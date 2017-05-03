@@ -1,6 +1,7 @@
 
 use std::u64;
 use std::path::{Path, PathBuf};
+use std::ops::Deref;
 
 use env::InfoLogLevel;
 use env::Logger;
@@ -1400,8 +1401,8 @@ impl Default for DBOptions {
 
 /// Options to control the behavior of a database (passed to DB::Open)
 pub struct Options {
-    db: DBOptions,
-    cf: ColumnFamilyOptions,
+    pub db: DBOptions,
+    pub cf: ColumnFamilyOptions,
 }
 
 impl Options {
@@ -1424,6 +1425,38 @@ impl Options {
     pub fn optimize_for_small_db(&mut self) -> &mut Self {
         unimplemented!()
     }
+}
+
+impl Default for Options {
+    fn default() -> Self {
+        Options {
+            db: DBOptions::default(),
+            cf: ColumnFamilyOptions::default(),
+        }
+    }
+}
+
+impl Deref for Options {
+    type Target = DBOptions;
+     fn deref(&self) -> &Self::Target {
+        &self.db
+    }
+}
+
+/*
+impl Deref for Options {
+    type Target = ColumnFamilyOptions;
+     fn deref(&self) -> &Self::Target {
+        &self.cf
+    }
+}
+*/
+
+#[test]
+fn test_options_deref_as_dboptions() {
+    let opt = Options::default();
+    // can be used as dboptions
+    assert_eq!(opt.use_direct_reads, false);
 }
 
 /// An application can issue a read request (via Get/Iterators) and specify

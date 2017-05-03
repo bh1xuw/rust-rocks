@@ -83,7 +83,7 @@ impl Range {
 /// A DB is safe for concurrent access from multiple threads without
 /// any external synchronization.
 pub struct DB {
-    raw: *mut ll::rocksdb::DB,
+    raw: *mut ll::db::DB,
 }
 
 impl DB {
