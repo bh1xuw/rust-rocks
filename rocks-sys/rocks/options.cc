@@ -29,50 +29,51 @@ extern "C" {
     delete options;
   }
 
-  rocks_column_family_options_t* rocks_cfoptions_create() {
-    return new rocks_column_family_options_t;
+  rocks_cfoptions_t* rocks_cfoptions_create() {
+    return new rocks_cfoptions_t;
   }
 
-  void rocks_cfoptions_destroy(rocks_column_family_options_t* options) {
+  void rocks_cfoptions_destroy(rocks_cfoptions_t* options) {
     delete options;
   }
 
-  rocks_options_t* rocks_options_create_from_db_cf_options(rocks_dboptions_t* dbopt, rocks_column_family_options_t* cfopt) {
+  // upconvert, downconvert
+  rocks_options_t* rocks_options_create_from_db_cf_options(rocks_dboptions_t* dbopt, rocks_cfoptions_t* cfopt) {
     return new rocks_options_t { Options(dbopt->rep, cfopt->rep) };
   }
 
-  rocks_column_family_options_t* rocks_options_as_cfoptions(rocks_options_t* options) {
-    return reinterpret_cast<rocks_column_family_options_t*>(options);
+  rocks_cfoptions_t* rocks_options_createfrom_cfoptions(rocks_options_t* options) {
+    return new rocks_cfoptions_t { ColumnFamilyOptions(options->rep) };
   }
 
-  rocks_dboptions_t* rocks_options_as_dboptions(rocks_options_t* options) {
-    return reinterpret_cast<rocks_dboptions_t*>(options);
+  rocks_dboptions_t* rocks_options_create_from_dboptions(rocks_options_t* options) {
+    return new rocks_dboptions_t { DBOptions(options->rep) };
   }
 
   // cfoptions
 
-  void rocks_cfoptions_optimize_for_small_db(rocks_column_family_options_t* opt) {
+  void rocks_cfoptions_optimize_for_small_db(rocks_cfoptions_t* opt) {
     opt->rep.OptimizeForSmallDb();
   }
 
-  void rocks_cfoptions_optimize_for_point_lookup(rocks_column_family_options_t* opt, uint64_t block_cache_size_mb) {
+  void rocks_cfoptions_optimize_for_point_lookup(rocks_cfoptions_t* opt, uint64_t block_cache_size_mb) {
     opt->rep.OptimizeForPointLookup(block_cache_size_mb);
   }
 
-  void rocks_cfoptions_optimize_level_style_compaction(rocks_column_family_options_t* opt, uint64_t memtable_memory_budget) {
+  void rocks_cfoptions_optimize_level_style_compaction(rocks_cfoptions_t* opt, uint64_t memtable_memory_budget) {
     opt->rep.OptimizeLevelStyleCompaction(memtable_memory_budget);
   }
 
-  void rocks_cfoptions_optimize_universal_style_compaction(rocks_column_family_options_t* opt, uint64_t memtable_memory_budget) {
+  void rocks_cfoptions_optimize_universal_style_compaction(rocks_cfoptions_t* opt, uint64_t memtable_memory_budget) {
     opt->rep.OptimizeUniversalStyleCompaction(memtable_memory_budget);
   }
 
   /*
-  void rocks_cfoptions_set_comparator(rocks_column_family_options_t* opt, rocks_comparator_t* cmp) {
+  void rocks_cfoptions_set_comparator(rocks_cfoptions_t* opt, rocks_comparator_t* cmp) {
     opt->rep.comparator = cmp;
   }
 
-  void rocks_cfoptions_set_merge_operator(rocks_column_family_options_t* opt, rocks_mergeoperator_t* merge_operator) {
+  void rocks_cfoptions_set_merge_operator(rocks_cfoptions_t* opt, rocks_mergeoperator_t* merge_operator) {
     opt->rep.merge_operator = std::shared_ptr<MergeOperator>(merge_operator);
   }
 
@@ -88,15 +89,15 @@ extern "C" {
   }
   */
 
-  void rocks_cfoptions_set_write_buffer_size(rocks_column_family_options_t* opt, size_t s) {
+  void rocks_cfoptions_set_write_buffer_size(rocks_cfoptions_t* opt, size_t s) {
     opt->rep.write_buffer_size = s;
   }
 
-  void rocks_cfoptions_set_compression(rocks_column_family_options_t* opt, int t) {
+  void rocks_cfoptions_set_compression(rocks_cfoptions_t* opt, int t) {
     opt->rep.compression = static_cast<CompressionType>(t);
   }
 
-  void rocks_cfoptions_set_compression_options(rocks_column_family_options_t* opt, int w_bits,
+  void rocks_cfoptions_set_compression_options(rocks_cfoptions_t* opt, int w_bits,
                                                int level, int strategy,
                                                int max_dict_bytes) {
     opt->rep.compression_opts.window_bits = w_bits;
@@ -105,7 +106,7 @@ extern "C" {
     opt->rep.compression_opts.max_dict_bytes = max_dict_bytes;
   }
 
-  void rocks_cfoptions_set_level0_file_num_compaction_trigger(rocks_column_family_options_t* opt, int n) {
+  void rocks_cfoptions_set_level0_file_num_compaction_trigger(rocks_cfoptions_t* opt, int n) {
     opt->rep.level0_file_num_compaction_trigger = n;
   }
 
@@ -116,18 +117,18 @@ extern "C" {
     }
   */
 
-  void rocks_cfoptions_set_max_bytes_for_level_base(rocks_column_family_options_t* opt, uint64_t n) {
+  void rocks_cfoptions_set_max_bytes_for_level_base(rocks_cfoptions_t* opt, uint64_t n) {
     opt->rep.max_bytes_for_level_base = n;
   }
 
-  void rocks_cfoptions_set_disable_auto_compactions(rocks_column_family_options_t* opt, int disable) {
+  void rocks_cfoptions_set_disable_auto_compactions(rocks_cfoptions_t* opt, int disable) {
     opt->rep.disable_auto_compactions = disable;
   }
 
   // rocks_cfoptions_set_table_factory()
   // table_factory
   void rocks_cfoptions_set_plain_table_factory(
-                                             rocks_column_family_options_t *opt, uint32_t user_key_len, int bloom_bits_per_key,
+                                             rocks_cfoptions_t *opt, uint32_t user_key_len, int bloom_bits_per_key,
                                              double hash_table_ratio, size_t index_sparseness) {
     rocksdb::PlainTableOptions options;
     options.user_key_len = user_key_len;
@@ -141,37 +142,37 @@ extern "C" {
 
   // via AdvancedColumnFamilyOptions
 
-  void rocks_cfoptions_set_max_write_buffer_number(rocks_column_family_options_t* opt, int n) {
+  void rocks_cfoptions_set_max_write_buffer_number(rocks_cfoptions_t* opt, int n) {
     opt->rep.max_write_buffer_number = n;
   }
 
-  void rocks_cfoptions_set_min_write_buffer_number_to_merge(rocks_column_family_options_t* opt, int n) {
+  void rocks_cfoptions_set_min_write_buffer_number_to_merge(rocks_cfoptions_t* opt, int n) {
     opt->rep.min_write_buffer_number_to_merge = n;
   }
 
   void rocks_cfoptions_set_max_write_buffer_number_to_maintain(
-                                                             rocks_column_family_options_t* opt, int n) {
+                                                             rocks_cfoptions_t* opt, int n) {
     opt->rep.max_write_buffer_number_to_maintain = n;
   }
 
   void rocks_cfoptions_set_inplace_update_support(
-                                                rocks_column_family_options_t* opt, unsigned char v) {
+                                                rocks_cfoptions_t* opt, unsigned char v) {
     opt->rep.inplace_update_support = v;
   }
 
   void rocks_cfoptions_set_inplace_update_num_locks(
-                                                  rocks_column_family_options_t* opt, size_t v) {
+                                                  rocks_cfoptions_t* opt, size_t v) {
     opt->rep.inplace_update_num_locks = v;
   }
 
   // inplace_callback
 
   void rocks_cfoptions_set_memtable_prefix_bloom_size_ratio(
-                                                          rocks_column_family_options_t* opt, double v) {
+                                                          rocks_cfoptions_t* opt, double v) {
     opt->rep.memtable_prefix_bloom_size_ratio = v;
   }
 
-  void rocks_cfoptions_set_memtable_huge_page_size(rocks_column_family_options_t* opt,
+  void rocks_cfoptions_set_memtable_huge_page_size(rocks_cfoptions_t* opt,
                                                  size_t v) {
     opt->rep.memtable_huge_page_size = v;
   }
@@ -179,16 +180,16 @@ extern "C" {
   // memtable_insert_with_hint_prefix_extractor
 
   void rocks_cfoptions_set_bloom_locality(
-                                        rocks_column_family_options_t* opt, uint32_t v) {
+                                        rocks_cfoptions_t* opt, uint32_t v) {
     opt->rep.bloom_locality = v;
   }
 
   void rocks_cfoptions_set_arena_block_size(
-                                          rocks_column_family_options_t* opt, size_t v) {
+                                          rocks_cfoptions_t* opt, size_t v) {
     opt->rep.arena_block_size = v;
   }
 
-  void rocks_cfoptions_set_compression_per_level(rocks_column_family_options_t* opt,
+  void rocks_cfoptions_set_compression_per_level(rocks_cfoptions_t* opt,
                                                int* level_values,
                                                size_t num_levels) {
     opt->rep.compression_per_level.resize(num_levels);
@@ -198,126 +199,126 @@ extern "C" {
     }
   }
 
-  void rocks_cfoptions_set_num_levels(rocks_column_family_options_t* opt, int n) {
+  void rocks_cfoptions_set_num_levels(rocks_cfoptions_t* opt, int n) {
     opt->rep.num_levels = n;
   }
 
   void rocks_cfoptions_set_level0_slowdown_writes_trigger(
-                                                        rocks_column_family_options_t* opt, int n) {
+                                                        rocks_cfoptions_t* opt, int n) {
     opt->rep.level0_slowdown_writes_trigger = n;
   }
 
   void rocks_cfoptions_set_level0_stop_writes_trigger(
-                                                    rocks_column_family_options_t* opt, int n) {
+                                                    rocks_cfoptions_t* opt, int n) {
     opt->rep.level0_stop_writes_trigger = n;
   }
 
   void rocks_cfoptions_set_target_file_size_base(
-                                               rocks_column_family_options_t* opt, uint64_t n) {
+                                               rocks_cfoptions_t* opt, uint64_t n) {
     opt->rep.target_file_size_base = n;
   }
 
   void rocks_cfoptions_set_target_file_size_multiplier(
-                                                     rocks_column_family_options_t* opt, int n) {
+                                                     rocks_cfoptions_t* opt, int n) {
     opt->rep.target_file_size_multiplier = n;
   }
 
   void rocks_cfoptions_set_level_compaction_dynamic_level_bytes(
-                                                              rocks_column_family_options_t* opt, unsigned char v) {
+                                                              rocks_cfoptions_t* opt, unsigned char v) {
     opt->rep.level_compaction_dynamic_level_bytes = v;
   }
 
-  void rocks_cfoptions_set_max_bytes_for_level_multiplier(rocks_column_family_options_t* opt,
+  void rocks_cfoptions_set_max_bytes_for_level_multiplier(rocks_cfoptions_t* opt,
                                                         double n) {
     opt->rep.max_bytes_for_level_multiplier = n;
   }
 
   void rocks_cfoptions_set_max_bytes_for_level_multiplier_additional(
-                                                                   rocks_column_family_options_t* opt, int* level_values, size_t num_levels) {
+                                                                   rocks_cfoptions_t* opt, int* level_values, size_t num_levels) {
     opt->rep.max_bytes_for_level_multiplier_additional.resize(num_levels);
     for (size_t i = 0; i < num_levels; ++i) {
       opt->rep.max_bytes_for_level_multiplier_additional[i] = level_values[i];
     }
   }
 
-  void rocks_cfoptions_set_max_compaction_bytes(rocks_column_family_options_t* opt,
+  void rocks_cfoptions_set_max_compaction_bytes(rocks_cfoptions_t* opt,
                                               uint64_t n) {
     opt->rep.max_compaction_bytes = n;
   }
 
-  void rocks_cfoptions_set_soft_pending_compaction_bytes_limit(rocks_column_family_options_t* opt, size_t v) {
+  void rocks_cfoptions_set_soft_pending_compaction_bytes_limit(rocks_cfoptions_t* opt, size_t v) {
     opt->rep.soft_pending_compaction_bytes_limit = v;
   }
 
-  void rocks_cfoptions_set_hard_pending_compaction_bytes_limit(rocks_column_family_options_t* opt, size_t v) {
+  void rocks_cfoptions_set_hard_pending_compaction_bytes_limit(rocks_cfoptions_t* opt, size_t v) {
     opt->rep.hard_pending_compaction_bytes_limit = v;
   }
 
-  void rocks_cfoptions_set_compaction_style(rocks_column_family_options_t *opt, int style) {
+  void rocks_cfoptions_set_compaction_style(rocks_cfoptions_t *opt, int style) {
     opt->rep.compaction_style = static_cast<rocksdb::CompactionStyle>(style);
   }
 
   // compaction_pri
 
   /*
-    void rocks_cfoptions_set_universal_compaction_options(rocks_column_family_options_t *opt, rocks_universal_compaction_options_t *uco) {
+    void rocks_cfoptions_set_universal_compaction_options(rocks_cfoptions_t *opt, rocks_universal_compaction_options_t *uco) {
     opt->rep.compaction_options_universal = *(uco->rep);
   }
   */
 
   /*
   void rocks_cfoptions_set_fifo_compaction_options(
-                                                 rocks_column_family_options_t* opt,
+                                                 rocks_cfoptions_t* opt,
                                                  rocks_fifo_compaction_options_t* fifo) {
     opt->rep.compaction_options_fifo = fifo->rep;
   }
   */
 
-  void rocks_cfoptions_set_max_sequential_skip_in_iterations(rocks_column_family_options_t* opt, uint64_t v) {
+  void rocks_cfoptions_set_max_sequential_skip_in_iterations(rocks_cfoptions_t* opt, uint64_t v) {
     opt->rep.max_sequential_skip_in_iterations = v;
   }
 
   // memtable_factory
-  void rocks_cfoptions_set_memtable_vector_rep(rocks_column_family_options_t *opt) {
+  void rocks_cfoptions_set_memtable_vector_rep(rocks_cfoptions_t *opt) {
     opt->rep.memtable_factory.reset(new rocksdb::VectorRepFactory);
   }
 
   void rocks_cfoptions_set_hash_skip_list_rep(
-    rocks_column_family_options_t *opt, size_t bucket_count,
+    rocks_cfoptions_t *opt, size_t bucket_count,
     int32_t skiplist_height, int32_t skiplist_branching_factor) {
     rocksdb::MemTableRepFactory* factory = rocksdb::NewHashSkipListRepFactory(
     bucket_count, skiplist_height, skiplist_branching_factor);
     opt->rep.memtable_factory.reset(factory);
   }
 
-  void rocks_cfoptions_set_hash_link_list_rep(rocks_column_family_options_t *opt, size_t bucket_count) {
+  void rocks_cfoptions_set_hash_link_list_rep(rocks_cfoptions_t *opt, size_t bucket_count) {
     opt->rep.memtable_factory.reset(rocksdb::NewHashLinkListRepFactory(bucket_count));
   }
 
   /*
-  void rocks_cfoptions_set_table_properties_collector_factories(rocks_column_family_options_t *opt,
+  void rocks_cfoptions_set_table_properties_collector_factories(rocks_cfoptions_t *opt,
                                                                 rocks_table_properties_collector_factory_t* factories,
                                                                 size_t n) {
   }
   */
 
-  void rocks_cfoptions_set_max_successive_merges(rocks_column_family_options_t* opt, size_t v) {
+  void rocks_cfoptions_set_max_successive_merges(rocks_cfoptions_t* opt, size_t v) {
     opt->rep.max_successive_merges = v;
   }
 
-  void rocks_cfoptions_set_optimize_filters_for_hits(rocks_column_family_options_t* opt, int v) {
+  void rocks_cfoptions_set_optimize_filters_for_hits(rocks_cfoptions_t* opt, int v) {
     opt->rep.optimize_filters_for_hits = v;
   }
 
-  void rocks_cfoptions_set_paranoid_file_checks(rocks_column_family_options_t* opt, unsigned char v) {
+  void rocks_cfoptions_set_paranoid_file_checks(rocks_cfoptions_t* opt, unsigned char v) {
     opt->rep.paranoid_file_checks = v;
   }
 
-  void rocks_cfoptions_set_force_consistency_checks(rocks_column_family_options_t* opt, unsigned char v) {
+  void rocks_cfoptions_set_force_consistency_checks(rocks_cfoptions_t* opt, unsigned char v) {
     opt->rep.force_consistency_checks = v;;
   }
 
-  void rocks_cfoptions_set_report_bg_io_stats(rocks_column_family_options_t* opt, int v) {
+  void rocks_cfoptions_set_report_bg_io_stats(rocks_cfoptions_t* opt, int v) {
     opt->rep.report_bg_io_stats = v;
   }
 

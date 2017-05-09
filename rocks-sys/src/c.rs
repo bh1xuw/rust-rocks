@@ -241,7 +241,7 @@ pub struct rocks_column_family_handle_t([u8; 0]);
 pub struct rocks_db_t([u8; 0]);
 #[repr(C)]
 #[derive(Debug, Copy, Clone)]
-pub struct rocks_column_family_options_t([u8; 0]);
+pub struct rocks_cfoptions_t([u8; 0]);
 #[repr(C)]
 #[derive(Debug, Copy, Clone)]
 pub struct rocks_dbpath_t([u8; 0]);
@@ -316,62 +316,58 @@ extern "C" {
     pub fn rocks_dboptions_destroy(options: *mut rocks_dboptions_t);
 }
 extern "C" {
-    pub fn rocks_cfoptions_create() -> *mut rocks_column_family_options_t;
+    pub fn rocks_cfoptions_create() -> *mut rocks_cfoptions_t;
 }
 extern "C" {
-    pub fn rocks_cfoptions_destroy(options:
-                                       *mut rocks_column_family_options_t);
+    pub fn rocks_cfoptions_destroy(options: *mut rocks_cfoptions_t);
 }
 extern "C" {
     pub fn rocks_options_create_from_db_cf_options(dbopt:
                                                        *mut rocks_dboptions_t,
                                                    cfopt:
-                                                       *mut rocks_column_family_options_t)
+                                                       *mut rocks_cfoptions_t)
      -> *mut rocks_options_t;
 }
 extern "C" {
-    pub fn rocks_options_as_cfoptions(options: *mut rocks_options_t)
-     -> *mut rocks_column_family_options_t;
+    pub fn rocks_options_createfrom_cfoptions(options: *mut rocks_options_t)
+     -> *mut rocks_cfoptions_t;
 }
 extern "C" {
-    pub fn rocks_options_as_dboptions(options: *mut rocks_options_t)
+    pub fn rocks_options_create_from_dboptions(options: *mut rocks_options_t)
      -> *mut rocks_dboptions_t;
 }
 extern "C" {
-    pub fn rocks_cfoptions_optimize_for_small_db(opt:
-                                                     *mut rocks_column_family_options_t);
+    pub fn rocks_cfoptions_optimize_for_small_db(opt: *mut rocks_cfoptions_t);
 }
 extern "C" {
     pub fn rocks_cfoptions_optimize_for_point_lookup(opt:
-                                                         *mut rocks_column_family_options_t,
+                                                         *mut rocks_cfoptions_t,
                                                      block_cache_size_mb:
                                                          u64);
 }
 extern "C" {
     pub fn rocks_cfoptions_optimize_level_style_compaction(opt:
-                                                               *mut rocks_column_family_options_t,
+                                                               *mut rocks_cfoptions_t,
                                                            memtable_memory_budget:
                                                                u64);
 }
 extern "C" {
     pub fn rocks_cfoptions_optimize_universal_style_compaction(opt:
-                                                                   *mut rocks_column_family_options_t,
+                                                                   *mut rocks_cfoptions_t,
                                                                memtable_memory_budget:
                                                                    u64);
 }
 extern "C" {
-    pub fn rocks_cfoptions_set_write_buffer_size(opt:
-                                                     *mut rocks_column_family_options_t,
+    pub fn rocks_cfoptions_set_write_buffer_size(opt: *mut rocks_cfoptions_t,
                                                  s: usize);
 }
 extern "C" {
-    pub fn rocks_cfoptions_set_compression(opt:
-                                               *mut rocks_column_family_options_t,
+    pub fn rocks_cfoptions_set_compression(opt: *mut rocks_cfoptions_t,
                                            t: ::std::os::raw::c_int);
 }
 extern "C" {
     pub fn rocks_cfoptions_set_compression_options(opt:
-                                                       *mut rocks_column_family_options_t,
+                                                       *mut rocks_cfoptions_t,
                                                    w_bits:
                                                        ::std::os::raw::c_int,
                                                    level:
@@ -383,24 +379,24 @@ extern "C" {
 }
 extern "C" {
     pub fn rocks_cfoptions_set_level0_file_num_compaction_trigger(opt:
-                                                                      *mut rocks_column_family_options_t,
+                                                                      *mut rocks_cfoptions_t,
                                                                   n:
                                                                       ::std::os::raw::c_int);
 }
 extern "C" {
     pub fn rocks_cfoptions_set_max_bytes_for_level_base(opt:
-                                                            *mut rocks_column_family_options_t,
+                                                            *mut rocks_cfoptions_t,
                                                         n: u64);
 }
 extern "C" {
     pub fn rocks_cfoptions_set_disable_auto_compactions(opt:
-                                                            *mut rocks_column_family_options_t,
+                                                            *mut rocks_cfoptions_t,
                                                         disable:
                                                             ::std::os::raw::c_int);
 }
 extern "C" {
     pub fn rocks_cfoptions_set_plain_table_factory(opt:
-                                                       *mut rocks_column_family_options_t,
+                                                       *mut rocks_cfoptions_t,
                                                    user_key_len: u32,
                                                    bloom_bits_per_key:
                                                        ::std::os::raw::c_int,
@@ -409,102 +405,99 @@ extern "C" {
 }
 extern "C" {
     pub fn rocks_cfoptions_set_max_write_buffer_number(opt:
-                                                           *mut rocks_column_family_options_t,
+                                                           *mut rocks_cfoptions_t,
                                                        n:
                                                            ::std::os::raw::c_int);
 }
 extern "C" {
     pub fn rocks_cfoptions_set_min_write_buffer_number_to_merge(opt:
-                                                                    *mut rocks_column_family_options_t,
+                                                                    *mut rocks_cfoptions_t,
                                                                 n:
                                                                     ::std::os::raw::c_int);
 }
 extern "C" {
     pub fn rocks_cfoptions_set_max_write_buffer_number_to_maintain(opt:
-                                                                       *mut rocks_column_family_options_t,
+                                                                       *mut rocks_cfoptions_t,
                                                                    n:
                                                                        ::std::os::raw::c_int);
 }
 extern "C" {
     pub fn rocks_cfoptions_set_inplace_update_support(opt:
-                                                          *mut rocks_column_family_options_t,
+                                                          *mut rocks_cfoptions_t,
                                                       v:
                                                           ::std::os::raw::c_uchar);
 }
 extern "C" {
     pub fn rocks_cfoptions_set_inplace_update_num_locks(opt:
-                                                            *mut rocks_column_family_options_t,
+                                                            *mut rocks_cfoptions_t,
                                                         v: usize);
 }
 extern "C" {
     pub fn rocks_cfoptions_set_memtable_prefix_bloom_size_ratio(opt:
-                                                                    *mut rocks_column_family_options_t,
+                                                                    *mut rocks_cfoptions_t,
                                                                 v: f64);
 }
 extern "C" {
     pub fn rocks_cfoptions_set_memtable_huge_page_size(opt:
-                                                           *mut rocks_column_family_options_t,
+                                                           *mut rocks_cfoptions_t,
                                                        v: usize);
 }
 extern "C" {
-    pub fn rocks_cfoptions_set_bloom_locality(opt:
-                                                  *mut rocks_column_family_options_t,
+    pub fn rocks_cfoptions_set_bloom_locality(opt: *mut rocks_cfoptions_t,
                                               v: u32);
 }
 extern "C" {
-    pub fn rocks_cfoptions_set_arena_block_size(opt:
-                                                    *mut rocks_column_family_options_t,
+    pub fn rocks_cfoptions_set_arena_block_size(opt: *mut rocks_cfoptions_t,
                                                 v: usize);
 }
 extern "C" {
     pub fn rocks_cfoptions_set_compression_per_level(opt:
-                                                         *mut rocks_column_family_options_t,
+                                                         *mut rocks_cfoptions_t,
                                                      level_values:
                                                          *mut ::std::os::raw::c_int,
                                                      num_levels: usize);
 }
 extern "C" {
-    pub fn rocks_cfoptions_set_num_levels(opt:
-                                              *mut rocks_column_family_options_t,
+    pub fn rocks_cfoptions_set_num_levels(opt: *mut rocks_cfoptions_t,
                                           n: ::std::os::raw::c_int);
 }
 extern "C" {
     pub fn rocks_cfoptions_set_level0_slowdown_writes_trigger(opt:
-                                                                  *mut rocks_column_family_options_t,
+                                                                  *mut rocks_cfoptions_t,
                                                               n:
                                                                   ::std::os::raw::c_int);
 }
 extern "C" {
     pub fn rocks_cfoptions_set_level0_stop_writes_trigger(opt:
-                                                              *mut rocks_column_family_options_t,
+                                                              *mut rocks_cfoptions_t,
                                                           n:
                                                               ::std::os::raw::c_int);
 }
 extern "C" {
     pub fn rocks_cfoptions_set_target_file_size_base(opt:
-                                                         *mut rocks_column_family_options_t,
+                                                         *mut rocks_cfoptions_t,
                                                      n: u64);
 }
 extern "C" {
     pub fn rocks_cfoptions_set_target_file_size_multiplier(opt:
-                                                               *mut rocks_column_family_options_t,
+                                                               *mut rocks_cfoptions_t,
                                                            n:
                                                                ::std::os::raw::c_int);
 }
 extern "C" {
     pub fn rocks_cfoptions_set_level_compaction_dynamic_level_bytes(opt:
-                                                                        *mut rocks_column_family_options_t,
+                                                                        *mut rocks_cfoptions_t,
                                                                     v:
                                                                         ::std::os::raw::c_uchar);
 }
 extern "C" {
     pub fn rocks_cfoptions_set_max_bytes_for_level_multiplier(opt:
-                                                                  *mut rocks_column_family_options_t,
+                                                                  *mut rocks_cfoptions_t,
                                                               n: f64);
 }
 extern "C" {
     pub fn rocks_cfoptions_set_max_bytes_for_level_multiplier_additional(opt:
-                                                                             *mut rocks_column_family_options_t,
+                                                                             *mut rocks_cfoptions_t,
                                                                          level_values:
                                                                              *mut ::std::os::raw::c_int,
                                                                          num_levels:
@@ -512,72 +505,68 @@ extern "C" {
 }
 extern "C" {
     pub fn rocks_cfoptions_set_max_compaction_bytes(opt:
-                                                        *mut rocks_column_family_options_t,
+                                                        *mut rocks_cfoptions_t,
                                                     n: u64);
 }
 extern "C" {
     pub fn rocks_cfoptions_set_soft_pending_compaction_bytes_limit(opt:
-                                                                       *mut rocks_column_family_options_t,
+                                                                       *mut rocks_cfoptions_t,
                                                                    v: usize);
 }
 extern "C" {
     pub fn rocks_cfoptions_set_hard_pending_compaction_bytes_limit(opt:
-                                                                       *mut rocks_column_family_options_t,
+                                                                       *mut rocks_cfoptions_t,
                                                                    v: usize);
 }
 extern "C" {
-    pub fn rocks_cfoptions_set_compaction_style(opt:
-                                                    *mut rocks_column_family_options_t,
+    pub fn rocks_cfoptions_set_compaction_style(opt: *mut rocks_cfoptions_t,
                                                 style: ::std::os::raw::c_int);
 }
 extern "C" {
     pub fn rocks_cfoptions_set_max_sequential_skip_in_iterations(opt:
-                                                                     *mut rocks_column_family_options_t,
+                                                                     *mut rocks_cfoptions_t,
                                                                  v: u64);
 }
 extern "C" {
     pub fn rocks_cfoptions_set_memtable_vector_rep(opt:
-                                                       *mut rocks_column_family_options_t);
+                                                       *mut rocks_cfoptions_t);
 }
 extern "C" {
-    pub fn rocks_cfoptions_set_hash_skip_list_rep(opt:
-                                                      *mut rocks_column_family_options_t,
+    pub fn rocks_cfoptions_set_hash_skip_list_rep(opt: *mut rocks_cfoptions_t,
                                                   bucket_count: usize,
                                                   skiplist_height: i32,
                                                   skiplist_branching_factor:
                                                       i32);
 }
 extern "C" {
-    pub fn rocks_cfoptions_set_hash_link_list_rep(opt:
-                                                      *mut rocks_column_family_options_t,
+    pub fn rocks_cfoptions_set_hash_link_list_rep(opt: *mut rocks_cfoptions_t,
                                                   bucket_count: usize);
 }
 extern "C" {
     pub fn rocks_cfoptions_set_max_successive_merges(opt:
-                                                         *mut rocks_column_family_options_t,
+                                                         *mut rocks_cfoptions_t,
                                                      v: usize);
 }
 extern "C" {
     pub fn rocks_cfoptions_set_optimize_filters_for_hits(opt:
-                                                             *mut rocks_column_family_options_t,
+                                                             *mut rocks_cfoptions_t,
                                                          v:
                                                              ::std::os::raw::c_int);
 }
 extern "C" {
     pub fn rocks_cfoptions_set_paranoid_file_checks(opt:
-                                                        *mut rocks_column_family_options_t,
+                                                        *mut rocks_cfoptions_t,
                                                     v:
                                                         ::std::os::raw::c_uchar);
 }
 extern "C" {
     pub fn rocks_cfoptions_set_force_consistency_checks(opt:
-                                                            *mut rocks_column_family_options_t,
+                                                            *mut rocks_cfoptions_t,
                                                         v:
                                                             ::std::os::raw::c_uchar);
 }
 extern "C" {
-    pub fn rocks_cfoptions_set_report_bg_io_stats(opt:
-                                                      *mut rocks_column_family_options_t,
+    pub fn rocks_cfoptions_set_report_bg_io_stats(opt: *mut rocks_cfoptions_t,
                                                   v: ::std::os::raw::c_int);
 }
 extern "C" {

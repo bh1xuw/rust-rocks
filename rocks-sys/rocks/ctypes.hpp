@@ -35,7 +35,7 @@ extern "C" {
   /* options */ 
   struct rocks_dbpath_t                { DbPath                        rep; };
   struct rocks_dboptions_t             { DBOptions                     rep; };
-  struct rocks_column_family_options_t { ColumnFamilyOptions           rep; };
+  struct rocks_cfoptions_t             { ColumnFamilyOptions           rep; };
   struct rocks_options_t               { Options                       rep; };
   struct rocks_readoptions_t           {
     ReadOptions rep;
