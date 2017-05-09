@@ -1,3 +1,5 @@
+#![allow(unused_variables, unused_imports, dead_code)]
+
 extern crate rocks_sys;
 
 pub use status::Status;
@@ -22,3 +24,4 @@ pub mod slice_transform;
 pub mod table_properties;
 pub mod types;
 pub mod snapshot;
+pub mod write_batch;

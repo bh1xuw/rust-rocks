@@ -294,6 +294,15 @@ pub struct rocks_env_t([u8; 0]);
 #[repr(C)]
 #[derive(Debug, Copy, Clone)]
 pub struct rocks_snapshot_t([u8; 0]);
+#[repr(C)]
+#[derive(Debug, Copy, Clone)]
+pub struct rocks_iterator_t([u8; 0]);
+#[repr(C)]
+#[derive(Debug, Copy, Clone)]
+pub struct rocks_writebatch_t([u8; 0]);
+#[repr(C)]
+#[derive(Debug, Copy, Clone)]
+pub struct rocks_cache_t([u8; 0]);
 extern "C" {
     pub fn rocks_options_create() -> *mut rocks_options_t;
 }
@@ -301,37 +310,572 @@ extern "C" {
     pub fn rocks_options_destroy(options: *mut rocks_options_t);
 }
 extern "C" {
-    pub fn rocks_options_set_create_if_missing(opt: *mut rocks_options_t,
-                                               v: ::std::os::raw::c_uchar);
+    pub fn rocks_dboptions_create() -> *mut rocks_dboptions_t;
 }
 extern "C" {
-    pub fn rocks_column_family_options_create()
+    pub fn rocks_dboptions_destroy(options: *mut rocks_dboptions_t);
+}
+extern "C" {
+    pub fn rocks_cfoptions_create() -> *mut rocks_column_family_options_t;
+}
+extern "C" {
+    pub fn rocks_cfoptions_destroy(options:
+                                       *mut rocks_column_family_options_t);
+}
+extern "C" {
+    pub fn rocks_options_create_from_db_cf_options(dbopt:
+                                                       *mut rocks_dboptions_t,
+                                                   cfopt:
+                                                       *mut rocks_column_family_options_t)
+     -> *mut rocks_options_t;
+}
+extern "C" {
+    pub fn rocks_options_as_cfoptions(options: *mut rocks_options_t)
      -> *mut rocks_column_family_options_t;
 }
 extern "C" {
-    pub fn rocks_column_family_options_destroy(options:
-                                                   *mut rocks_column_family_options_t);
+    pub fn rocks_options_as_dboptions(options: *mut rocks_options_t)
+     -> *mut rocks_dboptions_t;
 }
 extern "C" {
-    pub fn rocks_options_increase_parallelism(opt: *mut rocks_options_t,
-                                              total_threads:
-                                                  ::std::os::raw::c_int);
+    pub fn rocks_cfoptions_optimize_for_small_db(opt:
+                                                     *mut rocks_column_family_options_t);
 }
 extern "C" {
-    pub fn rocks_options_optimize_for_point_lookup(opt: *mut rocks_options_t,
-                                                   block_cache_size_mb: u64);
+    pub fn rocks_cfoptions_optimize_for_point_lookup(opt:
+                                                         *mut rocks_column_family_options_t,
+                                                     block_cache_size_mb:
+                                                         u64);
 }
 extern "C" {
-    pub fn rocks_options_optimize_level_style_compaction(opt:
-                                                             *mut rocks_options_t,
-                                                         memtable_memory_budget:
-                                                             u64);
+    pub fn rocks_cfoptions_optimize_level_style_compaction(opt:
+                                                               *mut rocks_column_family_options_t,
+                                                           memtable_memory_budget:
+                                                               u64);
 }
 extern "C" {
-    pub fn rocks_options_optimize_universal_style_compaction(opt:
-                                                                 *mut rocks_options_t,
-                                                             memtable_memory_budget:
-                                                                 u64);
+    pub fn rocks_cfoptions_optimize_universal_style_compaction(opt:
+                                                                   *mut rocks_column_family_options_t,
+                                                               memtable_memory_budget:
+                                                                   u64);
+}
+extern "C" {
+    pub fn rocks_cfoptions_set_write_buffer_size(opt:
+                                                     *mut rocks_column_family_options_t,
+                                                 s: usize);
+}
+extern "C" {
+    pub fn rocks_cfoptions_set_compression(opt:
+                                               *mut rocks_column_family_options_t,
+                                           t: ::std::os::raw::c_int);
+}
+extern "C" {
+    pub fn rocks_cfoptions_set_compression_options(opt:
+                                                       *mut rocks_column_family_options_t,
+                                                   w_bits:
+                                                       ::std::os::raw::c_int,
+                                                   level:
+                                                       ::std::os::raw::c_int,
+                                                   strategy:
+                                                       ::std::os::raw::c_int,
+                                                   max_dict_bytes:
+                                                       ::std::os::raw::c_int);
+}
+extern "C" {
+    pub fn rocks_cfoptions_set_level0_file_num_compaction_trigger(opt:
+                                                                      *mut rocks_column_family_options_t,
+                                                                  n:
+                                                                      ::std::os::raw::c_int);
+}
+extern "C" {
+    pub fn rocks_cfoptions_set_max_bytes_for_level_base(opt:
+                                                            *mut rocks_column_family_options_t,
+                                                        n: u64);
+}
+extern "C" {
+    pub fn rocks_cfoptions_set_disable_auto_compactions(opt:
+                                                            *mut rocks_column_family_options_t,
+                                                        disable:
+                                                            ::std::os::raw::c_int);
+}
+extern "C" {
+    pub fn rocks_cfoptions_set_plain_table_factory(opt:
+                                                       *mut rocks_column_family_options_t,
+                                                   user_key_len: u32,
+                                                   bloom_bits_per_key:
+                                                       ::std::os::raw::c_int,
+                                                   hash_table_ratio: f64,
+                                                   index_sparseness: usize);
+}
+extern "C" {
+    pub fn rocks_cfoptions_set_max_write_buffer_number(opt:
+                                                           *mut rocks_column_family_options_t,
+                                                       n:
+                                                           ::std::os::raw::c_int);
+}
+extern "C" {
+    pub fn rocks_cfoptions_set_min_write_buffer_number_to_merge(opt:
+                                                                    *mut rocks_column_family_options_t,
+                                                                n:
+                                                                    ::std::os::raw::c_int);
+}
+extern "C" {
+    pub fn rocks_cfoptions_set_max_write_buffer_number_to_maintain(opt:
+                                                                       *mut rocks_column_family_options_t,
+                                                                   n:
+                                                                       ::std::os::raw::c_int);
+}
+extern "C" {
+    pub fn rocks_cfoptions_set_inplace_update_support(opt:
+                                                          *mut rocks_column_family_options_t,
+                                                      v:
+                                                          ::std::os::raw::c_uchar);
+}
+extern "C" {
+    pub fn rocks_cfoptions_set_inplace_update_num_locks(opt:
+                                                            *mut rocks_column_family_options_t,
+                                                        v: usize);
+}
+extern "C" {
+    pub fn rocks_cfoptions_set_memtable_prefix_bloom_size_ratio(opt:
+                                                                    *mut rocks_column_family_options_t,
+                                                                v: f64);
+}
+extern "C" {
+    pub fn rocks_cfoptions_set_memtable_huge_page_size(opt:
+                                                           *mut rocks_column_family_options_t,
+                                                       v: usize);
+}
+extern "C" {
+    pub fn rocks_cfoptions_set_bloom_locality(opt:
+                                                  *mut rocks_column_family_options_t,
+                                              v: u32);
+}
+extern "C" {
+    pub fn rocks_cfoptions_set_arena_block_size(opt:
+                                                    *mut rocks_column_family_options_t,
+                                                v: usize);
+}
+extern "C" {
+    pub fn rocks_cfoptions_set_compression_per_level(opt:
+                                                         *mut rocks_column_family_options_t,
+                                                     level_values:
+                                                         *mut ::std::os::raw::c_int,
+                                                     num_levels: usize);
+}
+extern "C" {
+    pub fn rocks_cfoptions_set_num_levels(opt:
+                                              *mut rocks_column_family_options_t,
+                                          n: ::std::os::raw::c_int);
+}
+extern "C" {
+    pub fn rocks_cfoptions_set_level0_slowdown_writes_trigger(opt:
+                                                                  *mut rocks_column_family_options_t,
+                                                              n:
+                                                                  ::std::os::raw::c_int);
+}
+extern "C" {
+    pub fn rocks_cfoptions_set_level0_stop_writes_trigger(opt:
+                                                              *mut rocks_column_family_options_t,
+                                                          n:
+                                                              ::std::os::raw::c_int);
+}
+extern "C" {
+    pub fn rocks_cfoptions_set_target_file_size_base(opt:
+                                                         *mut rocks_column_family_options_t,
+                                                     n: u64);
+}
+extern "C" {
+    pub fn rocks_cfoptions_set_target_file_size_multiplier(opt:
+                                                               *mut rocks_column_family_options_t,
+                                                           n:
+                                                               ::std::os::raw::c_int);
+}
+extern "C" {
+    pub fn rocks_cfoptions_set_level_compaction_dynamic_level_bytes(opt:
+                                                                        *mut rocks_column_family_options_t,
+                                                                    v:
+                                                                        ::std::os::raw::c_uchar);
+}
+extern "C" {
+    pub fn rocks_cfoptions_set_max_bytes_for_level_multiplier(opt:
+                                                                  *mut rocks_column_family_options_t,
+                                                              n: f64);
+}
+extern "C" {
+    pub fn rocks_cfoptions_set_max_bytes_for_level_multiplier_additional(opt:
+                                                                             *mut rocks_column_family_options_t,
+                                                                         level_values:
+                                                                             *mut ::std::os::raw::c_int,
+                                                                         num_levels:
+                                                                             usize);
+}
+extern "C" {
+    pub fn rocks_cfoptions_set_max_compaction_bytes(opt:
+                                                        *mut rocks_column_family_options_t,
+                                                    n: u64);
+}
+extern "C" {
+    pub fn rocks_cfoptions_set_soft_pending_compaction_bytes_limit(opt:
+                                                                       *mut rocks_column_family_options_t,
+                                                                   v: usize);
+}
+extern "C" {
+    pub fn rocks_cfoptions_set_hard_pending_compaction_bytes_limit(opt:
+                                                                       *mut rocks_column_family_options_t,
+                                                                   v: usize);
+}
+extern "C" {
+    pub fn rocks_cfoptions_set_compaction_style(opt:
+                                                    *mut rocks_column_family_options_t,
+                                                style: ::std::os::raw::c_int);
+}
+extern "C" {
+    pub fn rocks_cfoptions_set_max_sequential_skip_in_iterations(opt:
+                                                                     *mut rocks_column_family_options_t,
+                                                                 v: u64);
+}
+extern "C" {
+    pub fn rocks_cfoptions_set_memtable_vector_rep(opt:
+                                                       *mut rocks_column_family_options_t);
+}
+extern "C" {
+    pub fn rocks_cfoptions_set_hash_skip_list_rep(opt:
+                                                      *mut rocks_column_family_options_t,
+                                                  bucket_count: usize,
+                                                  skiplist_height: i32,
+                                                  skiplist_branching_factor:
+                                                      i32);
+}
+extern "C" {
+    pub fn rocks_cfoptions_set_hash_link_list_rep(opt:
+                                                      *mut rocks_column_family_options_t,
+                                                  bucket_count: usize);
+}
+extern "C" {
+    pub fn rocks_cfoptions_set_max_successive_merges(opt:
+                                                         *mut rocks_column_family_options_t,
+                                                     v: usize);
+}
+extern "C" {
+    pub fn rocks_cfoptions_set_optimize_filters_for_hits(opt:
+                                                             *mut rocks_column_family_options_t,
+                                                         v:
+                                                             ::std::os::raw::c_int);
+}
+extern "C" {
+    pub fn rocks_cfoptions_set_paranoid_file_checks(opt:
+                                                        *mut rocks_column_family_options_t,
+                                                    v:
+                                                        ::std::os::raw::c_uchar);
+}
+extern "C" {
+    pub fn rocks_cfoptions_set_force_consistency_checks(opt:
+                                                            *mut rocks_column_family_options_t,
+                                                        v:
+                                                            ::std::os::raw::c_uchar);
+}
+extern "C" {
+    pub fn rocks_cfoptions_set_report_bg_io_stats(opt:
+                                                      *mut rocks_column_family_options_t,
+                                                  v: ::std::os::raw::c_int);
+}
+extern "C" {
+    pub fn rocks_dboptions_optimize_for_small_db(opt: *mut rocks_dboptions_t);
+}
+extern "C" {
+    pub fn rocks_dboptions_increase_parallelism(opt: *mut rocks_dboptions_t,
+                                                total_threads:
+                                                    ::std::os::raw::c_int);
+}
+extern "C" {
+    pub fn rocks_dboptions_set_create_if_missing(opt: *mut rocks_dboptions_t,
+                                                 v: ::std::os::raw::c_uchar);
+}
+extern "C" {
+    pub fn rocks_dboptions_set_create_missing_column_families(opt:
+                                                                  *mut rocks_dboptions_t,
+                                                              v:
+                                                                  ::std::os::raw::c_uchar);
+}
+extern "C" {
+    pub fn rocks_dboptions_set_error_if_exists(opt: *mut rocks_dboptions_t,
+                                               v: ::std::os::raw::c_uchar);
+}
+extern "C" {
+    pub fn rocks_dboptions_set_paranoid_checks(opt: *mut rocks_dboptions_t,
+                                               v: ::std::os::raw::c_uchar);
+}
+extern "C" {
+    pub fn rocks_dboptions_set_env(opt: *mut rocks_dboptions_t,
+                                   env: *mut rocks_env_t);
+}
+extern "C" {
+    pub fn rocks_dboptions_set_ratelimiter(opt: *mut rocks_dboptions_t,
+                                           limiter: *mut rocks_ratelimiter_t);
+}
+extern "C" {
+    pub fn rocks_dboptions_set_info_log(opt: *mut rocks_dboptions_t,
+                                        l: *mut rocks_logger_t);
+}
+extern "C" {
+    pub fn rocks_dboptions_set_info_log_level(opt: *mut rocks_dboptions_t,
+                                              v: ::std::os::raw::c_int);
+}
+extern "C" {
+    pub fn rocks_dboptions_set_max_open_files(opt: *mut rocks_dboptions_t,
+                                              n: ::std::os::raw::c_int);
+}
+extern "C" {
+    pub fn rocks_dboptions_set_max_file_opening_threads(opt:
+                                                            *mut rocks_dboptions_t,
+                                                        n:
+                                                            ::std::os::raw::c_int);
+}
+extern "C" {
+    pub fn rocks_dboptions_set_max_total_wal_size(opt: *mut rocks_dboptions_t,
+                                                  n: u64);
+}
+extern "C" {
+    pub fn rocks_dboptions_enable_statistics(opt: *mut rocks_dboptions_t);
+}
+extern "C" {
+    pub fn rocks_dboptions_set_use_fsync(opt: *mut rocks_dboptions_t,
+                                         use_fsync: ::std::os::raw::c_int);
+}
+extern "C" {
+    pub fn rocks_dboptions_set_db_log_dir(opt: *mut rocks_dboptions_t,
+                                          db_log_dir:
+                                              *const ::std::os::raw::c_char);
+}
+extern "C" {
+    pub fn rocks_dboptions_set_wal_dir(opt: *mut rocks_dboptions_t,
+                                       v: *const ::std::os::raw::c_char);
+}
+extern "C" {
+    pub fn rocks_dboptions_set_delete_obsolete_files_period_micros(opt:
+                                                                       *mut rocks_dboptions_t,
+                                                                   v: u64);
+}
+extern "C" {
+    pub fn rocks_dboptions_set_base_background_compactions(opt:
+                                                               *mut rocks_dboptions_t,
+                                                           n:
+                                                               ::std::os::raw::c_int);
+}
+extern "C" {
+    pub fn rocks_dboptions_set_max_background_compactions(opt:
+                                                              *mut rocks_dboptions_t,
+                                                          n:
+                                                              ::std::os::raw::c_int);
+}
+extern "C" {
+    pub fn rocks_dboptions_set_max_subcompactions(opt: *mut rocks_dboptions_t,
+                                                  n: u32);
+}
+extern "C" {
+    pub fn rocks_dboptions_set_max_background_flushes(opt:
+                                                          *mut rocks_dboptions_t,
+                                                      n:
+                                                          ::std::os::raw::c_int);
+}
+extern "C" {
+    pub fn rocks_dboptions_set_max_log_file_size(opt: *mut rocks_dboptions_t,
+                                                 v: usize);
+}
+extern "C" {
+    pub fn rocks_dboptions_set_log_file_time_to_roll(opt:
+                                                         *mut rocks_dboptions_t,
+                                                     v: usize);
+}
+extern "C" {
+    pub fn rocks_dboptions_set_keep_log_file_num(opt: *mut rocks_dboptions_t,
+                                                 v: usize);
+}
+extern "C" {
+    pub fn rocks_dboptions_set_recycle_log_file_num(opt:
+                                                        *mut rocks_dboptions_t,
+                                                    v: usize);
+}
+extern "C" {
+    pub fn rocks_dboptions_set_max_manifest_file_size(opt:
+                                                          *mut rocks_dboptions_t,
+                                                      v: usize);
+}
+extern "C" {
+    pub fn rocks_dboptions_set_table_cache_numshardbits(opt:
+                                                            *mut rocks_dboptions_t,
+                                                        v:
+                                                            ::std::os::raw::c_int);
+}
+extern "C" {
+    pub fn rocks_dboptions_set_WAL_ttl_seconds(opt: *mut rocks_dboptions_t,
+                                               ttl: u64);
+}
+extern "C" {
+    pub fn rocks_dboptions_set_WAL_size_limit_MB(opt: *mut rocks_dboptions_t,
+                                                 limit: u64);
+}
+extern "C" {
+    pub fn rocks_dboptions_set_manifest_preallocation_size(opt:
+                                                               *mut rocks_dboptions_t,
+                                                           v: usize);
+}
+extern "C" {
+    pub fn rocks_dboptions_set_allow_mmap_writes(opt: *mut rocks_dboptions_t,
+                                                 v: ::std::os::raw::c_uchar);
+}
+extern "C" {
+    pub fn rocks_dboptions_set_use_direct_reads(opt: *mut rocks_dboptions_t,
+                                                v: ::std::os::raw::c_uchar);
+}
+extern "C" {
+    pub fn rocks_dboptions_set_use_direct_writes(opt: *mut rocks_dboptions_t,
+                                                 v: ::std::os::raw::c_uchar);
+}
+extern "C" {
+    pub fn rocks_dboptions_set_allow_fallocate(opt: *mut rocks_dboptions_t,
+                                               v: ::std::os::raw::c_uchar);
+}
+extern "C" {
+    pub fn rocks_dboptions_set_is_fd_close_on_exec(opt:
+                                                       *mut rocks_dboptions_t,
+                                                   v:
+                                                       ::std::os::raw::c_uchar);
+}
+extern "C" {
+    pub fn rocks_dboptions_set_stats_dump_period_sec(opt:
+                                                         *mut rocks_dboptions_t,
+                                                     v:
+                                                         ::std::os::raw::c_uint);
+}
+extern "C" {
+    pub fn rocks_dboptions_set_advise_random_on_open(opt:
+                                                         *mut rocks_dboptions_t,
+                                                     v:
+                                                         ::std::os::raw::c_uchar);
+}
+extern "C" {
+    pub fn rocks_dboptions_set_db_write_buffer_size(opt:
+                                                        *mut rocks_dboptions_t,
+                                                    s: usize);
+}
+extern "C" {
+    pub fn rocks_dboptions_set_access_hint_on_compaction_start(opt:
+                                                                   *mut rocks_dboptions_t,
+                                                               v:
+                                                                   ::std::os::raw::c_int);
+}
+extern "C" {
+    pub fn rocks_dboptions_set_new_table_reader_for_compaction_inputs(opt:
+                                                                          *mut rocks_dboptions_t,
+                                                                      v:
+                                                                          ::std::os::raw::c_uchar);
+}
+extern "C" {
+    pub fn rocks_dboptions_compaction_readahead_size(opt:
+                                                         *mut rocks_dboptions_t,
+                                                     s: usize);
+}
+extern "C" {
+    pub fn rocks_dboptions_set_random_access_max_buffer_size(opt:
+                                                                 *mut rocks_dboptions_t,
+                                                             s: usize);
+}
+extern "C" {
+    pub fn rocks_dboptions_set_writable_file_max_buffer_size(opt:
+                                                                 *mut rocks_dboptions_t,
+                                                             s: usize);
+}
+extern "C" {
+    pub fn rocks_dboptions_set_use_adaptive_mutex(opt: *mut rocks_dboptions_t,
+                                                  v: ::std::os::raw::c_uchar);
+}
+extern "C" {
+    pub fn rocks_dboptions_set_bytes_per_sync(opt: *mut rocks_dboptions_t,
+                                              v: u64);
+}
+extern "C" {
+    pub fn rocks_dboptions_set_wal_bytes_per_sync(opt: *mut rocks_dboptions_t,
+                                                  v: u64);
+}
+extern "C" {
+    pub fn rocks_dboptions_set_enable_thread_tracking(opt:
+                                                          *mut rocks_dboptions_t,
+                                                      v:
+                                                          ::std::os::raw::c_uchar);
+}
+extern "C" {
+    pub fn rocks_dboptions_set_delayed_write_rate(opt: *mut rocks_dboptions_t,
+                                                  v: u64);
+}
+extern "C" {
+    pub fn rocks_dboptions_set_allow_concurrent_memtable_write(opt:
+                                                                   *mut rocks_dboptions_t,
+                                                               v:
+                                                                   ::std::os::raw::c_uchar);
+}
+extern "C" {
+    pub fn rocks_dboptions_set_enable_write_thread_adaptive_yield(opt:
+                                                                      *mut rocks_dboptions_t,
+                                                                  v:
+                                                                      ::std::os::raw::c_uchar);
+}
+extern "C" {
+    pub fn rocks_dboptions_set_write_thread_max_yield_usec(opt:
+                                                               *mut rocks_dboptions_t,
+                                                           v: u64);
+}
+extern "C" {
+    pub fn rocks_dboptions_set_write_thread_slow_yield_usec(opt:
+                                                                *mut rocks_dboptions_t,
+                                                            v: u64);
+}
+extern "C" {
+    pub fn rocks_dboptions_set_skip_stats_update_on_db_open(opt:
+                                                                *mut rocks_dboptions_t,
+                                                            v:
+                                                                ::std::os::raw::c_uchar);
+}
+extern "C" {
+    pub fn rocks_dboptions_set_wal_recovery_mode(opt: *mut rocks_dboptions_t,
+                                                 mode: ::std::os::raw::c_int);
+}
+extern "C" {
+    pub fn rocks_dboptions_set_allow_2pc(opt: *mut rocks_dboptions_t,
+                                         v: ::std::os::raw::c_uchar);
+}
+extern "C" {
+    pub fn rocks_dboptions_set_row_cache(opt: *mut rocks_dboptions_t,
+                                         cache: *mut rocks_cache_t);
+}
+extern "C" {
+    pub fn rocks_dboptions_set_fail_if_options_file_error(opt:
+                                                              *mut rocks_dboptions_t,
+                                                          v:
+                                                              ::std::os::raw::c_uchar);
+}
+extern "C" {
+    pub fn rocks_dboptions_set_dump_malloc_stats(opt: *mut rocks_dboptions_t,
+                                                 v: ::std::os::raw::c_uchar);
+}
+extern "C" {
+    pub fn rocks_dboptions_set_avoid_flush_during_recovery(opt:
+                                                               *mut rocks_dboptions_t,
+                                                           v:
+                                                               ::std::os::raw::c_uchar);
+}
+extern "C" {
+    pub fn rocks_dboptions_set_avoid_flush_during_shutdown(opt:
+                                                               *mut rocks_dboptions_t,
+                                                           v:
+                                                               ::std::os::raw::c_uchar);
+}
+extern "C" {
+    pub fn rocks_options_prepare_for_bulk_load(opt: *mut rocks_options_t);
+}
+extern "C" {
+    pub fn rocks_options_optimize_for_small_db(opt: *mut rocks_dboptions_t);
 }
 extern "C" {
     pub fn rocks_readoptions_create() -> *mut rocks_readoptions_t;
@@ -407,14 +951,47 @@ extern "C" {
                          status: *mut rocks_status_t) -> *mut rocks_db_t;
 }
 extern "C" {
-    pub fn rocks_db_close(db: *mut rocks_db_t);
-}
-extern "C" {
     pub fn rocks_db_open_for_read_only(options: *const rocks_options_t,
                                        name: *const ::std::os::raw::c_char,
                                        error_if_log_file_exist:
                                            ::std::os::raw::c_uchar,
                                        status: *mut rocks_status_t)
+     -> *mut rocks_db_t;
+}
+extern "C" {
+    pub fn rocks_db_close(db: *mut rocks_db_t);
+}
+extern "C" {
+    pub fn rocks_db_open_column_families(db_options: *const rocks_options_t,
+                                         name: *const ::std::os::raw::c_char,
+                                         num_column_families:
+                                             ::std::os::raw::c_int,
+                                         column_family_names:
+                                             *mut *const ::std::os::raw::c_char,
+                                         column_family_options:
+                                             *mut *const rocks_options_t,
+                                         column_family_handles:
+                                             *mut *mut rocks_column_family_handle_t,
+                                         status: *mut rocks_status_t)
+     -> *mut rocks_db_t;
+}
+extern "C" {
+    pub fn rocks_db_open_for_read_only_column_families(db_options:
+                                                           *const rocks_options_t,
+                                                       name:
+                                                           *const ::std::os::raw::c_char,
+                                                       num_column_families:
+                                                           ::std::os::raw::c_int,
+                                                       column_family_names:
+                                                           *mut *const ::std::os::raw::c_char,
+                                                       column_family_options:
+                                                           *mut *const rocks_options_t,
+                                                       column_family_handles:
+                                                           *mut *mut rocks_column_family_handle_t,
+                                                       error_if_log_file_exist:
+                                                           ::std::os::raw::c_uchar,
+                                                       status:
+                                                           *mut rocks_status_t)
      -> *mut rocks_db_t;
 }
 extern "C" {
@@ -445,8 +1022,8 @@ extern "C" {
                                        status: *mut rocks_status_t);
 }
 extern "C" {
-    pub fn rocks_db_column_family_handle_destroy(handle:
-                                                     *mut rocks_column_family_handle_t);
+    pub fn rocks_column_family_handle_destroy(handle:
+                                                  *mut rocks_column_family_handle_t);
 }
 extern "C" {
     pub fn rocks_db_put(db: *mut rocks_db_t,
@@ -478,6 +1055,48 @@ extern "C" {
                               keylen: usize, status: *mut rocks_status_t);
 }
 extern "C" {
+    pub fn rocks_db_single_delete(db: *mut rocks_db_t,
+                                  options: *const rocks_writeoptions_t,
+                                  key: *const ::std::os::raw::c_char,
+                                  keylen: usize, status: *mut rocks_status_t);
+}
+extern "C" {
+    pub fn rocks_db_single_delete_cf(db: *mut rocks_db_t,
+                                     options: *const rocks_writeoptions_t,
+                                     column_family:
+                                         *mut rocks_column_family_handle_t,
+                                     key: *const ::std::os::raw::c_char,
+                                     keylen: usize,
+                                     status: *mut rocks_status_t);
+}
+extern "C" {
+    pub fn rocks_db_delete_range_cf(db: *mut rocks_db_t,
+                                    options: *const rocks_writeoptions_t,
+                                    column_family:
+                                        *mut rocks_column_family_handle_t,
+                                    begin_key: *const ::std::os::raw::c_char,
+                                    begin_keylen: usize,
+                                    end_key: *const ::std::os::raw::c_char,
+                                    end_keylen: usize,
+                                    status: *mut rocks_status_t);
+}
+extern "C" {
+    pub fn rocks_db_merge(db: *mut rocks_db_t,
+                          options: *const rocks_writeoptions_t,
+                          key: *const ::std::os::raw::c_char, keylen: usize,
+                          val: *const ::std::os::raw::c_char, vallen: usize,
+                          status: *mut rocks_status_t);
+}
+extern "C" {
+    pub fn rocks_db_merge_cf(db: *mut rocks_db_t,
+                             options: *const rocks_writeoptions_t,
+                             column_family: *mut rocks_column_family_handle_t,
+                             key: *const ::std::os::raw::c_char,
+                             keylen: usize,
+                             val: *const ::std::os::raw::c_char,
+                             vallen: usize, status: *mut rocks_status_t);
+}
+extern "C" {
     pub fn rocks_db_get(db: *mut rocks_db_t,
                         options: *const rocks_readoptions_t,
                         key: *const ::std::os::raw::c_char, keylen: usize,
@@ -491,6 +1110,35 @@ extern "C" {
                            key: *const ::std::os::raw::c_char, keylen: usize,
                            vallen: *mut usize, status: *mut rocks_status_t)
      -> *mut ::std::os::raw::c_char;
+}
+extern "C" {
+    pub fn rocks_db_multi_get(db: *mut rocks_db_t,
+                              options: *const rocks_readoptions_t,
+                              num_keys: usize,
+                              keys_list: *const *const ::std::os::raw::c_char,
+                              keys_list_sizes: *const usize,
+                              values_list: *mut *mut ::std::os::raw::c_char,
+                              values_list_sizes: *mut usize,
+                              status: *mut rocks_status_t);
+}
+extern "C" {
+    pub fn rocks_db_multi_get_cf(db: *mut rocks_db_t,
+                                 options: *const rocks_readoptions_t,
+                                 column_families:
+                                     *const *const rocks_column_family_handle_t,
+                                 num_keys: usize,
+                                 keys_list:
+                                     *const *const ::std::os::raw::c_char,
+                                 keys_list_sizes: *const usize,
+                                 values_list:
+                                     *mut *mut ::std::os::raw::c_char,
+                                 values_list_sizes: *mut usize,
+                                 status: *mut rocks_status_t);
+}
+extern "C" {
+    pub fn rocks_db_create_iterator(db: *mut rocks_db_t,
+                                    options: *const rocks_readoptions_t)
+     -> *mut rocks_iterator_t;
 }
 extern "C" {
     pub fn rocks_destroy_db(options: *const rocks_options_t,
@@ -548,6 +1196,250 @@ extern "C" {
 extern "C" {
     pub fn rocks_release_snapshot(db: *mut rocks_db_t,
                                   snapshot: *const rocks_snapshot_t);
+}
+extern "C" {
+    pub fn rocks_writebatch_create() -> *mut rocks_writebatch_t;
+}
+extern "C" {
+    pub fn rocks_writebatch_create_from(rep: *const ::std::os::raw::c_char,
+                                        size: usize)
+     -> *mut rocks_writebatch_t;
+}
+extern "C" {
+    pub fn rocks_writebatch_destroy(b: *mut rocks_writebatch_t);
+}
+extern "C" {
+    pub fn rocks_writebatch_clear(b: *mut rocks_writebatch_t);
+}
+extern "C" {
+    pub fn rocks_writebatch_count(b: *mut rocks_writebatch_t)
+     -> ::std::os::raw::c_int;
+}
+extern "C" {
+    pub fn rocks_writebatch_put(b: *mut rocks_writebatch_t,
+                                key: *const ::std::os::raw::c_char,
+                                klen: usize,
+                                val: *const ::std::os::raw::c_char,
+                                vlen: usize);
+}
+extern "C" {
+    pub fn rocks_writebatch_put_cf(b: *mut rocks_writebatch_t,
+                                   column_family:
+                                       *mut rocks_column_family_handle_t,
+                                   key: *const ::std::os::raw::c_char,
+                                   klen: usize,
+                                   val: *const ::std::os::raw::c_char,
+                                   vlen: usize);
+}
+extern "C" {
+    pub fn rocks_writebatch_putv(b: *mut rocks_writebatch_t,
+                                 num_keys: ::std::os::raw::c_int,
+                                 keys_list:
+                                     *const *const ::std::os::raw::c_char,
+                                 keys_list_sizes: *const usize,
+                                 num_values: ::std::os::raw::c_int,
+                                 values_list:
+                                     *const *const ::std::os::raw::c_char,
+                                 values_list_sizes: *const usize);
+}
+extern "C" {
+    pub fn rocks_writebatch_putv_cf(b: *mut rocks_writebatch_t,
+                                    column_family:
+                                        *mut rocks_column_family_handle_t,
+                                    num_keys: ::std::os::raw::c_int,
+                                    keys_list:
+                                        *const *const ::std::os::raw::c_char,
+                                    keys_list_sizes: *const usize,
+                                    num_values: ::std::os::raw::c_int,
+                                    values_list:
+                                        *const *const ::std::os::raw::c_char,
+                                    values_list_sizes: *const usize);
+}
+extern "C" {
+    pub fn rocks_writebatch_merge(b: *mut rocks_writebatch_t,
+                                  key: *const ::std::os::raw::c_char,
+                                  klen: usize,
+                                  val: *const ::std::os::raw::c_char,
+                                  vlen: usize);
+}
+extern "C" {
+    pub fn rocks_writebatch_merge_cf(b: *mut rocks_writebatch_t,
+                                     column_family:
+                                         *mut rocks_column_family_handle_t,
+                                     key: *const ::std::os::raw::c_char,
+                                     klen: usize,
+                                     val: *const ::std::os::raw::c_char,
+                                     vlen: usize);
+}
+extern "C" {
+    pub fn rocks_writebatch_mergev(b: *mut rocks_writebatch_t,
+                                   num_keys: ::std::os::raw::c_int,
+                                   keys_list:
+                                       *const *const ::std::os::raw::c_char,
+                                   keys_list_sizes: *const usize,
+                                   num_values: ::std::os::raw::c_int,
+                                   values_list:
+                                       *const *const ::std::os::raw::c_char,
+                                   values_list_sizes: *const usize);
+}
+extern "C" {
+    pub fn rocks_writebatch_mergev_cf(b: *mut rocks_writebatch_t,
+                                      column_family:
+                                          *mut rocks_column_family_handle_t,
+                                      num_keys: ::std::os::raw::c_int,
+                                      keys_list:
+                                          *const *const ::std::os::raw::c_char,
+                                      keys_list_sizes: *const usize,
+                                      num_values: ::std::os::raw::c_int,
+                                      values_list:
+                                          *const *const ::std::os::raw::c_char,
+                                      values_list_sizes: *const usize);
+}
+extern "C" {
+    pub fn rocks_writebatch_delete(b: *mut rocks_writebatch_t,
+                                   key: *const ::std::os::raw::c_char,
+                                   klen: usize);
+}
+extern "C" {
+    pub fn rocks_writebatch_delete_cf(b: *mut rocks_writebatch_t,
+                                      column_family:
+                                          *mut rocks_column_family_handle_t,
+                                      key: *const ::std::os::raw::c_char,
+                                      klen: usize);
+}
+extern "C" {
+    pub fn rocks_writebatch_deletev(b: *mut rocks_writebatch_t,
+                                    num_keys: ::std::os::raw::c_int,
+                                    keys_list:
+                                        *const *const ::std::os::raw::c_char,
+                                    keys_list_sizes: *const usize);
+}
+extern "C" {
+    pub fn rocks_writebatch_deletev_cf(b: *mut rocks_writebatch_t,
+                                       column_family:
+                                           *mut rocks_column_family_handle_t,
+                                       num_keys: ::std::os::raw::c_int,
+                                       keys_list:
+                                           *const *const ::std::os::raw::c_char,
+                                       keys_list_sizes: *const usize);
+}
+extern "C" {
+    pub fn rocks_writebatch_delete_range(b: *mut rocks_writebatch_t,
+                                         start_key:
+                                             *const ::std::os::raw::c_char,
+                                         start_key_len: usize,
+                                         end_key:
+                                             *const ::std::os::raw::c_char,
+                                         end_key_len: usize);
+}
+extern "C" {
+    pub fn rocks_writebatch_delete_range_cf(b: *mut rocks_writebatch_t,
+                                            column_family:
+                                                *mut rocks_column_family_handle_t,
+                                            start_key:
+                                                *const ::std::os::raw::c_char,
+                                            start_key_len: usize,
+                                            end_key:
+                                                *const ::std::os::raw::c_char,
+                                            end_key_len: usize);
+}
+extern "C" {
+    pub fn rocks_writebatch_delete_rangev(b: *mut rocks_writebatch_t,
+                                          num_keys: ::std::os::raw::c_int,
+                                          start_keys_list:
+                                              *const *const ::std::os::raw::c_char,
+                                          start_keys_list_sizes: *const usize,
+                                          end_keys_list:
+                                              *const *const ::std::os::raw::c_char,
+                                          end_keys_list_sizes: *const usize);
+}
+extern "C" {
+    pub fn rocks_writebatch_delete_rangev_cf(b: *mut rocks_writebatch_t,
+                                             column_family:
+                                                 *mut rocks_column_family_handle_t,
+                                             num_keys: ::std::os::raw::c_int,
+                                             start_keys_list:
+                                                 *const *const ::std::os::raw::c_char,
+                                             start_keys_list_sizes:
+                                                 *const usize,
+                                             end_keys_list:
+                                                 *const *const ::std::os::raw::c_char,
+                                             end_keys_list_sizes:
+                                                 *const usize);
+}
+extern "C" {
+    pub fn rocks_writebatch_put_log_data(b: *mut rocks_writebatch_t,
+                                         blob: *const ::std::os::raw::c_char,
+                                         len: usize);
+}
+extern "C" {
+    pub fn rocks_writebatch_iterate(b: *mut rocks_writebatch_t,
+                                    state: *mut ::std::os::raw::c_void,
+                                    put:
+                                        ::std::option::Option<unsafe extern "C" fn(arg1:
+                                                                                       *mut ::std::os::raw::c_void,
+                                                                                   k:
+                                                                                       *const ::std::os::raw::c_char,
+                                                                                   klen:
+                                                                                       usize,
+                                                                                   v:
+                                                                                       *const ::std::os::raw::c_char,
+                                                                                   vlen:
+                                                                                       usize)>,
+                                    deleted:
+                                        ::std::option::Option<unsafe extern "C" fn(arg1:
+                                                                                       *mut ::std::os::raw::c_void,
+                                                                                   k:
+                                                                                       *const ::std::os::raw::c_char,
+                                                                                   klen:
+                                                                                       usize)>);
+}
+extern "C" {
+    pub fn rocks_writebatch_data(b: *mut rocks_writebatch_t, size: *mut usize)
+     -> *const ::std::os::raw::c_char;
+}
+extern "C" {
+    pub fn rocks_writebatch_set_save_point(b: *mut rocks_writebatch_t);
+}
+extern "C" {
+    pub fn rocks_writebatch_rollback_to_save_point(b: *mut rocks_writebatch_t,
+                                                   status:
+                                                       *mut rocks_status_t);
+}
+extern "C" {
+    pub fn rocks_cache_create_lru(capacity: usize,
+                                  num_shard_bits: ::std::os::raw::c_int,
+                                  strict_capacity_limit:
+                                      ::std::os::raw::c_char,
+                                  high_pri_pool_ratio: f64)
+     -> *mut rocks_cache_t;
+}
+extern "C" {
+    pub fn rocks_cache_create_clock(capacity: usize,
+                                    num_shard_bits: ::std::os::raw::c_int,
+                                    strict_capacity_limit:
+                                        ::std::os::raw::c_char)
+     -> *mut rocks_cache_t;
+}
+extern "C" {
+    pub fn rocks_cache_destroy(cache: *mut rocks_cache_t);
+}
+extern "C" {
+    pub fn rocks_cache_set_capacity(cache: *mut rocks_cache_t,
+                                    capacity: usize);
+}
+extern "C" {
+    pub fn rocks_cache_get_capacity(cache: *mut rocks_cache_t) -> usize;
+}
+extern "C" {
+    pub fn rocks_cache_get_usage(cache: *mut rocks_cache_t) -> usize;
+}
+extern "C" {
+    pub fn rocks_cache_get_pinned_usage(cache: *mut rocks_cache_t) -> usize;
+}
+extern "C" {
+    pub fn rocks_cache_name(cache: *mut rocks_cache_t)
+     -> *const ::std::os::raw::c_char;
 }
 #[repr(C)]
 #[derive(Copy)]

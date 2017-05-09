@@ -6,6 +6,9 @@
 //! length strings, may use the length of the string as the charge for
 //! the string.
 
+use std::os::raw::c_char;
+use std::ffi::CStr;
+
 use rocks_sys as ll;
 
 // #[derive(Copy, Clone, Eq, PartialEq, Hash, Debug)]
@@ -23,13 +26,48 @@ pub struct Handle;
 /// they want something more sophisticated (like scan-resistance, a
 /// custom eviction policy, variable cache sizing, etc.)
 pub struct Cache {
-    raw: *mut ll::rocksdb::Cache,
+    raw: *mut ll::rocks_cache_t,
 }
 
 impl Cache {
     /// The type of the Cache
     pub fn name(&self) -> &'static str {
-        unsafe { unimplemented!() }
+        unsafe {
+            let ptr = ll::rocks_cache_name(self.raw);
+            CStr::from_ptr(ptr).to_str().unwrap()
+        }
+    }
+
+    // sets the maximum configured capacity of the cache. When the new
+    // capacity is less than the old capacity and the existing usage is
+    // greater than new capacity, the implementation will do its best job to
+    // purge the released entries from the cache in order to lower the usage
+    pub fn set_capacity(&mut self, capacity: usize) {
+        unsafe {
+            ll::rocks_cache_set_capacity(self.raw, capacity);
+        }
+    }
+
+    /// returns the maximum configured capacity of the cache
+    pub fn get_capacity(&self) -> usize {
+        unsafe {
+            ll::rocks_cache_get_capacity(self.raw)
+        }
+    }
+
+    /// returns the memory size for a specific entry in the cache.
+    pub fn get_usage(&self) -> usize {
+        unsafe {
+            ll::rocks_cache_get_usage(self.raw)
+        }
+    }
+}
+
+impl Drop for Cache {
+    fn drop(&mut self) {
+        unsafe {
+            ll::rocks_cache_destroy(self.raw);
+        }
     }
 }
 
@@ -83,9 +121,25 @@ impl CacheBuilder {
     }
 
     pub fn build(&mut self) -> Option<Cache> {
-        match self.type_ {
-            CacheType::LRU => unimplemented!(),
-            CacheType::Clock => unimplemented!(),
+        let ptr = match self.type_ {
+            CacheType::LRU => unsafe {
+                ll::rocks_cache_create_lru(
+                    self.capacity,
+                    self.num_shard_bits,
+                    self.strict_capacity_limit as c_char,
+                    self.high_pri_pool_ratio)
+            },
+            CacheType::Clock => unsafe {
+                ll::rocks_cache_create_clock(
+                    self.capacity,
+                    self.num_shard_bits,
+                    self.strict_capacity_limit as c_char)
+            }
+        };
+        if !ptr.is_null() {
+            Some(Cache { raw: ptr })
+        } else {
+            None
         }
     }
 
@@ -107,4 +161,26 @@ impl CacheBuilder {
         }
         self
     }
+}
+
+
+#[test]
+fn test_cache_lru() {
+    let mut lru_cache = CacheBuilder::new_lru(1024)
+        .high_pri_pool_ratio(0.3)
+        .build()
+        .unwrap();
+    assert_eq!(lru_cache.name(), "LRUCache");
+    assert_eq!(lru_cache.get_capacity(), 1024);
+    lru_cache.set_capacity(512);
+    assert_eq!(lru_cache.get_capacity(), 512);
+    assert!(lru_cache.get_usage() == 0);
+}
+
+
+#[test]
+fn test_cache_clock() {
+    let clk_cache = CacheBuilder::new_clock(1024).build();
+    // not supported yet?
+    assert!(clk_cache.is_none());
 }

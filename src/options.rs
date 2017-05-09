@@ -759,7 +759,6 @@ impl ColumnFamilyOptions {
     /// spend lots of memory for memtables.
     pub fn optimize_for_smalldb(&mut self) -> &mut Self {
         unimplemented!();
-        self
     }
 
     /// Use this if you don't need to keep the data sorted, i.e. you'll never use
@@ -768,7 +767,6 @@ impl ColumnFamilyOptions {
     /// Not supported in ROCKSDB_LITE
     pub fn optimize_for_pointlookup(&mut self, block_cache_size_mb: u64) -> &mut Self {
         unimplemented!();
-        self
     }
 
     /// Default values for some parameters in ColumnFamilyOptions are not
@@ -790,7 +788,6 @@ impl ColumnFamilyOptions {
     pub fn optimize_level_style_compaction(&mut self, memtable_memory_budget: u64) -> &mut Self {
         // 512 * 1024 * 1024);
         unimplemented!();
-        self
     }
 
     pub fn optimize_universal_style_compaction(&mut self,
@@ -798,7 +795,6 @@ impl ColumnFamilyOptions {
                                                -> &mut Self {
         // 512 * 1024 * 1024)
         unimplemented!();
-        self
     }
 
     // Create ColumnFamilyOptions with default values for all fields
@@ -1048,8 +1044,8 @@ pub struct DBOptions {
     ///    are older than WAL_ttl_seconds will be deleted.
     /// 4. If both are not 0, WAL files will be checked every 10 min and both
     ///    checks will be performed with ttl being first.
-    pub WAL_ttl_seconds: u64,
-    pub WAL_size_limit_MB: u64,
+    pub wal_ttl_seconds: u64,
+    pub wal_size_limit_mb: u64,
 
     /// Number of bytes to preallocate (via fallocate) the manifest
     /// files.  Default is 4mb, which is reasonable to reduce random IO
@@ -1357,8 +1353,8 @@ impl Default for DBOptions {
             recycle_log_file_num: 0,
             max_manifest_file_size: u64::MAX,
             table_cache_numshardbits: 6,
-            WAL_ttl_seconds: 0,
-            WAL_size_limit_MB: 0,
+            wal_ttl_seconds: 0,
+            wal_size_limit_mb: 0,
             manifest_preallocation_size: 4 * 1024 * 1024,
             allow_mmap_reads: false,
             allow_mmap_writes: false,
@@ -1631,7 +1627,7 @@ pub struct WriteOptions {
 
     /// If true, writes will not first go to the write ahead log,
     /// and the write may got lost after a crash.
-    pub disableWAL: bool,
+    pub disable_wal: bool,
 
     // The option is deprecated. It's not used anymore.
     // timeout_hint_us: u64,
@@ -1650,7 +1646,7 @@ impl Default for WriteOptions {
     fn default() -> Self {
         WriteOptions {
             sync: false,
-            disableWAL: false,
+            disable_wal: false,
             // timeout_hint_us: 0,
             ignore_missing_column_families: false,
             no_slowdown: false,

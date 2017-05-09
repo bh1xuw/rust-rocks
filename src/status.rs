@@ -1,4 +1,8 @@
+
 use std::fmt;
+use std::mem;
+
+use rocks_sys as ll;
 
 #[repr(C)]
 #[derive(Debug, Copy, Clone, PartialEq, Eq, Hash)]
@@ -47,6 +51,17 @@ impl Status {
             code: Code::Ok,
             subcode: SubCode::None,
             status: String::new(),
+        }
+    }
+
+    pub fn from_raw(st: &ll::rocks_status_t) -> Status {
+        unsafe 
+        {
+            Status {
+            code: mem::transmute(st.code),
+            subcode: mem::transmute(st.sub_code),
+            status: "fuck".into(),
+            }
         }
     }
     // Return a success status.

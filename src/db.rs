@@ -1,4 +1,7 @@
 
+use std::mem;
+use std::ffi::{CStr, CString};
+
 use rocks_sys as ll;
 
 use status::Status;
@@ -62,19 +65,19 @@ impl ColumnFamilyHandle {
 
 
 /// A range of keys
-pub struct Range {
+pub struct Range<'a> {
     /// Included in the range
-    start: Vec<u8>,
+    start: &'a [u8],
     /// Not included in the range
-    limit: Vec<u8>,
+    limit: &'a [u8],
 }
 
 
-impl Range {
-    pub fn new(s: &[u8], l: &[u8]) -> Range {
+impl<'a> Range<'a> {
+    pub fn new(s: &'a [u8], l: &'a [u8]) -> Range<'a> {
         Range {
-            start: s.to_owned(),
-            limit: l.to_owned(),
+            start: s,
+            limit: l,
         }
     }
 }
@@ -83,7 +86,7 @@ impl Range {
 /// A DB is safe for concurrent access from multiple threads without
 /// any external synchronization.
 pub struct DB {
-    raw: *mut ll::db::DB,
+    raw: *mut ll::rocks_db_t,
 }
 
 impl DB {
@@ -93,7 +96,19 @@ impl DB {
     /// Stores nullptr in *dbptr and returns a non-OK status on error.
     /// Caller should delete *dbptr when it is no longer needed.
     pub fn open(options: &Options, name: &str) -> Result<DB, Status> {
-        unimplemented!()
+        unsafe {
+            let opt = ll::rocks_options_create();
+            let dbname = CString::new(name).unwrap();
+            let mut status = mem::uninitialized::<ll::rocks_status_t>();
+            let db_ptr = ll::rocks_db_open(opt, dbname.as_ptr(), &mut status);
+            if status.code == 0 {
+                Ok(DB{ raw: db_ptr })
+            } else {
+                Err(Status::from_raw(&status))
+            }
+
+
+        }
     }
 
     // Open the database for read only. All DB interfaces
@@ -109,8 +124,18 @@ impl DB {
 }
 
 
-#[cfg(test)]
-mod tests {
-    #[test]
-    fn it_works() {}
+impl Drop for DB {
+    fn drop(&mut self) {
+        unsafe {
+            ll::rocks_db_close(self.raw);
+        }
+    }
+}
+
+
+#[test]
+fn it_works() {
+    let db = DB::open(&Options::default(), "./default");
+    assert!(db.is_ok());
+
 }

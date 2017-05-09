@@ -5,6 +5,8 @@
 #include "rocksdb/options.h"
 #include "rocksdb/rate_limiter.h"
 #include "rocksdb/env.h"
+#include "rocksdb/iterator.h"
+#include "rocksdb/cache.h"
 
 using namespace rocksdb;
 
@@ -31,13 +33,13 @@ extern "C" {
   struct rocks_db_t                       { DB*                 rep; };
 
   /* options */ 
-  struct rocks_column_family_options_t       { ColumnFamilyOptions       rep; };
-  struct rocks_dbpath_t                    { DbPath                    rep; };
-  struct rocks_db_options_t                 { DBOptions                 rep; };
-  struct rocks_options_t                   { Options                   rep; };
-  struct rocks_readoptions_t               {
+  struct rocks_dbpath_t                { DbPath                        rep; };
+  struct rocks_dboptions_t             { DBOptions                     rep; };
+  struct rocks_column_family_options_t { ColumnFamilyOptions           rep; };
+  struct rocks_options_t               { Options                       rep; };
+  struct rocks_readoptions_t           {
     ReadOptions rep;
-    Slice upper_bound; // stack variable to set pointer to in ReadOptions
+    Slice       upper_bound; // stack variable to set pointer to in ReadOptions
   };
   struct rocks_writeoptions_t              { WriteOptions              rep; };
   struct rocks_flushoptions_t              { FlushOptions              rep; };
@@ -61,14 +63,21 @@ extern "C" {
   /* snapshot*/
   struct rocks_snapshot_t        { const Snapshot*   rep; };
 
+  /* iterator */
+  struct rocks_iterator_t        { Iterator*         rep; };
 
+  /* write_batch */
+  struct rocks_writebatch_t      { WriteBatch        rep; };
+
+  /* cache */
+  struct rocks_cache_t           { shared_ptr<Cache>   rep; };
 
 
   /* aux */
   static bool SaveError(rocks_status_t* status, const Status& s) {
     assert(status != nullptr);
     rocks_status_convert(&s, status);
-    return s.ok();
+    return !s.ok();
   }
 
   static char* CopyString(const std::string& str) {
