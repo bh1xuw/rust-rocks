@@ -60,9 +60,9 @@ impl Default for CompactionOptionsFIFO {
 /// Compression options for different compression algorithms like Zlib
 #[repr(C)]
 pub struct CompressionOptions {
-    window_bits: c_int,
-    level: c_int,
-    strategy: c_int,
+    pub window_bits: c_int,
+    pub level: c_int,
+    pub strategy: c_int,
     /// Maximum size of dictionary used to prime the compression library. Currently
     /// this dictionary will be constructed by sampling the first output file in a
     /// subcompaction when the target level is bottommost. This dictionary will be
@@ -71,7 +71,7 @@ pub struct CompressionOptions {
     /// improves compression ratios when there are repetitions across data blocks.
     /// A value of 0 indicates the feature is disabled.
     /// Default: 0.
-    max_dict_bytes: u32,
+    pub max_dict_bytes: u32,
 }
 
 impl CompressionOptions {

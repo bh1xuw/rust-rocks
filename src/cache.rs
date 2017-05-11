@@ -30,6 +30,10 @@ pub struct Cache {
 }
 
 impl Cache {
+    pub unsafe fn raw(&self) -> *mut ll::rocks_cache_t {
+        return self.raw
+    }
+
     /// The type of the Cache
     pub fn name(&self) -> &'static str {
         unsafe {

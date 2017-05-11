@@ -42,12 +42,12 @@ extern "C" {
     return new rocks_options_t { Options(dbopt->rep, cfopt->rep) };
   }
 
-  rocks_cfoptions_t* rocks_options_createfrom_cfoptions(rocks_options_t* options) {
-    return new rocks_cfoptions_t { ColumnFamilyOptions(options->rep) };
+  rocks_dboptions_t* rocks_dboptions_create_from_options(rocks_options_t* options) {
+    return new rocks_dboptions_t { DBOptions(options->rep) };
   }
 
-  rocks_dboptions_t* rocks_options_create_from_dboptions(rocks_options_t* options) {
-    return new rocks_dboptions_t { DBOptions(options->rep) };
+  rocks_cfoptions_t* rocks_cfoptions_create_from_options(rocks_options_t* options) {
+    return new rocks_cfoptions_t { ColumnFamilyOptions(options->rep) };
   }
 
   // cfoptions
@@ -97,9 +97,13 @@ extern "C" {
     opt->rep.compression = static_cast<CompressionType>(t);
   }
 
+  void rocks_cfoptions_set_bottommost_compression(rocks_cfoptions_t* opt, int t) {
+    opt->rep.bottommost_compression = static_cast<CompressionType>(t);
+  }
+
   void rocks_cfoptions_set_compression_options(rocks_cfoptions_t* opt, int w_bits,
                                                int level, int strategy,
-                                               int max_dict_bytes) {
+                                               uint32_t max_dict_bytes) {
     opt->rep.compression_opts.window_bits = w_bits;
     opt->rep.compression_opts.level = level;
     opt->rep.compression_opts.strategy = strategy;
@@ -121,7 +125,7 @@ extern "C" {
     opt->rep.max_bytes_for_level_base = n;
   }
 
-  void rocks_cfoptions_set_disable_auto_compactions(rocks_cfoptions_t* opt, int disable) {
+  void rocks_cfoptions_set_disable_auto_compactions(rocks_cfoptions_t* opt, unsigned char disable) {
     opt->rep.disable_auto_compactions = disable;
   }
 
@@ -190,8 +194,8 @@ extern "C" {
   }
 
   void rocks_cfoptions_set_compression_per_level(rocks_cfoptions_t* opt,
-                                               int* level_values,
-                                               size_t num_levels) {
+                                                 const int* level_values,
+                                                 size_t num_levels) {
     opt->rep.compression_per_level.resize(num_levels);
     for (size_t i = 0; i < num_levels; ++i) {
       opt->rep.compression_per_level[i] =
@@ -246,11 +250,11 @@ extern "C" {
     opt->rep.max_compaction_bytes = n;
   }
 
-  void rocks_cfoptions_set_soft_pending_compaction_bytes_limit(rocks_cfoptions_t* opt, size_t v) {
+  void rocks_cfoptions_set_soft_pending_compaction_bytes_limit(rocks_cfoptions_t* opt, uint64_t v) {
     opt->rep.soft_pending_compaction_bytes_limit = v;
   }
 
-  void rocks_cfoptions_set_hard_pending_compaction_bytes_limit(rocks_cfoptions_t* opt, size_t v) {
+  void rocks_cfoptions_set_hard_pending_compaction_bytes_limit(rocks_cfoptions_t* opt, uint64_t v) {
     opt->rep.hard_pending_compaction_bytes_limit = v;
   }
 
@@ -306,7 +310,7 @@ extern "C" {
     opt->rep.max_successive_merges = v;
   }
 
-  void rocks_cfoptions_set_optimize_filters_for_hits(rocks_cfoptions_t* opt, int v) {
+  void rocks_cfoptions_set_optimize_filters_for_hits(rocks_cfoptions_t* opt, unsigned char v) {
     opt->rep.optimize_filters_for_hits = v;
   }
 
@@ -318,7 +322,7 @@ extern "C" {
     opt->rep.force_consistency_checks = v;;
   }
 
-  void rocks_cfoptions_set_report_bg_io_stats(rocks_cfoptions_t* opt, int v) {
+  void rocks_cfoptions_set_report_bg_io_stats(rocks_cfoptions_t* opt, unsigned char v) {
     opt->rep.report_bg_io_stats = v;
   }
 
@@ -394,7 +398,7 @@ extern "C" {
   }
 
   void rocks_dboptions_set_use_fsync(
-                                   rocks_dboptions_t* opt, int use_fsync) {
+                                   rocks_dboptions_t* opt, unsigned char use_fsync) {
     opt->rep.use_fsync = use_fsync;
   }
 
@@ -445,8 +449,7 @@ extern "C" {
     opt->rep.recycle_log_file_num = v;
   }
 
-  void rocks_dboptions_set_max_manifest_file_size(
-                                                rocks_dboptions_t* opt, size_t v) {
+  void rocks_dboptions_set_max_manifest_file_size(rocks_dboptions_t* opt, uint64_t v) {
     opt->rep.max_manifest_file_size = v;
   }
 
@@ -455,11 +458,11 @@ extern "C" {
     opt->rep.table_cache_numshardbits = v;
   }
 
-  void rocks_dboptions_set_WAL_ttl_seconds(rocks_dboptions_t* opt, uint64_t ttl) {
+  void rocks_dboptions_set_wal_ttl_seconds(rocks_dboptions_t* opt, uint64_t ttl) {
     opt->rep.WAL_ttl_seconds = ttl;
   }
 
-  void rocks_dboptions_set_WAL_size_limit_MB(
+  void rocks_dboptions_set_wal_size_limit_mb(
                                            rocks_dboptions_t* opt, uint64_t limit) {
     opt->rep.WAL_size_limit_MB = limit;
   }
@@ -468,18 +471,24 @@ extern "C" {
                                                      rocks_dboptions_t* opt, size_t v) {
     opt->rep.manifest_preallocation_size = v;
   }
+
+  void rocks_dboptions_set_allow_mmap_reads(
+                                             rocks_dboptions_t* opt, unsigned char v) {
+    opt->rep.allow_mmap_reads = v;
+  }
+
   void rocks_dboptions_set_allow_mmap_writes(
                                            rocks_dboptions_t* opt, unsigned char v) {
     opt->rep.allow_mmap_writes = v;
   }
 
   void rocks_dboptions_set_use_direct_reads(rocks_dboptions_t* opt,
-                                          unsigned char v) {
+                                            unsigned char v) {
     opt->rep.use_direct_reads = v;
   }
 
   void rocks_dboptions_set_use_direct_writes(rocks_dboptions_t* opt,
-                                           unsigned char v) {
+                                             unsigned char v) {
     opt->rep.use_direct_writes = v;
   }
 
@@ -538,7 +547,7 @@ extern "C" {
     opt->rep.new_table_reader_for_compaction_inputs = v;
   }
 
-  void rocks_dboptions_compaction_readahead_size(
+  void rocks_dboptions_set_compaction_readahead_size(
                                                rocks_dboptions_t* opt, size_t s) {
     opt->rep.compaction_readahead_size = s;
   }
@@ -649,7 +658,7 @@ extern "C" {
     opt->rep.PrepareForBulkLoad();
   }
 
-  void rocks_options_optimize_for_small_db(rocks_dboptions_t* opt) {
+  void rocks_options_optimize_for_small_db(rocks_options_t* opt) {
     opt->rep.OptimizeForSmallDb();
   }
 

@@ -2,6 +2,10 @@
 use std::u64;
 use std::path::{Path, PathBuf};
 use std::ops::Deref;
+use std::mem;
+use std::ptr;
+
+use rocks_sys as ll;
 
 use env::InfoLogLevel;
 use env::Logger;
@@ -26,7 +30,7 @@ use snapshot::Snapshot;
 /// sequence of key,value pairs.  Each block may be compressed before
 /// being stored in a file.  The following enum describes which
 /// compression method (if any) is used to compress a block.
-#[repr(u8)]
+#[repr(C)]                      // FIXME: u8 in rocksdb
 pub enum CompressionType {
     /// NOTE: do not change the values of existing entries, as these are
     /// part of the persistent format on disk.
@@ -97,7 +101,81 @@ impl Default for DbPath {
 }
 
 pub struct ColumnFamilyOptions {
-    /// -------------------
+    raw: *mut ll::rocks_cfoptions_t,
+}
+
+impl ColumnFamilyOptions {
+    /// Create ColumnFamilyOptions with default values for all fields
+    pub fn new() -> ColumnFamilyOptions {
+        ColumnFamilyOptions {
+            raw: unsafe { ll::rocks_cfoptions_create() },
+        }
+    }
+
+    pub unsafe fn from_ll(raw: *mut ll::rocks_cfoptions_t) -> ColumnFamilyOptions {
+        ColumnFamilyOptions {
+            raw: raw,
+        }
+    }
+
+    pub fn raw(&self) -> *mut ll::rocks_cfoptions_t {
+        self.raw
+    }
+
+    /// Some functions that make it easier to optimize RocksDB
+
+    /// Use this if your DB is very small (like under 1GB) and you don't want to
+    /// spend lots of memory for memtables.
+    pub fn optimize_for_small_db(self) -> Self {
+        unsafe {
+            ll::rocks_cfoptions_optimize_for_small_db(self.raw);
+        }
+        self
+    }
+
+    /// Use this if you don't need to keep the data sorted, i.e. you'll never use
+    /// an iterator, only Put() and Get() API calls
+    ///
+    /// Not supported in ROCKSDB_LITE
+    pub fn optimize_for_point_lookup(self, block_cache_size_mb: u64) -> Self {
+        unsafe {
+            ll::rocks_cfoptions_optimize_for_point_lookup(self.raw, block_cache_size_mb)
+        }
+        self
+    }
+
+    /// Default values for some parameters in ColumnFamilyOptions are not
+    /// optimized for heavy workloads and big datasets, which means you might
+    /// observe write stalls under some conditions. As a starting point for tuning
+    /// RocksDB options, use the following two functions:
+    /// * OptimizeLevelStyleCompaction -- optimizes level style compaction
+    /// * OptimizeUniversalStyleCompaction -- optimizes universal style compaction
+    /// Universal style compaction is focused on reducing Write Amplification
+    /// Factor for big data sets, but increases Space Amplification. You can learn
+    /// more about the different styles here:
+    /// https://github.com/facebook/rocksdb/wiki/Rocksdb-Architecture-Guide
+    /// Make sure to also call IncreaseParallelism(), which will provide the
+    /// biggest performance gains.
+    /// Note: we might use more memory than memtable_memory_budget during high
+    /// write rate period
+    ///
+    /// OptimizeUniversalStyleCompaction is not supported in ROCKSDB_LITE
+    pub fn optimize_level_style_compaction(self, memtable_memory_budget: u64) -> Self {
+        // 512 * 1024 * 1024
+        unsafe {
+            ll::rocks_cfoptions_optimize_level_style_compaction(self.raw, memtable_memory_budget);
+        }
+        self
+    }
+
+    pub fn optimize_universal_style_compaction(self, memtable_memory_budget: u64) -> Self {
+        // 512 * 1024 * 1024
+        unsafe {
+            ll::rocks_cfoptions_optimize_universal_style_compaction(self.raw, memtable_memory_budget);
+        }
+        self
+    }
+
     /// Parameters that affect behavior
 
     /// Comparator used to define the order of keys in the table.
@@ -106,7 +184,13 @@ pub struct ColumnFamilyOptions {
     /// REQUIRES: The client must ensure that the comparator supplied
     /// here has the same name and orders keys *exactly* the same as the
     /// comparator provided to previous open calls on the same DB.
-    pub comparator: Option<Comparator>,
+    pub fn comparator(self, val: Option<Comparator>) -> Self {
+        // unsafe {
+        //     ll::rocks_cfoptions_set_comparator(self.raw, val.unwrap_or_else(ptr::null_mut));
+        // }
+        // self
+        unimplemented!()
+    }
 
     /// REQUIRES: The client must provide a merge operator if Merge operation
     /// needs to be accessed. Calling Merge on a DB without a merge operator
@@ -118,7 +202,13 @@ pub struct ColumnFamilyOptions {
     /// for the first time. It's necessary to specify a merge operator when
     /// openning the DB in this case.
     /// Default: nullptr
-    pub merge_operator: Option<MergeOperator>,
+    pub fn merge_operator(self, val: Option<MergeOperator>) -> Self {
+        // unsafe {
+        //     ll::rocks_cfoptions_set_merge_operator(self.raw, None);
+        // }
+        // self
+        unimplemented!()
+    }
 
     /// A single CompactionFilter instance to call into during compaction.
     /// Allows an application to modify/delete a key-value during background
@@ -135,7 +225,13 @@ pub struct ColumnFamilyOptions {
     /// thread-safe.
     ///
     /// Default: nullptr
-    pub compaction_filter: Option<CompactionFilter>,
+    pub fn compaction_filter(self, filter: Option<CompactionFilter>) -> Self {
+        // unsafe {
+        //     ll::rocks_cfoptions_set_compaction_filter(self.raw, None);
+        // }
+        // self
+        unimplemented!()
+    }
 
     /// This is a factory that provides compaction filter objects which allow
     /// an application to modify/delete a key-value during background compaction.
@@ -145,7 +241,13 @@ pub struct ColumnFamilyOptions {
     /// from a single thread and so does not need to be thread-safe.
     ///
     /// Default: nullptr
-    pub compaction_filter_factory: Option<CompactionFilterFactory>,
+    pub fn compaction_filter_factory(self, factory: Option<CompactionFilterFactory>) -> Self {
+        // unsafe {
+        //     ll::rocks_cfoptions_set_compaction_filter_factory(self.raw, )
+        // }
+        // self
+        unimplemented!()
+    }
 
     /// -------------------
     /// Parameters that affect performance
@@ -166,7 +268,138 @@ pub struct ColumnFamilyOptions {
     /// Default: 64MB
     ///
     /// Dynamically changeable through SetOptions() API
-    pub write_buffer_size: usize,
+    pub fn write_buffer_size(self, val: usize) -> Self {
+        unsafe {
+            ll::rocks_cfoptions_set_write_buffer_size(self.raw, val);
+        }
+        self
+    }
+
+    /// Compress blocks using the specified compression algorithm.  This
+    /// parameter can be changed dynamically.
+    ///
+    /// Default: kSnappyCompression, if it's supported. If snappy is not linked
+    /// with the library, the default is kNoCompression.
+    ///
+    /// Typical speeds of kSnappyCompression on an Intel(R) Core(TM)2 2.4GHz:
+    ///    ~200-500MB/s compression
+    ///    ~400-800MB/s decompression
+    /// Note that these speeds are significantly faster than most
+    /// persistent storage speeds, and therefore it is typically never
+    /// worth switching to kNoCompression.  Even if the input data is
+    /// incompressible, the kSnappyCompression implementation will
+    /// efficiently detect that and will switch to uncompressed mode.
+    pub fn compression(self, val: CompressionType) -> Self {
+        unsafe {
+            ll::rocks_cfoptions_set_compression(self.raw, mem::transmute(val));
+        }
+        self
+    }
+
+    /// Compression algorithm that will be used for the bottommost level that
+    /// contain files. If level-compaction is used, this option will only affect
+    /// levels after base level.
+    ///
+    /// Default: kDisableCompressionOption (Disabled)
+    pub fn bottommost_compression(self, val: CompressionType) -> Self {
+        unsafe {
+            ll::rocks_cfoptions_set_bottommost_compression(self.raw, mem::transmute(val));
+        }
+        self
+    }
+
+    /// different options for compression algorithms
+    pub fn compression_opts(self, val: CompressionOptions) -> Self {
+        unsafe {
+            // FIXME: name changes from opts to options
+            ll::rocks_cfoptions_set_compression_options(self.raw,
+                                                        val.window_bits,
+                                                        val.level,
+                                                        val.strategy,
+                                                        val.max_dict_bytes);
+        }
+        self
+    }
+
+    /// Number of files to trigger level-0 compaction. A value <0 means that
+    /// level-0 compaction will not be triggered by number of files at all.
+    ///
+    /// Default: 4
+    ///
+    /// Dynamically changeable through SetOptions() API
+    pub fn level0_file_num_compaction_trigger(self, val: i32) -> Self {
+        unsafe {
+            ll::rocks_cfoptions_set_level0_file_num_compaction_trigger(self.raw, val);
+        }
+        self
+    }
+
+    /// If non-nullptr, use the specified function to determine the
+    /// prefixes for keys.  These prefixes will be placed in the filter.
+    /// Depending on the workload, this can reduce the number of read-IOP
+    /// cost for scans when a prefix is passed via ReadOptions to
+    /// db.NewIterator().  For prefix filtering to work properly,
+    /// "prefix_extractor" and "comparator" must be such that the following
+    /// properties hold:
+    ///
+    /// 1) key.starts_with(prefix(key))
+    /// 2) Compare(prefix(key), key) <= 0.
+    /// 3) If Compare(k1, k2) <= 0, then Compare(prefix(k1), prefix(k2)) <= 0
+    /// 4) prefix(prefix(key)) == prefix(key)
+    ///
+    /// Default: nullptr
+    pub fn prefix_extractor(self, val: Option<SliceTransform>) -> Self {
+        // unsafe {
+        //     ll::rocks_cfoptions_set_prefix_extractor(self.raw, val);
+        // }
+        // self
+        unimplemented!()
+    }
+
+    /// Control maximum total data size for a level.
+    /// max_bytes_for_level_base is the max total for level-1.
+    /// Maximum number of bytes for level L can be calculated as
+    /// (max_bytes_for_level_base) * (max_bytes_for_level_multiplier ^ (L-1))
+    /// For example, if max_bytes_for_level_base is 200MB, and if
+    /// max_bytes_for_level_multiplier is 10, total data size for level-1
+    /// will be 200MB, total file size for level-2 will be 2GB,
+    /// and total file size for level-3 will be 20GB.
+    ///
+    /// Default: 256MB.
+    ///
+    /// Dynamically changeable through SetOptions() API
+    pub fn max_bytes_for_level_base(self, val: u64) -> Self {
+        unsafe {
+            ll::rocks_cfoptions_set_max_bytes_for_level_base(self.raw, val);
+        }
+        self
+    }
+
+    /// Disable automatic compactions. Manual compactions can still
+    /// be issued on this column family
+    ///
+    /// Dynamically changeable through SetOptions() API
+    pub fn disable_auto_compactions(self, val: bool) -> Self {
+        unsafe {
+            ll::rocks_cfoptions_set_disable_auto_compactions(self.raw, val as u8);
+        }
+        self
+    }
+
+    /// This is a factory that provides TableFactory objects.
+    /// Default: a block-based table factory that provides a default
+    /// implementation of TableBuilder and TableReader with default
+    /// BlockBasedTableOptions.
+    pub fn table_factory(self, val: Option<TableFactory>) -> Self {
+        unimplemented!()
+        // unsafe {
+        //     ll::rocks_cfoptions_set_table_factory(self.raw, val);
+        // }
+        // self
+    }
+
+    // Following: AdvancedColumnFamilyOptions
+
 
     /// The maximum number of write buffers that are built up in memory.
     /// The default and the minimum number is 2, so that when 1 write buffer
@@ -179,7 +412,12 @@ pub struct ColumnFamilyOptions {
     /// Default: 2
     ///
     /// Dynamically changeable through SetOptions() API
-    pub max_write_buffer_number: i32,
+    pub fn max_write_buffer_number(self, val: i32) -> Self {
+        unsafe {
+            ll::rocks_cfoptions_set_max_write_buffer_number(self.raw, val);
+        }
+        self
+    }
 
     /// The minimum number of write buffers that will be merged together
     /// before writing to storage.  If set to 1, then
@@ -188,7 +426,12 @@ pub struct ColumnFamilyOptions {
     /// files. Also, an in-memory merge may result in writing lesser
     /// data to storage if there are duplicate records in each of these
     /// individual write buffers.  Default: 1
-    pub min_write_buffer_number_to_merge: i32,
+    pub fn min_write_buffer_number_to_merge(self, val: i32) -> Self {
+        unsafe {
+            ll::rocks_cfoptions_set_min_write_buffer_number_to_merge(self.raw, val);
+        }
+        self
+    }
 
     /// The total maximum number of write buffers to maintain in memory including
     /// copies of buffers that have already been flushed.  Unlike
@@ -214,23 +457,186 @@ pub struct ColumnFamilyOptions {
     /// If using a TransactionDB/OptimisticTransactionDB, the default value will
     /// be set to the value of 'max_write_buffer_number' if it is not explicitly
     /// set by the user.  Otherwise, the default is 0.
-    pub max_write_buffer_number_to_maintain: i32,
+    pub fn max_write_buffer_number_to_maintain(self, val: i32) -> Self {
+        unsafe {
+            ll::rocks_cfoptions_set_max_write_buffer_number_to_maintain(self.raw, val);
+        }
+        self
+    }
 
-    /// Compress blocks using the specified compression algorithm.  This
-    /// parameter can be changed dynamically.
+    /// Allows thread-safe inplace updates. If this is true, there is no way to
+    /// achieve point-in-time consistency using snapshot or iterator (assuming
+    /// concurrent updates). Hence iterator and multi-get will return results
+    /// which are not consistent as of any point-in-time.
+    /// If inplace_callback function is not set,
+    ///   Put(key, new_value) will update inplace the existing_value iff
+    ///   * key exists in current memtable
+    ///   * new sizeof(new_value) <= sizeof(existing_value)
+    ///   * existing_value for that key is a put i.e. kTypeValue
+    /// If inplace_callback function is set, check doc for inplace_callback.
+    /// Default: false.
+    pub fn inplace_update_support(self, val: bool) -> Self {
+    unsafe {
+        ll::rocks_cfoptions_set_inplace_update_support(self.raw, val as u8);
+    }
+        self
+}
+
+    /// Number of locks used for inplace update
+    /// Default: 10000, if inplace_update_support = true, else 0.
     ///
-    /// Default: kSnappyCompression, if it's supported. If snappy is not linked
-    /// with the library, the default is kNoCompression.
+    /// Dynamically changeable through SetOptions() API
+    pub fn inplace_update_num_locks(self, val: usize) -> Self {
+        unsafe {
+            ll::rocks_cfoptions_set_inplace_update_num_locks(self.raw, val);
+        }
+        self
+    }
+
+    /// existing_value - pointer to previous value (from both memtable and sst).
+    ///                  pub nullptr if key doesn't exist
+    /// existing_value_size - pointer to size of existing_value).
+    ///                       pub nullptr if key doesn't exist
+    /// delta_value - Delta value to be merged with the existing_value.
+    ///               pub Stored in transaction logs.
+    /// merged_value - Set when delta is applied on the previous value.
+
+    /// Applicable only when inplace_update_support is true,
+    /// this callback function is called at the time of updating the memtable
+    /// as part of a Put operation, lets say Put(key, delta_value). It allows the
+    /// 'delta_value' specified as part of the Put operation to be merged with
+    /// an 'existing_value' of the key in the database.
+
+    /// If the merged value is smaller in size that the 'existing_value',
+    /// then this function can update the 'existing_value' buffer inplace and
+    /// the corresponding 'existing_value'_size pointer, if it wishes to.
+    /// The callback should return UpdateStatus::UPDATED_INPLACE.
+    /// In this case. (In this case, the snapshot-semantics of the rocksdb
+    /// Iterator is not atomic anymore).
+
+    /// If the merged value is larger in size than the 'existing_value' or the
+    /// application does not wish to modify the 'existing_value' buffer inplace,
+    /// then the merged value should be returned via *merge_value. It is set by
+    /// merging the 'existing_value' and the Put 'delta_value'. The callback should
+    /// return UpdateStatus::UPDATED in this case. This merged value will be added
+    /// to the memtable.
+
+    /// If merging fails or the application does not wish to take any action,
+    /// then the callback should return UpdateStatus::UPDATE_FAILED.
+
+    /// Please remember that the original call from the application is Put(key,
+    /// delta_value). So the transaction log (if enabled) will still contain (key,
+    /// delta_value). The 'merged_value' is not stored in the transaction log.
+    /// Hence the inplace_callback function should be consistent across db reopens.
+
+    /// Default: nullptr
+    pub fn inplace_callback(self, val: Option<()>) -> Self {
+        unimplemented!()
+        // unsafe {
+        //     ll::rocks_cfoptions_set_inplace_callback(self.raw, val);
+        // }
+        // self
+    }
+
+    //  UpdateStatus (*inplace_callback)(char* existing_value,
+    // uint32_t* existing_value_size,
+    // Slice delta_value,
+    // std::string* merged_value) = nullptr;
+
+    /// if prefix_extractor is set and memtable_prefix_bloom_size_ratio is not 0,
+    /// create prefix bloom for memtable with the size of
+    /// write_buffer_size * memtable_prefix_bloom_size_ratio.
+    /// If it is larger than 0.25, it is santinized to 0.25.
     ///
-    /// Typical speeds of kSnappyCompression on an Intel(R) Core(TM)2 2.4GHz:
-    ///    ~200-500MB/s compression
-    ///    ~400-800MB/s decompression
-    /// Note that these speeds are significantly faster than most
-    /// persistent storage speeds, and therefore it is typically never
-    /// worth switching to kNoCompression.  Even if the input data is
-    /// incompressible, the kSnappyCompression implementation will
-    /// efficiently detect that and will switch to uncompressed mode.
-    pub compression: CompressionType,
+    /// Default: 0 (disable)
+    ///
+    /// Dynamically changeable through SetOptions() API
+    pub fn memtable_prefix_bloom_size_ratio(self, val: f64) -> Self {
+        unsafe {
+            ll::rocks_cfoptions_set_memtable_prefix_bloom_size_ratio(self.raw, val);
+        }
+        self
+    }
+
+    /// Page size for huge page for the arena used by the memtable. If <=0, it
+    /// won't allocate from huge page but from malloc.
+    /// Users are responsible to reserve huge pages for it to be allocated. For
+    /// example:
+    ///      pub sysctl -w vm.nr_hugepages=20
+    /// See linux doc Documentation/vm/hugetlbpage.txt
+    /// If there isn't enough free huge page available, it will fall back to
+    /// malloc.
+    ///
+    /// Dynamically changeable through SetOptions() API
+    pub fn memtable_huge_page_size(self, val: usize) -> Self {
+        unsafe {
+            ll::rocks_cfoptions_set_memtable_huge_page_size(self.raw, val);
+        }
+        self
+    }
+
+    /// If non-nullptr, memtable will use the specified function to extract
+    /// prefixes for keys, and for each prefix maintain a hint of insert location
+    /// to reduce CPU usage for inserting keys with the prefix. Keys out of
+    /// domain of the prefix extractor will be insert without using hints.
+    ///
+    /// Currently only the default skiplist based memtable implements the feature.
+    /// All other memtable implementation will ignore the option. It incurs ~250
+    /// additional bytes of memory overhead to store a hint for each prefix.
+    /// Also concurrent writes (when allow_concurrent_memtable_write is true) will
+    /// ignore the option.
+    ///
+    /// The option is best suited for workloads where keys will likely to insert
+    /// to a location close the the last inserted key with the same prefix.
+    /// One example could be inserting keys of the form (prefix + timestamp),
+    /// and keys of the same prefix always comes in with time order. Another
+    /// example would be updating the same key over and over again, in which case
+    /// the prefix can be the key itself.
+    ///
+    /// Default: nullptr (disable)
+    pub fn memtable_insert_with_hint_prefix_extractor(self, val: Option<SliceTransform>) -> Self {
+        unimplemented!()
+        // unsafe {
+        //     ll::rocks_cfoptions_set_memtable_insert_with_hint_prefix_extractor(self.raw, val);
+        // }
+        // self
+    }
+
+    /// Control locality of bloom filter probes to improve cache miss rate.
+    /// This option only applies to memtable prefix bloom and plaintable
+    /// prefix bloom. It essentially limits every bloom checking to one cache line.
+    /// This optimization is turned off when set to 0, and positive number to turn
+    /// it on.
+    /// Default: 0
+    pub fn bloom_locality(self, val: u32) -> Self {
+        unsafe {
+            ll::rocks_cfoptions_set_bloom_locality(self.raw, val);
+        }
+        self
+    }
+
+    /// size of one block in arena memory allocation.
+    /// If <= 0, a proper value is automatically calculated (usually 1/8 of
+    /// writer_buffer_size, rounded up to a multiple of 4KB).
+    ///
+    /// There are two additional restriction of the The specified size:
+    /// (1) size should be in the range of [4096, 2 << 30] and
+    /// (2) be the multiple of the CPU word (which helps with the memory
+    /// alignment).
+    ///
+    /// We'll automatically check and adjust the size number to make sure it
+    /// conforms to the restrictions.
+    ///
+    /// Default: 0
+    ///
+    /// Dynamically changeable through SetOptions() API
+    pub fn arena_block_size(self, val: usize) -> Self {
+        unsafe {
+            ll::rocks_cfoptions_set_arena_block_size(self.raw, val);
+        }
+        self
+    }
+
 
     /// Different levels can have different compression policies. There
     /// are cases where most lower levels would like to use quick compression
@@ -253,44 +659,22 @@ pub struct ColumnFamilyOptions {
     /// according to compression_per_level[1], L3 using compression_per_level[2]
     /// and L4 using compression_per_level[3]. Compaction for each level can
     /// change when data grows.
-    pub compression_per_level: Vec<CompressionType>,
-
-    /// Compression algorithm that will be used for the bottommost level that
-    /// contain files. If level-compaction is used, this option will only affect
-    /// levels after base level.
-    ///
-    /// Default: kDisableCompressionOption (Disabled)
-    pub bottommost_compression: CompressionType,
-
-    /// different options for compression algorithms
-    pub compression_opts: CompressionOptions,
-
-    /// If non-nullptr, use the specified function to determine the
-    /// prefixes for keys.  These prefixes will be placed in the filter.
-    /// Depending on the workload, this can reduce the number of read-IOP
-    /// cost for scans when a prefix is passed via ReadOptions to
-    /// db.NewIterator().  For prefix filtering to work properly,
-    /// "prefix_extractor" and "comparator" must be such that the following
-    /// properties hold:
-    ///
-    /// 1) key.starts_with(prefix(key))
-    /// 2) Compare(prefix(key), key) <= 0.
-    /// 3) If Compare(k1, k2) <= 0, then Compare(prefix(k1), prefix(k2)) <= 0
-    /// 4) prefix(prefix(key)) == prefix(key)
-    ///
-    /// Default: nullptr
-    pub prefix_extractor: Option<SliceTransform>,
+    pub fn compression_per_level(self, val: Vec<CompressionType>) -> Self {
+        unsafe {
+            ll::rocks_cfoptions_set_compression_per_level(self.raw,
+                                                          mem::transmute(val.as_slice().as_ptr()), // repr(C)
+                                                          val.len());
+        }
+        self
+    }
 
     /// Number of levels for this database
-    pub num_levels: i32,
-
-    /// Number of files to trigger level-0 compaction. A value <0 means that
-    /// level-0 compaction will not be triggered by number of files at all.
-    ///
-    /// Default: 4
-    ///
-    /// Dynamically changeable through SetOptions() API
-    pub level0_file_num_compaction_trigger: i32,
+    pub fn num_levels(self, val: i32) -> Self {
+        unsafe {
+            ll::rocks_cfoptions_set_num_levels(self.raw, val);
+        }
+        self
+    }
 
     /// Soft limit on number of level-0 files. We start slowing down writes at this
     /// point. A value <0 means that no writing slow down will be triggered by
@@ -299,14 +683,24 @@ pub struct ColumnFamilyOptions {
     /// Default: 20
     ///
     /// Dynamically changeable through SetOptions() API
-    pub level0_slowdown_writes_trigger: i32,
+    pub fn level0_slowdown_writes_trigger(self, val: i32) -> Self {
+        unsafe {
+            ll::rocks_cfoptions_set_level0_slowdown_writes_trigger(self.raw, val);
+        }
+        self
+    }
 
     /// Maximum number of level-0 files.  We stop writes at this point.
     ///
     /// Default: 36
     ///
     /// Dynamically changeable through SetOptions() API
-    pub level0_stop_writes_trigger: i32,
+    pub fn level0_stop_writes_trigger(self, val: i32) -> Self {
+        unsafe {
+            ll::rocks_cfoptions_set_level0_stop_writes_trigger(self.raw, val);
+        }
+        self
+    }
 
     /// Target file size for compaction.
     /// target_file_size_base is per-file size for level-1.
@@ -320,27 +714,23 @@ pub struct ColumnFamilyOptions {
     /// Default: 64MB.
     ///
     /// Dynamically changeable through SetOptions() API
-    pub target_file_size_base: u64,
+    pub fn target_file_size_base(self, val: u64) -> Self {
+        unsafe {
+            ll::rocks_cfoptions_set_target_file_size_base(self.raw, val);
+        }
+        self
+    }
 
     /// By default target_file_size_multiplier is 1, which means
     /// by default files in different levels will have similar size.
     ///
     /// Dynamically changeable through SetOptions() API
-    pub target_file_size_multiplier: i32,
-
-    /// Control maximum total data size for a level.
-    /// max_bytes_for_level_base is the max total for level-1.
-    /// Maximum number of bytes for level L can be calculated as
-    /// (max_bytes_for_level_base) * (max_bytes_for_level_multiplier ^ (L-1))
-    /// For example, if max_bytes_for_level_base is 200MB, and if
-    /// max_bytes_for_level_multiplier is 10, total data size for level-1
-    /// will be 200MB, total file size for level-2 will be 2GB,
-    /// and total file size for level-3 will be 20GB.
-    ///
-    /// Default: 256MB.
-    ///
-    /// Dynamically changeable through SetOptions() API
-    pub max_bytes_for_level_base: u64,
+    pub fn target_file_size_multiplier(self, val: i32) -> Self {
+        unsafe {
+            ll::rocks_cfoptions_set_target_file_size_multiplier(self.raw, val);
+        }
+        self
+    }
 
     /// If true, RocksDB will pick target size of each level dynamically.
     /// We will pick a base level b >= 1. L0 will be directly merged into level b,
@@ -399,12 +789,23 @@ pub struct ColumnFamilyOptions {
     /// NOTE: this option is experimental
     ///
     /// Default: false
-    pub level_compaction_dynamic_level_bytes: bool,
+    pub fn level_compaction_dynamic_level_bytes(self, val: bool) -> Self {
+        unsafe {
+            // wtf this name is a bool?
+            ll::rocks_cfoptions_set_level_compaction_dynamic_level_bytes(self.raw, val as u8);
+        }
+        self
+    }
 
     /// Default: 10.
     ///
     /// Dynamically changeable through SetOptions() API
-    pub max_bytes_for_level_multiplier: f64,
+    pub fn max_bytes_for_level_multiplier(self, val: f64) -> Self {
+        unsafe {
+            ll::rocks_cfoptions_set_max_bytes_for_level_multiplier(self.raw, val);
+        }
+        self
+    }
 
     /// Different max-size multipliers for different levels.
     /// These are multiplied by max_bytes_for_level_multiplier to arrive
@@ -413,71 +814,84 @@ pub struct ColumnFamilyOptions {
     /// Default: 1
     ///
     /// Dynamically changeable through SetOptions() API
-    pub max_bytes_for_level_multiplier_additional: Vec<i32>,
+    pub fn max_bytes_for_level_multiplier_additional(self, val: Vec<i32>) -> Self {
+        unimplemented!()
+        // unsafe {
+        //     ll::rocks_cfoptions_set_max_bytes_for_level_multiplier_additional(self.raw, val);
+        // }
+        // self
+    }
 
     /// We try to limit number of bytes in one compaction to be lower than this
     /// threshold. But it's not guaranteed.
     /// Value 0 will be sanitized.
     ///
     /// Default: result.target_file_size_base * 25
-    pub max_compaction_bytes: u64,
+    pub fn max_compaction_bytes(self, val: u64) -> Self {
+        unsafe {
+            ll::rocks_cfoptions_set_max_compaction_bytes(self.raw, val);
+        }
+        self
+    }
 
     /// All writes will be slowed down to at least delayed_write_rate if estimated
     /// bytes needed to be compaction exceed this threshold.
     ///
     /// Default: 64GB
-    pub soft_pending_compaction_bytes_limit: u64,
+    pub fn soft_pending_compaction_bytes_limit(self, val: u64) -> Self {
+        unsafe {
+            ll::rocks_cfoptions_set_soft_pending_compaction_bytes_limit(self.raw, val);
+        }
+        self
+    }
 
     /// All writes are stopped if estimated bytes needed to be compaction exceed
     /// this threshold.
     ///
     /// Default: 256GB
-    pub hard_pending_compaction_bytes_limit: u64,
-
-    /// size of one block in arena memory allocation.
-    /// If <= 0, a proper value is automatically calculated (usually 1/8 of
-    /// writer_buffer_size, rounded up to a multiple of 4KB).
-    ///
-    /// There are two additional restriction of the The specified size:
-    /// (1) size should be in the range of [4096, 2 << 30] and
-    /// (2) be the multiple of the CPU word (which helps with the memory
-    /// alignment).
-    ///
-    /// We'll automatically check and adjust the size number to make sure it
-    /// conforms to the restrictions.
-    ///
-    /// Default: 0
-    ///
-    /// Dynamically changeable through SetOptions() API
-    pub arena_block_size: usize,
-
-    /// Disable automatic compactions. Manual compactions can still
-    /// be issued on this column family
-    ///
-    /// Dynamically changeable through SetOptions() API
-    pub disable_auto_compactions: bool,
+    pub fn hard_pending_compaction_bytes_limit(self, val: u64) -> Self {
+        unsafe {
+            ll::rocks_cfoptions_set_hard_pending_compaction_bytes_limit(self.raw, val);
+        }
+        self
+    }
 
     /// The compaction style. Default: kCompactionStyleLevel
-    pub compaction_style: CompactionStyle,
+    pub fn compaction_style(self, val: CompactionStyle) -> Self {
+        unsafe {
+            ll::rocks_cfoptions_set_compaction_style(self.raw, mem::transmute(val));
+        }
+        self
+    }
 
     /// If level compaction_style = kCompactionStyleLevel, for each level,
     /// which files are prioritized to be picked to compact.
     /// Default: kByCompensatedSize
-    pub compaction_pri: CompactionPri,
-
-    /// If true, compaction will verify checksum on every read that happens
-    /// as part of compaction
-    ///
-    /// Default: true
-    ///
-    /// Dynamically changeable through SetOptions() API
-    pub verify_checksums_in_compaction: bool,
+    pub fn compaction_pri(self, val: CompactionPri) -> Self {
+        unimplemented!()
+        // unsafe {
+        //     ll::rocks_cfoptions_set_compaction_pri(self.raw, val);
+        // }
+        // self
+    }
 
     /// The options needed to support Universal Style compactions
-    pub compaction_options_universal: CompactionOptionsUniversal,
+    pub fn compaction_options_universal(self, val: CompactionOptionsUniversal) -> Self {
+        unimplemented!()
+        // unsafe {
+        //     ll::rocks_cfoptions_set_compaction_options_universal(self.raw, val);
+        // }
+        // self
+    }
 
     /// The options for FIFO compaction style
-    pub compaction_options_fifo: CompactionOptionsFIFO,
+    pub fn compaction_options_fifo(self, val: CompactionOptionsFIFO) -> Self {
+        unimplemented!()
+    //     unsafe {
+    //         ll::rocks_cfoptions_set_compaction_options_fifo(self.raw, val);
+    //     }
+    //     self
+    }
 
     /// An iteration->Next() sequentially skips over keys with the same
     /// user-key unless this option is set. This number specifies the number
@@ -487,17 +901,19 @@ pub struct ColumnFamilyOptions {
     /// Default: 8
     ///
     /// Dynamically changeable through SetOptions() API
-    pub max_sequential_skip_in_iterations: u64,
+    pub fn max_sequential_skip_in_iterations(self, val: u64) -> Self {
+        unsafe {
+            ll::rocks_cfoptions_set_max_sequential_skip_in_iterations(self.raw, val);
+        }
+        self
+    }
 
     /// This is a factory that provides MemTableRep objects.
     /// Default: a factory that provides a skip-list-based implementation of
     /// MemTableRep.
-    // memtable_factory:
-    /// This is a factory that provides TableFactory objects.
-    /// Default: a block-based table factory that provides a default
-    /// implementation of TableBuilder and TableReader with default
-    /// BlockBasedTableOptions.
-    pub table_factory: Option<TableFactory>,
+    pub fn memtable_factory(self, val: ()) -> Self {
+        unimplemented!()
+    }
 
     /// Block-based table related options are moved to BlockBasedTableOptions.
     /// Related options that were originally here but now moved include:
@@ -516,119 +932,13 @@ pub struct ColumnFamilyOptions {
     /// the tables.
     /// Default: empty vector -- no user-defined statistics collection will be
     /// performed.
-    pub table_properties_collector_factories: Vec<()>,
-
-    /// Allows thread-safe inplace updates. If this is true, there is no way to
-    /// achieve point-in-time consistency using snapshot or iterator (assuming
-    /// concurrent updates). Hence iterator and multi-get will return results
-    /// which are not consistent as of any point-in-time.
-    /// If inplace_callback function is not set,
-    ///   Put(key, new_value) will update inplace the existing_value iff
-    ///   * key exists in current memtable
-    ///   * new sizeof(new_value) <= sizeof(existing_value)
-    ///   * existing_value for that key is a put i.e. kTypeValue
-    /// If inplace_callback function is set, check doc for inplace_callback.
-    /// Default: false.
-    pub inplace_update_support: bool,
-
-    /// Number of locks used for inplace update
-    /// Default: 10000, if inplace_update_support = true, else 0.
-    ///
-    /// Dynamically changeable through SetOptions() API
-    pub inplace_update_num_locks: usize,
-
-    /// existing_value - pointer to previous value (from both memtable and sst).
-    ///                  pub nullptr if key doesn't exist
-    /// existing_value_size - pointer to size of existing_value).
-    ///                       pub nullptr if key doesn't exist
-    /// delta_value - Delta value to be merged with the existing_value.
-    ///               pub Stored in transaction logs.
-    /// merged_value - Set when delta is applied on the previous value.
-
-    /// Applicable only when inplace_update_support is true,
-    /// this callback function is called at the time of updating the memtable
-    /// as part of a Put operation, lets say Put(key, delta_value). It allows the
-    /// 'delta_value' specified as part of the Put operation to be merged with
-    /// an 'existing_value' of the key in the database.
-
-    /// If the merged value is smaller in size that the 'existing_value',
-    /// then this function can update the 'existing_value' buffer inplace and
-    /// the corresponding 'existing_value'_size pointer, if it wishes to.
-    /// The callback should return UpdateStatus::UPDATED_INPLACE.
-    /// In this case. (In this case, the snapshot-semantics of the rocksdb
-    /// Iterator is not atomic anymore).
-
-    /// If the merged value is larger in size than the 'existing_value' or the
-    /// application does not wish to modify the 'existing_value' buffer inplace,
-    /// then the merged value should be returned via *merge_value. It is set by
-    /// merging the 'existing_value' and the Put 'delta_value'. The callback should
-    /// return UpdateStatus::UPDATED in this case. This merged value will be added
-    /// to the memtable.
-
-    /// If merging fails or the application does not wish to take any action,
-    /// then the callback should return UpdateStatus::UPDATE_FAILED.
-
-    /// Please remember that the original call from the application is Put(key,
-    /// delta_value). So the transaction log (if enabled) will still contain (key,
-    /// delta_value). The 'merged_value' is not stored in the transaction log.
-    /// Hence the inplace_callback function should be consistent across db reopens.
-
-    /// Default: nullptr
-    pub inplace_callback: Option<()>,
-    //  UpdateStatus (*inplace_callback)(char* existing_value,
-    // uint32_t* existing_value_size,
-    // Slice delta_value,
-    // std::string* merged_value) = nullptr;
-    /// if prefix_extractor is set and memtable_prefix_bloom_size_ratio is not 0,
-    /// create prefix bloom for memtable with the size of
-    /// write_buffer_size * memtable_prefix_bloom_size_ratio.
-    /// If it is larger than 0.25, it is santinized to 0.25.
-    ///
-    /// Default: 0 (disable)
-    ///
-    /// Dynamically changeable through SetOptions() API
-    pub memtable_prefix_bloom_size_ratio: f64,
-
-    /// Page size for huge page for the arena used by the memtable. If <=0, it
-    /// won't allocate from huge page but from malloc.
-    /// Users are responsible to reserve huge pages for it to be allocated. For
-    /// example:
-    ///      pub sysctl -w vm.nr_hugepages=20
-    /// See linux doc Documentation/vm/hugetlbpage.txt
-    /// If there isn't enough free huge page available, it will fall back to
-    /// malloc.
-    ///
-    /// Dynamically changeable through SetOptions() API
-    pub memtable_huge_page_size: usize,
-
-    /// If non-nullptr, memtable will use the specified function to extract
-    /// prefixes for keys, and for each prefix maintain a hint of insert location
-    /// to reduce CPU usage for inserting keys with the prefix. Keys out of
-    /// domain of the prefix extractor will be insert without using hints.
-    ///
-    /// Currently only the default skiplist based memtable implements the feature.
-    /// All other memtable implementation will ignore the option. It incurs ~250
-    /// additional bytes of memory overhead to store a hint for each prefix.
-    /// Also concurrent writes (when allow_concurrent_memtable_write is true) will
-    /// ignore the option.
-    ///
-    /// The option is best suited for workloads where keys will likely to insert
-    /// to a location close the the last inserted key with the same prefix.
-    /// One example could be inserting keys of the form (prefix + timestamp),
-    /// and keys of the same prefix always comes in with time order. Another
-    /// example would be updating the same key over and over again, in which case
-    /// the prefix can be the key itself.
-    ///
-    /// Default: nullptr (disable)
-    pub memtable_insert_with_hint_prefix_extractor: Option<SliceTransform>,
-
-    /// Control locality of bloom filter probes to improve cache miss rate.
-    /// This option only applies to memtable prefix bloom and plaintable
-    /// prefix bloom. It essentially limits every bloom checking to one cache line.
-    /// This optimization is turned off when set to 0, and positive number to turn
-    /// it on.
-    /// Default: 0
-    pub bloom_locality: u32,
+    pub fn table_properties_collector_factories(self, val: Vec<()>) -> Self {
+        unimplemented!()
+    //     unsafe {
+    //         ll::rocks_cfoptions_set_table_properties_collector_factories(self.raw, val);
+    //     }
+    //     self
+    }
 
     /// Maximum number of successive merge operations on a key in the memtable.
     ///
@@ -641,16 +951,12 @@ pub struct ColumnFamilyOptions {
     /// Default: 0 (disabled)
     ///
     /// Dynamically changeable through SetOptions() API
-    pub max_successive_merges: usize,
-
-    /// The number of partial merge operands to accumulate before partial
-    /// merge will be performed. Partial merge will not be called
-    /// if the list of values to merge is less than min_partial_merge_operands.
-    ///
-    /// If min_partial_merge_operands < 2, then it will be treated as 2.
-    ///
-    /// Default: 2
-    pub min_partial_merge_operands: u32,
+    pub fn max_successive_merges(self, val: usize) -> Self {
+        unsafe {
+            ll::rocks_cfoptions_set_max_successive_merges(self.raw, val);
+        }
+        self
+    }
 
     /// This flag specifies that the implementation should optimize the filters
     /// mainly for cases where keys are found rather than also optimize for keys
@@ -666,144 +972,53 @@ pub struct ColumnFamilyOptions {
     /// to the higher level.
     ///
     /// Default: false
-    pub optimize_filters_for_hits: bool,
+    pub fn optimize_filters_for_hits(self, val: bool) -> Self {
+        unsafe {
+            ll::rocks_cfoptions_set_optimize_filters_for_hits(self.raw, val as u8);
+        }
+        self
+    }
 
     /// After writing every SST file, reopen it and read all the keys.
     /// Default: false
-    pub paranoid_file_checks: bool,
+    pub fn paranoid_file_checks(self, val: bool) -> Self {
+        unsafe {
+            ll::rocks_cfoptions_set_paranoid_file_checks(self.raw, val as u8);
+        }
+        self
+    }
 
     /// In debug mode, RocksDB run consistency checks on the LSM everytime the LSM
     /// change (Flush, Compaction, AddFile). These checks are disabled in release
     /// mode, use this option to enable them in release mode as well.
     /// Default: false
-    pub force_consistency_checks: bool,
+    pub fn force_consistency_checks(self, val: bool) -> Self {
+        unsafe {
+            ll::rocks_cfoptions_set_force_consistency_checks(self.raw, val as u8);
+        }
+        self
+    }
 
     /// Measure IO stats in compactions and flushes, if true.
     /// Default: false
-    pub report_bg_io_stats: bool,
+    pub fn report_bg_io_stats(self, val: bool) -> Self {
+        unsafe {
+            ll::rocks_cfoptions_set_report_bg_io_stats(self.raw, val as u8);
+        }
+        self
+    }
+
+    pub fn dump(&self, log: &mut Logger) {
+        unimplemented!()
+    }
 }
 
 
 impl Default for ColumnFamilyOptions {
     fn default() -> Self {
-        let default_num_levels = 7;
-
         ColumnFamilyOptions {
-            comparator: None, // BytewiseComparator,
-            merge_operator: None,
-            compaction_filter: None,
-            compaction_filter_factory: None,
-            write_buffer_size: 64 << 20,
-            max_write_buffer_number: 2,
-            min_write_buffer_number_to_merge: 1,
-            max_write_buffer_number_to_maintain: 0,
-            // Default: kSnappyCompression, if it's supported. If snappy is not linked
-            // with the library, the default is kNoCompression.
-            compression: CompressionType::NoCompression,
-            compression_per_level: vec![],
-            bottommost_compression: CompressionType::DisableCompressionOption,
-            compression_opts: CompressionOptions::default(),
-            prefix_extractor: None,
-            num_levels: default_num_levels,
-            level0_file_num_compaction_trigger: 4,
-            level0_slowdown_writes_trigger: 20,
-            level0_stop_writes_trigger: 36,
-            target_file_size_base: 64 * 1048576,
-            target_file_size_multiplier: 1,
-            max_bytes_for_level_base: 256 * 1048576,
-            level_compaction_dynamic_level_bytes: false,
-            max_bytes_for_level_multiplier: 10.0,
-            max_bytes_for_level_multiplier_additional: vec![1; default_num_levels as usize],
-            max_compaction_bytes: 0,
-            soft_pending_compaction_bytes_limit: 64 * 1073741824,
-            hard_pending_compaction_bytes_limit: 256 * 1073741824,
-            arena_block_size: 0,
-            disable_auto_compactions: false,
-            compaction_style: CompactionStyle::CompactionStyleLevel,
-            compaction_pri: CompactionPri::ByCompensatedSize,
-            verify_checksums_in_compaction: true,
-            compaction_options_universal: CompactionOptionsUniversal::default(),
-            compaction_options_fifo: Default::default(),
-            max_sequential_skip_in_iterations: 8,
-            // memtable_factory: None,
-            //      std::shared_ptr<SkipListFactory>(new SkipListFactory),
-            // typedef std::vector<std::shared_ptr<TablePropertiesCollectorFactory>>
-            table_factory: None,
-            table_properties_collector_factories: Default::default(),
-            inplace_update_support: false,
-            inplace_update_num_locks: 10000,
-            inplace_callback: None,
-            memtable_prefix_bloom_size_ratio: 0.0,
-            memtable_huge_page_size: 0,
-            memtable_insert_with_hint_prefix_extractor: None,
-            bloom_locality: 0,
-            max_successive_merges: 0,
-            min_partial_merge_operands: 2,
-            optimize_filters_for_hits: false,
-            paranoid_file_checks: false,
-            force_consistency_checks: false,
-            report_bg_io_stats: false,
+            raw: unsafe { ll::rocks_cfoptions_create() },
         }
-    }
-}
-
-impl ColumnFamilyOptions {
-    /// The function recovers options to a previous version. Only 4.6 or later
-    /// versions are supported.
-    pub fn old_defaults(rocksdb_major_version: i32, irocksdb_minor_version: i32) -> Self {
-        unimplemented!()
-    }
-
-    /// Some functions that make it easier to optimize RocksDB
-    /// Use this if your DB is very small (like under 1GB) and you don't want to
-    /// spend lots of memory for memtables.
-    pub fn optimize_for_smalldb(&mut self) -> &mut Self {
-        unimplemented!();
-    }
-
-    /// Use this if you don't need to keep the data sorted, i.e. you'll never use
-    /// an iterator, only Put() and Get() API calls
-    ///
-    /// Not supported in ROCKSDB_LITE
-    pub fn optimize_for_pointlookup(&mut self, block_cache_size_mb: u64) -> &mut Self {
-        unimplemented!();
-    }
-
-    /// Default values for some parameters in ColumnFamilyOptions are not
-    /// optimized for heavy workloads and big datasets, which means you might
-    /// observe write stalls under some conditions. As a starting point for tuning
-    /// RocksDB options, use the following two functions:
-    /// * OptimizeLevelStyleCompaction -- optimizes level style compaction
-    /// * OptimizeUniversalStyleCompaction -- optimizes universal style compaction
-    /// Universal style compaction is focused on reducing Write Amplification
-    /// Factor for big data sets, but increases Space Amplification. You can learn
-    /// more about the different styles here:
-    /// https://github.com/facebook/rocksdb/wiki/Rocksdb-Architecture-Guide
-    /// Make sure to also call IncreaseParallelism(), which will provide the
-    /// biggest performance gains.
-    /// Note: we might use more memory than memtable_memory_budget during high
-    /// write rate period
-    ///
-    /// OptimizeUniversalStyleCompaction is not supported in ROCKSDB_LITE
-    pub fn optimize_level_style_compaction(&mut self, memtable_memory_budget: u64) -> &mut Self {
-        // 512 * 1024 * 1024);
-        unimplemented!();
-    }
-
-    pub fn optimize_universal_style_compaction(&mut self,
-                                               memtable_memory_budget: u64)
-                                               -> &mut Self {
-        // 512 * 1024 * 1024)
-        unimplemented!();
-    }
-
-    // Create ColumnFamilyOptions with default values for all fields
-    // ColumnFamilyOptions();
-    // Create ColumnFamilyOptions from Options
-    // explicit ColumnFamilyOptions(const Options& options);
-    //
-    pub fn dump(&self, log: &mut Logger) {
-        unimplemented!()
     }
 }
 
@@ -820,17 +1035,46 @@ pub enum AccessHint {
 }
 
 pub struct DBOptions {
+    raw: *mut ll::rocks_dboptions_t,
+}
+
+impl DBOptions {
+    pub fn raw(&self) -> *mut ll::rocks_dboptions_t {
+        self.raw
+    }
+
+    pub unsafe fn from_ll(raw: *mut ll::rocks_dboptions_t) -> DBOptions {
+        DBOptions {
+            raw: raw,
+        }
+    }
+
     /// If true, the database will be created if it is missing.
     /// Default: false
-    pub create_if_missing: bool,
+    pub fn create_if_missing(self, val: bool) -> Self  {
+        unsafe {
+            ll::rocks_dboptions_set_create_if_missing(self.raw, val as u8);
+        }
+        self
+    }
 
     /// If true, missing column families will be automatically created.
     /// Default: false
-    pub create_missing_column_families: bool,
+    pub fn create_missing_column_families(self, val: bool) -> Self {
+        unsafe {
+            ll::rocks_dboptions_set_create_if_missing(self.raw, val as u8);
+        }
+        self
+    }
 
     /// If true, an error is raised if the database already exists.
     /// Default: false
-    pub error_if_exists: bool,
+    pub fn error_if_exists(self, val: bool) -> Self {
+        unsafe {
+            ll::rocks_dboptions_set_error_if_exists(self.raw, val as u8);
+        }
+        self
+    }
 
     /// If true, RocksDB will aggressively check consistency of the data.
     /// Also, if any of the  writes to the database fails (Put, Delete, Merge,
@@ -838,7 +1082,12 @@ pub struct DBOptions {
     /// Write operations.
     /// In most cases you want this to be set to true.
     /// Default: true
-    pub paranoid_checks: bool,
+    pub fn paranoid_checks(self, val: bool) -> Self {
+        unsafe {
+            ll::rocks_dboptions_set_paranoid_checks(self.raw, val as u8);
+        }
+        self
+    }
 
     /// Use the specified object to interact with the environment,
     /// e.g. to read/write files, schedule background work, etc.
@@ -848,7 +1097,13 @@ pub struct DBOptions {
     /// priority than compaction. Rate limiting is disabled if nullptr.
     /// If rate limiter is enabled, bytes_per_sync is set to 1MB by default.
     /// Default: nullptr
-    pub rate_limiter: Option<RateLimiter>,
+    pub fn rate_limiter(self, val: Option<RateLimiter>) -> Self {
+        // unsafe {
+        //     ll::rocks_dboptions_set_rate_limiter(self.raw, val);
+        // }
+        // self
+        unimplemented!()
+    }
 
     /// Use to track SST files and control their file deletion rate.
     ///
@@ -864,15 +1119,35 @@ pub struct DBOptions {
     ///    first db_path (db_name if db_paths is empty).
     ///
     /// Default: nullptr
-    pub sst_file_manager: Option<SstFileManager>,
+    pub fn sst_file_manager(self, val: Option<SstFileManager>) -> Self {
+        // unsafe {
+        //     ll::rocks_dboptions_set_sst_file_manager(self.raw, val);
+        // }
+        // self
+        unimplemented!()
+    }
 
     /// Any internal progress/error information generated by the db will
     /// be written to info_log if it is non-nullptr, or to a file stored
     /// in the same directory as the DB contents if info_log is nullptr.
     /// Default: nullptr
-    pub info_log: Option<Logger>,
+    pub fn info_log(self, val: Option<Logger>) -> Self {
+        unsafe {
+            if let Some(logger) = val {
+                ll::rocks_dboptions_set_info_log(self.raw, logger.raw());
+            } else {
+                ll::rocks_dboptions_set_info_log(self.raw, ptr::null_mut());
+            }
+        }
+        self
+    }
 
-    pub info_log_level: InfoLogLevel,
+    pub fn info_log_level(self, val: InfoLogLevel) -> Self {
+        unsafe {
+            ll::rocks_dboptions_set_info_log_level(self.raw, mem::transmute(val));
+        }
+        self
+    }
 
     /// Number of open files that can be used by the DB.  You may need to
     /// increase this if your database has a large working set. Value -1 means
@@ -880,12 +1155,22 @@ pub struct DBOptions {
     /// on target_file_size_base and target_file_size_multiplier for level-based
     /// compaction. For universal-style compaction, you can usually set it to -1.
     /// Default: -1
-    pub max_open_files: i32,
+    pub fn max_open_files(self, val: i32) -> Self {
+        unsafe {
+            ll::rocks_dboptions_set_max_open_files(self.raw, val);
+        }
+        self
+    }
 
     /// If max_open_files is -1, DB will open all files on DB::Open(). You can
     /// use this option to increase the number of threads used to open the files.
     /// Default: 16
-    pub max_file_opening_threads: i32,
+    pub fn max_file_opening_threads(self, val: i32) -> Self {
+        unsafe {
+            ll::rocks_dboptions_set_max_file_opening_threads(self.raw, val);
+        }
+        self
+    }
 
     /// Once write-ahead logs exceed this size, we will start forcing the flush of
     /// column families whose memtables are backed by the oldest live WAL file
@@ -893,10 +1178,21 @@ pub struct DBOptions {
     /// (default), we will dynamically choose the WAL size limit to be
     /// [sum of all write_buffer_size * max_write_buffer_number] * 4
     /// Default: 0
-    pub max_total_wal_size: u64,
+    pub fn max_total_wal_size(self, val: u64) -> Self {
+        unsafe {
+            ll::rocks_dboptions_set_max_total_wal_size(self.raw, val);
+        }
+        self
+    }
 
     /// If non-null, then we should collect metrics about database operations
-    pub statistics: Option<Statistics>,
+    pub fn statistics(self, val: Option<Statistics>) -> Self {
+        // unsafe {
+        //     ll::rocks_dboptions_set_statistics(self.raw, val);
+        // }
+        // self
+        unimplemented!()
+    }
 
     /// If true, then every store to stable storage will issue a fsync.
     /// If false, then every store to stable storage will issue a fdatasync.
@@ -905,7 +1201,12 @@ pub struct DBOptions {
     /// Default: false
     /// Note: on many platforms fdatasync is defined as fsync, so this parameter
     /// would make no difference. Refer to fdatasync definition in this code base.
-    pub use_fsync: bool,
+    pub fn use_fsync(self, val: bool) -> Self {
+        unsafe {
+            ll::rocks_dboptions_set_use_fsync(self.raw, val as u8);
+        }
+        self
+    }
 
     /// A list of paths where SST files can be put into, with its target size.
     /// Newer data is placed into paths specified earlier in the vector while
@@ -931,14 +1232,26 @@ pub struct DBOptions {
     /// If left empty, only one path will be used, which is db_name passed when
     /// opening the DB.
     /// Default: empty
-    pub db_paths: Vec<DbPath>,
+    pub fn db_paths(self, val: Vec<DbPath>) -> Self {
+        // unsafe {
+        //     ll::rocks_dboptions_set_db_paths(self.raw, val);
+        // }
+        // self
+        unimplemented!()
+    }
 
     /// This specifies the info LOG dir.
     /// If it is empty, the log files will be in the same dir as data.
     /// If it is non empty, the log files will be in the specified dir,
     /// and the db data dir's absolute path will be used as the log file
     /// name's prefix.
-    pub db_log_dir: String,
+    pub fn db_log_dir<P: AsRef<Path>>(self, path: P) -> Self {
+        unsafe {
+            ll::rocks_dboptions_set_db_log_dir(self.raw,
+                                               path.as_ref().to_str().unwrap().as_ptr() as _);
+        }
+        self
+    }
 
     /// This specifies the absolute dir path for write-ahead logs (WAL).
     /// If it is empty, the log files will be in the same dir as data,
@@ -946,19 +1259,35 @@ pub struct DBOptions {
     /// If it is non empty, the log files will be in kept the specified dir.
     /// When destroying the db,
     ///   all log files in wal_dir and the dir itself is deleted
-    pub wal_dir: String,
+    pub fn wal_dir<P: AsRef<Path>>(self, path: P) -> Self {
+        unsafe {
+            ll::rocks_dboptions_set_wal_dir(self.raw,
+                                            path.as_ref().to_str().unwrap().as_ptr() as _);
+        }
+        self
+    }
 
     /// The periodicity when obsolete files get deleted. The default
     /// value is 6 hours. The files that get out of scope by compaction
     /// process will still get automatically delete on every compaction,
     /// regardless of this setting
-    pub delete_obsolete_files_period_micros: u64,
+    pub fn delete_obsolete_files_period_micros(self, val: u64) -> Self {
+        unsafe {
+            ll::rocks_dboptions_set_delete_obsolete_files_period_micros(self.raw, val);
+        }
+        self
+    }
 
     /// Suggested number of concurrent background compaction jobs, submitted to
     /// the default LOW priority thread pool.
     ///
     /// Default: 1
-    pub base_background_compactions: i32,
+    pub fn base_background_compactions(self, val: i32) -> Self {
+        unsafe {
+            ll::rocks_dboptions_set_base_background_compactions(self.raw, val);
+        }
+        self
+    }
 
     /// Maximum number of concurrent background compaction jobs, submitted to
     /// the default LOW priority thread pool.
@@ -971,13 +1300,23 @@ pub struct DBOptions {
     /// LOW priority thread pool. For more information, see
     /// Env::SetBackgroundThreads
     /// Default: 1
-    pub max_background_compactions: i32,
+    pub fn max_background_compactions(self, val: i32) -> Self {
+        unsafe {
+            ll::rocks_dboptions_set_max_background_compactions(self.raw, val);
+        }
+        self
+    }
 
     /// This value represents the maximum number of threads that will
     /// concurrently perform a compaction job by breaking it into multiple,
     /// smaller ones that are run simultaneously.
     /// Default: 1 (i.e. no subcompactions)
-    pub max_subcompactions: u32,
+    pub fn max_subcompactions(self, val: u32) -> Self {
+        unsafe {
+            ll::rocks_dboptions_set_max_subcompactions(self.raw, val);
+        }
+        self
+    }
 
     /// Maximum number of concurrent background memtable flush jobs, submitted to
     /// the HIGH priority thread pool.
@@ -994,25 +1333,45 @@ pub struct DBOptions {
     /// HIGH priority thread pool. For more information, see
     /// Env::SetBackgroundThreads
     /// Default: 1
-    pub max_background_flushes: i32,
+    pub fn max_background_flushes(self, val: i32) -> Self {
+        unsafe {
+            ll::rocks_dboptions_set_max_background_flushes(self.raw, val);
+        }
+        self
+    }
 
     /// Specify the maximal size of the info log file. If the log file
     /// is larger than `max_log_file_size`, a new info log file will
     /// be created.
     /// If max_log_file_size == 0, all logs will be written to one
     /// log file.
-    pub max_log_file_size: usize,
+    pub fn max_log_file_size(self, val: usize) -> Self {
+        unsafe {
+            ll::rocks_dboptions_set_max_log_file_size(self.raw, val);
+        }
+        self
+    }
 
     /// Time for the info log file to roll (in seconds).
     /// If specified with non-zero value, log file will be rolled
     /// if it has been active longer than `log_file_time_to_roll`.
     /// Default: 0 (disabled)
     /// Not supported in ROCKSDB_LITE mode!
-    pub log_file_time_to_roll: usize,
+    pub fn log_file_time_to_roll(self, val: usize) -> Self {
+        unsafe {
+            ll::rocks_dboptions_set_log_file_time_to_roll(self.raw, val);
+        }
+        self
+    }
 
     /// Maximal info log files to be kept.
     /// Default: 1000
-    pub keep_log_file_num: usize,
+    pub fn keep_log_file_num(self, val: usize) -> Self {
+        unsafe {
+            ll::rocks_dboptions_set_keep_log_file_num(self.raw, val);
+        }
+        self
+    }
 
     /// Recycle log files.
     /// If non-zero, we will reuse previously written log files for new
@@ -1022,15 +1381,30 @@ pub struct DBOptions {
     /// allocated and fdatasync does not need to update the inode after
     /// each write.
     /// Default: 0
-    pub recycle_log_file_num: usize,
+    pub fn recycle_log_file_num(self, val: usize) -> Self {
+        unsafe {
+            ll::rocks_dboptions_set_recycle_log_file_num(self.raw, val);
+        }
+        self
+    }
 
     /// manifest file is rolled over on reaching this limit.
     /// The older manifest file be deleted.
     /// The default value is MAX_INT so that roll-over does not take place.
-    pub max_manifest_file_size: u64,
+    pub fn max_manifest_file_size(self, val: u64) -> Self {
+        unsafe {
+            ll::rocks_dboptions_set_max_manifest_file_size(self.raw, val);
+        }
+        self
+    }
 
     /// Number of shards used for table cache.
-    pub table_cache_numshardbits: i32,
+    pub fn table_cache_numshardbits(self, val: i32) -> Self {
+        unsafe {
+            ll::rocks_dboptions_set_table_cache_numshardbits(self.raw, val);
+        }
+        self
+    }
 
     /// The following two fields affect how archived logs will be deleted.
     /// 1. If both set to 0, logs will be deleted asap and will not get into
@@ -1044,22 +1418,47 @@ pub struct DBOptions {
     ///    are older than WAL_ttl_seconds will be deleted.
     /// 4. If both are not 0, WAL files will be checked every 10 min and both
     ///    checks will be performed with ttl being first.
-    pub wal_ttl_seconds: u64,
-    pub wal_size_limit_mb: u64,
+    pub fn wal_ttl_seconds(self, val: u64) -> Self {
+        unsafe {
+            ll::rocks_dboptions_set_wal_ttl_seconds(self.raw, val);
+        }
+        self
+    }
+    pub fn wal_size_limit_mb(self, val: u64) -> Self {
+        unsafe {
+            ll::rocks_dboptions_set_wal_size_limit_mb(self.raw, val);
+        }
+        self
+    }
 
     /// Number of bytes to preallocate (via fallocate) the manifest
     /// files.  Default is 4mb, which is reasonable to reduce random IO
     /// as well as prevent overallocation for mounts that preallocate
     /// large amounts of data (such as xfs's allocsize option).
-    pub manifest_preallocation_size: usize,
+    pub fn manifest_preallocation_size(self, val: usize) -> Self {
+        unsafe {
+            ll::rocks_dboptions_set_manifest_preallocation_size(self.raw, val);
+        }
+        self
+    }
 
     /// Allow the OS to mmap file for reading sst tables. Default: false
-    pub allow_mmap_reads: bool,
+    pub fn allow_mmap_reads(self, val: bool) -> Self {
+        unsafe {
+            ll::rocks_dboptions_set_allow_mmap_reads(self.raw, val as u8);
+        }
+        self
+    }
 
     /// Allow the OS to mmap file for writing.
     /// DB::SyncWAL() only works if this is set to false.
     /// Default: false
-    pub allow_mmap_writes: bool,
+    pub fn allow_mmap_writes(self, val: bool) -> Self {
+        unsafe {
+            ll::rocks_dboptions_set_allow_mmap_writes(self.raw, val as u8);
+        }
+        self
+    }
 
     /// Enable direct I/O mode for read/write
     /// they may or may not improve performance depending on the use case
@@ -1072,31 +1471,60 @@ pub struct DBOptions {
     /// Use O_DIRECT for user reads
     /// Default: false
     /// Not supported in ROCKSDB_LITE mode!
-    pub use_direct_reads: bool,
+    pub fn use_direct_reads(self, val: bool) -> Self {
+        unsafe {
+            ll::rocks_dboptions_set_use_direct_reads(self.raw, val as u8);
+        }
+        self
+    }
 
+    /*
     /// Use O_DIRECT for both reads and writes in background flush and compactions
     /// When true, we also force new_table_reader_for_compaction_inputs to true.
     /// Default: false
     /// Not supported in ROCKSDB_LITE mode!
-    pub use_direct_io_for_flush_and_compaction: bool,
+    pub fn use_direct_io_for_flush_and_compaction(self, val: bool) -> Self {
+        unsafe {
+            ll::rocks_dboptions_set_use_direct_io_for_flush_and_compaction(self.raw, val as u8);
+        }
+        self
+    }
+    */
 
     /// If false, fallocate() calls are bypassed
-    pub allow_fallocate: bool,
+    pub fn allow_fallocate(self, val: bool) -> Self {
+        unsafe {
+            ll::rocks_dboptions_set_allow_fallocate(self.raw, val as u8);
+        }
+        self
+    }
 
     /// Disable child process inherit open files. Default: true
-    pub is_fd_close_on_exec: bool,
-
-    /// NOT SUPPORTED ANYMORE -- this options is no longer used
-    pub skip_log_error_on_recovery: bool,
+    pub fn is_fd_close_on_exec(self, val: bool) -> Self {
+        unsafe {
+            ll::rocks_dboptions_set_is_fd_close_on_exec(self.raw, val as u8);
+        }
+        self
+    }
 
     /// if not zero, dump rocksdb.stats to LOG every stats_dump_period_sec
     /// Default: 600 (10 min)
-    pub stats_dump_period_sec: i32,
+    pub fn stats_dump_period_sec(self, val: u32) -> Self {
+        unsafe {
+            ll::rocks_dboptions_set_stats_dump_period_sec(self.raw, val);
+        }
+        self
+    }
 
     /// If set true, will hint the underlying file system that the file
     /// access pattern is random, when a sst file is opened.
     /// Default: true
-    pub advise_random_on_open: bool,
+    pub fn advise_random_on_open(self, val: bool) -> Self {
+        unsafe {
+            ll::rocks_dboptions_set_advise_random_on_open(self.raw, val as u8);
+        }
+        self
+    }
 
     /// Amount of data to build up in memtables across all column
     /// families before writing to disk.
@@ -1108,7 +1536,12 @@ pub struct DBOptions {
     /// to enable it.
     ///
     /// Default: 0 (disabled)
-    pub db_write_buffer_size: usize,
+    pub fn db_write_buffer_size(self, val: usize) -> Self {
+        unsafe {
+            ll::rocks_dboptions_set_db_write_buffer_size(self.raw, val);
+        }
+        self
+    }
 
     /// The memory usage of memtable will report to this object. The same object
     /// can be passed into multiple DBs and it will track the sum of size of all
@@ -1124,12 +1557,23 @@ pub struct DBOptions {
     /// to enable it.
     ///
     /// Default: null
-    pub write_buffer_manager: Option<WriteBufferManager>,
+    pub fn write_buffer_manager(self, val: Option<WriteBufferManager>) -> Self {
+        // unsafe {
+        //     ll::rocks_dboptions_set_write_buffer_manager(self.raw, val);
+        // }
+        // self
+        unimplemented!()
+    }
 
     /// Specify the file access pattern once a compaction is started.
     /// It will be applied to all input files of a compaction.
     /// Default: NORMAL
-    pub access_hint_on_compaction_start: AccessHint,
+    pub fn access_hint_on_compaction_start(self, val: AccessHint) -> Self {
+        unsafe {
+            ll::rocks_dboptions_set_access_hint_on_compaction_start(self.raw, mem::transmute(val));
+        }
+        self
+    }
 
     /// If true, always create a new file descriptor and new table reader
     /// for compaction inputs. Turn this parameter on may introduce extra
@@ -1141,7 +1585,12 @@ pub struct DBOptions {
     /// for this mode if using block-based table.
     ///
     /// Default: false
-    pub new_table_reader_for_compaction_inputs: bool,
+    pub fn new_table_reader_for_compaction_inputs(self, val: bool) -> Self {
+        unsafe {
+            ll::rocks_dboptions_set_new_table_reader_for_compaction_inputs(self.raw, val as u8);
+        }
+        self
+    }
 
     /// If non-zero, we perform bigger reads when doing compaction. If you're
     /// running RocksDB on spinning disks, you should set this to at least 2MB.
@@ -1151,7 +1600,12 @@ pub struct DBOptions {
     /// true.
     ///
     /// Default: 0
-    pub compaction_readahead_size: usize,
+    pub fn compaction_readahead_size(self, val: usize) -> Self {
+        unsafe {
+            ll::rocks_dboptions_set_compaction_readahead_size(self.raw, val);
+        }
+        self
+    }
 
     /// This is a maximum buffer size that is used by WinMmapReadableFile in
     /// unbuffered disk I/O mode. We need to maintain an aligned buffer for
@@ -1168,7 +1622,12 @@ pub struct DBOptions {
     ///
     /// Special value: 0 - means do not maintain per instance buffer. Allocate
     ///                per request buffer and avoid locking.
-    pub random_access_max_buffer_size: usize,
+    pub fn random_access_max_buffer_size(self, val: usize) -> Self {
+        unsafe {
+            ll::rocks_dboptions_set_random_access_max_buffer_size(self.raw, val);
+        }
+        self
+    }
 
     /// This is the maximum buffer size that is used by WritableFileWriter.
     /// On Windows, we need to maintain an aligned buffer for writes.
@@ -1177,14 +1636,24 @@ pub struct DBOptions {
     /// write requests if the logical sector size is unusual
     ///
     /// Default: 1024 * 1024 (1 MB)
-    pub writable_file_max_buffer_size: usize,
+    pub fn writable_file_max_buffer_size(self, val: usize) -> Self {
+        unsafe {
+            ll::rocks_dboptions_set_writable_file_max_buffer_size(self.raw, val);
+        }
+        self
+    }
 
     /// Use adaptive mutex, which spins in the user space before resorting
     /// to kernel. This could reduce context switch when the mutex is not
     /// heavily contended. However, if the mutex is hot, we could end up
     /// wasting spin time.
     /// Default: false
-    pub use_adaptive_mutex: bool,
+    pub fn use_adaptive_mutex(self, val: bool) -> Self {
+        unsafe {
+            ll::rocks_dboptions_set_use_adaptive_mutex(self.raw, val as u8);
+        }
+        self
+    }
 
     /// Allows OS to incrementally sync files to disk while they are being
     /// written, asynchronously, in the background. This operation can be used
@@ -1198,21 +1667,42 @@ pub struct DBOptions {
     /// to 1MB.
     ///
     /// This option applies to table files
-    pub bytes_per_sync: u64,
+    pub fn bytes_per_sync(self, val: u64) -> Self {
+        unsafe {
+            ll::rocks_dboptions_set_bytes_per_sync(self.raw, val);
+        }
+        self
+    }
 
     /// Same as bytes_per_sync, but applies to WAL files
     /// Default: 0, turned off
-    pub wal_bytes_per_sync: u64,
+    pub fn wal_bytes_per_sync(self, val: u64) -> Self {
+        unsafe {
+            ll::rocks_dboptions_set_wal_bytes_per_sync(self.raw, val);
+        }
+        self
+    }
 
     /// A vector of EventListeners which call-back functions will be called
     /// when specific RocksDB event happens.
-    pub listeners: Vec<EventListener>,
+    pub fn listeners(self, val: Vec<EventListener>) -> Self {
+        // unsafe {
+        //     ll::rocks_dboptions_set_listeners(self.raw, val);
+        // }
+        // self
+        unimplemented!()
+    }
 
     /// If true, then the status of the threads involved in this DB will
     /// be tracked and available via GetThreadList() API.
     ///
     /// Default: false
-    pub enable_thread_tracking: bool,
+    pub fn enable_thread_tracking(self, val: bool) -> Self {
+        unsafe {
+            ll::rocks_dboptions_set_enable_thread_tracking(self.raw, val as u8);
+        }
+        self
+    }
 
     /// The limited write rate to DB if soft_pending_compaction_bytes_limit or
     /// level0_slowdown_writes_trigger is triggered, or we are writing to the
@@ -1223,7 +1713,12 @@ pub struct DBOptions {
     /// Unit: byte per second.
     ///
     /// Default: 16MB/s
-    pub delayed_write_rate: u64,
+    pub fn delayed_write_rate(self, val: u64) -> Self {
+        unsafe {
+            ll::rocks_dboptions_set_delayed_write_rate(self.raw, val);
+        }
+        self
+    }
 
     /// If true, allow multi-writers to update mem tables in parallel.
     /// Only some memtable_factory-s support concurrent writes; currently it
@@ -1233,7 +1728,12 @@ pub struct DBOptions {
     /// if you are going to use this feature.
     ///
     /// Default: true
-    pub allow_concurrent_memtable_write: bool,
+    pub fn allow_concurrent_memtable_write(self, val: bool) -> Self {
+        unsafe {
+            ll::rocks_dboptions_set_allow_concurrent_memtable_write(self.raw, val as u8);
+        }
+        self
+    }
 
     /// If true, threads synchronizing with the write batch group leader will
     /// wait for up to write_thread_max_yield_usec before blocking on a mutex.
@@ -1241,7 +1741,12 @@ pub struct DBOptions {
     /// regardless of whether allow_concurrent_memtable_write is enabled.
     ///
     /// Default: true
-    pub enable_write_thread_adaptive_yield: bool,
+    pub fn enable_write_thread_adaptive_yield(self, val: bool) -> Self {
+        unsafe {
+            ll::rocks_dboptions_set_enable_write_thread_adaptive_yield(self.raw, val as u8);
+        }
+        self
+    }
 
     /// The maximum number of microseconds that a write operation will use
     /// a yielding spin loop to coordinate with other write threads before
@@ -1250,7 +1755,12 @@ pub struct DBOptions {
     /// throughput at the expense of increased CPU usage.
     ///
     /// Default: 100
-    pub write_thread_max_yield_usec: u64,
+    pub fn write_thread_max_yield_usec(self, val: u64) -> Self {
+        unsafe {
+            ll::rocks_dboptions_set_write_thread_max_yield_usec(self.raw, val);
+        }
+        self
+    }
 
     /// The latency in microseconds after which a std::this_thread::yield
     /// call (sched_yield on Linux) is considered to be a signal that
@@ -1260,7 +1770,12 @@ pub struct DBOptions {
     /// involuntary context switches.
     ///
     /// Default: 3
-    pub write_thread_slow_yield_usec: u64,
+    pub fn write_thread_slow_yield_usec(self, val: u64) -> Self {
+        unsafe {
+            ll::rocks_dboptions_set_write_thread_slow_yield_usec(self.raw, val);
+        }
+        self
+    }
 
     /// If true, then DB::Open() will not update the statistics used to optimize
     /// compaction decision by loading table properties from many files.
@@ -1268,20 +1783,44 @@ pub struct DBOptions {
     /// disk environment.
     ///
     /// Default: false
-    pub skip_stats_update_on_db_open: bool,
+    pub fn skip_stats_update_on_db_open(self, val: bool) -> Self {
+        unsafe {
+            ll::rocks_dboptions_set_skip_stats_update_on_db_open(self.raw, val as u8);
+        }
+        self
+    }
 
     /// Recovery mode to control the consistency while replaying WAL
     /// Default: kPointInTimeRecovery
-    pub wal_recovery_mode: WALRecoveryMode,
+    pub fn wal_recovery_mode(self, val: WALRecoveryMode) -> Self {
+        unsafe {
+            ll::rocks_dboptions_set_wal_recovery_mode(self.raw, mem::transmute(val));
+        }
+        self
+    }
 
     /// if set to false then recovery will fail when a prepared
     /// transaction is encountered in the WAL
-    pub allow_2pc: bool,
+    pub fn allow_2pc(self, val: bool) -> Self {
+        unsafe {
+            ll::rocks_dboptions_set_allow_2pc(self.raw, val as u8);
+        }
+        self
+    }
 
     /// A global cache for table-level rows.
     /// Default: nullptr (disabled)
     /// Not supported in ROCKSDB_LITE mode!
-    pub row_cache: Option<Cache>,
+    pub fn row_cache(self, val: Option<Cache>) -> Self {
+        unsafe {
+            if let Some(cache) = val {
+                ll::rocks_dboptions_set_row_cache(self.raw, cache.raw());
+            } else {
+                ll::rocks_dboptions_set_row_cache(self.raw, ptr::null_mut());
+            }
+        }
+        self
+    }
 
     // #ifndef ROCKSDB_LITE
     // /// A filter object supplied to be invoked while processing write-ahead-logs
@@ -1296,12 +1835,22 @@ pub struct DBOptions {
     /// persisted.
     ///
     /// DEFAULT: false
-    pub fail_if_options_file_error: bool,
+    pub fn fail_if_options_file_error(self, val: bool) -> Self {
+        unsafe {
+            ll::rocks_dboptions_set_fail_if_options_file_error(self.raw, val as u8);
+        }
+        self
+    }
 
     /// If true, then print malloc stats together with rocksdb.stats
     /// when printing to LOG.
     /// DEFAULT: false
-    pub dump_malloc_stats: bool,
+    pub fn dump_malloc_stats(self, val: bool) -> Self {
+        unsafe {
+            ll::rocks_dboptions_set_dump_malloc_stats(self.raw, val as u8);
+        }
+        self
+    }
 
     /// By default RocksDB replay WAL logs and flush them on DB open, which may
     /// create very small SST files. If this option is enabled, RocksDB will try
@@ -1310,7 +1859,12 @@ pub struct DBOptions {
     /// have logs to recover from.
     ///
     /// DEFAULT: false
-    pub avoid_flush_during_recovery: bool,
+    pub fn avoid_flush_during_recovery(self, val: bool) -> Self {
+        unsafe {
+            ll::rocks_dboptions_set_avoid_flush_during_recovery(self.raw, val as u8);
+        }
+        self
+    }
 
     /// By default RocksDB will flush all memtables on DB close if there are
     /// unpersisted data (i.e. with WAL disabled) The flush can be skip to speedup
@@ -1319,90 +1873,79 @@ pub struct DBOptions {
     /// DEFAULT: false
     ///
     /// Dynamically changeable through SetDBOptions() API.
-    pub avoid_flush_during_shutdown: bool,
+    pub fn avoid_flush_during_shutdown(self, val: bool) -> Self {
+        unsafe {
+            ll::rocks_dboptions_set_avoid_flush_during_shutdown(self.raw, val as u8);
+        }
+        self
+    }
 }
 
 impl Default for DBOptions {
     fn default() -> Self {
+        println!("drop DBOPtions");
         DBOptions {
-            create_if_missing: false,
-            create_missing_column_families: false,
-            error_if_exists: false,
-            paranoid_checks: true,
-            // env: Env::Default(),
-            rate_limiter: None,
-            sst_file_manager: None,
-            info_log: None,
-            info_log_level: InfoLogLevel::Info,
-            max_open_files: -1,
-            max_file_opening_threads: 16,
-            max_total_wal_size: 0,
-            statistics: None,
-            use_fsync: false,
-            db_paths: Vec::new(),
-            db_log_dir: "".to_string(),
-            wal_dir: "".to_string(),
-            delete_obsolete_files_period_micros: 6 * 60 * 60 * 1000000,
-            base_background_compactions: 1,
-            max_background_compactions: 1,
-            max_subcompactions: 1,
-            max_background_flushes: 1,
-            max_log_file_size: 0,
-            log_file_time_to_roll: 0,
-            keep_log_file_num: 1000,
-            recycle_log_file_num: 0,
-            max_manifest_file_size: u64::MAX,
-            table_cache_numshardbits: 6,
-            wal_ttl_seconds: 0,
-            wal_size_limit_mb: 0,
-            manifest_preallocation_size: 4 * 1024 * 1024,
-            allow_mmap_reads: false,
-            allow_mmap_writes: false,
-            use_direct_reads: false,
-            use_direct_io_for_flush_and_compaction: false,
-            allow_fallocate: true,
-            is_fd_close_on_exec: true,
-            skip_log_error_on_recovery: false,
-            stats_dump_period_sec: 600,
-            advise_random_on_open: true,
-            db_write_buffer_size: 0,
-            write_buffer_manager: None,
-            access_hint_on_compaction_start: AccessHint::Normal,
-            new_table_reader_for_compaction_inputs: false,
-            compaction_readahead_size: 0,
-            random_access_max_buffer_size: 1024 * 1024,
-            writable_file_max_buffer_size: 1024 * 1024,
-            use_adaptive_mutex: false,
-            bytes_per_sync: 0,
-            wal_bytes_per_sync: 0,
-            listeners: Vec::new(),
-            enable_thread_tracking: false,
-            delayed_write_rate: 16 * 1024 * 1024,
-            allow_concurrent_memtable_write: true,
-            enable_write_thread_adaptive_yield: true,
-            write_thread_max_yield_usec: 100,
-            write_thread_slow_yield_usec: 3,
-            skip_stats_update_on_db_open: false,
-            wal_recovery_mode: WALRecoveryMode::PointInTimeRecovery,
-            allow_2pc: false,
-            row_cache: None,
-            // wal_filter: None,
-            fail_if_options_file_error: false,
-            dump_malloc_stats: false,
-            avoid_flush_during_recovery: false,
-            avoid_flush_during_shutdown: false,
+            raw: unsafe { ll::rocks_dboptions_create() },
         }
     }
 }
 
 /// Options to control the behavior of a database (passed to DB::Open)
 pub struct Options {
-    pub db: DBOptions,
-    pub cf: ColumnFamilyOptions,
+    raw: *mut ll::rocks_options_t,
+    // private, once moved in, never changes
+    // db: DBOptions,
+    // cf: ColumnFamilyOptions,
 }
 
 impl Options {
     // Some functions that make it easier to optimize RocksDB
+
+    // FIXME: ugly but works
+    pub fn raw(&self) -> *mut ll::rocks_options_t {
+        self.raw
+    }
+
+    pub unsafe fn from_ll(raw: *mut ll::rocks_options_t) -> Options {
+        Options {
+            raw: raw,
+        }
+    }
+
+    pub fn new(dbopt: Option<DBOptions>, cfopt: Option<ColumnFamilyOptions>) -> Options {
+        let dbopt = dbopt.unwrap_or_default();
+        let cfopt = cfopt.unwrap_or_default();
+        Options {
+            raw: unsafe { ll::rocks_options_create_from_db_cf_options(dbopt.raw(), cfopt.raw()) },
+        }
+    }
+
+    pub fn map_db_options<F: FnOnce(DBOptions) -> DBOptions>(self, f: F) -> Self {
+        let dbopt = unsafe { DBOptions::from_ll(ll::rocks_dboptions_create_from_options(self.raw)) };
+        let new_dbopt = f(dbopt);
+        let old_cfopt = unsafe { ColumnFamilyOptions::from_ll(ll::rocks_cfoptions_create_from_options(self.raw)) };
+        let new_opt = unsafe {
+            Options::from_ll(ll::rocks_options_create_from_db_cf_options(
+                new_dbopt.raw(),
+                old_cfopt.raw(), // self.raw() as _,
+            ))
+        };
+        new_opt
+    }
+
+    pub fn map_cf_options<F: FnOnce(ColumnFamilyOptions) -> ColumnFamilyOptions>(self, f: F) -> Self {
+        let cfopts = unsafe { ColumnFamilyOptions::from_ll(ll::rocks_cfoptions_create_from_options(self.raw)) };
+        let new_cfopts = f(cfopts);
+        // let cfopts = unsafe { ll::rocks_cfoptions_create_from_options(self.raw) };
+        let new_opts = unsafe {
+            Options::from_ll(ll::rocks_options_create_from_db_cf_options(
+                self.raw() as _,
+                new_cfopts.raw(),
+            ))
+        };
+        new_opts
+    }
+
 
     /// Set appropriate parameters for bulk loading.
     /// The reason that this is a function that returns "this" instead of a
@@ -1412,32 +1955,43 @@ impl Options {
     /// All data will be in level 0 without any automatic compaction.
     /// It's recommended to manually call CompactRange(NULL, NULL) before reading
     /// from the database, because otherwise the read can be very slow.
-    pub fn prepare_for_bulk_load(&mut self) -> &mut Self {
-        unimplemented!()
+    pub fn prepare_for_bulk_load(self) -> Self {
+        unsafe { ll::rocks_options_prepare_for_bulk_load(self.raw) };
+        self
     }
 
     /// Use this if your DB is very small (like under 1GB) and you don't want to
     /// spend lots of memory for memtables.
-    pub fn optimize_for_small_db(&mut self) -> &mut Self {
-        unimplemented!()
+    pub fn optimize_for_small_db(self) -> Self {
+        unsafe { ll::rocks_options_optimize_for_small_db(self.raw) };
+        self
     }
 }
 
 impl Default for Options {
     fn default() -> Self {
         Options {
-            db: DBOptions::default(),
-            cf: ColumnFamilyOptions::default(),
+            raw: unsafe { ll::rocks_options_create() },
         }
     }
 }
 
+impl Drop for Options {
+    fn drop(&mut self) {
+        unsafe {
+            ll::rocks_options_destroy(self.raw);
+        }
+    }
+}
+
+/*
 impl Deref for Options {
     type Target = DBOptions;
      fn deref(&self) -> &Self::Target {
         &self.db
     }
 }
+*/
 
 /*
 impl Deref for Options {
@@ -1452,7 +2006,7 @@ impl Deref for Options {
 fn test_options_deref_as_dboptions() {
     let opt = Options::default();
     // can be used as dboptions
-    assert_eq!(opt.use_direct_reads, false);
+    // assert_eq!(opt.use_direct_reads, false);
 }
 
 /// An application can issue a read request (via Get/Iterators) and specify

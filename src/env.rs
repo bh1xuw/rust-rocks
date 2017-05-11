@@ -6,6 +6,9 @@
 //! All Env implementations are safe for concurrent access from
 //! multiple threads without any external synchronization.
 
+
+use rocks_sys as ll;
+
 use rate_limiter::RateLimiter;
 
 
@@ -91,7 +94,28 @@ pub enum InfoLogLevel {
 }
 
 
-pub struct Logger;
+pub struct Logger {
+    raw: *mut ll::rocks_logger_t,
+}
 
+impl Logger {
+    pub unsafe fn from_ll(raw: *mut ll::rocks_logger_t) -> Logger {
+        Logger {
+            raw: raw,
+        }
+    }
+
+    pub fn raw(&self) -> *mut ll::rocks_logger_t {
+        self.raw
+    }
+}
+
+impl Drop for Logger {
+    fn drop(&mut self) {
+        unsafe {
+            ll::rocks_logger_destroy(self.raw);
+        }
+    }
+}
 
 pub struct Env;

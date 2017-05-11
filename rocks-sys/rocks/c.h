@@ -70,11 +70,11 @@ extern "C" {
 
   rocks_options_t* rocks_options_create_from_db_cf_options(rocks_dboptions_t* dbopt, rocks_cfoptions_t* cfopt);
 
-  rocks_cfoptions_t* rocks_options_createfrom_cfoptions(rocks_options_t* options);
+  rocks_dboptions_t* rocks_dboptions_create_from_options(rocks_options_t* options);
 
-  rocks_dboptions_t* rocks_options_create_from_dboptions(rocks_options_t* options);
+  rocks_cfoptions_t* rocks_cfoptions_create_from_options(rocks_options_t* options);
 
-    // cfoptions
+  // cfoptions
 
   void rocks_cfoptions_optimize_for_small_db(rocks_cfoptions_t* opt);
 
@@ -100,9 +100,11 @@ extern "C" {
 
   void rocks_cfoptions_set_compression(rocks_cfoptions_t* opt, int t);
 
+  void rocks_cfoptions_set_bottommost_compression(rocks_cfoptions_t* opt, int t);
+
   void rocks_cfoptions_set_compression_options(rocks_cfoptions_t* opt, int w_bits,
                                                int level, int strategy,
-                                               int max_dict_bytes);
+                                               uint32_t max_dict_bytes);
 
   void rocks_cfoptions_set_level0_file_num_compaction_trigger(rocks_cfoptions_t* opt, int n);
 
@@ -113,7 +115,7 @@ extern "C" {
 
   void rocks_cfoptions_set_max_bytes_for_level_base(rocks_cfoptions_t* opt, uint64_t n);
 
-  void rocks_cfoptions_set_disable_auto_compactions(rocks_cfoptions_t* opt, int disable);
+  void rocks_cfoptions_set_disable_auto_compactions(rocks_cfoptions_t* opt, unsigned char disable);
 
   // rocks_cfoptions_set_table_factory()
   // table_factory
@@ -146,7 +148,7 @@ extern "C" {
   void rocks_cfoptions_set_arena_block_size(rocks_cfoptions_t* opt, size_t v);
 
   void rocks_cfoptions_set_compression_per_level(rocks_cfoptions_t* opt,
-                                                 int* level_values,
+                                                 const int* level_values,
                                                  size_t num_levels);
 
   void rocks_cfoptions_set_num_levels(rocks_cfoptions_t* opt, int n);
@@ -169,9 +171,9 @@ extern "C" {
   void rocks_cfoptions_set_max_compaction_bytes(rocks_cfoptions_t* opt,
                                                 uint64_t n);
 
-  void rocks_cfoptions_set_soft_pending_compaction_bytes_limit(rocks_cfoptions_t* opt, size_t v);
+  void rocks_cfoptions_set_soft_pending_compaction_bytes_limit(rocks_cfoptions_t* opt, uint64_t v);
 
-  void rocks_cfoptions_set_hard_pending_compaction_bytes_limit(rocks_cfoptions_t* opt, size_t v);
+  void rocks_cfoptions_set_hard_pending_compaction_bytes_limit(rocks_cfoptions_t* opt, uint64_t v);
 
   void rocks_cfoptions_set_compaction_style(rocks_cfoptions_t *opt, int style);
 
@@ -207,13 +209,13 @@ extern "C" {
 
   void rocks_cfoptions_set_max_successive_merges(rocks_cfoptions_t* opt, size_t v);
 
-  void rocks_cfoptions_set_optimize_filters_for_hits(rocks_cfoptions_t* opt, int v);
+  void rocks_cfoptions_set_optimize_filters_for_hits(rocks_cfoptions_t* opt, unsigned char v);
 
   void rocks_cfoptions_set_paranoid_file_checks(rocks_cfoptions_t* opt, unsigned char v);
 
   void rocks_cfoptions_set_force_consistency_checks(rocks_cfoptions_t* opt, unsigned char v);
 
-  void rocks_cfoptions_set_report_bg_io_stats(rocks_cfoptions_t* opt, int v);
+  void rocks_cfoptions_set_report_bg_io_stats(rocks_cfoptions_t* opt, unsigned char v);
 
   // dboptions
 
@@ -250,7 +252,7 @@ extern "C" {
 
   void rocks_dboptions_enable_statistics(rocks_dboptions_t* opt);
 
-  void rocks_dboptions_set_use_fsync(rocks_dboptions_t* opt, int use_fsync);
+  void rocks_dboptions_set_use_fsync(rocks_dboptions_t* opt, unsigned char use_fsync);
 
   // db_paths
   // void rocks_dboptions_set_db_paths(rocks_dboptions_t* opt, rocks_dbpath_t* paths, int size_t);
@@ -277,15 +279,17 @@ extern "C" {
 
   void rocks_dboptions_set_recycle_log_file_num(rocks_dboptions_t* opt, size_t v);
 
-  void rocks_dboptions_set_max_manifest_file_size(rocks_dboptions_t* opt, size_t v);
+  void rocks_dboptions_set_max_manifest_file_size(rocks_dboptions_t* opt, uint64_t v);
 
   void rocks_dboptions_set_table_cache_numshardbits(rocks_dboptions_t* opt, int v);
 
-  void rocks_dboptions_set_WAL_ttl_seconds(rocks_dboptions_t* opt, uint64_t ttl);
+  void rocks_dboptions_set_wal_ttl_seconds(rocks_dboptions_t* opt, uint64_t ttl);
 
-  void rocks_dboptions_set_WAL_size_limit_MB(rocks_dboptions_t* opt, uint64_t limit);
+  void rocks_dboptions_set_wal_size_limit_mb(rocks_dboptions_t* opt, uint64_t limit);
 
   void rocks_dboptions_set_manifest_preallocation_size(rocks_dboptions_t* opt, size_t v);
+
+  void rocks_dboptions_set_allow_mmap_reads(rocks_dboptions_t* opt, unsigned char v);
 
   void rocks_dboptions_set_allow_mmap_writes(rocks_dboptions_t* opt, unsigned char v);
 
@@ -312,7 +316,7 @@ extern "C" {
 
   void rocks_dboptions_set_new_table_reader_for_compaction_inputs(
                                                rocks_dboptions_t* opt, unsigned char v);
-  void rocks_dboptions_compaction_readahead_size(
+  void rocks_dboptions_set_compaction_readahead_size(
                                                rocks_dboptions_t* opt, size_t s);
   void rocks_dboptions_set_random_access_max_buffer_size(rocks_dboptions_t* opt,
                                               size_t s);
@@ -365,8 +369,7 @@ extern "C" {
 
   void rocks_options_prepare_for_bulk_load(rocks_options_t* opt);
 
-
-  void rocks_options_optimize_for_small_db(rocks_dboptions_t* opt);
+  void rocks_options_optimize_for_small_db(rocks_options_t* opt);
 
   /*
     char *rocks_options_statistics_get_string(rocks_options_t *opt) {
@@ -596,7 +599,7 @@ extern "C" {
                         const rocks_options_t* options,
                         const char* name,
                         rocks_status_t* status);
-  
+
   void rocks_repair_db(
                        const rocks_options_t* options,
                        const char* name,

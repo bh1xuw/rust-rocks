@@ -5,9 +5,8 @@ use std::ffi::{CStr, CString};
 use rocks_sys as ll;
 
 use status::Status;
-use options::ColumnFamilyOptions;
 use comparator::Comparator;
-use options::Options;
+use options::{Options, DBOptions, ColumnFamilyOptions};
 use table_properties::TableProperties;
 
 const DEFAULT_COLUMN_FAMILY_NAME: &'static str = "default";
@@ -85,6 +84,7 @@ impl<'a> Range<'a> {
 /// A DB is a persistent ordered map from keys to values.
 /// A DB is safe for concurrent access from multiple threads without
 /// any external synchronization.
+#[derive(Debug)]
 pub struct DB {
     raw: *mut ll::rocks_db_t,
 }
@@ -97,7 +97,7 @@ impl DB {
     /// Caller should delete *dbptr when it is no longer needed.
     pub fn open(options: &Options, name: &str) -> Result<DB, Status> {
         unsafe {
-            let opt = ll::rocks_options_create();
+            let opt = options.raw();
             let dbname = CString::new(name).unwrap();
             let mut status = mem::uninitialized::<ll::rocks_status_t>();
             let db_ptr = ll::rocks_db_open(opt, dbname.as_ptr(), &mut status);
@@ -111,13 +111,13 @@ impl DB {
         }
     }
 
-    // Open the database for read only. All DB interfaces
-    // that modify data, like put/delete, will return error.
-    // If the db is opened in read only mode, then no compactions
-    // will happen.
-    //
-    // Not supported in ROCKSDB_LITE, in which case the function will
-    // return Status::NotSupported.
+    /// Open the database for read only. All DB interfaces
+    /// that modify data, like put/delete, will return error.
+    /// If the db is opened in read only mode, then no compactions
+    /// will happen.
+    ///
+    /// Not supported in ROCKSDB_LITE, in which case the function will
+    /// return Status::NotSupported.
     pub fn open_for_readonly(options: &Options, name: &str) -> Result<DB, Status> {
         unimplemented!()
     }
@@ -135,7 +135,14 @@ impl Drop for DB {
 
 #[test]
 fn it_works() {
-    let db = DB::open(&Options::default(), "./default");
+    // let dbopt = DBOptions::default()
+    //     .create_if_missing(true);
+    // let mut opt = Options::new(Some(dbopt), None);
+    let opt = Options::default()
+        .map_db_options(|db| {
+            db.create_if_missing(true)
+        })
+        .optimize_for_small_db();
+    let db = DB::open(&opt, "./default");
     assert!(db.is_ok());
-
 }

@@ -1,6 +1,7 @@
 
 use std::fmt;
 use std::mem;
+use std::ffi::CStr;
 
 use rocks_sys as ll;
 
@@ -55,15 +56,15 @@ impl Status {
     }
 
     pub fn from_raw(st: &ll::rocks_status_t) -> Status {
-        unsafe 
-        {
+        unsafe {
             Status {
-            code: mem::transmute(st.code),
-            subcode: mem::transmute(st.sub_code),
-            status: "fuck".into(),
+                code: mem::transmute(st.code),
+                subcode: mem::transmute(st.sub_code),
+                status: CStr::from_ptr(st.state).to_str().map(|s| s.to_owned()).unwrap_or_default()
             }
         }
     }
+    
     // Return a success status.
     // pub fn Ok() -> Status {
     // Status::new()
