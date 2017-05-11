@@ -1924,26 +1924,24 @@ impl Options {
         let dbopt = unsafe { DBOptions::from_ll(ll::rocks_dboptions_create_from_options(self.raw)) };
         let new_dbopt = f(dbopt);
         let old_cfopt = unsafe { ColumnFamilyOptions::from_ll(ll::rocks_cfoptions_create_from_options(self.raw)) };
-        let new_opt = unsafe {
+        unsafe {
             Options::from_ll(ll::rocks_options_create_from_db_cf_options(
                 new_dbopt.raw(),
-                old_cfopt.raw(), // self.raw() as _,
+                old_cfopt.raw(),
             ))
-        };
-        new_opt
+        }
     }
 
     pub fn map_cf_options<F: FnOnce(ColumnFamilyOptions) -> ColumnFamilyOptions>(self, f: F) -> Self {
-        let cfopts = unsafe { ColumnFamilyOptions::from_ll(ll::rocks_cfoptions_create_from_options(self.raw)) };
-        let new_cfopts = f(cfopts);
-        // let cfopts = unsafe { ll::rocks_cfoptions_create_from_options(self.raw) };
-        let new_opts = unsafe {
+        let cfopt = unsafe { ColumnFamilyOptions::from_ll(ll::rocks_cfoptions_create_from_options(self.raw)) };
+        let new_cfopt = f(cfopt);
+        let old_dbopt = unsafe { DBOptions::from_ll(ll::rocks_dboptions_create_from_options(self.raw)) };
+        unsafe {
             Options::from_ll(ll::rocks_options_create_from_db_cf_options(
-                self.raw() as _,
-                new_cfopts.raw(),
+                old_dbopt.raw(),
+                new_cfopt.raw(),
             ))
-        };
-        new_opts
+        }
     }
 
 
