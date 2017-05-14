@@ -262,7 +262,9 @@ extern "C" {
     opt->rep.compaction_style = static_cast<rocksdb::CompactionStyle>(style);
   }
 
-  // compaction_pri
+  void rocks_cfoptions_set_compaction_pri(rocks_cfoptions_t *opt, int pri) {
+    opt->rep.compaction_pri = static_cast<rocksdb::CompactionPri>(pri);
+  }
 
   /*
     void rocks_cfoptions_set_universal_compaction_options(rocks_cfoptions_t *opt, rocks_universal_compaction_options_t *uco) {
@@ -402,9 +404,16 @@ extern "C" {
     opt->rep.use_fsync = use_fsync;
   }
 
-  // db_paths
-  // void rocks_dboptions_set_db_paths(rocks_dboptions_t* opt, rocks_dbpath_t* paths, int size_t) {
-  // }
+  void rocks_dboptions_set_db_paths(rocks_dboptions_t* opt,
+                                    const char* const* paths,
+                                    const uint64_t* target_sizes,
+                                    int size) {
+    std::vector<DbPath> dbpaths;
+    for (int i = 0; i < size; i++) {
+      dbpaths.push_back(DbPath(std::string(paths[i]), target_sizes[i]));
+    }
+    opt->rep.db_paths = dbpaths;
+  }
 
   void rocks_dboptions_set_db_log_dir(rocks_dboptions_t* opt, const char* db_log_dir) {
     opt->rep.db_log_dir = db_log_dir;
@@ -724,6 +733,11 @@ extern "C" {
     opt->rep.tailing = v;
   }
 
+  void rocks_readoptions_set_managed(
+                                     rocks_readoptions_t* opt, unsigned char v) {
+    opt->rep.managed = v;
+  }
+
   void rocks_readoptions_set_readahead_size(
                                             rocks_readoptions_t* opt, size_t v) {
     opt->rep.readahead_size = v;
@@ -737,6 +751,21 @@ extern "C" {
   void rocks_readoptions_set_total_order_seek(rocks_readoptions_t* opt,
                                               unsigned char v) {
     opt->rep.total_order_seek = v;
+  }
+
+  void rocks_readoptions_set_prefix_same_as_start(rocks_readoptions_t* opt,
+                                                  unsigned char v) {
+    opt->rep.prefix_same_as_start = v;
+  }
+
+  void rocks_readoptions_set_ignore_range_deletions(rocks_readoptions_t* opt,
+                                                    unsigned char v) {
+    opt->rep.ignore_range_deletions = v;
+  }
+
+  void rocks_readoptions_set_background_purge_on_iterator_cleanup(rocks_readoptions_t* opt,
+                                                                  unsigned char v) {
+    opt->rep.background_purge_on_iterator_cleanup = v;
   }
 }
 
@@ -754,8 +783,16 @@ extern "C" {
     opt->rep.sync = v;
   }
 
-  void rocks_writeoptions_disable_WAL(rocks_writeoptions_t* opt, int disable) {
-    opt->rep.disableWAL = disable;
+  void rocks_writeoptions_set_disable_wal(rocks_writeoptions_t* opt, unsigned char v) {
+    opt->rep.disableWAL = v;
+  }
+
+  void rocks_writeoptions_set_ignore_missing_column_families(rocks_writeoptions_t* opt, unsigned char v) {
+    opt->rep.ignore_missing_column_families = v;
+  }
+
+  void rocks_writeoptions_set_no_slowdown(rocks_writeoptions_t* opt, unsigned char v) {
+    opt->rep.no_slowdown = v;
   }
 }
 

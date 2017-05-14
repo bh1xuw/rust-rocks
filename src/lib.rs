@@ -2,6 +2,9 @@
 
 extern crate rocks_sys;
 
+#[cfg(test)]
+extern crate tempdir;
+
 pub use status::Status;
 
 pub mod status;

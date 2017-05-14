@@ -231,6 +231,15 @@ pub type __darwin_pthread_t = *mut _opaque_pthread_t;
 pub type intmax_t = ::std::os::raw::c_long;
 pub type uintmax_t = ::std::os::raw::c_ulong;
 #[repr(C)]
+#[derive(Copy)]
+pub struct Slice {
+    pub data_: *const ::std::os::raw::c_char,
+    pub size_: usize,
+}
+impl Clone for Slice {
+    fn clone(&self) -> Self { *self }
+}
+#[repr(C)]
 #[derive(Debug, Copy, Clone)]
 pub struct rocks_column_family_descriptor_t([u8; 0]);
 #[repr(C)]
@@ -528,6 +537,10 @@ extern "C" {
                                                 style: ::std::os::raw::c_int);
 }
 extern "C" {
+    pub fn rocks_cfoptions_set_compaction_pri(opt: *mut rocks_cfoptions_t,
+                                              pri: ::std::os::raw::c_int);
+}
+extern "C" {
     pub fn rocks_cfoptions_set_max_sequential_skip_in_iterations(opt:
                                                                      *mut rocks_cfoptions_t,
                                                                  v: u64);
@@ -636,6 +649,13 @@ extern "C" {
 extern "C" {
     pub fn rocks_dboptions_set_use_fsync(opt: *mut rocks_dboptions_t,
                                          use_fsync: ::std::os::raw::c_uchar);
+}
+extern "C" {
+    pub fn rocks_dboptions_set_db_paths(opt: *mut rocks_dboptions_t,
+                                        paths:
+                                            *const *const ::std::os::raw::c_char,
+                                        target_sizes: *const u64,
+                                        size: ::std::os::raw::c_int);
 }
 extern "C" {
     pub fn rocks_dboptions_set_db_log_dir(opt: *mut rocks_dboptions_t,
@@ -910,6 +930,10 @@ extern "C" {
                                          v: ::std::os::raw::c_uchar);
 }
 extern "C" {
+    pub fn rocks_readoptions_set_managed(opt: *mut rocks_readoptions_t,
+                                         v: ::std::os::raw::c_uchar);
+}
+extern "C" {
     pub fn rocks_readoptions_set_readahead_size(opt: *mut rocks_readoptions_t,
                                                 v: usize);
 }
@@ -923,6 +947,24 @@ extern "C" {
                                                   v: ::std::os::raw::c_uchar);
 }
 extern "C" {
+    pub fn rocks_readoptions_set_prefix_same_as_start(opt:
+                                                          *mut rocks_readoptions_t,
+                                                      v:
+                                                          ::std::os::raw::c_uchar);
+}
+extern "C" {
+    pub fn rocks_readoptions_set_ignore_range_deletions(opt:
+                                                            *mut rocks_readoptions_t,
+                                                        v:
+                                                            ::std::os::raw::c_uchar);
+}
+extern "C" {
+    pub fn rocks_readoptions_set_background_purge_on_iterator_cleanup(opt:
+                                                                          *mut rocks_readoptions_t,
+                                                                      v:
+                                                                          ::std::os::raw::c_uchar);
+}
+extern "C" {
     pub fn rocks_writeoptions_create() -> *mut rocks_writeoptions_t;
 }
 extern "C" {
@@ -933,8 +975,18 @@ extern "C" {
                                        v: ::std::os::raw::c_uchar);
 }
 extern "C" {
-    pub fn rocks_writeoptions_disable_WAL(opt: *mut rocks_writeoptions_t,
-                                          disable: ::std::os::raw::c_int);
+    pub fn rocks_writeoptions_set_disable_wal(opt: *mut rocks_writeoptions_t,
+                                              v: ::std::os::raw::c_uchar);
+}
+extern "C" {
+    pub fn rocks_writeoptions_set_ignore_missing_column_families(opt:
+                                                                     *mut rocks_writeoptions_t,
+                                                                 v:
+                                                                     ::std::os::raw::c_uchar);
+}
+extern "C" {
+    pub fn rocks_writeoptions_set_no_slowdown(opt: *mut rocks_writeoptions_t,
+                                              v: ::std::os::raw::c_uchar);
 }
 extern "C" {
     pub fn rocks_create_logger_from_options(path:
@@ -942,6 +994,16 @@ extern "C" {
                                             opts: *mut rocks_options_t,
                                             status: *mut rocks_status_t)
      -> *mut rocks_logger_t;
+}
+extern "C" {
+    pub fn rocks_column_family_handle_get_name(handle:
+                                                   *const rocks_column_family_handle_t)
+     -> *const ::std::os::raw::c_char;
+}
+extern "C" {
+    pub fn rocks_column_family_handle_get_id(handle:
+                                                 *const rocks_column_family_handle_t)
+     -> u32;
 }
 extern "C" {
     pub fn rocks_db_open(options: *const rocks_options_t,
@@ -965,9 +1027,9 @@ extern "C" {
                                          num_column_families:
                                              ::std::os::raw::c_int,
                                          column_family_names:
-                                             *mut *const ::std::os::raw::c_char,
+                                             *const *const ::std::os::raw::c_char,
                                          column_family_options:
-                                             *mut *const rocks_options_t,
+                                             *const *const rocks_cfoptions_t,
                                          column_family_handles:
                                              *mut *mut rocks_column_family_handle_t,
                                          status: *mut rocks_status_t)
@@ -983,7 +1045,7 @@ extern "C" {
                                                        column_family_names:
                                                            *mut *const ::std::os::raw::c_char,
                                                        column_family_options:
-                                                           *mut *const rocks_options_t,
+                                                           *mut *const rocks_cfoptions_t,
                                                        column_family_handles:
                                                            *mut *mut rocks_column_family_handle_t,
                                                        error_if_log_file_exist:
@@ -1007,7 +1069,7 @@ extern "C" {
 extern "C" {
     pub fn rocks_db_create_column_family(db: *mut rocks_db_t,
                                          column_family_options:
-                                             *const rocks_options_t,
+                                             *const rocks_cfoptions_t,
                                          column_family_name:
                                              *const ::std::os::raw::c_char,
                                          status: *mut rocks_status_t)
@@ -1018,6 +1080,12 @@ extern "C" {
                                        handle:
                                            *mut rocks_column_family_handle_t,
                                        status: *mut rocks_status_t);
+}
+extern "C" {
+    pub fn rocks_db_destroy_column_family_handle(db: *mut rocks_db_t,
+                                                 handle:
+                                                     *mut rocks_column_family_handle_t,
+                                                 status: *mut rocks_status_t);
 }
 extern "C" {
     pub fn rocks_column_family_handle_destroy(handle:
@@ -1438,6 +1506,9 @@ extern "C" {
 extern "C" {
     pub fn rocks_cache_name(cache: *mut rocks_cache_t)
      -> *const ::std::os::raw::c_char;
+}
+extern "C" {
+    pub fn free(p: *mut ::std::os::raw::c_void);
 }
 #[repr(C)]
 #[derive(Copy)]

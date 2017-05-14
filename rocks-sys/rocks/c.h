@@ -7,6 +7,12 @@ extern "C" {
 #include <stddef.h>
 #include <stdint.h>
 
+  /* slice is the same in rocksdb & rust */
+  typedef struct Slice {
+    const char* data_;
+    size_t size_;
+  } Slice;
+
   /* db.h */
   typedef struct rocks_column_family_descriptor_t rocks_column_family_descriptor_t ;
   typedef struct rocks_column_family_handle_t     rocks_column_family_handle_t     ;
@@ -177,7 +183,7 @@ extern "C" {
 
   void rocks_cfoptions_set_compaction_style(rocks_cfoptions_t *opt, int style);
 
-  // compaction_pri
+  void rocks_cfoptions_set_compaction_pri(rocks_cfoptions_t *opt, int pri);
 
   /*
     void rocks_cfoptions_set_universal_compaction_options(rocks_cfoptions_t *opt,
@@ -254,8 +260,10 @@ extern "C" {
 
   void rocks_dboptions_set_use_fsync(rocks_dboptions_t* opt, unsigned char use_fsync);
 
-  // db_paths
-  // void rocks_dboptions_set_db_paths(rocks_dboptions_t* opt, rocks_dbpath_t* paths, int size_t);
+  void rocks_dboptions_set_db_paths(rocks_dboptions_t* opt,
+                                    const char* const* paths,
+                                    const uint64_t* target_sizes,
+                                    int size);
 
   void rocks_dboptions_set_db_log_dir(rocks_dboptions_t* opt, const char* db_log_dir);
 
@@ -409,6 +417,10 @@ extern "C" {
   void rocks_readoptions_set_tailing(
                                      rocks_readoptions_t* opt, unsigned char v);
 
+  void rocks_readoptions_set_managed(
+                                     rocks_readoptions_t* opt, unsigned char v);
+
+
   void rocks_readoptions_set_readahead_size(
                                             rocks_readoptions_t* opt, size_t v);
 
@@ -418,7 +430,16 @@ extern "C" {
   void rocks_readoptions_set_total_order_seek(rocks_readoptions_t* opt,
                                               unsigned char v);
 
-  /* writeoptions */
+  void rocks_readoptions_set_prefix_same_as_start(rocks_readoptions_t* opt,
+                                                  unsigned char v);
+
+  void rocks_readoptions_set_ignore_range_deletions(rocks_readoptions_t* opt,
+                                                    unsigned char v);
+
+  void rocks_readoptions_set_background_purge_on_iterator_cleanup(rocks_readoptions_t* opt,
+                                                                  unsigned char v);
+
+  /* > writeoptions */
   rocks_writeoptions_t* rocks_writeoptions_create();
 
   void rocks_writeoptions_destroy(rocks_writeoptions_t* opt);
@@ -426,16 +447,26 @@ extern "C" {
   void rocks_writeoptions_set_sync(
                                    rocks_writeoptions_t* opt, unsigned char v);
 
-  void rocks_writeoptions_disable_WAL(rocks_writeoptions_t* opt, int disable);
+  void rocks_writeoptions_set_disable_wal(rocks_writeoptions_t* opt, unsigned char v);
 
+  void rocks_writeoptions_set_ignore_missing_column_families(rocks_writeoptions_t* opt, unsigned char v);
+
+  void rocks_writeoptions_set_no_slowdown(rocks_writeoptions_t* opt, unsigned char v);
+
+  /* > misc */
   rocks_logger_t *rocks_create_logger_from_options(const char *path,
                                                    rocks_options_t *opts,
                                                    rocks_status_t *status);
 
 
-
-
   /* db.h */
+
+  /* > rocks_column_family_handle_t */
+  const char* rocks_column_family_handle_get_name(const rocks_column_family_handle_t* handle);
+
+  uint32_t rocks_column_family_handle_get_id(const rocks_column_family_handle_t* handle);
+
+  /* > rocks_db_t */
   rocks_db_t* rocks_db_open(
                             const rocks_options_t* options,
                             const char* name,
@@ -453,8 +484,8 @@ extern "C" {
                                             const rocks_options_t* db_options,
                                             const char* name,
                                             int num_column_families,
-                                            const char** column_family_names,
-                                            const rocks_options_t** column_family_options,
+                                            const char* const* column_family_names,
+                                            const rocks_cfoptions_t* const* column_family_options,
                                             rocks_column_family_handle_t** column_family_handles,
                                             rocks_status_t *status);
 
@@ -463,7 +494,7 @@ extern "C" {
                                                           const char* name,
                                                           int num_column_families,
                                                           const char** column_family_names,
-                                                          const rocks_options_t** column_family_options,
+                                                          const rocks_cfoptions_t** column_family_options,
                                                           rocks_column_family_handle_t** column_family_handles,
                                                           unsigned char error_if_log_file_exist,
                                                           rocks_status_t *status);
@@ -478,7 +509,7 @@ extern "C" {
 
   rocks_column_family_handle_t* rocks_db_create_column_family(
                                                                  rocks_db_t* db,
-                                                                 const rocks_options_t* column_family_options,
+                                                                 const rocks_cfoptions_t* column_family_options,
                                                                  const char* column_family_name,
                                                                  rocks_status_t* status);
 
@@ -487,11 +518,12 @@ extern "C" {
                                    rocks_column_family_handle_t* handle,
                                    rocks_status_t* status);
 
-  /* sans `db` for dtor` */
+  /* FIXME: when to use? */
+  void rocks_db_destroy_column_family_handle(rocks_db_t* db,
+                                          rocks_column_family_handle_t* handle,
+                                          rocks_status_t* status);
+
   void rocks_column_family_handle_destroy(rocks_column_family_handle_t* handle);
-
-
-
 
   void rocks_db_put(
                     rocks_db_t* db,
@@ -500,7 +532,13 @@ extern "C" {
                     const char* val, size_t vallen,
                     rocks_status_t* status);
 
-
+  /*
+  void rocks_db_put_slice(
+                        rocks_db_t* db,
+                        const rocks_writeoptions_t* options,
+                        const Slice* key, const Slice* value,
+                        rocks_status_t* status);
+  */
   void rocks_db_put_cf(
                        rocks_db_t* db,
                        const rocks_writeoptions_t* options,
@@ -785,6 +823,9 @@ extern "C" {
   size_t rocks_cache_get_pinned_usage(rocks_cache_t* cache);
 
   const char* rocks_cache_name(rocks_cache_t* cache);
+
+  /* aux */
+  void free(void *p);
 
 #ifdef __cplusplus
 }

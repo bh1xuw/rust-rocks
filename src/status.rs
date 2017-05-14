@@ -37,12 +37,22 @@ pub enum SubCode {
     MemoryLimit = 7,
 }
 
-#[derive(Debug, Clone, PartialEq, Eq, Hash)]
+#[derive(Clone, PartialEq, Eq, Hash)]
 pub struct Status {
     pub code: Code,
     pub subcode: SubCode,
     /// string indicating the message of the Status
     pub status: String,
+}
+
+impl fmt::Debug for Status {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        write!(f,
+               "{:?}({:?}, {})",
+               self.code,
+               self.subcode,
+               self.status)
+    }
 }
 
 impl Status {
@@ -55,16 +65,26 @@ impl Status {
         }
     }
 
-    pub fn from_raw(st: &ll::rocks_status_t) -> Status {
+    pub fn is_not_found(&self) -> bool {
+        self.code == Code::NotFound
+    }
+
+    pub fn from_ll(raw: &ll::rocks_status_t) -> Status {
         unsafe {
             Status {
-                code: mem::transmute(st.code),
-                subcode: mem::transmute(st.sub_code),
-                status: CStr::from_ptr(st.state).to_str().map(|s| s.to_owned()).unwrap_or_default()
+                code: mem::transmute(raw.code),
+                subcode: mem::transmute(raw.sub_code),
+                status: {
+                    raw.state.as_ref().and_then(|p| {
+                        CStr::from_ptr(p).to_str().ok()
+                    })
+                   .map(|s| s.to_owned())
+                   .unwrap_or_default()
+                }
             }
         }
     }
-    
+
     // Return a success status.
     // pub fn Ok() -> Status {
     // Status::new()

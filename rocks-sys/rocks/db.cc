@@ -8,6 +8,17 @@ using namespace rocksdb;
 using std::shared_ptr;
 
 extern "C" {
+  const char* rocks_column_family_handle_get_name(const rocks_column_family_handle_t* handle) {
+    return handle->rep->GetName().c_str();
+  }
+
+  uint32_t rocks_column_family_handle_get_id(const rocks_column_family_handle_t* handle) {
+    return handle->rep->GetID();
+  }
+}
+
+
+extern "C" {
 
   // DB
   rocks_db_t* rocks_db_open(
@@ -51,8 +62,8 @@ extern "C" {
                                             const rocks_options_t* db_options,
                                             const char* name,
                                             int num_column_families,
-                                            const char** column_family_names,
-                                            const rocks_options_t** column_family_options,
+                                            const char* const* column_family_names,
+                                            const rocks_cfoptions_t* const* column_family_options,
                                             rocks_column_family_handle_t** column_family_handles,
                                             rocks_status_t *status) {
     std::vector<ColumnFamilyDescriptor> column_families;
@@ -83,8 +94,8 @@ extern "C" {
                                                           const rocks_options_t* db_options,
                                                           const char* name,
                                                           int num_column_families,
-                                                          const char** column_family_names,
-                                                          const rocks_options_t** column_family_options,
+                                                          const char* const* column_family_names,
+                                                          const rocks_cfoptions_t* const* column_family_options,
                                                           rocks_column_family_handle_t** column_family_handles,
                                                           unsigned char error_if_log_file_exist,
                                                           rocks_status_t *status) {
@@ -144,7 +155,7 @@ extern "C" {
 
   rocks_column_family_handle_t* rocks_db_create_column_family(
                                                               rocks_db_t* db,
-                                                              const rocks_options_t* column_family_options,
+                                                              const rocks_cfoptions_t* column_family_options,
                                                               const char* column_family_name,
                                                               rocks_status_t* status) {
     rocks_column_family_handle_t* handle = new rocks_column_family_handle_t;
@@ -154,12 +165,18 @@ extern "C" {
     return handle;
   }
 
-  void rocks_db_drop_column_family(
-                                   rocks_db_t* db,
+  void rocks_db_drop_column_family(rocks_db_t* db,
                                    rocks_column_family_handle_t* handle,
                                    rocks_status_t* status) {
     SaveError(status, db->rep->DropColumnFamily(handle->rep));
   }
+
+  void rocks_db_destroy_column_family_handle(rocks_db_t* db,
+                                             rocks_column_family_handle_t* handle,
+                                             rocks_status_t* status) {
+    SaveError(status, db->rep->DestroyColumnFamilyHandle(handle->rep));
+  }
+
 
   void rocks_column_family_handle_destroy(rocks_column_family_handle_t* handle) {
     delete handle->rep;
@@ -175,6 +192,16 @@ extern "C" {
     SaveError(status,
               db->rep->Put(options->rep, Slice(key, keylen), Slice(val, vallen)));
   }
+
+  /*
+  void rocks_db_put_slice(
+                    rocks_db_t* db,
+                    const rocks_writeoptions_t* options,
+                    const Slice* key, const Slice* value,
+                    rocks_status_t* status) {
+    SaveError(status,
+              db->rep->Put(options->rep, *key, *value));
+              }*/
 
 
   void rocks_db_put_cf(
@@ -276,6 +303,8 @@ extern "C" {
     char* result = nullptr;
     std::string tmp;
     Status s = db->rep->Get(options->rep, Slice(key, keylen), &tmp);
+    SaveError(status, s);
+
     if (s.ok()) {
       *vallen = tmp.size();
       result = CopyString(tmp);

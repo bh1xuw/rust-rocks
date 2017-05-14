@@ -4,6 +4,7 @@ use std::path::{Path, PathBuf};
 use std::ops::Deref;
 use std::mem;
 use std::ptr;
+use std::os::raw::c_int;
 
 use rocks_sys as ll;
 
@@ -54,6 +55,7 @@ pub enum CompressionType {
     DisableCompressionOption = 0xff,
 }
 
+/// Recovery mode to control the consistency while replaying WAL
 #[repr(C)]
 pub enum WALRecoveryMode {
     /// Original levelDB recovery
@@ -100,6 +102,25 @@ impl Default for DbPath {
     }
 }
 
+impl<T: Into<PathBuf>> From<T> for DbPath {
+    fn from(path: T) -> DbPath {
+        DbPath {
+            path: path.into(),
+            target_size: 0,
+        }
+    }
+}
+
+// impl<P: Into<PathBuf>, S: Into<u64>> From<(P, S)> for DbPath {
+//     fn from((path, size): (P, S)) -> DbPath {
+//         DbPath {
+//             path: path.into(),
+//             target_size: size.into(),
+//         }
+//     }
+// }
+
+
 pub struct ColumnFamilyOptions {
     raw: *mut ll::rocks_cfoptions_t,
 }
@@ -120,6 +141,12 @@ impl ColumnFamilyOptions {
 
     pub fn raw(&self) -> *mut ll::rocks_cfoptions_t {
         self.raw
+    }
+
+    pub fn from_options(opt: &Options) -> ColumnFamilyOptions {
+        ColumnFamilyOptions {
+            raw: unsafe { ll::rocks_cfoptions_create_from_options(opt.raw()) }
+        }
     }
 
     /// Some functions that make it easier to optimize RocksDB
@@ -251,6 +278,7 @@ impl ColumnFamilyOptions {
 
     /// -------------------
     /// Parameters that affect performance
+    /// -------------------
 
     /// Amount of data to build up in memory (backed by an unsorted log
     /// on disk) before converting to a sorted on-disk file.
@@ -476,11 +504,11 @@ impl ColumnFamilyOptions {
     /// If inplace_callback function is set, check doc for inplace_callback.
     /// Default: false.
     pub fn inplace_update_support(self, val: bool) -> Self {
-    unsafe {
-        ll::rocks_cfoptions_set_inplace_update_support(self.raw, val as u8);
-    }
+        unsafe {
+            ll::rocks_cfoptions_set_inplace_update_support(self.raw, val as u8);
+        }
         self
-}
+    }
 
     /// Number of locks used for inplace update
     /// Default: 10000, if inplace_update_support = true, else 0.
@@ -661,9 +689,10 @@ impl ColumnFamilyOptions {
     /// change when data grows.
     pub fn compression_per_level(self, val: Vec<CompressionType>) -> Self {
         unsafe {
-            ll::rocks_cfoptions_set_compression_per_level(self.raw,
-                                                          mem::transmute(val.as_slice().as_ptr()), // repr(C)
-                                                          val.len());
+            ll::rocks_cfoptions_set_compression_per_level(
+                self.raw,
+                mem::transmute(val.as_slice().as_ptr()), // repr(C)
+                val.len());
         }
         self
     }
@@ -868,11 +897,10 @@ impl ColumnFamilyOptions {
     /// which files are prioritized to be picked to compact.
     /// Default: kByCompensatedSize
     pub fn compaction_pri(self, val: CompactionPri) -> Self {
-        unimplemented!()
-        // unsafe {
-        //     ll::rocks_cfoptions_set_compaction_pri(self.raw, val);
-        // }
-        // self
+        unsafe {
+            ll::rocks_cfoptions_set_compaction_pri(self.raw, mem::transmute(val));
+        }
+        self
     }
 
     /// The options needed to support Universal Style compactions
@@ -1022,6 +1050,13 @@ impl Default for ColumnFamilyOptions {
     }
 }
 
+impl Drop for ColumnFamilyOptions {
+    fn drop(&mut self) {
+        unsafe {
+            ll::rocks_cfoptions_destroy(self.raw);
+        }
+    }
+}
 
 /// Specify the file access pattern once a compaction is started.
 /// It will be applied to all input files of a compaction.
@@ -1232,12 +1267,23 @@ impl DBOptions {
     /// If left empty, only one path will be used, which is db_name passed when
     /// opening the DB.
     /// Default: empty
-    pub fn db_paths(self, val: Vec<DbPath>) -> Self {
-        // unsafe {
-        //     ll::rocks_dboptions_set_db_paths(self.raw, val);
-        // }
-        // self
-        unimplemented!()
+    pub fn db_paths<P: Into<DbPath>>(self, val: Vec<P>) -> Self {
+        let num_paths = val.len();
+        let paths = val.into_iter().map(|p| p.into()).collect::<Vec<_>>();
+        let mut cpaths = Vec::with_capacity(num_paths);
+        let mut sizes = Vec::with_capacity(num_paths);
+        for dbpath in &paths {
+            cpaths.push(dbpath.path.to_str().map(|s| s.as_ptr() as _).unwrap_or_else(ptr::null));
+            sizes.push(dbpath.target_size);
+        }
+
+        unsafe {
+            ll::rocks_dboptions_set_db_paths(self.raw,
+                                             cpaths.as_ptr(),
+                                             sizes.as_ptr(),
+                                             num_paths as c_int);
+        }
+        self
     }
 
     /// This specifies the info LOG dir.
@@ -1883,7 +1929,6 @@ impl DBOptions {
 
 impl Default for DBOptions {
     fn default() -> Self {
-        println!("drop DBOPtions");
         DBOptions {
             raw: unsafe { ll::rocks_dboptions_create() },
         }
@@ -1893,15 +1938,11 @@ impl Default for DBOptions {
 /// Options to control the behavior of a database (passed to DB::Open)
 pub struct Options {
     raw: *mut ll::rocks_options_t,
-    // private, once moved in, never changes
-    // db: DBOptions,
-    // cf: ColumnFamilyOptions,
 }
 
 impl Options {
     // Some functions that make it easier to optimize RocksDB
 
-    // FIXME: ugly but works
     pub fn raw(&self) -> *mut ll::rocks_options_t {
         self.raw
     }
@@ -1920,6 +1961,7 @@ impl Options {
         }
     }
 
+    /// Configure DBOptions using builder style.
     pub fn map_db_options<F: FnOnce(DBOptions) -> DBOptions>(self, f: F) -> Self {
         let dbopt = unsafe { DBOptions::from_ll(ll::rocks_dboptions_create_from_options(self.raw)) };
         let new_dbopt = f(dbopt);
@@ -1932,6 +1974,7 @@ impl Options {
         }
     }
 
+    /// Configure ColumnFamilyOptions using builder style.
     pub fn map_cf_options<F: FnOnce(ColumnFamilyOptions) -> ColumnFamilyOptions>(self, f: F) -> Self {
         let cfopt = unsafe { ColumnFamilyOptions::from_ll(ll::rocks_cfoptions_create_from_options(self.raw)) };
         let new_cfopt = f(cfopt);
@@ -1982,24 +2025,6 @@ impl Drop for Options {
     }
 }
 
-/*
-impl Deref for Options {
-    type Target = DBOptions;
-     fn deref(&self) -> &Self::Target {
-        &self.db
-    }
-}
-*/
-
-/*
-impl Deref for Options {
-    type Target = ColumnFamilyOptions;
-     fn deref(&self) -> &Self::Target {
-        &self.cf
-    }
-}
-*/
-
 #[test]
 fn test_options_deref_as_dboptions() {
     let opt = Options::default();
@@ -2028,30 +2053,47 @@ pub enum ReadTier {
 
 /// Options that control read operations
 pub struct ReadOptions {
+    raw: *mut ll::rocks_readoptions_t,
+}
+
+impl ReadOptions {
+    pub fn raw(&self) -> *mut ll::rocks_readoptions_t {
+        self.raw
+    }
+
     /// If true, all data read from underlying storage will be
     /// verified against corresponding checksums.
     /// Default: true
-    pub verify_checksums: bool,
+    pub fn verify_checksums(self, val: bool) -> Self {
+        unsafe {
+            ll::rocks_readoptions_set_verify_checksums(self.raw, val as u8);
+        }
+        self
+    }
 
     /// Should the "data block"/"index block"/"filter block" read for this
     /// iteration be cached in memory?
     /// Callers may wish to set this field to false for bulk scans.
     /// Default: true
-    pub fill_cache: bool,
-
-    /// If this option is set and memtable implementation allows, Seek
-    /// might only return keys with the same prefix as the seek-key
-    ///
-    /// ! DEPRECATED: prefix_seek is on by default when prefix_extractor
-    /// is configured
-    /// bool prefix_seek;
+    pub fn fill_cache(self, val: bool) -> Self {
+        unsafe {
+            ll::rocks_readoptions_set_fill_cache(self.raw, val as u8);
+        }
+        self
+    }
 
     /// If "snapshot" is non-nullptr, read as of the supplied snapshot
     /// (which must belong to the DB that is being read and which must
     /// not have been released).  If "snapshot" is nullptr, use an implicit
     /// snapshot of the state at the beginning of this read operation.
     /// Default: nullptr
-    pub snapshot: Option<Snapshot>,
+    pub fn snapshot(self, val: Option<Snapshot>) -> Self {
+        // unsafe {
+        //     ll::rocks_readoptions_set_snapshot(self.raw, val);
+        // }
+        // self
+        unimplemented!()
+    }
 
     /// "iterate_upper_bound" defines the extent upto which the forward iterator
     /// can returns entries. Once the bound is reached, Valid() will be false.
@@ -2063,13 +2105,24 @@ pub struct ReadOptions {
     /// implemented
     ///
     /// Default: nullptr
-    pub iterate_upper_bound: Option<Vec<u8>>,
+    pub fn iterate_upper_bound(self, val: Option<Vec<u8>>) -> Self {
+        // unsafe {
+        //     ll::rocks_readoptions_set_iterate_upper_bound(self.raw, val);
+        // }
+        // self
+        unimplemented!()
+    }
 
     /// Specify if this read request should process data that ALREADY
     /// resides on a particular cache. If the required data is not
     /// found at the specified cache, then Status::Incomplete is returned.
     /// Default: kReadAllTier
-    pub read_tier: ReadTier,
+    pub fn read_tier(self, val: ReadTier) -> Self {
+        unsafe {
+            ll::rocks_readoptions_set_read_tier(self.raw, mem::transmute(val));
+        }
+        self
+    }
 
     /// Specify to create a tailing iterator -- a special iterator that has a
     /// view of the complete database (i.e. it can also be used to read newly
@@ -2077,14 +2130,24 @@ pub struct ReadOptions {
     /// that were inserted into the database after the creation of the iterator.
     /// Default: false
     /// Not supported in ROCKSDB_LITE mode!
-    pub tailing: bool,
+    pub fn tailing(self, val: bool) -> Self {
+        unsafe {
+            ll::rocks_readoptions_set_tailing(self.raw, val as u8);
+        }
+        self
+    }
 
     /// Specify to create a managed iterator -- a special iterator that
     /// uses less resources by having the ability to free its underlying
     /// resources on request.
     /// Default: false
     /// Not supported in ROCKSDB_LITE mode!
-    pub managed: bool,
+    pub fn managed(self, val: bool) -> Self {
+        unsafe {
+            ll::rocks_readoptions_set_managed(self.raw, val as u8);
+        }
+        self
+    }
 
     /// Enable a total order seek regardless of index format (e.g. hash index)
     /// used in the table. Some table format (e.g. plain table) may not support
@@ -2092,7 +2155,12 @@ pub struct ReadOptions {
     /// If true when calling Get(), we also skip prefix bloom when reading from
     /// block based table. It provides a way to read existing data after
     /// changing implementation of prefix extractor.
-    pub total_order_seek: bool,
+    pub fn total_order_seek(self, val: bool) -> Self {
+        unsafe {
+            ll::rocks_readoptions_set_total_order_seek(self.raw, val as u8);
+        }
+        self
+    }
 
     /// Enforce that the iterator only iterates over the same prefix as the seek.
     /// This option is effective only for prefix seeks, i.e. prefix_extractor is
@@ -2100,7 +2168,12 @@ pub struct ReadOptions {
     /// iterate_upper_bound, prefix_same_as_start only works within a prefix
     /// but in both directions.
     /// Default: false
-    pub prefix_same_as_start: bool,
+    pub fn prefix_same_as_start(self, val: bool) -> Self {
+        unsafe {
+            ll::rocks_readoptions_set_prefix_same_as_start(self.raw, val as u8);
+        }
+        self
+    }
 
     /// Keep the blocks loaded by the iterator pinned in memory as long as the
     /// iterator is not deleted, If used when reading from tables created with
@@ -2108,28 +2181,46 @@ pub struct ReadOptions {
     /// Iterator's property "rocksdb.iterator.is-key-pinned" is guaranteed to
     /// return 1.
     /// Default: false
-    pub pin_data: bool,
+    pub fn pin_data(self, val: bool) -> Self {
+        unsafe {
+            ll::rocks_readoptions_set_pin_data(self.raw, val as u8);
+        }
+        self
+    }
 
     /// If true, when PurgeObsoleteFile is called in CleanupIteratorState, we
     /// schedule a background job in the flush job queue and delete obsolete files
     /// in background.
     /// Default: false
-    pub background_purge_on_iterator_cleanup: bool,
+    pub fn background_purge_on_iterator_cleanup(self, val: bool) -> Self {
+        unsafe {
+            ll::rocks_readoptions_set_background_purge_on_iterator_cleanup(self.raw, val as u8);
+        }
+        self
+    }
 
     /// If non-zero, NewIterator will create a new table reader which
     /// performs reads of the given size. Using a large size (> 2MB) can
     /// improve the performance of forward iteration on spinning disks.
     /// Default: 0
-    pub readahead_size: usize,
+    pub fn readahead_size(self, val: usize) -> Self {
+        unsafe {
+            ll::rocks_readoptions_set_readahead_size(self.raw, val);
+        }
+        self
+    }
 
     /// If true, keys deleted using the DeleteRange() API will be visible to
     /// readers until they are naturally deleted during compaction. This improves
     /// read performance in DBs with many range deletions.
     /// Default: false
-    pub ignore_range_deletions: bool,
-}
+    pub fn ignore_range_deletions(self, val: bool) -> Self {
+        unsafe {
+            ll::rocks_readoptions_set_ignore_range_deletions(self.raw, val as u8);
+        }
+        self
+    }
 
-impl ReadOptions {
     pub fn new(cksum: bool, cache: bool) -> ReadOptions {
         unimplemented!()
     }
@@ -2138,27 +2229,33 @@ impl ReadOptions {
 impl Default for ReadOptions {
     fn default() -> Self {
         ReadOptions {
-            verify_checksums: true,
-            fill_cache: true,
-            snapshot: None,
-            iterate_upper_bound: None,
-            read_tier: ReadTier::ReadAllTier,
-            tailing: false,
-            managed: false,
-            total_order_seek: false,
-            prefix_same_as_start: false,
-            pin_data: false,
-            background_purge_on_iterator_cleanup: false,
-            readahead_size: 0,
-            ignore_range_deletions: false,
+            raw: unsafe { ll::rocks_readoptions_create() },
         }
     }
 }
 
 
+#[test]
+fn test_read_options() {
+    let _ = ReadOptions::default()
+        .fill_cache(true)
+        .managed(true)
+        .read_tier(ReadTier::PersistedTier);
+}
+
+
+
 /// Options that control write operations
 #[repr(C)]
 pub struct WriteOptions {
+    raw: *mut ll::rocks_writeoptions_t,
+}
+
+impl WriteOptions {
+    pub fn raw(&self) -> *mut ll::rocks_writeoptions_t {
+        self.raw
+    }
+
     /// If true, the write will be flushed from the operating system
     /// buffer cache (by calling WritableFile::Sync()) before the write
     /// is considered complete.  If this flag is true, writes will be
@@ -2175,33 +2272,47 @@ pub struct WriteOptions {
     /// system call followed by "fdatasync()".
     ///
     /// Default: false
-    pub sync: bool,
+    pub fn sync(self, val: bool) -> Self {
+        unsafe {
+            ll::rocks_writeoptions_set_sync(self.raw, val as u8);
+        }
+        self
+    }
 
     /// If true, writes will not first go to the write ahead log,
     /// and the write may got lost after a crash.
-    pub disable_wal: bool,
+    pub fn disable_wal(self, val: bool) -> Self {
+        unsafe {
+            ll::rocks_writeoptions_set_disable_wal(self.raw, val as u8);
+        }
+        self
+    }
 
-    // The option is deprecated. It's not used anymore.
-    // timeout_hint_us: u64,
     /// If true and if user is trying to write to column families that don't exist
     /// (they were dropped),  ignore the write (don't return an error). If there
     /// are multiple writes in a WriteBatch, other writes will succeed.
     /// Default: false
-    pub ignore_missing_column_families: bool,
+    pub fn ignore_missing_column_families(self, val: bool) -> Self {
+        unsafe {
+            ll::rocks_writeoptions_set_ignore_missing_column_families(self.raw, val as u8);
+        }
+        self
+    }
 
     /// If true and we need to wait or sleep for the write request, fails
     /// immediately with Status::Incomplete().
-    pub no_slowdown: bool,
+    pub fn no_slowdown(self, val: bool) -> Self {
+        unsafe {
+            ll::rocks_writeoptions_set_no_slowdown(self.raw, val as u8);
+        }
+        self
+    }
 }
 
 impl Default for WriteOptions {
     fn default() -> Self {
         WriteOptions {
-            sync: false,
-            disable_wal: false,
-            // timeout_hint_us: 0,
-            ignore_missing_column_families: false,
-            no_slowdown: false,
+            raw: unsafe { ll::rocks_writeoptions_create() },
         }
     }
 }

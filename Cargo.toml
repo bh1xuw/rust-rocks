@@ -5,3 +5,6 @@ authors = ["BH1XUW <bh1xuw@gmail.com>"]
 
 [dependencies]
 rocks-sys = { path = "./rocks-sys" }
+
+[dev-dependencies]
+tempdir = "0.3"
