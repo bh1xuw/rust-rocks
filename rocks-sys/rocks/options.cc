@@ -415,12 +415,12 @@ extern "C" {
     opt->rep.db_paths = dbpaths;
   }
 
-  void rocks_dboptions_set_db_log_dir(rocks_dboptions_t* opt, const char* db_log_dir) {
-    opt->rep.db_log_dir = db_log_dir;
+  void rocks_dboptions_set_db_log_dir(rocks_dboptions_t* opt, const char* db_log_dir, size_t len) {
+    opt->rep.db_log_dir = std::string(db_log_dir, len);
   }
 
-  void rocks_dboptions_set_wal_dir(rocks_dboptions_t* opt, const char* v) {
-    opt->rep.wal_dir = v;
+  void rocks_dboptions_set_wal_dir(rocks_dboptions_t* opt, const char* v, size_t len) {
+    opt->rep.wal_dir = std::string(v, len);
   }
 
   void rocks_dboptions_set_delete_obsolete_files_period_micros(rocks_dboptions_t* opt, uint64_t v) {

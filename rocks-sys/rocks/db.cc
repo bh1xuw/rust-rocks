@@ -401,6 +401,19 @@ extern "C" {
     return result;
   }
 
+  rocks_snapshot_t* rocks_db_get_snapshot(rocks_db_t* db) {
+    rocks_snapshot_t* result = new rocks_snapshot_t;
+    result->rep = db->rep->GetSnapshot();
+    return result;
+  }
+
+  // also destroy
+  void rocks_db_release_snapshot(rocks_db_t* db, rocks_snapshot_t* snapshot) {
+    db->rep->ReleaseSnapshot(snapshot->rep);
+    delete snapshot;
+  }
+
+
   // public functions
   void rocks_destroy_db(
                         const rocks_options_t* options,

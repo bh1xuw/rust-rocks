@@ -1,3 +1,8 @@
+
+use std::marker::PhantomData;
+
+use rocks_sys as ll;
+
 use types::SequenceNumber;
 
 /// Abstract handle to particular state of a DB.
@@ -6,9 +11,18 @@ use types::SequenceNumber;
 ///
 /// To Create a Snapshot, call DB::GetSnapshot().
 /// To Destroy a Snapshot, call DB::ReleaseSnapshot(snapshot).
-pub struct Snapshot;
+pub struct Snapshot<'a> {
+    raw: *mut ll::rocks_snapshot_t,
+    _marker: PhantomData<&'a ()>
+}
 
-impl Snapshot {
+impl<'a> Snapshot<'a> {
+    pub unsafe fn from_ll<'b>(raw: *mut ll::rocks_snapshot_t) -> Snapshot<'a> {
+        Snapshot {
+            raw: raw,
+            _marker: PhantomData,
+        }
+    }
     pub fn get_sequence_number(&self) -> SequenceNumber {
         unimplemented!()
     }

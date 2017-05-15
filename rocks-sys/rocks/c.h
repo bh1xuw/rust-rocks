@@ -265,9 +265,9 @@ extern "C" {
                                     const uint64_t* target_sizes,
                                     int size);
 
-  void rocks_dboptions_set_db_log_dir(rocks_dboptions_t* opt, const char* db_log_dir);
+  void rocks_dboptions_set_db_log_dir(rocks_dboptions_t* opt, const char* db_log_dir, size_t len);
 
-  void rocks_dboptions_set_wal_dir(rocks_dboptions_t* opt, const char* v);
+  void rocks_dboptions_set_wal_dir(rocks_dboptions_t* opt, const char* v, size_t len);
 
   void rocks_dboptions_set_delete_obsolete_files_period_micros(rocks_dboptions_t* opt, uint64_t v);
 
@@ -631,6 +631,9 @@ extern "C" {
   rocks_iterator_t* rocks_db_create_iterator(rocks_db_t* db,
                                              const rocks_readoptions_t* options);
 
+  rocks_snapshot_t* rocks_db_get_snapshot(rocks_db_t* db);
+
+  void rocks_db_release_snapshot(rocks_db_t* db, rocks_snapshot_t* snapshot);
 
   /*    pub fn */
   void rocks_destroy_db(

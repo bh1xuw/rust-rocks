@@ -1293,8 +1293,10 @@ impl DBOptions {
     /// name's prefix.
     pub fn db_log_dir<P: AsRef<Path>>(self, path: P) -> Self {
         unsafe {
+            let path_str = path.as_ref().to_str().unwrap();
             ll::rocks_dboptions_set_db_log_dir(self.raw,
-                                               path.as_ref().to_str().unwrap().as_ptr() as _);
+                                               path_str.as_ptr() as _,
+                                               path_str.len());
         }
         self
     }
@@ -1307,8 +1309,10 @@ impl DBOptions {
     ///   all log files in wal_dir and the dir itself is deleted
     pub fn wal_dir<P: AsRef<Path>>(self, path: P) -> Self {
         unsafe {
+            let path_str = path.as_ref().to_str().unwrap();
             ll::rocks_dboptions_set_wal_dir(self.raw,
-                                            path.as_ref().to_str().unwrap().as_ptr() as _);
+                                            path_str.as_ptr() as _,
+                                            path_str.len());
         }
         self
     }

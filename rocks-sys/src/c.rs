@@ -660,11 +660,13 @@ extern "C" {
 extern "C" {
     pub fn rocks_dboptions_set_db_log_dir(opt: *mut rocks_dboptions_t,
                                           db_log_dir:
-                                              *const ::std::os::raw::c_char);
+                                              *const ::std::os::raw::c_char,
+                                          len: usize);
 }
 extern "C" {
     pub fn rocks_dboptions_set_wal_dir(opt: *mut rocks_dboptions_t,
-                                       v: *const ::std::os::raw::c_char);
+                                       v: *const ::std::os::raw::c_char,
+                                       len: usize);
 }
 extern "C" {
     pub fn rocks_dboptions_set_delete_obsolete_files_period_micros(opt:
@@ -1205,6 +1207,14 @@ extern "C" {
     pub fn rocks_db_create_iterator(db: *mut rocks_db_t,
                                     options: *const rocks_readoptions_t)
      -> *mut rocks_iterator_t;
+}
+extern "C" {
+    pub fn rocks_db_get_snapshot(db: *mut rocks_db_t)
+     -> *mut rocks_snapshot_t;
+}
+extern "C" {
+    pub fn rocks_db_release_snapshot(db: *mut rocks_db_t,
+                                     snapshot: *mut rocks_snapshot_t);
 }
 extern "C" {
     pub fn rocks_destroy_db(options: *const rocks_options_t,
