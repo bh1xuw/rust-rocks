@@ -1215,6 +1215,22 @@ extern "C" {
      -> *mut rocks_iterator_t;
 }
 extern "C" {
+    pub fn rocks_db_create_iterator_cf(db: *mut rocks_db_t,
+                                       options: *const rocks_readoptions_t,
+                                       column_family:
+                                           *mut rocks_column_family_handle_t)
+     -> *mut rocks_iterator_t;
+}
+extern "C" {
+    pub fn rocks_db_create_iterators(db: *mut rocks_db_t,
+                                     opts: *mut rocks_readoptions_t,
+                                     column_families:
+                                         *mut *mut rocks_column_family_handle_t,
+                                     iterators: *mut *mut rocks_iterator_t,
+                                     size: usize,
+                                     status: *mut rocks_status_t);
+}
+extern "C" {
     pub fn rocks_db_get_snapshot(db: *mut rocks_db_t)
      -> *mut rocks_snapshot_t;
 }
@@ -1500,6 +1516,46 @@ extern "C" {
     pub fn rocks_writebatch_rollback_to_save_point(b: *mut rocks_writebatch_t,
                                                    status:
                                                        *mut rocks_status_t);
+}
+extern "C" {
+    pub fn rocks_iter_destroy(iter: *mut rocks_iterator_t);
+}
+extern "C" {
+    pub fn rocks_iter_valid(iter: *const rocks_iterator_t)
+     -> ::std::os::raw::c_uchar;
+}
+extern "C" {
+    pub fn rocks_iter_seek_to_first(iter: *mut rocks_iterator_t);
+}
+extern "C" {
+    pub fn rocks_iter_seek_to_last(iter: *mut rocks_iterator_t);
+}
+extern "C" {
+    pub fn rocks_iter_seek(iter: *mut rocks_iterator_t,
+                           k: *const ::std::os::raw::c_char, klen: usize);
+}
+extern "C" {
+    pub fn rocks_iter_seek_for_prev(iter: *mut rocks_iterator_t,
+                                    k: *const ::std::os::raw::c_char,
+                                    klen: usize);
+}
+extern "C" {
+    pub fn rocks_iter_next(iter: *mut rocks_iterator_t);
+}
+extern "C" {
+    pub fn rocks_iter_prev(iter: *mut rocks_iterator_t);
+}
+extern "C" {
+    pub fn rocks_iter_key(iter: *const rocks_iterator_t, klen: *mut usize)
+     -> *const ::std::os::raw::c_char;
+}
+extern "C" {
+    pub fn rocks_iter_value(iter: *const rocks_iterator_t, vlen: *mut usize)
+     -> *const ::std::os::raw::c_char;
+}
+extern "C" {
+    pub fn rocks_iter_get_status(iter: *const rocks_iterator_t,
+                                 status: *mut rocks_status_t);
 }
 extern "C" {
     pub fn rocks_cache_create_lru(capacity: usize,

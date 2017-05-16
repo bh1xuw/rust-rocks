@@ -28,3 +28,4 @@ pub mod table_properties;
 pub mod types;
 pub mod snapshot;
 pub mod write_batch;
+pub mod iterator;

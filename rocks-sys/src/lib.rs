@@ -13,15 +13,6 @@ mod c;
 
 pub use c::*;
 
-
-#[test]
-fn test_cf_opt() {
-    unsafe {
-        let cfopt = c::rocks_cfoptions_create();
-        c::rocks_cfoptions_destroy(cfopt);
-    }
-}
-
 #[test]
 fn test_db_list_cf_names() {
     unsafe {

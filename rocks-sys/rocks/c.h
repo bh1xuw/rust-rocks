@@ -637,6 +637,20 @@ extern "C" {
   rocks_iterator_t* rocks_db_create_iterator(rocks_db_t* db,
                                              const rocks_readoptions_t* options);
 
+  rocks_iterator_t* rocks_db_create_iterator_cf(
+                                                rocks_db_t* db,
+                                                const rocks_readoptions_t* options,
+                                                rocks_column_family_handle_t* column_family);
+
+  void rocks_db_create_iterators(
+                                 rocks_db_t *db,
+                                 rocks_readoptions_t* opts,
+                                 rocks_column_family_handle_t** column_families,
+                                 rocks_iterator_t** iterators,
+                                 size_t size,
+                                 rocks_status_t* status);
+
+
   rocks_snapshot_t* rocks_db_get_snapshot(rocks_db_t* db);
 
   void rocks_db_release_snapshot(rocks_db_t* db, rocks_snapshot_t* snapshot);
@@ -821,6 +835,30 @@ extern "C" {
 
   void rocks_writebatch_rollback_to_save_point(rocks_writebatch_t* b,
                                                rocks_status_t* status);
+
+  /* iterator */
+  void rocks_iter_destroy(rocks_iterator_t* iter);
+
+  unsigned char rocks_iter_valid(const rocks_iterator_t* iter);
+
+  void rocks_iter_seek_to_first(rocks_iterator_t* iter);
+
+  void rocks_iter_seek_to_last(rocks_iterator_t* iter);
+
+  void rocks_iter_seek(rocks_iterator_t* iter, const char* k, size_t klen);
+
+  void rocks_iter_seek_for_prev(rocks_iterator_t* iter, const char* k,
+                                size_t klen);
+
+  void rocks_iter_next(rocks_iterator_t* iter);
+
+  void rocks_iter_prev(rocks_iterator_t* iter);
+
+  const char* rocks_iter_key(const rocks_iterator_t* iter, size_t* klen);
+
+  const char* rocks_iter_value(const rocks_iterator_t* iter, size_t* vlen);
+
+  void rocks_iter_get_status(const rocks_iterator_t* iter, rocks_status_t* status);
 
   /* cache */
   rocks_cache_t* rocks_cache_create_lru(size_t capacity,

@@ -401,6 +401,40 @@ extern "C" {
     return result;
   }
 
+  rocks_iterator_t* rocks_db_create_iterator_cf(
+                                                 rocks_db_t* db,
+                                                 const rocks_readoptions_t* options,
+                                                 rocks_column_family_handle_t* column_family) {
+    rocks_iterator_t* result = new rocks_iterator_t;
+    result->rep = db->rep->NewIterator(options->rep, column_family->rep);
+    return result;
+  }
+
+  void rocks_db_create_iterators(
+                                rocks_db_t *db,
+                                rocks_readoptions_t* opts,
+                                rocks_column_family_handle_t** column_families,
+                                rocks_iterator_t** iterators,
+                                size_t size,
+                                rocks_status_t* status) {
+    std::vector<ColumnFamilyHandle*> column_families_vec;
+    for (size_t i = 0; i < size; i++) {
+      column_families_vec.push_back(column_families[i]->rep);
+    }
+
+    std::vector<Iterator*> res;
+    Status st = db->rep->NewIterators(opts->rep, column_families_vec, &res);
+    assert(res.size() == size);
+    if (SaveError(status, st)) {
+      return;
+    }
+
+    for (size_t i = 0; i < size; i++) {
+      iterators[i] = new rocks_iterator_t;
+      iterators[i]->rep = res[i];
+    }
+  }
+
   rocks_snapshot_t* rocks_db_get_snapshot(rocks_db_t* db) {
     rocks_snapshot_t* result = new rocks_snapshot_t;
     result->rep = db->rep->GetSnapshot();

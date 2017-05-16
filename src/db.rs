@@ -21,6 +21,7 @@ use options::{Options, DBOptions, ColumnFamilyOptions, ReadOptions, WriteOptions
 use table_properties::TableProperties;
 use snapshot::Snapshot;
 use write_batch::WriteBatch;
+use iterator::Iterator;
 
 const DEFAULT_COLUMN_FAMILY_NAME: &'static str = "default";
 
@@ -489,6 +490,19 @@ impl<'a> DB<'a> {
         }
     }
 
+    /// Return a heap-allocated iterator over the contents of the database.
+    /// The result of NewIterator() is initially invalid (caller must
+    /// call one of the Seek methods on the iterator before using it).
+    ///
+    /// Caller should delete the iterator when it is no longer needed.
+    /// The returned iterator should be deleted before this db is deleted.
+    pub fn new_iterator(&self, options: ReadOptions) -> Iterator {
+        unsafe {
+            let ptr = ll::rocks_db_create_iterator(self.raw(), options.raw());
+            Iterator::from_ll(ptr)
+        }
+    }
+
     /// Return a handle to the current DB state.  Iterators created with
     /// this handle will all observe a stable snapshot of the current DB
     /// state.  The caller must call ReleaseSnapshot(result) when the
@@ -505,6 +519,13 @@ impl<'a> DB<'a> {
                 Some(Snapshot::from_ll(ptr))
             }
         }
+    }
+
+
+    /// Release a previously acquired snapshot.  The caller must not
+    /// use "snapshot" after this call.
+    pub fn release_snapshot(&self, snapshot: Snapshot) {
+        unimplemented!()
     }
 }
 
@@ -786,4 +807,58 @@ fn test_write_batch() {
                b"BH1XUW");
     assert_eq!(db.get(ReadOptions::default(), b"site").unwrap().as_ref(),
                b"github");
+}
+
+
+#[test]
+fn test_iterator() {
+    use tempdir::TempDir;
+    let tmp_dir = TempDir::new_in(".", "rocks").unwrap();
+    let opt = Options::default()
+        .map_db_options(|db| {
+            db.create_if_missing(true)
+        });
+    let db = DB::open(opt, tmp_dir.path()).unwrap();
+    let batch = WriteBatch::new()
+        .put(b"key1", b"BYasdf1CQ")
+        .put(b"key2", b"BYasdf1CQ")
+        .put(b"key3", b"BYasdf1CQ")
+        .put(b"key4", b"BY1dfsgCQ")
+        .put(b"key5", b"BY1ghCQ")
+        .put(b"key0", b"BYwertw1CQ")
+        .put(b"key_", b"BY1C234Q")
+        .put(b"key4", b"BY1xcvbCQ")
+        .put(b"key5", b"BY1gjhkjCQ")
+        .put(b"key1", b"BY1CyuitQ")
+        .put(b"key8", b"BY1CvbncvQ")
+        .put(b"key4", b"BY1CsafQ")
+        .put(b"name", b"BH1XUwqrW")
+        .put(b"site", b"githuzxcvb");
+
+    let ret = db.write(WriteOptions::default(), batch);
+    assert!(ret.is_ok());
+    {
+        for (k,v) in db.new_iterator(ReadOptions::default()).iter() {
+            println!("> {:?} => {:?}", String::from_utf8_lossy(k), String::from_utf8_lossy(v));
+        }
+    }
+
+    assert!(ret.is_ok());
+    {
+        let kvs = db.new_iterator(ReadOptions::default()).iter().collect::<Vec<_>>();
+        println!("got kv => {:?}", kvs);
+    }
+
+    let mut it = db.new_iterator(ReadOptions::default());
+    assert_eq!(it.is_valid(), false);
+    println!("it => {:?}", it);
+    it.seek_to_first();
+    assert_eq!(it.is_valid(), true);
+    println!("it => {:?}", it);
+    it.next();
+    println!("it => {:?}", it);
+    it.seek_to_last();
+    println!("it => {:?}", it);
+    it.next();
+    println!("it => {:?}", it);
 }
