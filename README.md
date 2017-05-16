@@ -7,13 +7,22 @@ working in progress.
 
 ## status
 
-- [x] ``rocksdb/c.h``
+- [ ] ~~``rocksdb/c.h``~~
+  - [x] we use c++ API
 - [ ] ``rocksdb/cache.h``
 - [ ] ``rocksdb/compaction_filter.h``
 - [ ] ``rocksdb/compaction_job_stats.h``
 - [ ] ``rocksdb/comparator.h``
 - [ ] ``rocksdb/convenience.h``
 - [ ] ``rocksdb/db.h``
+  - [ ] column family
+  - [x] open / close
+  - [x] iterator
+  - [x] get
+  - [x] put
+  - [x] write
+  - [ ] delete
+  - [ ] merge
 - [ ] ``rocksdb/db_bench_tool.h``
 - [ ] ``rocksdb/db_dump_tool.h``
 - [ ] ``rocksdb/env.h``
@@ -28,11 +37,13 @@ working in progress.
 - [ ] ``rocksdb/merge_operator.h``
 - [ ] ``rocksdb/metadata.h``
 - [x] ``rocksdb/options.h``
+  - [x] builder style
 - [ ] ``rocksdb/perf_context.h``
 - [ ] ``rocksdb/perf_level.h``
 - [ ] ``rocksdb/persistent_cache.h``
 - [ ] ``rocksdb/rate_limiter.h``
-- [x] ``rocksdb/slice.h``
+- [x] ~~``rocksdb/slice.h``~~
+  - [x] use ``&[u8]`` to replace
 - [ ] ``rocksdb/slice_transform.h``
 - [ ] ``rocksdb/snapshot.h``
 - [ ] ``rocksdb/sst_dump_tool.h``
@@ -45,11 +56,13 @@ working in progress.
 - [ ] ``rocksdb/thread_status.h``
 - [ ] ``rocksdb/threadpool.h``
 - [ ] ``rocksdb/transaction_log.h``
-- [x] ``rocksdb/types.h``
-- [ ] ``rocksdb/version.h``
+- [ ] ~~``rocksdb/types.h``~~
+- [ ] ~~``rocksdb/version.h``~~
 - [ ] ``rocksdb/wal_filter.h``
 - [x] ``rocksdb/write_batch.h``
-- [ ] ``rocksdb/write_batch_base.h``
+  - [ ] builder style
+  - [ ] batch cf ops
+- [ ] ~~``rocksdb/write_batch_base.h``~~
 - [ ] ``rocksdb/write_buffer_manager.h``
 - [ ] ``rocksdb/universal_compaction.h``
 - [ ] ``rocksdb/utilities/backupable_db.h``
