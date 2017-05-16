@@ -31,7 +31,7 @@ pub struct Cache {
 
 impl Cache {
     pub unsafe fn raw(&self) -> *mut ll::rocks_cache_t {
-        return self.raw
+        return self.raw;
     }
 
     /// The type of the Cache
@@ -54,16 +54,12 @@ impl Cache {
 
     /// returns the maximum configured capacity of the cache
     pub fn get_capacity(&self) -> usize {
-        unsafe {
-            ll::rocks_cache_get_capacity(self.raw)
-        }
+        unsafe { ll::rocks_cache_get_capacity(self.raw) }
     }
 
     /// returns the memory size for a specific entry in the cache.
     pub fn get_usage(&self) -> usize {
-        unsafe {
-            ll::rocks_cache_get_usage(self.raw)
-        }
+        unsafe { ll::rocks_cache_get_usage(self.raw) }
     }
 }
 
@@ -127,18 +123,16 @@ impl CacheBuilder {
     pub fn build(&mut self) -> Option<Cache> {
         let ptr = match self.type_ {
             CacheType::LRU => unsafe {
-                ll::rocks_cache_create_lru(
-                    self.capacity,
-                    self.num_shard_bits,
-                    self.strict_capacity_limit as c_char,
-                    self.high_pri_pool_ratio)
+                ll::rocks_cache_create_lru(self.capacity,
+                                           self.num_shard_bits,
+                                           self.strict_capacity_limit as c_char,
+                                           self.high_pri_pool_ratio)
             },
             CacheType::Clock => unsafe {
-                ll::rocks_cache_create_clock(
-                    self.capacity,
-                    self.num_shard_bits,
-                    self.strict_capacity_limit as c_char)
-            }
+                ll::rocks_cache_create_clock(self.capacity,
+                                             self.num_shard_bits,
+                                             self.strict_capacity_limit as c_char)
+            },
         };
         if !ptr.is_null() {
             Some(Cache { raw: ptr })

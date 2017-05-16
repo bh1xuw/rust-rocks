@@ -14,7 +14,7 @@ use types::SequenceNumber;
 /// To Destroy a Snapshot, call DB::ReleaseSnapshot(snapshot).
 pub struct Snapshot<'a> {
     raw: *mut ll::rocks_snapshot_t,
-    _marker: PhantomData<&'a ()>
+    _marker: PhantomData<&'a ()>,
 }
 
 impl<'a> fmt::Debug for Snapshot<'a> {

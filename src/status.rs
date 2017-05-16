@@ -47,11 +47,7 @@ pub struct Status {
 
 impl fmt::Debug for Status {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        write!(f,
-               "{:?}({:?}, {:?})",
-               self.code,
-               self.subcode,
-               self.status)
+        write!(f, "{:?}({:?}, {:?})", self.code, self.subcode, self.status)
     }
 }
 
@@ -75,12 +71,12 @@ impl Status {
                 code: mem::transmute(raw.code),
                 subcode: mem::transmute(raw.sub_code),
                 status: {
-                    raw.state.as_ref().and_then(|p| {
-                        CStr::from_ptr(p).to_str().ok()
-                    })
-                   .map(|s| s.to_owned())
-                   .unwrap_or_default()
-                }
+                    raw.state
+                        .as_ref()
+                        .and_then(|p| CStr::from_ptr(p).to_str().ok())
+                        .map(|s| s.to_owned())
+                        .unwrap_or_default()
+                },
             }
         }
     }

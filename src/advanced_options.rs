@@ -108,5 +108,4 @@ pub enum UpdateStatus {
 
 
 // TODO: not in current version
-pub struct AdvancedColumnFamilyOptions {
-}
+pub struct AdvancedColumnFamilyOptions {}

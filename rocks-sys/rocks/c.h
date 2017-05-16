@@ -708,8 +708,7 @@ extern "C" {
 
   rocks_writebatch_t* rocks_writebatch_create();
 
-  rocks_writebatch_t* rocks_writebatch_create_from(const char* rep,
-                                                   size_t size);
+  rocks_writebatch_t* rocks_writebatch_create_with_reserved_bytes(size_t size);
 
   void rocks_writebatch_destroy(rocks_writebatch_t* b);
 
@@ -882,6 +881,12 @@ extern "C" {
 
   /* aux */
   void free(void *p);
+  /* version */
+  int rocks_version_major();
+  int rocks_version_minor();
+  int rocks_version_patch();
+
+
 
 #ifdef __cplusplus
 }

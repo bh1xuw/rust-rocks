@@ -1299,8 +1299,7 @@ extern "C" {
     pub fn rocks_writebatch_create() -> *mut rocks_writebatch_t;
 }
 extern "C" {
-    pub fn rocks_writebatch_create_from(rep: *const ::std::os::raw::c_char,
-                                        size: usize)
+    pub fn rocks_writebatch_create_with_reserved_bytes(size: usize)
      -> *mut rocks_writebatch_t;
 }
 extern "C" {
@@ -1594,6 +1593,15 @@ extern "C" {
 }
 extern "C" {
     pub fn free(p: *mut ::std::os::raw::c_void);
+}
+extern "C" {
+    pub fn rocks_version_major() -> ::std::os::raw::c_int;
+}
+extern "C" {
+    pub fn rocks_version_minor() -> ::std::os::raw::c_int;
+}
+extern "C" {
+    pub fn rocks_version_patch() -> ::std::os::raw::c_int;
 }
 #[repr(C)]
 #[derive(Copy)]

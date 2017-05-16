@@ -86,6 +86,17 @@ extern "C" {
     return result;
   }
 
+  /* version */
+  int rocks_version_major() {
+    return ROCKSDB_MAJOR;
+  }
+  int rocks_version_minor() {
+    return ROCKSDB_MINOR;
+  }
+  int rocks_version_patch() {
+    return ROCKSDB_PATCH;
+  }
+
 
 #ifdef __cplusplus
 }

@@ -57,4 +57,8 @@ extern "C" {
   void rocks_iter_get_status(const rocks_iterator_t* iter, rocks_status_t* status) {
     SaveError(status, iter->rep->status());
   }
+
+  /*  const char* rocks_iter_get_property(const rocks_iterator_t* iter, const char* prop_name, size_t len) {
+    SaveError(status, iter->rep->status());
+    }*/
 }

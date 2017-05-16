@@ -31,7 +31,7 @@ use snapshot::Snapshot;
 /// sequence of key,value pairs.  Each block may be compressed before
 /// being stored in a file.  The following enum describes which
 /// compression method (if any) is used to compress a block.
-#[repr(C)]                      // FIXME: u8 in rocksdb
+#[repr(C)] // FIXME: u8 in rocksdb
 pub enum CompressionType {
     /// NOTE: do not change the values of existing entries, as these are
     /// part of the persistent format on disk.
@@ -128,15 +128,11 @@ pub struct ColumnFamilyOptions {
 impl ColumnFamilyOptions {
     /// Create ColumnFamilyOptions with default values for all fields
     pub fn new() -> ColumnFamilyOptions {
-        ColumnFamilyOptions {
-            raw: unsafe { ll::rocks_cfoptions_create() },
-        }
+        ColumnFamilyOptions { raw: unsafe { ll::rocks_cfoptions_create() } }
     }
 
     pub unsafe fn from_ll(raw: *mut ll::rocks_cfoptions_t) -> ColumnFamilyOptions {
-        ColumnFamilyOptions {
-            raw: raw,
-        }
+        ColumnFamilyOptions { raw: raw }
     }
 
     pub fn raw(&self) -> *mut ll::rocks_cfoptions_t {
@@ -144,9 +140,7 @@ impl ColumnFamilyOptions {
     }
 
     pub fn from_options(opt: &Options) -> ColumnFamilyOptions {
-        ColumnFamilyOptions {
-            raw: unsafe { ll::rocks_cfoptions_create_from_options(opt.raw()) }
-        }
+        ColumnFamilyOptions { raw: unsafe { ll::rocks_cfoptions_create_from_options(opt.raw()) } }
     }
 
     /// Some functions that make it easier to optimize RocksDB
@@ -165,9 +159,7 @@ impl ColumnFamilyOptions {
     ///
     /// Not supported in ROCKSDB_LITE
     pub fn optimize_for_point_lookup(self, block_cache_size_mb: u64) -> Self {
-        unsafe {
-            ll::rocks_cfoptions_optimize_for_point_lookup(self.raw, block_cache_size_mb)
-        }
+        unsafe { ll::rocks_cfoptions_optimize_for_point_lookup(self.raw, block_cache_size_mb) }
         self
     }
 
@@ -198,7 +190,8 @@ impl ColumnFamilyOptions {
     pub fn optimize_universal_style_compaction(self, memtable_memory_budget: u64) -> Self {
         // 512 * 1024 * 1024
         unsafe {
-            ll::rocks_cfoptions_optimize_universal_style_compaction(self.raw, memtable_memory_budget);
+            ll::rocks_cfoptions_optimize_universal_style_compaction(self.raw,
+                                                                    memtable_memory_budget);
         }
         self
     }
@@ -689,10 +682,9 @@ impl ColumnFamilyOptions {
     /// change when data grows.
     pub fn compression_per_level(self, val: Vec<CompressionType>) -> Self {
         unsafe {
-            ll::rocks_cfoptions_set_compression_per_level(
-                self.raw,
-                mem::transmute(val.as_slice().as_ptr()), // repr(C)
-                val.len());
+            ll::rocks_cfoptions_set_compression_per_level(self.raw,
+                                                          mem::transmute(val.as_slice().as_ptr()), // repr(C)
+                                                          val.len());
         }
         self
     }
@@ -915,10 +907,10 @@ impl ColumnFamilyOptions {
     /// The options for FIFO compaction style
     pub fn compaction_options_fifo(self, val: CompactionOptionsFIFO) -> Self {
         unimplemented!()
-    //     unsafe {
-    //         ll::rocks_cfoptions_set_compaction_options_fifo(self.raw, val);
-    //     }
-    //     self
+        //     unsafe {
+        //         ll::rocks_cfoptions_set_compaction_options_fifo(self.raw, val);
+        //     }
+        //     self
     }
 
     /// An iteration->Next() sequentially skips over keys with the same
@@ -962,10 +954,10 @@ impl ColumnFamilyOptions {
     /// performed.
     pub fn table_properties_collector_factories(self, val: Vec<()>) -> Self {
         unimplemented!()
-    //     unsafe {
-    //         ll::rocks_cfoptions_set_table_properties_collector_factories(self.raw, val);
-    //     }
-    //     self
+        //     unsafe {
+        //         ll::rocks_cfoptions_set_table_properties_collector_factories(self.raw, val);
+        //     }
+        //     self
     }
 
     /// Maximum number of successive merge operations on a key in the memtable.
@@ -1044,9 +1036,7 @@ impl ColumnFamilyOptions {
 
 impl Default for ColumnFamilyOptions {
     fn default() -> Self {
-        ColumnFamilyOptions {
-            raw: unsafe { ll::rocks_cfoptions_create() },
-        }
+        ColumnFamilyOptions { raw: unsafe { ll::rocks_cfoptions_create() } }
     }
 }
 
@@ -1079,14 +1069,12 @@ impl DBOptions {
     }
 
     pub unsafe fn from_ll(raw: *mut ll::rocks_dboptions_t) -> DBOptions {
-        DBOptions {
-            raw: raw,
-        }
+        DBOptions { raw: raw }
     }
 
     /// If true, the database will be created if it is missing.
     /// Default: false
-    pub fn create_if_missing(self, val: bool) -> Self  {
+    pub fn create_if_missing(self, val: bool) -> Self {
         unsafe {
             ll::rocks_dboptions_set_create_if_missing(self.raw, val as u8);
         }
@@ -1273,7 +1261,11 @@ impl DBOptions {
         let mut cpaths = Vec::with_capacity(num_paths);
         let mut sizes = Vec::with_capacity(num_paths);
         for dbpath in &paths {
-            cpaths.push(dbpath.path.to_str().map(|s| s.as_ptr() as _).unwrap_or_else(ptr::null));
+            cpaths.push(dbpath
+                            .path
+                            .to_str()
+                            .map(|s| s.as_ptr() as _)
+                            .unwrap_or_else(ptr::null));
             sizes.push(dbpath.target_size);
         }
 
@@ -1294,9 +1286,7 @@ impl DBOptions {
     pub fn db_log_dir<P: AsRef<Path>>(self, path: P) -> Self {
         unsafe {
             let path_str = path.as_ref().to_str().unwrap();
-            ll::rocks_dboptions_set_db_log_dir(self.raw,
-                                               path_str.as_ptr() as _,
-                                               path_str.len());
+            ll::rocks_dboptions_set_db_log_dir(self.raw, path_str.as_ptr() as _, path_str.len());
         }
         self
     }
@@ -1310,9 +1300,7 @@ impl DBOptions {
     pub fn wal_dir<P: AsRef<Path>>(self, path: P) -> Self {
         unsafe {
             let path_str = path.as_ref().to_str().unwrap();
-            ll::rocks_dboptions_set_wal_dir(self.raw,
-                                            path_str.as_ptr() as _,
-                                            path_str.len());
+            ll::rocks_dboptions_set_wal_dir(self.raw, path_str.as_ptr() as _, path_str.len());
         }
         self
     }
@@ -1528,18 +1516,17 @@ impl DBOptions {
         self
     }
 
-    /*
-    /// Use O_DIRECT for both reads and writes in background flush and compactions
-    /// When true, we also force new_table_reader_for_compaction_inputs to true.
-    /// Default: false
-    /// Not supported in ROCKSDB_LITE mode!
-    pub fn use_direct_io_for_flush_and_compaction(self, val: bool) -> Self {
-        unsafe {
-            ll::rocks_dboptions_set_use_direct_io_for_flush_and_compaction(self.raw, val as u8);
-        }
-        self
-    }
-    */
+    // Use O_DIRECT for both reads and writes in background flush and compactions
+    // When true, we also force new_table_reader_for_compaction_inputs to true.
+    // Default: false
+    // Not supported in ROCKSDB_LITE mode!
+    // pub fn use_direct_io_for_flush_and_compaction(self, val: bool) -> Self {
+    // unsafe {
+    // ll::rocks_dboptions_set_use_direct_io_for_flush_and_compaction(self.raw, val as u8);
+    // }
+    // self
+    // }
+    //
 
     /// If false, fallocate() calls are bypassed
     pub fn allow_fallocate(self, val: bool) -> Self {
@@ -1933,9 +1920,7 @@ impl DBOptions {
 
 impl Default for DBOptions {
     fn default() -> Self {
-        DBOptions {
-            raw: unsafe { ll::rocks_dboptions_create() },
-        }
+        DBOptions { raw: unsafe { ll::rocks_dboptions_create() } }
     }
 }
 
@@ -1958,9 +1943,7 @@ impl Options {
     }
 
     pub unsafe fn from_ll(raw: *mut ll::rocks_options_t) -> Options {
-        Options {
-            raw: raw,
-        }
+        Options { raw: raw }
     }
 
     pub fn new(dbopt: Option<DBOptions>, cfopt: Option<ColumnFamilyOptions>) -> Options {
@@ -1973,27 +1956,33 @@ impl Options {
 
     /// Configure DBOptions using builder style.
     pub fn map_db_options<F: FnOnce(DBOptions) -> DBOptions>(self, f: F) -> Self {
-        let dbopt = unsafe { DBOptions::from_ll(ll::rocks_dboptions_create_from_options(self.raw)) };
+        let dbopt =
+            unsafe { DBOptions::from_ll(ll::rocks_dboptions_create_from_options(self.raw)) };
         let new_dbopt = f(dbopt);
-        let old_cfopt = unsafe { ColumnFamilyOptions::from_ll(ll::rocks_cfoptions_create_from_options(self.raw)) };
+        let old_cfopt =
+            unsafe {
+                ColumnFamilyOptions::from_ll(ll::rocks_cfoptions_create_from_options(self.raw))
+            };
         unsafe {
-            Options::from_ll(ll::rocks_options_create_from_db_cf_options(
-                new_dbopt.raw(),
-                old_cfopt.raw(),
-            ))
+            Options::from_ll(ll::rocks_options_create_from_db_cf_options(new_dbopt.raw(),
+                                                                         old_cfopt.raw()))
         }
     }
 
     /// Configure ColumnFamilyOptions using builder style.
-    pub fn map_cf_options<F: FnOnce(ColumnFamilyOptions) -> ColumnFamilyOptions>(self, f: F) -> Self {
-        let cfopt = unsafe { ColumnFamilyOptions::from_ll(ll::rocks_cfoptions_create_from_options(self.raw)) };
+    pub fn map_cf_options<F: FnOnce(ColumnFamilyOptions) -> ColumnFamilyOptions>(self,
+                                                                                 f: F)
+                                                                                 -> Self {
+        let cfopt =
+            unsafe {
+                ColumnFamilyOptions::from_ll(ll::rocks_cfoptions_create_from_options(self.raw))
+            };
         let new_cfopt = f(cfopt);
-        let old_dbopt = unsafe { DBOptions::from_ll(ll::rocks_dboptions_create_from_options(self.raw)) };
+        let old_dbopt =
+            unsafe { DBOptions::from_ll(ll::rocks_dboptions_create_from_options(self.raw)) };
         unsafe {
-            Options::from_ll(ll::rocks_options_create_from_db_cf_options(
-                old_dbopt.raw(),
-                new_cfopt.raw(),
-            ))
+            Options::from_ll(ll::rocks_options_create_from_db_cf_options(old_dbopt.raw(),
+                                                                         new_cfopt.raw()))
         }
     }
 
@@ -2021,9 +2010,7 @@ impl Options {
 
 impl Default for Options {
     fn default() -> Self {
-        Options {
-            raw: unsafe { ll::rocks_options_create() },
-        }
+        Options { raw: unsafe { ll::rocks_options_create() } }
     }
 }
 
@@ -2245,9 +2232,7 @@ impl ReadOptions {
 
 impl Default for ReadOptions {
     fn default() -> Self {
-        ReadOptions {
-            raw: unsafe { ll::rocks_readoptions_create() },
-        }
+        ReadOptions { raw: unsafe { ll::rocks_readoptions_create() } }
     }
 }
 
@@ -2333,9 +2318,7 @@ impl WriteOptions {
 
 impl Default for WriteOptions {
     fn default() -> Self {
-        WriteOptions {
-            raw: unsafe { ll::rocks_writeoptions_create() },
-        }
+        WriteOptions { raw: unsafe { ll::rocks_writeoptions_create() } }
     }
 }
 

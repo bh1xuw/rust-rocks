@@ -7,7 +7,9 @@ working in progress.
 
 ## status
 
-- [ ] ~~``rocksdb/c.h``~~
+> checkbox means DONE, or NEEDLESS TO BE DONE.
+
+- [x] ~~``rocksdb/c.h``~~
   - [x] we use c++ API
 - [ ] ``rocksdb/cache.h``
 - [ ] ``rocksdb/compaction_filter.h``
@@ -31,6 +33,7 @@ working in progress.
 - [ ] ``rocksdb/flush_block_policy.h``
 - [ ] ``rocksdb/iostats_context.h``
 - [x] ``rocksdb/iterator.h``
+  - [x] adapter for Rust Iterator
 - [ ] ``rocksdb/ldb_tool.h``
 - [ ] ``rocksdb/listener.h``
 - [ ] ``rocksdb/memtablerep.h``
@@ -51,16 +54,19 @@ working in progress.
 - [ ] ``rocksdb/sst_file_writer.h``
 - [ ] ``rocksdb/statistics.h``
 - [x] ``rocksdb/status.h``
+  - [ ] Rust style Error? (i.e. remove Status::OK)
 - [ ] ``rocksdb/table.h``
 - [ ] ``rocksdb/table_properties.h``
 - [ ] ``rocksdb/thread_status.h``
 - [ ] ``rocksdb/threadpool.h``
 - [ ] ``rocksdb/transaction_log.h``
-- [ ] ~~``rocksdb/types.h``~~
-- [ ] ~~``rocksdb/version.h``~~
+- [x] ~~``rocksdb/types.h``~~
+  - [x] a sequence number type, wrapped in Snapshot
+- [x] ``rocksdb/version.h``
 - [ ] ``rocksdb/wal_filter.h``
 - [x] ``rocksdb/write_batch.h``
-  - [ ] builder style
+  - [x] basic functions
+  - [x] builder style
   - [ ] batch cf ops
 - [ ] ~~``rocksdb/write_batch_base.h``~~
 - [ ] ``rocksdb/write_buffer_manager.h``

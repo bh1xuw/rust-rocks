@@ -12,6 +12,12 @@ extern "C" {
     return new rocks_writebatch_t;
   }
 
+  rocks_writebatch_t* rocks_writebatch_create_with_reserved_bytes(size_t size) {
+    rocks_writebatch_t* b = new rocks_writebatch_t;
+    b->rep = WriteBatch(size);
+    return b;
+  }
+
   rocks_writebatch_t* rocks_writebatch_create_from(const char* rep,
                                                    size_t size) {
     rocks_writebatch_t* b = new rocks_writebatch_t;

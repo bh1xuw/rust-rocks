@@ -26,7 +26,8 @@ impl fmt::Debug for Iterator {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         try!(write!(f, "Iterator("));
         if self.is_valid() {
-            write!(f, "key={:?} value={:?})",
+            write!(f,
+                   "key={:?} value={:?})",
                    String::from_utf8_lossy(self.key()),
                    String::from_utf8_lossy(self.value()))
         } else {
@@ -46,17 +47,13 @@ impl Drop for Iterator {
 
 impl Iterator {
     pub unsafe fn from_ll(raw: *mut ll::rocks_iterator_t) -> Self {
-        Iterator {
-            raw: raw,
-        }
+        Iterator { raw: raw }
     }
 
     /// An iterator is either positioned at a key/value pair, or
     /// not valid.  This method returns true iff the iterator is valid.
     pub fn is_valid(&self) -> bool {
-        unsafe {
-            ll::rocks_iter_valid(self.raw) != 0
-        }
+        unsafe { ll::rocks_iter_valid(self.raw) != 0 }
     }
 
     /// Position at the first key in the source.  The iterator is Valid()
@@ -157,9 +154,7 @@ impl Iterator {
     ///   LSM version used by the iterator. The same format as DB Property
     ///   kCurrentSuperVersionNumber. See its comment for more information.
     pub fn get_property(&self, prop_name: &str) -> String {
-        unsafe {
-            unimplemented!()
-        }
+        unimplemented!()
     }
 
     // FIXME: leaks?
@@ -205,10 +200,9 @@ impl<'a> iter::Iterator for Iter<'a> {
                 slice::from_raw_parts(ptr as _, len)
             };
             self.inner.next();
-            Some((k,v))
+            Some((k, v))
         } else {
             None
         }
     }
 }
-

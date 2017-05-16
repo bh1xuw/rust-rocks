@@ -100,9 +100,7 @@ pub struct Logger {
 
 impl Logger {
     pub unsafe fn from_ll(raw: *mut ll::rocks_logger_t) -> Logger {
-        Logger {
-            raw: raw,
-        }
+        Logger { raw: raw }
     }
 
     pub fn raw(&self) -> *mut ll::rocks_logger_t {
