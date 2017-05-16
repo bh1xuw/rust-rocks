@@ -1165,6 +1165,12 @@ extern "C" {
                              vallen: usize, status: *mut rocks_status_t);
 }
 extern "C" {
+    pub fn rocks_db_write(db: *mut rocks_db_t,
+                          options: *const rocks_writeoptions_t,
+                          batch: *mut rocks_writebatch_t,
+                          status: *mut rocks_status_t);
+}
+extern "C" {
     pub fn rocks_db_get(db: *mut rocks_db_t,
                         options: *const rocks_readoptions_t,
                         key: *const ::std::os::raw::c_char, keylen: usize,
@@ -1398,6 +1404,19 @@ extern "C" {
                                        keys_list:
                                            *const *const ::std::os::raw::c_char,
                                        keys_list_sizes: *const usize);
+}
+extern "C" {
+    pub fn rocks_writebatch_single_delete(b: *mut rocks_writebatch_t,
+                                          key: *const ::std::os::raw::c_char,
+                                          klen: usize);
+}
+extern "C" {
+    pub fn rocks_writebatch_single_delete_cf(b: *mut rocks_writebatch_t,
+                                             column_family:
+                                                 *mut rocks_column_family_handle_t,
+                                             key:
+                                                 *const ::std::os::raw::c_char,
+                                             klen: usize);
 }
 extern "C" {
     pub fn rocks_writebatch_delete_range(b: *mut rocks_writebatch_t,

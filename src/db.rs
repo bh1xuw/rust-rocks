@@ -11,6 +11,7 @@ use std::ops;
 use std::fmt;
 use std::iter::IntoIterator;
 use std::marker::PhantomData;
+use std::path::Path;
 
 use rocks_sys as ll;
 
@@ -19,6 +20,7 @@ use comparator::Comparator;
 use options::{Options, DBOptions, ColumnFamilyOptions, ReadOptions, WriteOptions};
 use table_properties::TableProperties;
 use snapshot::Snapshot;
+use write_batch::WriteBatch;
 
 const DEFAULT_COLUMN_FAMILY_NAME: &'static str = "default";
 
@@ -212,11 +214,11 @@ impl<'a> DB<'a> {
     /// OK on success.
     /// Stores nullptr in *dbptr and returns a non-OK status on error.
     /// Caller should delete *dbptr when it is no longer needed.
-    pub fn open<'b>(options: &Options, name: &str) -> Result<DB<'b>, Status> {
+    pub fn open<'b, T: AsRef<Options>, P: AsRef<Path>>(options: T, name: P) -> Result<DB<'b>, Status> {
         unsafe {
-            let opt = options.raw();
-            let dbname = CString::new(name).unwrap();
-            let mut status = mem::uninitialized::<ll::rocks_status_t>();
+            let opt = options.as_ref().raw();
+            let dbname = name.as_ref().to_str().and_then(|s| CString::new(s).ok()).unwrap();
+            let mut status = mem::zeroed::<ll::rocks_status_t>();
             let db_ptr = ll::rocks_db_open(opt, dbname.as_ptr(), &mut status);
             if status.code == 0 {
                 Ok(DB::from_ll(db_ptr))
@@ -242,7 +244,7 @@ impl<'a> DB<'a> {
     /// DestroyColumnFamilyHandle() with all the handles.
     pub fn open_with_column_families<'b, 'c: 'b, CF: Into<ColumnFamilyDescriptor>>(
         options: &Options, name: &str, column_families: Vec<CF>) ->
-        Result<(DB<'c>, Vec<ColumnFamilyHandle<'b, 'c>>), Status> {
+        Result<(DB<'b>, Vec<ColumnFamilyHandle<'c, 'b>>), Status> {
         unsafe {
             let opt = options.raw();
             let mut status = mem::uninitialized::<ll::rocks_status_t>();
@@ -302,7 +304,7 @@ impl<'a> DB<'a> {
     pub fn open_for_readonly<'b>(options: &Options, name: &str, error_if_log_file_exist: bool) -> Result<DB<'b>, Status> {
         unsafe {
             let dbname = CString::new(name).unwrap();
-            let mut status = mem::uninitialized::<ll::rocks_status_t>();
+            let mut status = mem::zeroed::<ll::rocks_status_t>();
             let db_ptr = ll::rocks_db_open_for_read_only(
                 options.raw(), dbname.as_ptr(), error_if_log_file_exist as u8, &mut status);
             if status.code == 0 {
@@ -321,7 +323,7 @@ impl<'a> DB<'a> {
     pub fn list_column_families(options: &Options, name: &str) -> Result<Vec<String>, Status> {
         unsafe {
             let dbname = CString::new(name).unwrap();
-            let mut status = mem::uninitialized::<ll::rocks_status_t>();
+            let mut status = mem::zeroed::<ll::rocks_status_t>();
             let mut lencfs = 0;
             let cfs = ll::rocks_db_list_column_families(
                 options.raw(),
@@ -376,7 +378,7 @@ impl<'a> DB<'a> {
     pub fn put_cf(&self, options: &WriteOptions, column_family: &ColumnFamilyHandle,
                key: &[u8], value: &[u8]) -> Result<(), Status> {
         unsafe {
-            let mut status = mem::uninitialized::<ll::rocks_status_t>();
+            let mut status = mem::zeroed::<ll::rocks_status_t>();
             // since rocksdb::DB::put without cf is for compatibility
             ll::rocks_db_put_cf(
                 self.raw(),
@@ -396,7 +398,7 @@ impl<'a> DB<'a> {
     pub fn put(&self, options: &WriteOptions,
                key: &[u8], value: &[u8]) -> Result<(), Status> {
         unsafe {
-            let mut status = mem::uninitialized::<ll::rocks_status_t>();
+            let mut status = mem::zeroed::<ll::rocks_status_t>();
             ll::rocks_db_put(
                 self.raw(),
                 options.raw(),
@@ -434,7 +436,17 @@ impl<'a> DB<'a> {
 
     // merge
 
-    // write
+    pub fn write<W: AsRef<WriteOptions>>(&self, options: W, updates: WriteBatch) -> Result<(), Status> {
+        unsafe {
+            let mut status = mem::zeroed();
+            ll::rocks_db_write(self.raw(), options.as_ref().raw(), updates.raw(), &mut status);
+            if status.code == 0 {
+                Ok(())
+            } else {
+                Err(Status::from_ll(&status))
+            }
+        }
+    }
 
     // If the database contains an entry for "key" store the
     // corresponding value in *value and return OK.
@@ -443,11 +455,11 @@ impl<'a> DB<'a> {
     // a status for which Status::IsNotFound() returns true.
     //
     // May return some other Status on an error.
-    pub fn get(&self, options: &ReadOptions, key: &[u8]) -> Result<CVec<u8>, Status> {
+    pub fn get<R: AsRef<ReadOptions>>(&self, options: R, key: &[u8]) -> Result<CVec<u8>, Status> {
         unsafe {
             let mut status = mem::zeroed::<ll::rocks_status_t>();
             let mut vallen = 0_usize;
-            let ptr = ll::rocks_db_get(self.raw(), options.raw(),
+            let ptr = ll::rocks_db_get(self.raw(), options.as_ref().raw(),
                                        key.as_ptr() as _, key.len(),
                                        &mut vallen, &mut status);
 
@@ -648,7 +660,7 @@ fn test_db_get() {
                        b"name", b"BH1XUW");
     }
 
-    let db = DB::open(&Default::default(), path).unwrap();
+    let db = DB::open(Options::default(), path).unwrap();
     let val = db.get(&ReadOptions::default(),
                      b"name");
     assert_eq!(val.unwrap().as_ref(), b"BH1XUW");
@@ -667,25 +679,29 @@ fn test_db_paths() {
                 .wal_dir("./my_wal")
         });
 
-    let db = DB::open(&opt, "multi");
+    let db = DB::open(opt, "multi");
     if db.is_err() {
         println!("err => {:?}", db.unwrap_err());
         return ;
     }
     let db = db.unwrap();
-    let _ = db.put(&Default::default(),
+    let _ = db.put(&WriteOptions::default(),
                    b"name", b"BH1XUW").unwrap();
     for i in 0..1000 {
-            let key = format!("test2-key-{}", i);
-            let val = format!("rocksdb-value-{}", i*10);
-            let value: String = iter::repeat(val)
-                .take(100)
-                .collect::<Vec<_>>()
-                .concat();
-
-            db.put(&WriteOptions::default(),
-                   key.as_bytes(), value.as_bytes()).unwrap();
+        let key = format!("test2-key-{}", i);
+        let val = format!("rocksdb-value-{}", i*10);
+        let value: String = iter::repeat(val)
+            .take(100000)
+            .collect::<Vec<_>>()
+            .concat();
+        if i == 500 {
+            let s = db.get_snapshot();
+            println!("debug snapshot => {:?}", s);
         }
+
+        db.put(&WriteOptions::default(),
+               key.as_bytes(), value.as_bytes()).unwrap();
+    }
 
 }
 
@@ -710,4 +726,64 @@ fn test_open_cf() {
         let cf = &cfs[0];
         println!("cf name => {:?} id => {}", cf.get_name(), cf.get_id());
     }
+}
+
+
+#[test]
+fn test_cf_lifetime() {
+    use tempdir::TempDir;
+    let tmp_dir = TempDir::new_in(".", "rocks").unwrap();
+    
+    let opt = Options::default()
+        .map_db_options(|db| {
+            db.create_if_missing(true)
+        });
+
+    let mut cf_handle = None;
+    {
+        let ret = DB::open_with_column_families(&opt, tmp_dir.path().to_str().unwrap(),
+                                                vec![ColumnFamilyDescriptor::default()]);
+        assert!(ret.is_ok(), "err => {:?}", ret);
+        println!("cfs => {:?}", ret);
+
+        if let Ok((db, mut cfs)) = ret {
+            let cf = cfs.pop().unwrap();
+            println!("cf name => {:?} id => {}", cf.get_name(), cf.get_id());
+            cf_handle = Some(cf);
+//            unsafe {
+//                ll::rocks_db_close(db.raw());
+//            }
+        }
+
+    }
+
+    println!("cf name => {:?}", cf_handle.unwrap().get_name());
+
+}
+
+#[test]
+fn test_write_batch() {
+    use tempdir::TempDir;
+    let tmp_dir = TempDir::new_in(".", "rocks").unwrap();
+    
+    let opt = Options::default()
+        .map_db_options(|db| {
+            db.create_if_missing(true)
+        });
+
+    let db = DB::open(opt, tmp_dir.path().to_str().unwrap()).unwrap();
+
+    let batch = WriteBatch::new()
+        .put(b"name", b"BY1CQ")
+        .delete(b"name")
+        .put(b"name", b"BH1XUW")
+        .put(b"site", b"github");
+
+    let ret = db.write(WriteOptions::default(), batch);
+    assert!(ret.is_ok());
+
+    assert_eq!(db.get(ReadOptions::default(), b"name").unwrap().as_ref(),
+               b"BH1XUW");
+    assert_eq!(db.get(ReadOptions::default(), b"site").unwrap().as_ref(),
+               b"github");
 }

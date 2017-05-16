@@ -1,4 +1,5 @@
 
+use std::fmt;
 use std::marker::PhantomData;
 
 use rocks_sys as ll;
@@ -15,6 +16,13 @@ pub struct Snapshot<'a> {
     raw: *mut ll::rocks_snapshot_t,
     _marker: PhantomData<&'a ()>
 }
+
+impl<'a> fmt::Debug for Snapshot<'a> {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        write!(f, "Snapshot({:?})", self.raw)
+    }
+}
+
 
 impl<'a> Snapshot<'a> {
     pub unsafe fn from_ll<'b>(raw: *mut ll::rocks_snapshot_t) -> Snapshot<'a> {

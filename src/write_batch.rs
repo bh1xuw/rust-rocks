@@ -14,6 +14,8 @@
 //! non-const method, all threads accessing the same WriteBatch must use
 //! external synchronization.
 
+use std::mem;
+
 use rocks_sys as ll;
 
 use status::Status;
@@ -38,8 +40,8 @@ impl WriteBatch {
         }
     }
 
-    pub fn with_capacity(reserved_bytes: usize) -> WriteBatch {
-        unimplemented!()
+    pub fn raw(&self) -> *mut ll::rocks_writebatch_t {
+        self.raw
     }
 
     /// Clear all updates buffered in this batch.
@@ -50,17 +52,24 @@ impl WriteBatch {
     }
 
     /// Store the mapping "key->value" in the database.
-    pub fn put(&mut self, key: &[u8], value: &[u8]) {
+    pub fn put(self, key: &[u8], value: &[u8]) -> Self {
         unsafe {
             ll::rocks_writebatch_put(self.raw,
                                      key.as_ptr() as _, key.len(),
                                      value.as_ptr() as _, value.len());
         }
+        self
     }
 
-    pub fn put_cf(&mut self, column_family: &ColumnFamilyHandle,
-                  key: &[u8], value: &[u8]) {
-        unimplemented!()
+    pub fn put_cf(self, column_family: &ColumnFamilyHandle,
+                  key: &[u8], value: &[u8]) -> Self {
+        unsafe {
+            ll::rocks_writebatch_put_cf(self.raw,
+                                        column_family.raw(),
+                                        key.as_ptr() as _, key.len(),
+                                        value.as_ptr() as _, value.len());
+        }
+        self
     }
 
     /// Variant of Put() that gathers output like writev(2).  The key and value
@@ -76,12 +85,21 @@ impl WriteBatch {
     }
 
     /// If the database contains a mapping for "key", erase it.  Else do nothing.
-    pub fn delete(&mut self, key: &[u8]) {
-        unimplemented!()
+    pub fn delete(self, key: &[u8]) -> Self {
+        unsafe {
+            ll::rocks_writebatch_delete(self.raw,
+                                     key.as_ptr() as _, key.len());
+        }
+        self
     }
 
-    pub fn delete_cf(&mut self, column_family: &ColumnFamilyHandle, key: &[u8]) {
-        unimplemented!()
+    pub fn delete_cf(self, column_family: &ColumnFamilyHandle, key: &[u8]) -> Self {
+        unsafe {
+            ll::rocks_writebatch_delete_cf(self.raw,
+                                           column_family.raw(),
+                                           key.as_ptr() as _, key.len());
+        }
+        self
     }
 
     /// variant that takes SliceParts
@@ -94,12 +112,21 @@ impl WriteBatch {
     }
 
     /// WriteBatch implementation of DB::SingleDelete().  See db.h.
-    pub fn single_delete(&mut self, key: &[u8]) {
-        unimplemented!()
+    pub fn single_delete(self, key: &[u8]) -> Self {
+        unsafe {
+            ll::rocks_writebatch_single_delete(self.raw,
+                                        key.as_ptr() as _, key.len());
+        }
+        self
     }
 
-    pub fn single_delete_cf(&mut self, column_family: &ColumnFamilyHandle, key: &[u8]) {
-        unimplemented!()
+    pub fn single_delete_cf(self, column_family: &ColumnFamilyHandle, key: &[u8]) -> Self {
+        unsafe {
+            ll::rocks_writebatch_single_delete_cf(self.raw,
+                                                  column_family.raw(),
+                                                  key.as_ptr() as _, key.len());
+        }
+        self
     }
 
     /// variant that takes SliceParts
@@ -112,12 +139,23 @@ impl WriteBatch {
     }
 
     /// WriteBatch implementation of DB::DeleteRange().  See db.h.
-    pub fn delete_range(&mut self, begin_key: &[u8], end_key: &[u8]) {
-        unimplemented!()
+    pub fn delete_range(self, begin_key: &[u8], end_key: &[u8]) -> Self {
+        unsafe {
+            ll::rocks_writebatch_delete_range(self.raw,
+                                              begin_key.as_ptr() as _, begin_key.len(),
+                                              end_key.as_ptr() as _, end_key.len());
+        }
+        self
     }
 
-    pub fn delete_range_cf(&mut self, column_family: &ColumnFamilyHandle, begin_key: &[u8], end_key: &[u8]) {
-        unimplemented!()
+    pub fn delete_range_cf(self, column_family: &ColumnFamilyHandle, begin_key: &[u8], end_key: &[u8]) -> Self {
+        unsafe {
+            ll::rocks_writebatch_delete_range_cf(self.raw,
+                                                 column_family.raw(),
+                                                 begin_key.as_ptr() as _, begin_key.len(),
+                                                 end_key.as_ptr() as _, end_key.len());
+        }
+        self
     }
 
     /// variant that takes SliceParts
@@ -132,13 +170,24 @@ impl WriteBatch {
 
     /// Merge "value" with the existing value of "key" in the database.
     /// "key->merge(existing, value)"
-    pub fn merge(&mut self, key: &[u8], value: &[u8]) {
-        unimplemented!()
+    pub fn merge(self, key: &[u8], value: &[u8]) -> Self {
+        unsafe {
+            ll::rocks_writebatch_merge(self.raw,
+                                       key.as_ptr() as _, key.len(),
+                                       value.as_ptr() as _, value.len());
+        }
+        self
     }
 
-    pub fn merge_cf(&mut self, column_family: &ColumnFamilyHandle,
-                  key: &[u8], value: &[u8]) {
-        unimplemented!()
+    pub fn merge_cf(self, column_family: &ColumnFamilyHandle,
+                    key: &[u8], value: &[u8]) -> Self {
+        unsafe {
+            ll::rocks_writebatch_merge_cf(self.raw,
+                                          column_family.raw(),
+                                          key.as_ptr() as _, key.len(),
+                                          value.as_ptr() as _, value.len());
+        }
+        self
     }
 
     // variant that takes SliceParts
@@ -161,14 +210,21 @@ impl WriteBatch {
     ///
     /// Example application: add timestamps to the transaction log for use in
     /// replication.
-    pub fn put_log_data(&mut self, blob: &[u8]) {
-        unimplemented!()
+    pub fn put_log_data(self, blob: &[u8]) -> Self {
+        unsafe {
+            ll::rocks_writebatch_put_log_data(self.raw,
+                                              blob.as_ptr() as _, blob.len());
+        }
+        self
     }
 
     /// Records the state of the batch for future calls to RollbackToSavePoint().
     /// May be called multiple times to set multiple save points.
-    pub fn set_save_point(&mut self) {
-        unimplemented!()
+    pub fn set_save_point(self) -> Self {
+        unsafe {
+            ll::rocks_writebatch_set_save_point(self.raw);
+        }
+        self
     }
 
     /// Remove all entries in this batch (Put, Merge, Delete, PutLogData) since the
@@ -176,8 +232,12 @@ impl WriteBatch {
     /// If there is no previous call to SetSavePoint(), Status::NotFound()
     /// will be returned.
     /// Otherwise returns Status::OK().
-    pub fn rollback_to_save_point(&mut self) {
-        unimplemented!()
+    pub fn rollback_to_save_point(self) -> Self {
+        unsafe {
+            let mut status = mem::zeroed();
+            ll::rocks_writebatch_rollback_to_save_point(self.raw, &mut status);
+        }
+        self
     }
 
 
@@ -253,9 +313,10 @@ impl WriteBatch {
 
 #[test]
 fn test_write_batch_create() {
-    let mut batch = WriteBatch::new();
-    assert!(batch.count() == 0);
-    batch.put(b"name", b"rocksdb");
-    assert_eq!(batch.count(), 1);
+    let batch = WriteBatch::new()
+        .put(b"name", b"rocksdb");
+    assert!(batch.count() == 1);
+    let batch = batch.delete(b"name");
+    assert_eq!(batch.count(), 2);
 }
 

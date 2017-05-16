@@ -1944,6 +1944,12 @@ pub struct Options {
     raw: *mut ll::rocks_options_t,
 }
 
+impl AsRef<Options> for Options {
+    fn as_ref(&self) -> &Options {
+        self
+    }
+}
+
 impl Options {
     // Some functions that make it easier to optimize RocksDB
 
@@ -2059,6 +2065,13 @@ pub enum ReadTier {
 pub struct ReadOptions {
     raw: *mut ll::rocks_readoptions_t,
 }
+
+impl AsRef<ReadOptions> for ReadOptions {
+    fn as_ref(&self) -> &ReadOptions {
+        self
+    }
+}
+
 
 impl ReadOptions {
     pub fn raw(&self) -> *mut ll::rocks_readoptions_t {
@@ -2250,9 +2263,14 @@ fn test_read_options() {
 
 
 /// Options that control write operations
-#[repr(C)]
 pub struct WriteOptions {
     raw: *mut ll::rocks_writeoptions_t,
+}
+
+impl AsRef<WriteOptions> for WriteOptions {
+    fn as_ref(&self) -> &WriteOptions {
+        self
+    }
 }
 
 impl WriteOptions {

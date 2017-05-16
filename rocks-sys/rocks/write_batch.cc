@@ -171,6 +171,19 @@ extern "C" {
     b->rep.Delete(column_family->rep, SliceParts(key_slices.data(), num_keys));
   }
 
+  void rocks_writebatch_single_delete(
+                               rocks_writebatch_t* b,
+                               const char* key, size_t klen) {
+    b->rep.SingleDelete(Slice(key, klen));
+  }
+
+  void rocks_writebatch_single_delete_cf(
+                                  rocks_writebatch_t* b,
+                                  rocks_column_family_handle_t* column_family,
+                                  const char* key, size_t klen) {
+    b->rep.SingleDelete(column_family->rep, Slice(key, klen));
+  }
+
   void rocks_writebatch_delete_range(rocks_writebatch_t* b,
                                      const char* start_key,
                                      size_t start_key_len, const char* end_key,

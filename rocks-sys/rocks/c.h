@@ -596,6 +596,12 @@ extern "C" {
                          const char* val, size_t vallen,
                          rocks_status_t* status);
 
+  void rocks_db_write(
+                      rocks_db_t* db,
+                      const rocks_writeoptions_t* options,
+                      rocks_writebatch_t* batch,
+                      rocks_status_t* status);
+
   char* rocks_db_get(
                      rocks_db_t* db,
                      const rocks_readoptions_t* options,
@@ -768,6 +774,15 @@ extern "C" {
                                    rocks_column_family_handle_t* column_family,
                                    int num_keys, const char* const* keys_list,
                                    const size_t* keys_list_sizes);
+
+  void rocks_writebatch_single_delete(
+                                      rocks_writebatch_t* b,
+                                      const char* key, size_t klen);
+
+  void rocks_writebatch_single_delete_cf(
+                                         rocks_writebatch_t* b,
+                                         rocks_column_family_handle_t* column_family,
+                                         const char* key, size_t klen);
 
   void rocks_writebatch_delete_range(rocks_writebatch_t* b,
                                      const char* start_key,
