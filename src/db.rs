@@ -17,7 +17,8 @@ use rocks_sys as ll;
 
 use status::Status;
 use comparator::Comparator;
-use options::{Options, DBOptions, ColumnFamilyOptions, ReadOptions, WriteOptions};
+use options::{Options, DBOptions, ColumnFamilyOptions, ReadOptions, WriteOptions,
+              CompactRangeOptions};
 use table_properties::TableProperties;
 use snapshot::Snapshot;
 use write_batch::WriteBatch;
@@ -148,22 +149,6 @@ impl<'a, 'b> Drop for ColumnFamilyHandle<'a, 'b> {
         }
     }
 }
-
-/// A range of keys
-pub struct Range<'a> {
-    /// Included in the range
-    start: &'a [u8],
-    /// Not included in the range
-    limit: &'a [u8],
-}
-
-
-impl<'a> Range<'a> {
-    pub fn new(s: &'a [u8], l: &'a [u8]) -> Range<'a> {
-        Range { start: s, limit: l }
-    }
-}
-
 
 pub struct DBContext<'a> {
     raw: *mut ll::rocks_db_t,
@@ -455,9 +440,193 @@ impl<'a> DB<'a> {
     // }
     // }
     //
-    // delete
 
-    // merge
+    /// Remove the database entry (if any) for "key".  Returns OK on
+    /// success, and a non-OK status on error.  It is not an error if "key"
+    /// did not exist in the database.
+    /// Note: consider setting options.sync = true.
+    pub fn delete<W: AsRef<WriteOptions>>(&self, options: W, key: &[u8]) -> Result<(), Status> {
+        unsafe {
+            let mut status = mem::zeroed();
+            ll::rocks_db_delete(self.raw(),
+                                options.as_ref().raw(),
+                                key.as_ptr() as *const _,
+                                key.len(),
+                                &mut status);
+            if status.code == 0 {
+                Ok(())
+            } else {
+                Err(Status::from_ll(&status))
+            }
+        }
+    }
+
+    pub fn delete_cf<W: AsRef<WriteOptions>>(&self,
+                                             options: W,
+                                             column_family: &ColumnFamilyHandle,
+                                             key: &[u8])
+                                             -> Result<(), Status> {
+        unsafe {
+            let mut status = mem::zeroed();
+            ll::rocks_db_delete_cf(self.raw(),
+                                   options.as_ref().raw(),
+                                   column_family.raw(),
+                                   key.as_ptr() as *const _,
+                                   key.len(),
+                                   &mut status);
+            if status.code == 0 {
+                Ok(())
+            } else {
+                Err(Status::from_ll(&status))
+            }
+        }
+    }
+
+    /// Remove the database entry for "key". Requires that the key exists
+    /// and was not overwritten. Returns OK on success, and a non-OK status
+    /// on error.  It is not an error if "key" did not exist in the database.
+    ///
+    /// If a key is overwritten (by calling Put() multiple times), then the result
+    /// of calling SingleDelete() on this key is undefined.  SingleDelete() only
+    /// behaves correctly if there has been only one Put() for this key since the
+    /// previous call to SingleDelete() for this key.
+    ///
+    /// This feature is currently an experimental performance optimization
+    /// for a very specific workload.  It is up to the caller to ensure that
+    /// SingleDelete is only used for a key that is not deleted using Delete() or
+    /// written using Merge().  Mixing SingleDelete operations with Deletes and
+    /// Merges can result in undefined behavior.
+    ///
+    /// Note: consider setting options.sync = true.
+    pub fn single_delete<W: AsRef<WriteOptions>>(&self,
+                                                 options: W,
+                                                 key: &[u8])
+                                                 -> Result<(), Status> {
+        unsafe {
+            let mut status = mem::zeroed();
+            ll::rocks_db_single_delete(self.raw(),
+                                       options.as_ref().raw(),
+                                       key.as_ptr() as *const _,
+                                       key.len(),
+                                       &mut status);
+            if status.code == 0 {
+                Ok(())
+            } else {
+                Err(Status::from_ll(&status))
+            }
+        }
+    }
+
+    pub fn single_delete_cf<W: AsRef<WriteOptions>>(&self,
+                                                    options: W,
+                                                    column_family: &ColumnFamilyHandle,
+                                                    key: &[u8])
+                                                    -> Result<(), Status> {
+        unsafe {
+            let mut status = mem::zeroed();
+            ll::rocks_db_single_delete_cf(self.raw(),
+                                          options.as_ref().raw(),
+                                          column_family.raw(),
+                                          key.as_ptr() as *const _,
+                                          key.len(),
+                                          &mut status);
+            if status.code == 0 {
+                Ok(())
+            } else {
+                Err(Status::from_ll(&status))
+            }
+        }
+    }
+
+    /// Removes the database entries in the range ["begin_key", "end_key"), i.e.,
+    /// including "begin_key" and excluding "end_key". Returns OK on success, and
+    /// a non-OK status on error. It is not an error if no keys exist in the range
+    /// ["begin_key", "end_key").
+    ///
+    /// This feature is currently an experimental performance optimization for
+    /// deleting very large ranges of contiguous keys. Invoking it many times or on
+    /// small ranges may severely degrade read performance; in particular, the
+    /// resulting performance can be worse than calling Delete() for each key in
+    /// the range. Note also the degraded read performance affects keys outside the
+    /// deleted ranges, and affects database operations involving scans, like flush
+    /// and compaction.
+    ///
+    /// Consider setting ReadOptions::ignore_range_deletions = true to speed
+    /// up reads for key(s) that are known to be unaffected by range deletions.
+    pub fn delete_range_cf<W: AsRef<WriteOptions>>(&self,
+                                                   options: W,
+                                                   column_family: &ColumnFamilyHandle,
+                                                   begin_key: &[u8],
+                                                   end_key: &[u8])
+                                                   -> Result<(), Status> {
+        unsafe {
+            let mut status = mem::zeroed();
+            ll::rocks_db_delete_range_cf(self.raw(),
+                                         options.as_ref().raw(),
+                                         column_family.raw(),
+                                         begin_key.as_ptr() as *const _,
+                                         begin_key.len(),
+                                         begin_key.as_ptr() as *const _,
+                                         begin_key.len(),
+                                         &mut status);
+            if status.code == 0 {
+                Ok(())
+            } else {
+                Err(Status::from_ll(&status))
+            }
+        }
+    }
+
+    /// Merge the database entry for "key" with "value".  Returns OK on success,
+    /// and a non-OK status on error. The semantics of this operation is
+    /// determined by the user provided merge_operator when opening DB.
+    /// Note: consider setting options.sync = true.
+    pub fn merge<W: AsRef<WriteOptions>>(&self,
+                                         options: W,
+                                         key: &[u8],
+                                         val: &[u8])
+                                         -> Result<(), Status> {
+        unsafe {
+            let mut status = mem::zeroed();
+            ll::rocks_db_merge(self.raw(),
+                               options.as_ref().raw(),
+                               key.as_ptr() as *const _,
+                               key.len(),
+                               val.as_ptr() as *const _,
+                               val.len(),
+                               &mut status);
+            if status.code == 0 {
+                Ok(())
+            } else {
+                Err(Status::from_ll(&status))
+            }
+        }
+    }
+
+    pub fn merge_cf<W: AsRef<WriteOptions>>(&self,
+                                            options: W,
+                                            column_family: &ColumnFamilyHandle,
+                                            key: &[u8],
+                                            val: &[u8])
+                                            -> Result<(), Status> {
+        unsafe {
+            let mut status = mem::zeroed();
+            ll::rocks_db_merge_cf(self.raw(),
+                                  options.as_ref().raw(),
+                                  column_family.raw(),
+                                  key.as_ptr() as *const _,
+                                  key.len(),
+                                  val.as_ptr() as *const _,
+                                  val.len(),
+                                  &mut status);
+            if status.code == 0 {
+                Ok(())
+            } else {
+                Err(Status::from_ll(&status))
+            }
+        }
+    }
+
 
     pub fn write<W: AsRef<WriteOptions>>(&self,
                                          options: W,
@@ -527,16 +696,95 @@ impl<'a> DB<'a> {
         }
     }
 
+
+    /// If keys[i] does not exist in the database, then the i'th returned
+    /// status will be one for which Status::IsNotFound() is true, and
+    /// (*values)[i] will be set to some arbitrary value (often ""). Otherwise,
+    /// the i'th returned status will have Status::ok() true, and (*values)[i]
+    /// will store the value associated with keys[i].
+    ///
+    /// (*values) will always be resized to be the same size as (keys).
+    /// Similarly, the number of returned statuses will be the number of keys.
+    /// Note: keys will not be "de-duplicated". Duplicate keys will return
+    /// duplicate values in order.
+    pub fn multi_get<R: AsRef<ReadOptions>>(&self,
+                                            options: R,
+                                            keys: &[&[u8]])
+                                            -> Vec<Result<CVec<u8>, Status>> {
+        unimplemented!()
+    }
+
+    pub fn multi_get_cf<R: AsRef<ReadOptions>>(&self,
+                                               options: R,
+                                               column_families: &[ColumnFamilyHandle],
+                                               keys: &[&[u8]])
+                                               -> Vec<Result<CVec<u8>, Status>> {
+        unimplemented!()
+    }
+
+    /// If the key definitely does not exist in the database, then this method
+    /// returns false, else true. If the caller wants to obtain value when the key
+    /// is found in memory, a bool for 'value_found' must be passed. 'value_found'
+    /// will be true on return if value has been set properly.
+    /// This check is potentially lighter-weight than invoking DB::Get(). One way
+    /// to make this lighter weight is to avoid doing any IOs.
+    /// Default implementation here returns true and sets 'value_found' to false
+    pub fn key_may_exist(&self, options: &ReadOptions, key: &[u8]) -> (bool, Option<CVec<u8>>) {
+        unimplemented!()
+    }
+    pub fn key_may_exist_cf(&self,
+                            options: &ReadOptions,
+                            column_family: &ColumnFamilyHandle,
+                            key: &[u8])
+                            -> (bool, Option<CVec<u8>>) {
+        unimplemented!()
+    }
+
     /// Return a heap-allocated iterator over the contents of the database.
     /// The result of NewIterator() is initially invalid (caller must
     /// call one of the Seek methods on the iterator before using it).
     ///
     /// Caller should delete the iterator when it is no longer needed.
     /// The returned iterator should be deleted before this db is deleted.
-    pub fn new_iterator(&self, options: ReadOptions) -> Iterator {
+    pub fn new_iterator(&self, options: &ReadOptions) -> Iterator {
         unsafe {
             let ptr = ll::rocks_db_create_iterator(self.raw(), options.raw());
             Iterator::from_ll(ptr)
+        }
+    }
+
+    pub fn new_iterator_cf(&self, options: &ReadOptions, cf: &ColumnFamilyHandle) -> Iterator {
+        unsafe {
+            let ptr = ll::rocks_db_create_iterator_cf(self.raw(), options.raw(), cf.raw());
+            Iterator::from_ll(ptr)
+        }
+    }
+
+    pub fn new_iterators(&self,
+                         options: &ReadOptions,
+                         cfs: &[ColumnFamilyHandle])
+                         -> Result<Vec<Iterator>, Status> {
+        unsafe {
+            let c_cfs = cfs.iter().map(|cf| cf.raw()).collect::<Vec<_>>();
+            let cfs_len = cfs.len();
+            let mut status = mem::zeroed();
+
+            let mut c_iters = vec![ptr::null_mut(); cfs_len];
+            ll::rocks_db_create_iterators(self.raw(),
+                                          options.raw(),
+                                          c_cfs.as_ptr() as _,
+                                          c_iters.as_mut_ptr(),
+                                          cfs_len,
+                                          &mut status);
+
+            if status.code == 0 {
+                Ok(c_iters
+                       .into_iter()
+                       .map(|ptr| Iterator::from_ll(ptr))
+                       .collect())
+            } else {
+                Err(Status::from_ll(&status))
+            }
         }
     }
 
@@ -562,10 +810,109 @@ impl<'a> DB<'a> {
     /// Release a previously acquired snapshot.  The caller must not
     /// use "snapshot" after this call.
     pub fn release_snapshot(&self, snapshot: Snapshot) {
-        unimplemented!()
+        unsafe {
+            ll::rocks_db_release_snapshot(self.raw(), snapshot.raw());
+        }
+    }
+
+
+    /// Compact the underlying storage for the key range [*begin,*end].
+    /// The actual compaction interval might be superset of [*begin, *end].
+    /// In particular, deleted and overwritten versions are discarded,
+    /// and the data is rearranged to reduce the cost of operations
+    /// needed to access the data.  This operation should typically only
+    /// be invoked by users who understand the underlying implementation.
+    ///
+    /// begin==nullptr is treated as a key before all keys in the database.
+    /// end==nullptr is treated as a key after all keys in the database.
+    /// Therefore the following call will compact the entire database:
+    ///    db->CompactRange(options, nullptr, nullptr);
+    /// Note that after the entire database is compacted, all data are pushed
+    /// down to the last level containing any data. If the total data size after
+    /// compaction is reduced, that level might not be appropriate for hosting all
+    /// the files. In this case, client could set options.change_level to true, to
+    /// move the files back to the minimum level capable of holding the data set
+    /// or a given level (specified by non-negative options.target_level).
+    pub fn compact_range<R: ToCompactRange>(&self,
+                                            options: &CompactRangeOptions,
+                                            range: R)
+                                            -> Result<(), Status> {
+        unsafe {
+            let mut status = mem::zeroed();
+            ll::rocks_db_compact_range_opt(self.raw(),
+                                           options.raw(),
+                                           range.start_key() as *const _,
+                                           range.start_key_len(),
+                                           range.end_key() as *const _,
+                                           range.end_key_len(),
+                                           &mut status);
+            if status.code == 0 {
+                Ok(())
+            } else {
+                Err(Status::from_ll(&status))
+            }
+        }
     }
 }
 
+
+pub trait ToCompactRange {
+    fn start_key(&self) -> *const u8 {
+        ptr::null()
+    }
+
+    fn start_key_len(&self) -> usize {
+        0
+    }
+
+    fn end_key(&self) -> *const u8 {
+        ptr::null()
+    }
+
+    fn end_key_len(&self) -> usize {
+        0
+    }
+}
+
+impl<'a> ToCompactRange for ops::Range<&'a [u8]> {
+    fn start_key(&self) -> *const u8 {
+        self.start.as_ptr()
+    }
+
+    fn start_key_len(&self) -> usize {
+        self.start.len()
+    }
+
+    fn end_key(&self) -> *const u8 {
+        self.end.as_ptr()
+    }
+
+    fn end_key_len(&self) -> usize {
+        self.end.len()
+    }
+}
+
+impl<'a> ToCompactRange for ops::RangeTo<&'a [u8]> {
+    fn end_key(&self) -> *const u8 {
+        self.end.as_ptr()
+    }
+
+    fn end_key_len(&self) -> usize {
+        self.end.len()
+    }
+}
+
+impl<'a> ToCompactRange for ops::RangeFrom<&'a [u8]> {
+    fn start_key(&self) -> *const u8 {
+        self.start.as_ptr()
+    }
+
+    fn start_key_len(&self) -> usize {
+        self.start.len()
+    }
+}
+
+impl ToCompactRange for ops::RangeFull {}
 
 pub struct CVec<T> {
     data: *mut T,
@@ -677,6 +1024,13 @@ fn test_list_cfs() {
     assert!(ret.as_ref().unwrap().contains(&"default".to_owned()));
     assert!(ret.as_ref().unwrap().contains(&"lock".to_owned()));
     assert!(ret.as_ref().unwrap().contains(&"write".to_owned()));
+
+    let cfs = ret.unwrap();
+    if let Ok((db, cf_handles)) = DB::open_with_column_families(&Options::default(), path, cfs) {
+        let iters = db.new_iterators(&ReadOptions::default(), &cf_handles);
+        assert!(iters.is_ok());
+    }
+
 }
 
 #[test]
@@ -706,11 +1060,11 @@ fn test_db_get() {
 fn test_db_paths() {
 
     let opt = Options::default().map_db_options(|dbopt| {
-        dbopt
+                                                    dbopt
             .create_if_missing(true)
             .db_paths(vec!["./sample1", "./sample2"])        /* only puts sst file */
             .wal_dir("./my_wal")
-    });
+                                                });
 
     let db = DB::open(opt, "multi");
     if db.is_err() {
@@ -836,7 +1190,7 @@ fn test_iterator() {
     let ret = db.write(WriteOptions::default(), batch);
     assert!(ret.is_ok());
     {
-        for (k, v) in db.new_iterator(ReadOptions::default()).iter() {
+        for (k, v) in db.new_iterator(&ReadOptions::default()).iter() {
             println!("> {:?} => {:?}",
                      String::from_utf8_lossy(k),
                      String::from_utf8_lossy(v));
@@ -846,15 +1200,13 @@ fn test_iterator() {
     assert!(ret.is_ok());
     {
         // must pin_data
-        let kvs = db.new_iterator(ReadOptions::default()
-                                  .pin_data(true))
+        let kvs = db.new_iterator(&ReadOptions::default().pin_data(true))
             .iter()
             .collect::<Vec<_>>();
         println!("got kv => {:?}", kvs);
-        
     }
 
-    let mut it = db.new_iterator(ReadOptions::default());
+    let mut it = db.new_iterator(&ReadOptions::default());
     assert_eq!(it.is_valid(), false);
     println!("it => {:?}", it);
     it.seek_to_first();
@@ -866,4 +1218,33 @@ fn test_iterator() {
     println!("it => {:?}", it);
     it.next();
     println!("it => {:?}", it);
+}
+
+
+#[test]
+fn test_compact_range() {
+    let s = b"123123123";
+    let e = b"asdfasfasfasf";
+
+    let a: ::std::ops::Range<&[u8]> = s.as_ref()..e.as_ref();
+
+    let opt = Options::default().map_db_options(|dbopt| dbopt.create_if_missing(true));
+
+    let db = DB::open(opt, "compact_test").unwrap();
+
+    let _ = db.put(&WriteOptions::default(), b"name", b"BH1XUW")
+        .unwrap();
+    for i in 0..10000 {
+        let key = format!("test2-key-{}", i);
+        let val = format!("rocksdb-value-{}", i * 10);
+        let value: String = iter::repeat(val).take(1000).collect::<Vec<_>>().concat();
+
+        db.put(&WriteOptions::default(), key.as_bytes(), value.as_bytes())
+            .unwrap();
+    }
+
+    // will be shown in LOG file
+    let ret = db.compact_range(&CompactRangeOptions::default(),
+                               b"test2-key-5".as_ref()..b"test2-key-9".as_ref());
+    assert!(ret.is_ok());
 }

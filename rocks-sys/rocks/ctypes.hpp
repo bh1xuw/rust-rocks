@@ -45,7 +45,7 @@ extern "C" {
   struct rocks_flushoptions_t              { FlushOptions              rep; };
   struct rocks_compaction_options_t        { CompactionOptions         rep; };
   struct rocks_compactrange_options_t      { CompactRangeOptions       rep; };
-  struct rocks_ingestexternalfileoptions_t { IngestExternalFileOptions rep; };
+  struct rocks_ingestexternalfile_options_t { IngestExternalFileOptions rep; };
 
   /* rate_limiter */
 

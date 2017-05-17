@@ -271,13 +271,13 @@ pub struct rocks_writeoptions_t([u8; 0]);
 pub struct rocks_flushoptions_t([u8; 0]);
 #[repr(C)]
 #[derive(Debug, Copy, Clone)]
-pub struct rocks_compactionoptions_t([u8; 0]);
+pub struct rocks_compaction_options_t([u8; 0]);
 #[repr(C)]
 #[derive(Debug, Copy, Clone)]
-pub struct rocks_compactrangeoptions_t([u8; 0]);
+pub struct rocks_compactrange_options_t([u8; 0]);
 #[repr(C)]
 #[derive(Debug, Copy, Clone)]
-pub struct rocks_ingestexternalfileoptions_t([u8; 0]);
+pub struct rocks_ingestexternalfile_options_t([u8; 0]);
 #[repr(C)]
 #[derive(Copy)]
 pub struct rocks_status_t {
@@ -991,6 +991,42 @@ extern "C" {
                                               v: ::std::os::raw::c_uchar);
 }
 extern "C" {
+    pub fn rocks_compactrange_options_create()
+     -> *mut rocks_compactrange_options_t;
+}
+extern "C" {
+    pub fn rocks_compactrange_options_destroy(opt:
+                                                  *mut rocks_compactrange_options_t);
+}
+extern "C" {
+    pub fn rocks_compactrange_options_set_exclusive_manual_compaction(opt:
+                                                                          *mut rocks_compactrange_options_t,
+                                                                      v:
+                                                                          ::std::os::raw::c_uchar);
+}
+extern "C" {
+    pub fn rocks_compactrange_options_set_change_level(opt:
+                                                           *mut rocks_compactrange_options_t,
+                                                       v:
+                                                           ::std::os::raw::c_uchar);
+}
+extern "C" {
+    pub fn rocks_compactrange_options_set_target_level(opt:
+                                                           *mut rocks_compactrange_options_t,
+                                                       v: i32);
+}
+extern "C" {
+    pub fn rocks_compactrange_options_set_target_path_id(opt:
+                                                             *mut rocks_compactrange_options_t,
+                                                         v: u32);
+}
+extern "C" {
+    pub fn rocks_compactrange_options_set_bottommost_level_compaction(opt:
+                                                                          *mut rocks_compactrange_options_t,
+                                                                      v:
+                                                                          ::std::os::raw::c_int);
+}
+extern "C" {
     pub fn rocks_create_logger_from_options(path:
                                                 *const ::std::os::raw::c_char,
                                             opts: *mut rocks_options_t,
@@ -1237,6 +1273,46 @@ extern "C" {
 extern "C" {
     pub fn rocks_db_release_snapshot(db: *mut rocks_db_t,
                                      snapshot: *mut rocks_snapshot_t);
+}
+extern "C" {
+    pub fn rocks_db_compact_range(db: *mut rocks_db_t,
+                                  start_key: *const ::std::os::raw::c_char,
+                                  start_key_len: usize,
+                                  limit_key: *const ::std::os::raw::c_char,
+                                  limit_key_len: usize);
+}
+extern "C" {
+    pub fn rocks_db_compact_range_cf(db: *mut rocks_db_t,
+                                     column_family:
+                                         *mut rocks_column_family_handle_t,
+                                     start_key: *const ::std::os::raw::c_char,
+                                     start_key_len: usize,
+                                     limit_key: *const ::std::os::raw::c_char,
+                                     limit_key_len: usize);
+}
+extern "C" {
+    pub fn rocks_db_compact_range_opt(db: *mut rocks_db_t,
+                                      opt: *mut rocks_compactrange_options_t,
+                                      start_key:
+                                          *const ::std::os::raw::c_char,
+                                      start_key_len: usize,
+                                      limit_key:
+                                          *const ::std::os::raw::c_char,
+                                      limit_key_len: usize,
+                                      status: *mut rocks_status_t);
+}
+extern "C" {
+    pub fn rocks_db_compact_range_cf_opt(db: *mut rocks_db_t,
+                                         column_family:
+                                             *mut rocks_column_family_handle_t,
+                                         opt:
+                                             *mut rocks_compactrange_options_t,
+                                         start_key:
+                                             *const ::std::os::raw::c_char,
+                                         start_key_len: usize,
+                                         limit_key:
+                                             *const ::std::os::raw::c_char,
+                                         limit_key_len: usize);
 }
 extern "C" {
     pub fn rocks_destroy_db(options: *const rocks_options_t,

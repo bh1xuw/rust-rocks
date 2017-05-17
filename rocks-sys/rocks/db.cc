@@ -448,6 +448,57 @@ extern "C" {
   }
 
 
+  void rocks_db_compact_range(
+                              rocks_db_t* db,
+                              const char* start_key, size_t start_key_len,
+                              const char* limit_key, size_t limit_key_len) {
+    Slice a, b;
+    db->rep->CompactRange(
+                          CompactRangeOptions(),
+                          // Pass nullptr Slice if corresponding "const char*" is nullptr
+                          (start_key ? (a = Slice(start_key, start_key_len), &a) : nullptr),
+                          (limit_key ? (b = Slice(limit_key, limit_key_len), &b) : nullptr));
+  }
+  
+  void rocks_db_compact_range_cf(
+                                rocks_db_t* db,
+                                rocks_column_family_handle_t* column_family,
+                                const char* start_key, size_t start_key_len,
+                                const char* limit_key, size_t limit_key_len) {
+    Slice a, b;
+    db->rep->CompactRange(
+                          CompactRangeOptions(), column_family->rep,
+                          // Pass nullptr Slice if corresponding "const char*" is nullptr
+                          (start_key ? (a = Slice(start_key, start_key_len), &a) : nullptr),
+                          (limit_key ? (b = Slice(limit_key, limit_key_len), &b) : nullptr));
+  }
+
+  void rocks_db_compact_range_opt(rocks_db_t* db, rocks_compactrange_options_t* opt,
+                                  const char* start_key, size_t start_key_len,
+                                  const char* limit_key, size_t limit_key_len,
+                                  rocks_status_t *status) {
+    Slice a, b;
+    auto st = db->rep->CompactRange(
+                                    opt->rep,
+                                    // Pass nullptr Slice if corresponding "const char*" is nullptr
+                                    (start_key ? (a = Slice(start_key, start_key_len), &a) : nullptr),
+                                    (limit_key ? (b = Slice(limit_key, limit_key_len), &b) : nullptr));
+    SaveError(status, st);
+  }
+
+  void rocks_db_compact_range_cf_opt(rocks_db_t* db,
+                                    rocks_column_family_handle_t* column_family,
+                                    rocks_compactrange_options_t* opt,
+                                     const char* start_key, size_t start_key_len,
+                                     const char* limit_key, size_t limit_key_len) {
+    Slice a, b;
+    db->rep->CompactRange(
+                          opt->rep, column_family->rep,
+                          // Pass nullptr Slice if corresponding "const char*" is nullptr
+                          (start_key ? (a = Slice(start_key, start_key_len), &a) : nullptr),
+                          (limit_key ? (b = Slice(limit_key, limit_key_len), &b) : nullptr));
+  }
+
   // public functions
   void rocks_destroy_db(
                         const rocks_options_t* options,

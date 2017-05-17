@@ -26,9 +26,9 @@ extern "C" {
   typedef struct rocks_readoptions_t               rocks_readoptions_t;
   typedef struct rocks_writeoptions_t              rocks_writeoptions_t;
   typedef struct rocks_flushoptions_t              rocks_flushoptions_t;
-  typedef struct rocks_compactionoptions_t         rocks_compactionoptions_t;
-  typedef struct rocks_compactrangeoptions_t       rocks_compactrangeoptions_t;
-  typedef struct rocks_ingestexternalfileoptions_t rocks_ingestexternalfileoptions_t;
+  typedef struct rocks_compaction_options_t         rocks_compaction_options_t;
+  typedef struct rocks_compactrange_options_t       rocks_compactrange_options_t;
+  typedef struct rocks_ingestexternalfile_options_t rocks_ingestexternalfile_options_t;
 
   /* status.h */
   typedef struct rocks_status_t {
@@ -453,6 +453,22 @@ extern "C" {
 
   void rocks_writeoptions_set_no_slowdown(rocks_writeoptions_t* opt, unsigned char v);
 
+  /* > compactrange_options */
+  rocks_compactrange_options_t* rocks_compactrange_options_create();
+
+  void rocks_compactrange_options_destroy(rocks_compactrange_options_t* opt);
+
+  void rocks_compactrange_options_set_exclusive_manual_compaction(
+                                                                  rocks_compactrange_options_t* opt, unsigned char v);
+
+  void rocks_compactrange_options_set_change_level(rocks_compactrange_options_t* opt, unsigned char v);
+
+  void rocks_compactrange_options_set_target_level(rocks_compactrange_options_t* opt, int32_t v);
+
+  void rocks_compactrange_options_set_target_path_id(rocks_compactrange_options_t* opt, uint32_t v);
+
+  void rocks_compactrange_options_set_bottommost_level_compaction(rocks_compactrange_options_t* opt, int v);
+
   /* > misc */
   rocks_logger_t *rocks_create_logger_from_options(const char *path,
                                                    rocks_options_t *opts,
@@ -654,6 +670,28 @@ extern "C" {
   rocks_snapshot_t* rocks_db_get_snapshot(rocks_db_t* db);
 
   void rocks_db_release_snapshot(rocks_db_t* db, rocks_snapshot_t* snapshot);
+
+  void rocks_db_compact_range(
+                              rocks_db_t* db,
+                              const char* start_key, size_t start_key_len,
+                              const char* limit_key, size_t limit_key_len);
+
+  void rocks_db_compact_range_cf(
+                                rocks_db_t* db,
+                                rocks_column_family_handle_t* column_family,
+                                const char* start_key, size_t start_key_len,
+                                const char* limit_key, size_t limit_key_len);
+
+  void rocks_db_compact_range_opt(rocks_db_t* db, rocks_compactrange_options_t* opt,
+                                  const char* start_key, size_t start_key_len,
+                                  const char* limit_key, size_t limit_key_len,
+                                  rocks_status_t *status);
+   
+  void rocks_db_compact_range_cf_opt(rocks_db_t* db,
+                                     rocks_column_family_handle_t* column_family,
+                                     rocks_compactrange_options_t* opt,
+                                     const char* start_key, size_t start_key_len,
+                                     const char* limit_key, size_t limit_key_len);
 
   /*    pub fn */
   void rocks_destroy_db(

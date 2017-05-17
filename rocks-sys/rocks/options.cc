@@ -798,6 +798,38 @@ extern "C" {
 
 
 extern "C" {
+  rocks_compactrange_options_t* rocks_compactrange_options_create() {
+    return new rocks_compactrange_options_t;
+  }
+
+  void rocks_compactrange_options_destroy(rocks_compactrange_options_t* opt) {
+    delete opt;
+  }
+
+  void rocks_compactrange_options_set_exclusive_manual_compaction(
+                                   rocks_compactrange_options_t* opt, unsigned char v) {
+    opt->rep.exclusive_manual_compaction = v;
+  }
+
+  void rocks_compactrange_options_set_change_level(rocks_compactrange_options_t* opt, unsigned char v) {
+    opt->rep.change_level = v;
+  }
+
+  void rocks_compactrange_options_set_target_level(rocks_compactrange_options_t* opt, int32_t v) {
+    opt->rep.target_level = v;
+  }
+
+  void rocks_compactrange_options_set_target_path_id(rocks_compactrange_options_t* opt, uint32_t v) {
+    opt->rep.target_path_id = v;
+  }
+
+  void rocks_compactrange_options_set_bottommost_level_compaction(rocks_compactrange_options_t* opt, int v) {
+    opt->rep.bottommost_level_compaction = static_cast<BottommostLevelCompaction>(v);
+  }
+}
+
+
+extern "C" {
   rocks_logger_t *rocks_create_logger_from_options(const char *path,
                                                    rocks_options_t *opts,
                                                    rocks_status_t *status) {

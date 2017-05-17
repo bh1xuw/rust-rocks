@@ -23,8 +23,12 @@ working in progress.
   - [x] get
   - [x] put
   - [x] write
-  - [ ] delete
-  - [ ] merge
+  - [x] delete
+  - [x] merge
+  - [ ] MultiGet
+  - [ ] KeyMayExist
+  - [ ] properties
+  - [ ] compact range
 - [ ] ``rocksdb/db_bench_tool.h``
 - [ ] ``rocksdb/db_dump_tool.h``
 - [ ] ``rocksdb/env.h``
@@ -34,6 +38,8 @@ working in progress.
 - [ ] ``rocksdb/iostats_context.h``
 - [x] ``rocksdb/iterator.h``
   - [x] adapter for Rust Iterator
+  - [ ] reverse iterator, any pos iterator
+  - [ ] pinned slice
 - [ ] ``rocksdb/ldb_tool.h``
 - [ ] ``rocksdb/listener.h``
 - [ ] ``rocksdb/memtablerep.h``
@@ -48,7 +54,7 @@ working in progress.
 - [x] ~~``rocksdb/slice.h``~~
   - [x] use ``&[u8]`` to replace
 - [ ] ``rocksdb/slice_transform.h``
-- [ ] ``rocksdb/snapshot.h``
+- [x] ``rocksdb/snapshot.h``
 - [ ] ``rocksdb/sst_dump_tool.h``
 - [ ] ``rocksdb/sst_file_manager.h``
 - [ ] ``rocksdb/sst_file_writer.h``

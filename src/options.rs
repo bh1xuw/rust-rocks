@@ -2376,34 +2376,49 @@ pub enum BottommostLevelCompaction {
 
 
 /// CompactRangeOptions is used by CompactRange() call.
-#[repr(C)]
 pub struct CompactRangeOptions {
+    raw: *mut ll::rocks_compactrange_options_t,
+}
+
+impl CompactRangeOptions {
+    pub fn raw(&self) -> *mut ll::rocks_compactrange_options_t {
+        self.raw
+    }
     /// If true, no other compaction will run at the same time as this
     /// manual compaction
-    exclusive_manual_compaction: bool,
+    pub fn exclusive_manual_compaction(self, val: bool) -> Self {
+        unimplemented!()
+    }
+
     /// If true, compacted files will be moved to the minimum level capable
     /// of holding the data or given level (specified non-negative target_level).
-    change_level: bool,
+    pub fn change_level(self, val: bool) -> Self {
+        unimplemented!()
+    }
+
     /// If change_level is true and target_level have non-negative value, compacted
     /// files will be moved to target_level.
-    target_level: i32,
+    pub fn target_level(self, val: i32) -> Self {
+        unimplemented!()
+    }
+
     /// Compaction outputs will be placed in options.db_paths[target_path_id].
     /// Behavior is undefined if target_path_id is out of range.
-    target_path_id: u32,
+
+    pub fn target_path_id(self, val: u32) -> Self {
+        unimplemented!()
+    }
+
     /// By default level based compaction will only compact the bottommost level
     /// if there is a compaction filter
-    bottommost_level_compaction: BottommostLevelCompaction,
+    pub fn bottommost_level_compaction(self, val: BottommostLevelCompaction) -> Self {
+        unimplemented!()
+    }
 }
 
 impl Default for CompactRangeOptions {
     fn default() -> Self {
-        CompactRangeOptions {
-            exclusive_manual_compaction: true,
-            change_level: false,
-            target_level: -1,
-            target_path_id: 0,
-            bottommost_level_compaction: BottommostLevelCompaction::IfHaveCompactionFilter,
-        }
+        CompactRangeOptions { raw: unsafe { ll::rocks_compactrange_options_create() } }
     }
 }
 

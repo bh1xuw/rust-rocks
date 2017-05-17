@@ -25,6 +25,10 @@ impl<'a> fmt::Debug for Snapshot<'a> {
 
 
 impl<'a> Snapshot<'a> {
+    pub fn raw(&self) -> *mut ll::rocks_snapshot_t {
+        self.raw
+    }
+
     pub unsafe fn from_ll<'b>(raw: *mut ll::rocks_snapshot_t) -> Snapshot<'a> {
         Snapshot {
             raw: raw,
