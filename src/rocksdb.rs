@@ -1,10 +1,12 @@
 
 use rocks_sys as ll;
 
-
 pub use self::ll::version;
 
-
+pub use status::Status;
+pub use db::*;
+pub use options::*;
+pub use write_batch::WriteBatch;
 
 #[test]
 fn test_version() {

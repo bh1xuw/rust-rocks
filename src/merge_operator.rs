@@ -54,9 +54,9 @@ impl<'a> MergeOperationInput<'a> {
     /// A list of operands to apply.
     pub fn operands(&self) -> &[&[u8]] {
         unsafe {
-            slice::from_raw_parts(
-                ll::cxx_vector_slice_nth(self.operand_list as *const _, 0) as *const _,
-                ll::cxx_vector_slice_size(self.operand_list as *const _))
+            slice::from_raw_parts(ll::cxx_vector_slice_nth(self.operand_list as *const _, 0) as
+                                  *const _,
+                                  ll::cxx_vector_slice_size(self.operand_list as *const _))
         }
     }
 

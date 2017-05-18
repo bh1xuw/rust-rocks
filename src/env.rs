@@ -94,6 +94,7 @@ pub enum InfoLogLevel {
 }
 
 
+/// An interface for writing log messages.
 pub struct Logger {
     raw: *mut ll::rocks_logger_t,
 }

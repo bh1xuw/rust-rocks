@@ -196,7 +196,7 @@ impl ColumnFamilyOptions {
         self
     }
 
-    /// Parameters that affect behavior
+    // Parameters that affect behavior
 
     /// Comparator used to define the order of keys in the table.
     /// Default: a comparator that uses lexicographic byte-wise ordering
@@ -204,12 +204,21 @@ impl ColumnFamilyOptions {
     /// REQUIRES: The client must ensure that the comparator supplied
     /// here has the same name and orders keys *exactly* the same as the
     /// comparator provided to previous open calls on the same DB.
-    pub fn comparator(self, val: Option<Comparator>) -> Self {
-        // unsafe {
-        //     ll::rocks_cfoptions_set_comparator(self.raw, val.unwrap_or_else(ptr::null_mut));
-        // }
-        // self
-        unimplemented!()
+    pub fn comparator(self, val: Box<Comparator>) -> Self {
+        unsafe {
+            let raw_ptr = Box::into_raw(Box::new(val)); // Box<Box<Comparator>>
+             ll::rocks_cfoptions_set_comparator_by_trait(self.raw, raw_ptr as *mut _);
+         }
+         self
+    }
+
+    /// rust-rocks extension.
+    /// use bitwise comparator and set if reversed.
+    pub fn bitwise_comparator_reversed(self, val: bool) -> Self {
+        unsafe {
+            ll::rocks_cfoptions_set_bitwise_comparator(self.raw, val as u8);
+        }
+        self
     }
 
     /// REQUIRES: The client must provide a merge operator if Merge operation

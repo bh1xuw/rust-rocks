@@ -61,6 +61,9 @@ extern "C" {
   typedef struct rocks_associative_mergeoperator_t rocks_associative_mergeoperator_t;
   typedef struct rocks_mergeoperator_t rocks_mergeoperator_t;
 
+  /* comparator.h */
+  typedef struct rocks_comparator_t rocks_comparator_t;
+
   /* ****************************** functions ****************************** */
   /* options.h */
   /*    start */
@@ -95,9 +98,12 @@ extern "C" {
   void rocks_cfoptions_set_merge_operator_by_assoc_op_trait(rocks_cfoptions_t* opt, void* op_trait_obj);
 
   void rocks_cfoptions_set_merge_operator_by_merge_op_trait(rocks_cfoptions_t* opt, void* op_trait_obj);
-  /*
-  void rocks_cfoptions_set_comparator(rocks_cfoptions_t* opt, rocks_comparator_t* cmp);
 
+  void rocks_cfoptions_set_comparator_by_trait(rocks_cfoptions_t* opt, void* cp_trait_obj);
+
+  void rocks_cfoptions_set_bitwise_comparator(rocks_cfoptions_t* opt, unsigned char reversed);
+
+    /*
   void rocks_cfoptions_set_compaction_filter(
                                            rocks_options_t* opt,
                                            rocks_compactionfilter_t* filter);
@@ -929,18 +935,20 @@ extern "C" {
 
   const char* rocks_cache_name(rocks_cache_t* cache);
 
-  /* aux */
-  void free(void *p);
   /* version */
   int rocks_version_major();
   int rocks_version_minor();
   int rocks_version_patch();
 
-  size_t cxx_vector_slice_size(const void* list);
+  /* aux */
+  void free(void *p);
 
+  size_t cxx_vector_slice_size(const void* list);
   const void* cxx_vector_slice_nth(const void* list, size_t n);
 
   void cxx_string_assign(void* s, const char* p, size_t len);
+  const char* cxx_string_data(const void *s);
+  size_t cxx_string_size(const void *s);
 
 
 #ifdef __cplusplus

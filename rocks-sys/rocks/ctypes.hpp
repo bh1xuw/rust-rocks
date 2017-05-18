@@ -119,6 +119,42 @@ extern "C" {
     }
   };
 
+  /* comparator */
+  struct rocks_comparator_t: public Comparator {
+    void* obj;                  // rust Box<trait obj>
+    
+    rocks_comparator_t(void *trait_obj): obj(trait_obj) {}
+
+    ~rocks_comparator_t() {
+      rust_comparator_drop(this->obj);
+    }
+
+    int Compare(const Slice& a, const Slice& b) const override {
+      return rust_comparator_compare(this->obj,
+                                     &a, &b);
+    }
+
+    bool Equal(const Slice& a, const Slice& b) const override {
+      return rust_comparator_equal(this->obj,
+                                   &a, &b);
+    }
+
+    const char* Name() const override {
+      return rust_comparator_name(this->obj);
+    }
+
+    void FindShortestSeparator(
+                               std::string* start,
+                               const Slice& limit) const override {
+      rust_comparator_find_shortest_separator(this->obj,
+                                              start, &limit);
+    }
+
+    void FindShortSuccessor(std::string* key) const override {
+      rust_comparator_find_short_successor(this->obj, key);
+    }
+  };
+
   /* rate_limiter */
 
   struct rocks_ratelimiter_t { RateLimiter* rep; };

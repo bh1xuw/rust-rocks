@@ -3,6 +3,7 @@
 #include "rocksdb/env.h"
 
 #include <cstdint>
+#include <string>
 
 using rocksdb::Slice;
 using rocksdb::Logger;
@@ -36,8 +37,26 @@ extern "C" {
 
   extern void rust_merge_operator_drop(void* op);
 
+  /* comparator */
 
+  extern int rust_comparator_compare(void* cp,
+                                     const Slice* a,
+                                     const Slice* b);
 
+  extern char rust_comparator_equal(void* cp,
+                                    const Slice* a,
+                                    const Slice* b);
+
+  extern const char* rust_comparator_name(const void* cp);
+
+  extern void rust_comparator_find_shortest_separator(void* cp,
+                                                      std::string* start, /* std::string */
+                                                      const Slice* limit);
+
+  extern void rust_comparator_find_short_successor(void* cp,
+                                                   std::string* key);
+
+  extern void rust_comparator_drop(void *cp);
 
 #ifdef __cplusplus
 }

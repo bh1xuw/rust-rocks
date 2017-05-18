@@ -14,7 +14,9 @@ working in progress.
 - [ ] ``rocksdb/cache.h``
 - [ ] ``rocksdb/compaction_filter.h``
 - [ ] ``rocksdb/compaction_job_stats.h``
-- [ ] ``rocksdb/comparator.h``
+- [x] ``rocksdb/comparator.h``
+  - [x] bitwise as new options
+  - [x] customized comparator via rust trait
 - [ ] ``rocksdb/convenience.h``
 - [ ] ``rocksdb/db.h``
   - [ ] column family
@@ -40,7 +42,7 @@ working in progress.
 - [x] ``rocksdb/iterator.h``
   - [x] adapter for Rust Iterator
   - [ ] reverse iterator, any pos iterator
-  - [ ] pinned slice
+  - [ ] pinned slice, wait rocksdb 5.4
 - [ ] ``rocksdb/ldb_tool.h``
 - [ ] ``rocksdb/listener.h``
 - [ ] ``rocksdb/memtablerep.h``

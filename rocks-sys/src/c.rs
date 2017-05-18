@@ -318,6 +318,9 @@ pub struct rocks_associative_mergeoperator_t([u8; 0]);
 #[repr(C)]
 #[derive(Debug, Copy, Clone)]
 pub struct rocks_mergeoperator_t([u8; 0]);
+#[repr(C)]
+#[derive(Debug, Copy, Clone)]
+pub struct rocks_comparator_t([u8; 0]);
 extern "C" {
     pub fn rocks_options_create() -> *mut rocks_options_t;
 }
@@ -383,6 +386,17 @@ extern "C" {
                                                                     *mut rocks_cfoptions_t,
                                                                 op_trait_obj:
                                                                     *mut ::std::os::raw::c_void);
+}
+extern "C" {
+    pub fn rocks_cfoptions_set_comparator_by_trait(opt:
+                                                       *mut rocks_cfoptions_t,
+                                                   cp_trait_obj:
+                                                       *mut ::std::os::raw::c_void);
+}
+extern "C" {
+    pub fn rocks_cfoptions_set_bitwise_comparator(opt: *mut rocks_cfoptions_t,
+                                                  reversed:
+                                                      ::std::os::raw::c_uchar);
 }
 extern "C" {
     pub fn rocks_cfoptions_set_write_buffer_size(opt: *mut rocks_cfoptions_t,
@@ -1709,9 +1723,6 @@ extern "C" {
      -> *const ::std::os::raw::c_char;
 }
 extern "C" {
-    pub fn free(p: *mut ::std::os::raw::c_void);
-}
-extern "C" {
     pub fn rocks_version_major() -> ::std::os::raw::c_int;
 }
 extern "C" {
@@ -1719,6 +1730,9 @@ extern "C" {
 }
 extern "C" {
     pub fn rocks_version_patch() -> ::std::os::raw::c_int;
+}
+extern "C" {
+    pub fn free(p: *mut ::std::os::raw::c_void);
 }
 extern "C" {
     pub fn cxx_vector_slice_size(list: *const ::std::os::raw::c_void)
@@ -1731,6 +1745,13 @@ extern "C" {
 extern "C" {
     pub fn cxx_string_assign(s: *mut ::std::os::raw::c_void,
                              p: *const ::std::os::raw::c_char, len: usize);
+}
+extern "C" {
+    pub fn cxx_string_data(s: *const ::std::os::raw::c_void)
+     -> *const ::std::os::raw::c_char;
+}
+extern "C" {
+    pub fn cxx_string_size(s: *const ::std::os::raw::c_void) -> usize;
 }
 #[repr(C)]
 #[derive(Copy)]

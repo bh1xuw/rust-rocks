@@ -133,11 +133,13 @@ impl<'a, 'b: 'a> ColumnFamilyHandle<'a, 'b> {
         unimplemented!()
     }
 
+    /*
     /// Returns the comparator of the column family associated with the
     /// current handle.
-    pub fn get_comparator(&self) -> Comparator {
-        unimplemented!()
-    }
+    //pub fn get_comparator(&self) -> Comparator {
+    //unimplemented!()
+    //}
+     */
 }
 
 impl<'a, 'b> Drop for ColumnFamilyHandle<'a, 'b> {

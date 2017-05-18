@@ -68,15 +68,19 @@ extern "C" {
     opt->rep.OptimizeUniversalStyleCompaction(memtable_memory_budget);
   }
 
-  /*
-  void rocks_cfoptions_set_comparator(rocks_cfoptions_t* opt, rocks_comparator_t* cmp) {
-    opt->rep.comparator = cmp;
+  void rocks_cfoptions_set_comparator_by_trait(rocks_cfoptions_t* opt, void* cp_trait_obj) {
+    // FIXME: mem leak
+    opt->rep.comparator = new rocks_comparator_t { cp_trait_obj };
   }
 
-  void rocks_cfoptions_set_merge_operator(rocks_cfoptions_t* opt, rocks_mergeoperator_t* merge_operator) {
-    opt->rep.merge_operator = std::shared_ptr<MergeOperator>(merge_operator);
+  void rocks_cfoptions_set_bitwise_comparator(rocks_cfoptions_t* opt, unsigned char reversed) {
+    if (reversed) {
+      opt->rep.comparator = ReverseBytewiseComparator();
+    } else {
+      // this is default
+      opt->rep.comparator = BytewiseComparator();
+    }
   }
-  */
 
   void rocks_cfoptions_set_merge_operator_by_assoc_op_trait(rocks_cfoptions_t* opt, void* op_trait_obj) {
     opt->rep.merge_operator = std::shared_ptr<MergeOperator>(

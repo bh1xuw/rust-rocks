@@ -23,4 +23,14 @@ extern "C" {
     auto str = reinterpret_cast<std::string*>(s);
     str->assign(p, len);
   }
+
+  const char* cxx_string_data(const void *s) {
+    auto str = reinterpret_cast<const std::string*>(s);
+    return str->data();
+  }
+
+  size_t cxx_string_size(const void *s) {
+    auto str = reinterpret_cast<const std::string*>(s);
+    return str->size();
+  }
 }
