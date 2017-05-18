@@ -1,9 +1,13 @@
 #![feature(untagged_unions)]
 
 
+#[cfg(test)]
 use std::ffi::{CStr, CString};
+#[cfg(test)]
 use std::mem;
+#[cfg(test)]
 use std::iter;
+#[cfg(test)]
 use std::ptr;
 
 #[allow(non_upper_case_globals)]
@@ -22,7 +26,6 @@ pub fn version() -> String {
                 rocks_version_patch())
     }
 }
-
 
 #[test]
 fn test_db_list_cf_names() {

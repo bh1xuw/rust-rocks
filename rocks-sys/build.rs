@@ -32,6 +32,8 @@ fn main() {
         .file("rocks/iterator.cc")
         .file("rocks/write_batch.cc")
         .file("rocks/cache.cc")
+        .file("rocks/merge_operator.cc")
+        .file("rocks/aux.cc")
         .flag("-fPIC")
         .flag("-O2")
         .flag("-g")

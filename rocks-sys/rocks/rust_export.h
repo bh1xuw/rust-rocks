@@ -26,6 +26,19 @@ extern "C" {
 
   extern const char* rust_associative_merge_operator_name(void* op);
 
+  extern void rust_associative_merge_operator_drop(void* op);
+
+  extern const char* rust_merge_operator_name(void* op);
+
+  extern int32_t rust_merge_operator_call_full_merge_v2(void* op,
+                                                        const void* merge_in,
+                                                        void* merge_out);
+
+  extern void rust_merge_operator_drop(void* op);
+
+
+
+
 #ifdef __cplusplus
 }
 #endif

@@ -32,6 +32,7 @@ working in progress.
 - [ ] ``rocksdb/db_bench_tool.h``
 - [ ] ``rocksdb/db_dump_tool.h``
 - [ ] ``rocksdb/env.h``
+  - [ ] logger
 - [ ] ``rocksdb/experimental.h``
 - [ ] ``rocksdb/filter_policy.h``
 - [ ] ``rocksdb/flush_block_policy.h``
@@ -43,9 +44,11 @@ working in progress.
 - [ ] ``rocksdb/ldb_tool.h``
 - [ ] ``rocksdb/listener.h``
 - [ ] ``rocksdb/memtablerep.h``
-- [ ] ``rocksdb/merge_operator.h``
+- [x] ``rocksdb/merge_operator.h``
   - [x] associative merge operator
-  - [ ] merge operator
+  - [x] merge operator - full merge v2
+  - [ ] merge operator - full merge - ``assign_existing_operand``
+  - [ ] merge operator - partial merge
 - [ ] ``rocksdb/metadata.h``
 - [x] ``rocksdb/options.h``
   - [x] builder style

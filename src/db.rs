@@ -23,7 +23,7 @@ use table_properties::TableProperties;
 use snapshot::Snapshot;
 use write_batch::WriteBatch;
 use iterator::Iterator;
-use merge_operator::AssociativeMergeOperator;
+use merge_operator::{MergeOperator, AssociativeMergeOperator};
 use env::Logger;
 
 const DEFAULT_COLUMN_FAMILY_NAME: &'static str = "default";
@@ -1290,12 +1290,11 @@ fn test_key_may_exist() {
     use tempdir::TempDir;
     let tmp_dir = TempDir::new_in(".", "rocks").unwrap();
 
-    let db = DB::open(
-        Options::default().map_db_options(|db| db.create_if_missing(true)),
-        tmp_dir
-    ).unwrap();
+    let db = DB::open(Options::default().map_db_options(|db| db.create_if_missing(true)),
+                      tmp_dir)
+            .unwrap();
 
-    db.put(&WriteOptions::default(), b"name", b"value");
+    db.put(&WriteOptions::default(), b"name", b"value").unwrap();
 
     assert!(db.key_may_exist(&ReadOptions::default(), b"name"));
     assert!(!db.key_may_exist(&ReadOptions::default(), b"name2"))
@@ -1303,31 +1302,34 @@ fn test_key_may_exist() {
 
 
 #[test]
-fn test_db_merge() {
+fn test_db_assoc_merge() {
     use tempdir::TempDir;
     let tmp_dir = TempDir::new_in(".", "rocks").unwrap();
 
     pub struct MyAssocMergeOp;
 
     impl AssociativeMergeOperator for MyAssocMergeOp {
-        fn merge(&self, key: &[u8], existing_value: Option<&[u8]>,
-                 value: &[u8], logger: &Logger) -> Option<Vec<u8>> {
+        fn merge(&self,
+                 key: &[u8],
+                 existing_value: Option<&[u8]>,
+                 value: &[u8],
+                 logger: &Logger)
+                 -> Option<Vec<u8>> {
 
-            let mut ret: Vec<u8> = existing_value.map(|s| s.into()).unwrap_or(b"new".to_vec());
+            let mut ret: Vec<u8> = existing_value.map(|s| s.into()).unwrap_or(b"HEAD".to_vec());
             ret.push(b'|');
             ret.extend_from_slice(value);
             Some(ret)
         }
     }
 
-    let db = DB::open(
-        Options::default()
-            .map_db_options(|db| db.create_if_missing(true))
-            .map_cf_options(|cf| {
-                cf.associative_merge_operator(Box::new(MyAssocMergeOp))
-            }),
-        tmp_dir
-    ).unwrap();
+    let db = DB::open(Options::default()
+                          .map_db_options(|db| db.create_if_missing(true))
+                          .map_cf_options(|cf| {
+        cf.associative_merge_operator(Box::new(MyAssocMergeOp))
+    }),
+                      tmp_dir)
+            .unwrap();
 
     let ret = db.merge(&WriteOptions::default(), b"name", b"value");
     let ret = db.merge(&WriteOptions::default(), b"name", b"valaerue");
@@ -1341,6 +1343,109 @@ fn test_db_merge() {
     let ret = db.merge(&WriteOptions::default(), b"name", b"valuzxve");
 
     let ret = db.get(&ReadOptions::default(), b"name");
-    println!("after read => {:?}", String::from_utf8_lossy(ret.unwrap().as_ref()));
+    println!("after read => {:?}",
+             String::from_utf8_lossy(ret.unwrap().as_ref()));
+}
 
+#[test]
+fn test_db_merge() {
+    use tempdir::TempDir;
+    use merge_operator::{MergeOperationInput, MergeOperationOutput};
+
+    let tmp_dir = TempDir::new_in(".", "rocks").unwrap();
+
+    pub struct MyMergeOp;
+
+    impl MergeOperator for MyMergeOp {
+        fn full_merge(&self,
+                      merge_in: &MergeOperationInput,
+                      merge_out: &mut MergeOperationOutput)
+                      -> bool {
+            assert_eq!(merge_in.key, b"name");
+            let mut ret = b"KEY:".to_vec();
+            ret.extend_from_slice(merge_in.key);
+            ret.push(b'|');
+            assert_eq!(merge_in.operands().len(), 3);
+            for op in merge_in.operands() {
+                ret.extend_from_slice(op);
+                ret.push(b'+');
+            }
+            ret.push(b'|');
+            merge_out.assign(&ret);
+            true
+        }
+    }
+
+    let db = DB::open(Options::default()
+                          .map_db_options(|db| db.create_if_missing(true))
+                          .map_cf_options(|cf| cf.merge_operator(Box::new(MyMergeOp))),
+                      tmp_dir)
+            .unwrap();
+
+    let ret = db.merge(&WriteOptions::default(), b"name", b"value");
+    assert!(ret.is_ok());
+
+    let ret = db.merge(&WriteOptions::default(), b"name", b"new");
+    assert!(ret.is_ok());
+
+    let ret = db.merge(&WriteOptions::default(), b"name", b"last");
+    assert!(ret.is_ok());
+
+    let ret = db.get(&ReadOptions::default(), b"name");
+    assert_eq!(ret.unwrap().as_ref(), b"KEY:name|value+new+last+|");
+}
+
+
+#[test]
+fn test_db_merge_assign_existing_operand() {
+    use tempdir::TempDir;
+    use merge_operator::{MergeOperationInput, MergeOperationOutput};
+
+    let tmp_dir = TempDir::new_in(".", "rocks").unwrap();
+
+    pub struct MyMergeOp;
+
+    impl MergeOperator for MyMergeOp {
+        fn full_merge(&self,
+                      merge_in: &MergeOperationInput,
+                      merge_out: &mut MergeOperationOutput)
+                      -> bool {
+            assert_eq!(merge_in.key, b"name");
+            assert_eq!(merge_in.operands().len(), 6);
+            let mut set = false;
+            for op in merge_in.operands() {
+                if op.starts_with(b"I-am-the-test") {
+                    // FIXME: following not works
+                    // merge_out.assign_existing_operand(op);
+                    merge_out.assign(op);
+                    set = true;
+                    break;
+                }
+            }
+            assert!(set);
+            true
+        }
+    }
+
+    let db = DB::open(Options::default()
+                          .map_db_options(|db| db.create_if_missing(true))
+                          .map_cf_options(|cf| cf.merge_operator(Box::new(MyMergeOp))),
+                      tmp_dir)
+            .unwrap();
+
+    let ret = db.merge(&WriteOptions::default(), b"name", b"randome-key");
+    assert!(ret.is_ok());
+    let ret = db.merge(&WriteOptions::default(), b"name", b"asdfkjasdkf");
+    assert!(ret.is_ok());
+    let ret = db.merge(&WriteOptions::default(), b"name", b"sadfjalskdfjlast");
+    assert!(ret.is_ok());
+    let ret = db.merge(&WriteOptions::default(), b"name", b"sadfjalskdfjlast");
+    assert!(ret.is_ok());
+    let ret = db.merge(&WriteOptions::default(), b"name", b"I-am-the-test-233");
+    assert!(ret.is_ok());
+    let ret = db.merge(&WriteOptions::default(), b"name", b"I-am-not-the-test");
+    assert!(ret.is_ok());
+    let ret = db.get(&ReadOptions::default(), b"name");
+    // println!("ret => {:?}", ret.as_ref().map(|s| String::from_utf8_lossy(s)));
+    assert_eq!(ret.unwrap().as_ref(), b"I-am-the-test-233");
 }

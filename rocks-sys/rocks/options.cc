@@ -84,6 +84,12 @@ extern "C" {
                                                              );
   }
 
+  void rocks_cfoptions_set_merge_operator_by_merge_op_trait(rocks_cfoptions_t* opt, void* op_trait_obj) {
+    opt->rep.merge_operator = std::shared_ptr<MergeOperator>(
+                                                             new rocks_mergeoperator_t { op_trait_obj }
+                                                             );
+  }
+
   /*
   void rocks_cfoptions_set_compaction_filter(
                                            rocks_options_t* opt,

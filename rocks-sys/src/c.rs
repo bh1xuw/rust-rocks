@@ -379,6 +379,12 @@ extern "C" {
                                                                     *mut ::std::os::raw::c_void);
 }
 extern "C" {
+    pub fn rocks_cfoptions_set_merge_operator_by_merge_op_trait(opt:
+                                                                    *mut rocks_cfoptions_t,
+                                                                op_trait_obj:
+                                                                    *mut ::std::os::raw::c_void);
+}
+extern "C" {
     pub fn rocks_cfoptions_set_write_buffer_size(opt: *mut rocks_cfoptions_t,
                                                  s: usize);
 }
@@ -1713,6 +1719,18 @@ extern "C" {
 }
 extern "C" {
     pub fn rocks_version_patch() -> ::std::os::raw::c_int;
+}
+extern "C" {
+    pub fn cxx_vector_slice_size(list: *const ::std::os::raw::c_void)
+     -> usize;
+}
+extern "C" {
+    pub fn cxx_vector_slice_nth(list: *const ::std::os::raw::c_void, n: usize)
+     -> *const ::std::os::raw::c_void;
+}
+extern "C" {
+    pub fn cxx_string_assign(s: *mut ::std::os::raw::c_void,
+                             p: *const ::std::os::raw::c_char, len: usize);
 }
 #[repr(C)]
 #[derive(Copy)]

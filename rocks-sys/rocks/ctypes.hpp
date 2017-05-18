@@ -1,5 +1,10 @@
 #pragma once
 
+#ifndef __RUST_ROCSK_SYS_H____
+#define __RUST_ROCSK_SYS_H____
+
+
+
 #include "rocksdb/status.h"
 #include "rocksdb/db.h"
 #include "rocksdb/options.h"
@@ -10,6 +15,8 @@
 #include "rocksdb/merge_operator.h"
 
 #include "rust_export.h"
+
+#include <iostream>
 
 using namespace rocksdb;
 
@@ -50,10 +57,41 @@ extern "C" {
   struct rocks_compactrange_options_t      { CompactRangeOptions       rep; };
   struct rocks_ingestexternalfile_options_t { IngestExternalFileOptions rep; };
 
+  struct rocks_mergeoperator_t: public MergeOperator {
+    void* obj;                  // rust Box<trait obj>
+
+    rocks_mergeoperator_t(void *trait_obj): obj(trait_obj) {}
+
+    ~rocks_mergeoperator_t() {
+      rust_merge_operator_drop(this->obj);
+    }
+
+    const char* Name() const override {
+      return rust_merge_operator_name(this->obj);
+    }
+
+    virtual bool FullMergeV2(const MergeOperationInput& merge_in,
+                             MergeOperationOutput* merge_out) const override {
+      auto ret = rust_merge_operator_call_full_merge_v2(
+                                                    this->obj,
+                                                    &merge_in,
+                                                    merge_out);
+
+      if (merge_out->existing_operand.data() != nullptr) {
+        merge_out->new_value.clear();
+      }
+      return ret != 0;
+    }
+  };
+
   struct rocks_associative_mergeoperator_t: public AssociativeMergeOperator {
-    void* obj;                  // rust trait obj
+    void* obj;                  // rust Box<trait obj>
 
     rocks_associative_mergeoperator_t(void *trait_obj): obj(trait_obj) {}
+
+    ~rocks_associative_mergeoperator_t() {
+      rust_associative_merge_operator_drop(this->obj);
+    }
 
     const char* Name() const override {
       return rust_associative_merge_operator_name(this->obj);
@@ -135,3 +173,6 @@ extern "C" {
 #ifdef __cplusplus
 }
 #endif
+
+#endif /* __RUST_ROCSK_SYS_H____ */
+

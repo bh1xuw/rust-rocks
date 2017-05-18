@@ -33,3 +33,7 @@ pub mod iterator;
 pub mod rocksdb;
 
 
+#[no_mangle]
+pub extern "C" fn rust_hello_world() {
+    println!("Hello World! from rust");
+}

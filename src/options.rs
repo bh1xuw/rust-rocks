@@ -222,20 +222,18 @@ impl ColumnFamilyOptions {
     /// for the first time. It's necessary to specify a merge operator when
     /// openning the DB in this case.
     /// Default: nullptr
-    pub fn merge_operator(self, val: Option<MergeOperator>) -> Self {
-        // unsafe {
-        //     ll::rocks_cfoptions_set_merge_operator(self.raw, None);
-        // }
-        // self
-        unimplemented!()
+    pub fn merge_operator(self, val: Box<MergeOperator>) -> Self {
+        unsafe {
+            let raw_ptr = Box::into_raw(Box::new(val)); // Box<Box<MergeOperator>>
+            ll::rocks_cfoptions_set_merge_operator_by_merge_op_trait(self.raw, raw_ptr as *mut _);
+        }
+        self
     }
 
     pub fn associative_merge_operator(self, val: Box<AssociativeMergeOperator>) -> Self {
         unsafe {
-            println!("ptr beforesetting => {:?}", val.as_ref() as *const _);
             // FIXME: into_raw
             let raw_ptr = Box::into_raw(Box::new(val)); // Box<Box<AssociativeMergeOperator>>
-            println!("raw ptr => {:?}", raw_ptr);
             ll::rocks_cfoptions_set_merge_operator_by_assoc_op_trait(self.raw, raw_ptr as *mut _);
         }
         self

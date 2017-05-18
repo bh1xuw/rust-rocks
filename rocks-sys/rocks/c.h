@@ -94,10 +94,9 @@ extern "C" {
 
   void rocks_cfoptions_set_merge_operator_by_assoc_op_trait(rocks_cfoptions_t* opt, void* op_trait_obj);
 
+  void rocks_cfoptions_set_merge_operator_by_merge_op_trait(rocks_cfoptions_t* opt, void* op_trait_obj);
   /*
   void rocks_cfoptions_set_comparator(rocks_cfoptions_t* opt, rocks_comparator_t* cmp);
-
-  void rocks_cfoptions_set_merge_operator(rocks_cfoptions_t* opt, rocks_mergeoperator_t* merge_operator);
 
   void rocks_cfoptions_set_compaction_filter(
                                            rocks_options_t* opt,
@@ -937,6 +936,11 @@ extern "C" {
   int rocks_version_minor();
   int rocks_version_patch();
 
+  size_t cxx_vector_slice_size(const void* list);
+
+  const void* cxx_vector_slice_nth(const void* list, size_t n);
+
+  void cxx_string_assign(void* s, const char* p, size_t len);
 
 
 #ifdef __cplusplus
