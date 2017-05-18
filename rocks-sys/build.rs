@@ -10,9 +10,6 @@ fn main() {
     println!("cargo:rustc-link-lib=rocksdb");
     println!("cargo:rustc-link-search=native=/usr/local/lib");
 
-    // println!("cargo:rustc-link-search=native=/Users/wangshuyu/Workspace/PingCAP/rocksdb");
-    // println!("cargo:rustc-link-lib=static=rocksdb_debug");
-
     println!("cargo:rustc-link-lib=bz2");
     println!("cargo:rustc-link-lib=z");
     println!("cargo:rustc-link-lib=snappy");
@@ -33,6 +30,8 @@ fn main() {
         .file("rocks/write_batch.cc")
         .file("rocks/cache.cc")
         .file("rocks/merge_operator.cc")
+        .file("rocks/sst_file_writer.cc")
+        .file("rocks/comparator.cc")
         .file("rocks/aux.cc")
         .flag("-fPIC")
         .flag("-O2")

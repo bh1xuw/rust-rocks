@@ -207,9 +207,9 @@ impl ColumnFamilyOptions {
     pub fn comparator(self, val: Box<Comparator>) -> Self {
         unsafe {
             let raw_ptr = Box::into_raw(Box::new(val)); // Box<Box<Comparator>>
-             ll::rocks_cfoptions_set_comparator_by_trait(self.raw, raw_ptr as *mut _);
-         }
-         self
+            ll::rocks_cfoptions_set_comparator_by_trait(self.raw, raw_ptr as *mut _);
+        }
+        self
     }
 
     /// rust-rocks extension.

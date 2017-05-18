@@ -211,10 +211,10 @@ mod tests {
         }
 
         let db = DB::open(Options::default()
-                          .map_db_options(|db| db.create_if_missing(true))
-                          .map_cf_options(|cf| cf.comparator(Box::new(MyComparator))),
+                              .map_db_options(|db| db.create_if_missing(true))
+                              .map_cf_options(|cf| cf.comparator(Box::new(MyComparator))),
                           tmp_dir)
-            .unwrap();
+                .unwrap();
 
         assert!(db.put(&WriteOptions::default(), b"Key1", b"").is_ok());
         assert!(db.put(&WriteOptions::default(), b"kEY3", b"").is_ok());

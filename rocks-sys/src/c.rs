@@ -321,6 +321,12 @@ pub struct rocks_mergeoperator_t([u8; 0]);
 #[repr(C)]
 #[derive(Debug, Copy, Clone)]
 pub struct rocks_comparator_t([u8; 0]);
+#[repr(C)]
+#[derive(Debug, Copy, Clone)]
+pub struct rocks_c_comparator_t([u8; 0]);
+#[repr(C)]
+#[derive(Debug, Copy, Clone)]
+pub struct rocks_sst_file_writer_t([u8; 0]);
 extern "C" {
     pub fn rocks_options_create() -> *mut rocks_options_t;
 }
@@ -1416,6 +1422,58 @@ extern "C" {
     pub fn rocks_envoptions_destroy(opt: *mut rocks_envoptions_t);
 }
 extern "C" {
+    pub fn rocks_envoptions_set_use_mmap_reads(opt: *mut rocks_envoptions_t,
+                                               val: ::std::os::raw::c_uchar);
+}
+extern "C" {
+    pub fn rocks_envoptions_set_use_mmap_writes(opt: *mut rocks_envoptions_t,
+                                                val: ::std::os::raw::c_uchar);
+}
+extern "C" {
+    pub fn rocks_envoptions_set_use_direct_reads(opt: *mut rocks_envoptions_t,
+                                                 val:
+                                                     ::std::os::raw::c_uchar);
+}
+extern "C" {
+    pub fn rocks_envoptions_set_use_direct_writes(opt:
+                                                      *mut rocks_envoptions_t,
+                                                  val:
+                                                      ::std::os::raw::c_uchar);
+}
+extern "C" {
+    pub fn rocks_envoptions_set_allow_fallocate(opt: *mut rocks_envoptions_t,
+                                                val: ::std::os::raw::c_uchar);
+}
+extern "C" {
+    pub fn rocks_envoptions_set_fd_cloexec(opt: *mut rocks_envoptions_t,
+                                           val: ::std::os::raw::c_uchar);
+}
+extern "C" {
+    pub fn rocks_envoptions_set_bytes_per_sync(opt: *mut rocks_envoptions_t,
+                                               val: u64);
+}
+extern "C" {
+    pub fn rocks_envoptions_set_fallocate_with_keep_size(opt:
+                                                             *mut rocks_envoptions_t,
+                                                         val:
+                                                             ::std::os::raw::c_uchar);
+}
+extern "C" {
+    pub fn rocks_envoptions_set_compaction_readahead_size(opt:
+                                                              *mut rocks_envoptions_t,
+                                                          val: usize);
+}
+extern "C" {
+    pub fn rocks_envoptions_set_random_access_max_buffer_size(opt:
+                                                                  *mut rocks_envoptions_t,
+                                                              val: usize);
+}
+extern "C" {
+    pub fn rocks_envoptions_set_writable_file_max_buffer_size(opt:
+                                                                  *mut rocks_envoptions_t,
+                                                              val: usize);
+}
+extern "C" {
     pub fn rocks_logger_destroy(logger: *mut rocks_logger_t);
 }
 extern "C" {
@@ -1721,6 +1779,43 @@ extern "C" {
 extern "C" {
     pub fn rocks_cache_name(cache: *mut rocks_cache_t)
      -> *const ::std::os::raw::c_char;
+}
+extern "C" {
+    pub fn rocks_sst_file_writer_create_from_c_comparator(env_options:
+                                                              *const rocks_envoptions_t,
+                                                          options:
+                                                              *const rocks_options_t,
+                                                          comparator:
+                                                              *const rocks_c_comparator_t,
+                                                          column_family:
+                                                              *mut rocks_column_family_handle_t,
+                                                          invalidate_page_cache:
+                                                              ::std::os::raw::c_uchar)
+     -> *mut rocks_sst_file_writer_t;
+}
+extern "C" {
+    pub fn rocks_sst_file_writer_create_from_rust_comparator(env_options:
+                                                                 *const rocks_envoptions_t,
+                                                             options:
+                                                                 *const rocks_options_t,
+                                                             comparator:
+                                                                 *const ::std::os::raw::c_void,
+                                                             column_family:
+                                                                 *mut rocks_column_family_handle_t,
+                                                             invalidate_page_cache:
+                                                                 ::std::os::raw::c_uchar)
+     -> *mut rocks_sst_file_writer_t;
+}
+extern "C" {
+    pub fn rocks_sst_file_writer_destroy(writer:
+                                             *mut rocks_sst_file_writer_t);
+}
+extern "C" {
+    pub fn rocks_comparator_bytewise() -> *const rocks_c_comparator_t;
+}
+extern "C" {
+    pub fn rocks_comparator_bytewise_reversed()
+     -> *const rocks_c_comparator_t;
 }
 extern "C" {
     pub fn rocks_version_major() -> ::std::os::raw::c_int;

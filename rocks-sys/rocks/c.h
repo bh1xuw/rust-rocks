@@ -62,7 +62,12 @@ extern "C" {
   typedef struct rocks_mergeoperator_t rocks_mergeoperator_t;
 
   /* comparator.h */
-  typedef struct rocks_comparator_t rocks_comparator_t;
+  typedef struct rocks_comparator_t rocks_comparator_t; /* for rust trait object */
+
+  typedef struct rocks_c_comparator_t rocks_c_comparator_t; /* for c */
+
+  /* sst_file_writer.h */
+  typedef struct rocks_sst_file_writer_t rocks_sst_file_writer_t;
 
   /* ****************************** functions ****************************** */
   /* options.h */
@@ -745,8 +750,20 @@ extern "C" {
   void rocks_env_destroy(rocks_env_t* env);
 
   rocks_envoptions_t* rocks_envoptions_create();
-
   void rocks_envoptions_destroy(rocks_envoptions_t* opt);
+
+  void rocks_envoptions_set_use_mmap_reads(rocks_envoptions_t* opt, unsigned char val);
+  void rocks_envoptions_set_use_mmap_writes(rocks_envoptions_t* opt, unsigned char val);
+  void rocks_envoptions_set_use_direct_reads(rocks_envoptions_t* opt, unsigned char val);
+  void rocks_envoptions_set_use_direct_writes(rocks_envoptions_t* opt, unsigned char val);
+  void rocks_envoptions_set_allow_fallocate(rocks_envoptions_t* opt, unsigned char val);
+  void rocks_envoptions_set_fd_cloexec(rocks_envoptions_t* opt, unsigned char val);
+  void rocks_envoptions_set_bytes_per_sync(rocks_envoptions_t* opt, uint64_t val);
+  void rocks_envoptions_set_fallocate_with_keep_size(rocks_envoptions_t* opt, unsigned char val);
+  void rocks_envoptions_set_compaction_readahead_size(rocks_envoptions_t* opt, size_t val);
+  void rocks_envoptions_set_random_access_max_buffer_size(rocks_envoptions_t* opt, size_t val);
+  void rocks_envoptions_set_writable_file_max_buffer_size(rocks_envoptions_t* opt, size_t val);
+
 
   void rocks_logger_destroy(rocks_logger_t *logger);
 
@@ -934,6 +951,29 @@ extern "C" {
   size_t rocks_cache_get_pinned_usage(rocks_cache_t* cache);
 
   const char* rocks_cache_name(rocks_cache_t* cache);
+
+  /* sst_file_writer */
+    rocks_sst_file_writer_t* rocks_sst_file_writer_create_from_c_comparator(
+                                                        const rocks_envoptions_t* env_options,
+                                                        const rocks_options_t* options,
+                                                        const rocks_c_comparator_t* comparator, /* avoid export rocksdb::Comparator type */
+                                                        rocks_column_family_handle_t* column_family,
+                                                        unsigned char invalidate_page_cache);
+
+  rocks_sst_file_writer_t* rocks_sst_file_writer_create_from_rust_comparator(
+                                                                             const rocks_envoptions_t* env_options,
+                                                                             const rocks_options_t* options,
+                                                                             const void* comparator,
+                                                                             rocks_column_family_handle_t* column_family,
+                                                                             unsigned char invalidate_page_cache);
+
+  void rocks_sst_file_writer_destroy(rocks_sst_file_writer_t* writer);
+
+  /* comparator */
+  /* avoid export rocksdb::Comparator type */
+  const rocks_c_comparator_t* rocks_comparator_bytewise();
+  const rocks_c_comparator_t* rocks_comparator_bytewise_reversed();
+
 
   /* version */
   int rocks_version_major();

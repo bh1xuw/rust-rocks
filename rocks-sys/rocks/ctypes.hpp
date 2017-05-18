@@ -13,6 +13,7 @@
 #include "rocksdb/iterator.h"
 #include "rocksdb/cache.h"
 #include "rocksdb/merge_operator.h"
+#include "rocksdb/sst_file_writer.h"
 
 #include "rust_export.h"
 
@@ -180,6 +181,8 @@ extern "C" {
   /* cache */
   struct rocks_cache_t           { shared_ptr<Cache>   rep; };
 
+  /* sst_file_writer */
+  struct rocks_sst_file_writer_t { SstFileWriter* rep; };
 
   /* aux */
   static bool SaveError(rocks_status_t* status, const Status& s) {

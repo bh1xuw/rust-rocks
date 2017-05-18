@@ -16,29 +16,78 @@ pub const DEFAULT_PAGE_SIZE: usize = 4 * 1024;
 
 /// Options while opening a file to read/write
 pub struct EnvOptions {
+    raw: *mut ll::rocks_envoptions_t,
+}
+
+impl Drop for EnvOptions {
+    fn drop(&mut self) {
+        unsafe { ll::rocks_envoptions_destroy(self.raw) }
+    }
+}
+
+impl EnvOptions {
+    pub fn raw(&self) -> *mut ll::rocks_envoptions_t {
+        self.raw
+    }
+
     /// If true, then use mmap to read data
-    pub use_mmap_reads: bool,
+    pub fn use_mmap_reads(self, val: bool) -> Self {
+        unsafe {
+            ll::rocks_envoptions_set_use_mmap_reads(self.raw, val as u8);
+        }
+        self
+    }
 
     /// If true, then use mmap to write data
-    pub use_mmap_writes: bool,
+    pub fn use_mmap_writes(self, val: bool) -> Self {
+        unsafe {
+            ll::rocks_envoptions_set_use_mmap_writes(self.raw, val as u8);
+        }
+        self
+    }
 
     /// If true, then use O_DIRECT for reading data
-    pub use_direct_reads: bool,
+    pub fn use_direct_reads(self, val: bool) -> Self {
+        unsafe {
+            ll::rocks_envoptions_set_use_direct_reads(self.raw, val as u8);
+        }
+        self
+    }
 
     /// If true, then use O_DIRECT for writing data
-    pub use_direct_writes: bool,
+    pub fn use_direct_writes(self, val: bool) -> Self {
+        unsafe {
+            ll::rocks_envoptions_set_use_direct_writes(self.raw, val as u8);
+        }
+        self
+    }
 
     /// If false, fallocate() calls are bypassed
-    pub allow_fallocate: bool,
+    pub fn allow_fallocate(self, val: bool) -> Self {
+        unsafe {
+            ll::rocks_envoptions_set_allow_fallocate(self.raw, val as u8);
+        }
+        self
+    }
 
     /// If true, set the FD_CLOEXEC on open fd.
-    pub set_fd_cloexec: bool,
+    pub fn fd_cloexec(self, val: bool) -> Self {
+        unsafe {
+            ll::rocks_envoptions_set_fd_cloexec(self.raw, val as u8);
+        }
+        self
+    }
 
     /// Allows OS to incrementally sync files to disk while they are being
     /// written, in the background. Issue one request for every bytes_per_sync
     /// written. 0 turns it off.
     /// Default: 0
-    pub bytes_per_sync: u64,
+    pub fn bytes_per_sync(self, val: u64) -> Self {
+        unsafe {
+            ll::rocks_envoptions_set_bytes_per_sync(self.raw, val);
+        }
+        self
+    }
 
     /// If true, we will preallocate the file with FALLOC_FL_KEEP_SIZE flag, which
     /// means that file size won't change as part of preallocation.
@@ -46,38 +95,50 @@ pub struct EnvOptions {
     /// improve the performance in workloads where you sync the data on every
     /// write. By default, we set it to true for MANIFEST writes and false for
     /// WAL writes
-    pub fallocate_with_keep_size: bool,
+    pub fn fallocate_with_keep_size(self, val: bool) -> Self {
+        unsafe {
+            ll::rocks_envoptions_set_fallocate_with_keep_size(self.raw, val as u8);
+        }
+        self
+    }
 
     /// See DBOPtions doc
-    pub compaction_readahead_size: usize,
+    pub fn compaction_readahead_size(self, val: usize) -> Self {
+        unsafe {
+            ll::rocks_envoptions_set_compaction_readahead_size(self.raw, val);
+        }
+        self
+    }
 
     /// See DBOPtions doc
-    pub random_access_max_buffer_size: usize,
+    pub fn random_access_max_buffer_size(self, val: usize) -> Self {
+        unsafe {
+            ll::rocks_envoptions_set_random_access_max_buffer_size(self.raw, val);
+        }
+        self
+    }
 
     /// See DBOptions doc
-    pub writable_file_max_buffer_size: usize,
+    pub fn writable_file_max_buffer_size(self, val: usize) -> Self {
+        unsafe {
+            ll::rocks_envoptions_set_writable_file_max_buffer_size(self.raw, val);
+        }
+        self
+    }
 
-    /// If not nullptr, write rate limiting is enabled for flush and compaction
-    pub rate_limiter: Option<RateLimiter>,
+    // If not nullptr, write rate limiting is enabled for flush and compaction
+    /*
+    pub fn rate_limiter(self, val: Option<RateLimiter>) -> Self {
+    unsafe {
+    ll::rocks_envoptions_set_
+    }
+    self
+     */
 }
-
 
 impl Default for EnvOptions {
     fn default() -> Self {
-        EnvOptions {
-            use_mmap_reads: false,
-            use_mmap_writes: true,
-            use_direct_reads: false,
-            use_direct_writes: false,
-            allow_fallocate: true,
-            set_fd_cloexec: true,
-            bytes_per_sync: 0,
-            fallocate_with_keep_size: true,
-            compaction_readahead_size: 0,
-            random_access_max_buffer_size: 0,
-            writable_file_max_buffer_size: 1024 * 1024,
-            rate_limiter: None,
-        }
+        EnvOptions { raw: unsafe { ll::rocks_envoptions_create() } }
     }
 }
 
