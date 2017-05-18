@@ -7,6 +7,9 @@
 #include "rocksdb/env.h"
 #include "rocksdb/iterator.h"
 #include "rocksdb/cache.h"
+#include "rocksdb/merge_operator.h"
+
+#include "rust_export.h"
 
 using namespace rocksdb;
 
@@ -46,6 +49,37 @@ extern "C" {
   struct rocks_compaction_options_t        { CompactionOptions         rep; };
   struct rocks_compactrange_options_t      { CompactRangeOptions       rep; };
   struct rocks_ingestexternalfile_options_t { IngestExternalFileOptions rep; };
+
+  struct rocks_associative_mergeoperator_t: public AssociativeMergeOperator {
+    void* obj;                  // rust trait obj
+
+    rocks_associative_mergeoperator_t(void *trait_obj): obj(trait_obj) {}
+
+    const char* Name() const override {
+      return rust_associative_merge_operator_name(this->obj);
+    }
+
+    bool Merge(const Slice& key,
+                       const Slice* existing_value,
+                       const Slice& value,
+                       std::string* new_value,
+                       Logger* logger) const override {
+      char* nval = nullptr;
+      size_t nval_len = 0;
+      auto ret = rust_associative_merge_operator_call(this->obj,
+                                                      &key,
+                                                      existing_value,
+                                                      &value,
+                                                      &nval, &nval_len,
+                                                      logger);
+      if (ret) {
+        new_value->assign(nval, nval_len);
+        // NOTE: this drops Vec<u8>
+        rust_drop_vec_u8(nval, nval_len);
+      }
+      return (bool)ret;
+    }
+  };
 
   /* rate_limiter */
 

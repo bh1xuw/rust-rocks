@@ -57,7 +57,9 @@ extern "C" {
   /* cache */
   typedef struct rocks_cache_t           rocks_cache_t;
 
-
+  /* merge_operator.h */
+  typedef struct rocks_associative_mergeoperator_t rocks_associative_mergeoperator_t;
+  typedef struct rocks_mergeoperator_t rocks_mergeoperator_t;
 
   /* ****************************** functions ****************************** */
   /* options.h */
@@ -89,6 +91,8 @@ extern "C" {
   void rocks_cfoptions_optimize_level_style_compaction(rocks_cfoptions_t* opt, uint64_t memtable_memory_budget);
 
   void rocks_cfoptions_optimize_universal_style_compaction(rocks_cfoptions_t* opt, uint64_t memtable_memory_budget);
+
+  void rocks_cfoptions_set_merge_operator_by_assoc_op_trait(rocks_cfoptions_t* opt, void* op_trait_obj);
 
   /*
   void rocks_cfoptions_set_comparator(rocks_cfoptions_t* opt, rocks_comparator_t* cmp);
@@ -649,6 +653,15 @@ extern "C" {
     const size_t* keys_list_sizes,
     char** values_list, size_t* values_list_sizes,
     rocks_status_t* status);
+
+  unsigned char rocks_db_key_may_exist(rocks_db_t* db, const rocks_readoptions_t* options,
+                                       const char* key, size_t key_len, char* value,
+                                       size_t* value_len, unsigned char* value_found);
+
+  unsigned char rocks_db_key_may_exist_cf(rocks_db_t* db, const rocks_readoptions_t* options,
+                                          const rocks_column_family_handle_t* column_family,
+                                          const char* key, size_t key_len, char* value,
+                                          size_t* value_len, unsigned char* value_found);
 
   rocks_iterator_t* rocks_db_create_iterator(rocks_db_t* db,
                                              const rocks_readoptions_t* options);

@@ -312,6 +312,12 @@ pub struct rocks_writebatch_t([u8; 0]);
 #[repr(C)]
 #[derive(Debug, Copy, Clone)]
 pub struct rocks_cache_t([u8; 0]);
+#[repr(C)]
+#[derive(Debug, Copy, Clone)]
+pub struct rocks_associative_mergeoperator_t([u8; 0]);
+#[repr(C)]
+#[derive(Debug, Copy, Clone)]
+pub struct rocks_mergeoperator_t([u8; 0]);
 extern "C" {
     pub fn rocks_options_create() -> *mut rocks_options_t;
 }
@@ -365,6 +371,12 @@ extern "C" {
                                                                    *mut rocks_cfoptions_t,
                                                                memtable_memory_budget:
                                                                    u64);
+}
+extern "C" {
+    pub fn rocks_cfoptions_set_merge_operator_by_assoc_op_trait(opt:
+                                                                    *mut rocks_cfoptions_t,
+                                                                op_trait_obj:
+                                                                    *mut ::std::os::raw::c_void);
 }
 extern "C" {
     pub fn rocks_cfoptions_set_write_buffer_size(opt: *mut rocks_cfoptions_t,
@@ -1244,6 +1256,29 @@ extern "C" {
                                      *mut *mut ::std::os::raw::c_char,
                                  values_list_sizes: *mut usize,
                                  status: *mut rocks_status_t);
+}
+extern "C" {
+    pub fn rocks_db_key_may_exist(db: *mut rocks_db_t,
+                                  options: *const rocks_readoptions_t,
+                                  key: *const ::std::os::raw::c_char,
+                                  key_len: usize,
+                                  value: *mut ::std::os::raw::c_char,
+                                  value_len: *mut usize,
+                                  value_found: *mut ::std::os::raw::c_uchar)
+     -> ::std::os::raw::c_uchar;
+}
+extern "C" {
+    pub fn rocks_db_key_may_exist_cf(db: *mut rocks_db_t,
+                                     options: *const rocks_readoptions_t,
+                                     column_family:
+                                         *const rocks_column_family_handle_t,
+                                     key: *const ::std::os::raw::c_char,
+                                     key_len: usize,
+                                     value: *mut ::std::os::raw::c_char,
+                                     value_len: *mut usize,
+                                     value_found:
+                                         *mut ::std::os::raw::c_uchar)
+     -> ::std::os::raw::c_uchar;
 }
 extern "C" {
     pub fn rocks_db_create_iterator(db: *mut rocks_db_t,

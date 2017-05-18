@@ -23,6 +23,8 @@ use table_properties::TableProperties;
 use snapshot::Snapshot;
 use write_batch::WriteBatch;
 use iterator::Iterator;
+use merge_operator::AssociativeMergeOperator;
+use env::Logger;
 
 const DEFAULT_COLUMN_FAMILY_NAME: &'static str = "default";
 
@@ -729,14 +731,44 @@ impl<'a> DB<'a> {
     /// This check is potentially lighter-weight than invoking DB::Get(). One way
     /// to make this lighter weight is to avoid doing any IOs.
     /// Default implementation here returns true and sets 'value_found' to false
-    pub fn key_may_exist(&self, options: &ReadOptions, key: &[u8]) -> (bool, Option<CVec<u8>>) {
+    pub fn key_may_exist(&self, options: &ReadOptions, key: &[u8]) -> bool {
+        unsafe {
+            ll::rocks_db_key_may_exist(self.raw(),
+                                       options.raw(),
+                                       key.as_ptr() as *const _,
+                                       key.len(),
+                                       ptr::null_mut(),
+                                       ptr::null_mut(),
+                                       ptr::null_mut()) != 0
+        }
+    }
+
+    pub fn key_may_get(&self, options: &ReadOptions, key: &[u8]) -> bool {
         unimplemented!()
     }
+
     pub fn key_may_exist_cf(&self,
                             options: &ReadOptions,
                             column_family: &ColumnFamilyHandle,
                             key: &[u8])
-                            -> (bool, Option<CVec<u8>>) {
+                            -> bool {
+        unsafe {
+            ll::rocks_db_key_may_exist_cf(self.raw(),
+                                          options.raw(),
+                                          column_family.raw(),
+                                          key.as_ptr() as *const _,
+                                          key.len(),
+                                          ptr::null_mut(),
+                                          ptr::null_mut(),
+                                          ptr::null_mut()) != 0
+        }
+    }
+
+    pub fn key_may_get_cf(&self,
+                          options: &ReadOptions,
+                          column_family: &ColumnFamilyHandle,
+                          key: &[u8])
+                          -> (bool, Option<CVec<u8>>) {
         unimplemented!()
     }
 
@@ -1247,4 +1279,68 @@ fn test_compact_range() {
     let ret = db.compact_range(&CompactRangeOptions::default(),
                                b"test2-key-5".as_ref()..b"test2-key-9".as_ref());
     assert!(ret.is_ok());
+
+    let ret = db.compact_range(&CompactRangeOptions::default(), ..);
+    assert!(ret.is_ok());
+}
+
+
+#[test]
+fn test_key_may_exist() {
+    use tempdir::TempDir;
+    let tmp_dir = TempDir::new_in(".", "rocks").unwrap();
+
+    let db = DB::open(
+        Options::default().map_db_options(|db| db.create_if_missing(true)),
+        tmp_dir
+    ).unwrap();
+
+    db.put(&WriteOptions::default(), b"name", b"value");
+
+    assert!(db.key_may_exist(&ReadOptions::default(), b"name"));
+    assert!(!db.key_may_exist(&ReadOptions::default(), b"name2"))
+}
+
+
+#[test]
+fn test_db_merge() {
+    use tempdir::TempDir;
+    let tmp_dir = TempDir::new_in(".", "rocks").unwrap();
+
+    pub struct MyAssocMergeOp;
+
+    impl AssociativeMergeOperator for MyAssocMergeOp {
+        fn merge(&self, key: &[u8], existing_value: Option<&[u8]>,
+                 value: &[u8], logger: &Logger) -> Option<Vec<u8>> {
+
+            let mut ret: Vec<u8> = existing_value.map(|s| s.into()).unwrap_or(b"new".to_vec());
+            ret.push(b'|');
+            ret.extend_from_slice(value);
+            Some(ret)
+        }
+    }
+
+    let db = DB::open(
+        Options::default()
+            .map_db_options(|db| db.create_if_missing(true))
+            .map_cf_options(|cf| {
+                cf.associative_merge_operator(Box::new(MyAssocMergeOp))
+            }),
+        tmp_dir
+    ).unwrap();
+
+    let ret = db.merge(&WriteOptions::default(), b"name", b"value");
+    let ret = db.merge(&WriteOptions::default(), b"name", b"valaerue");
+    let ret = db.merge(&WriteOptions::default(), b"name", b"vzxcvalue");
+    let ret = db.merge(&WriteOptions::default(), b"name", b"vasadflue");
+    let ret = db.merge(&WriteOptions::default(), b"name", b"valasdfue");
+    let ret = db.merge(&WriteOptions::default(), b"name", b"value");
+    let ret = db.merge(&WriteOptions::default(), b"name", b"vaasdflue");
+    let ret = db.merge(&WriteOptions::default(), b"name", b"vadfhlue");
+    let ret = db.merge(&WriteOptions::default(), b"name", b"valadfue");
+    let ret = db.merge(&WriteOptions::default(), b"name", b"valuzxve");
+
+    let ret = db.get(&ReadOptions::default(), b"name");
+    println!("after read => {:?}", String::from_utf8_lossy(ret.unwrap().as_ref()));
+
 }

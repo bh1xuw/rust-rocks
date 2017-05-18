@@ -21,7 +21,7 @@ use cache::Cache;
 use advanced_options::{CompactionStyle, CompactionPri, CompactionOptionsFIFO, CompressionOptions};
 use universal_compaction::CompactionOptionsUniversal;
 use compaction_filter::{CompactionFilter, CompactionFilterFactory};
-use merge_operator::MergeOperator;
+use merge_operator::{MergeOperator, AssociativeMergeOperator};
 use table::TableFactory;
 use comparator::Comparator;
 use slice_transform::SliceTransform;
@@ -228,6 +228,17 @@ impl ColumnFamilyOptions {
         // }
         // self
         unimplemented!()
+    }
+
+    pub fn associative_merge_operator(self, val: Box<AssociativeMergeOperator>) -> Self {
+        unsafe {
+            println!("ptr beforesetting => {:?}", val.as_ref() as *const _);
+            // FIXME: into_raw
+            let raw_ptr = Box::into_raw(Box::new(val)); // Box<Box<AssociativeMergeOperator>>
+            println!("raw ptr => {:?}", raw_ptr);
+            ll::rocks_cfoptions_set_merge_operator_by_assoc_op_trait(self.raw, raw_ptr as *mut _);
+        }
+        self
     }
 
     /// A single CompactionFilter instance to call into during compaction.
@@ -2091,12 +2102,13 @@ impl ReadOptions {
     /// not have been released).  If "snapshot" is nullptr, use an implicit
     /// snapshot of the state at the beginning of this read operation.
     /// Default: nullptr
-    pub fn snapshot(self, val: Option<Snapshot>) -> Self {
-        // unsafe {
-        //     ll::rocks_readoptions_set_snapshot(self.raw, val);
-        // }
-        // self
-        unimplemented!()
+    // FIXME: lifetime, val should be longer than self
+    pub fn snapshot(self, val: Option<&Snapshot>) -> Self {
+        unsafe {
+            ll::rocks_readoptions_set_snapshot(self.raw,
+                                               val.map(|v| v.raw()).unwrap_or(ptr::null_mut()));
+        }
+        self
     }
 
     /// "iterate_upper_bound" defines the extent upto which the forward iterator

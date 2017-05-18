@@ -44,6 +44,8 @@ working in progress.
 - [ ] ``rocksdb/listener.h``
 - [ ] ``rocksdb/memtablerep.h``
 - [ ] ``rocksdb/merge_operator.h``
+  - [x] associative merge operator
+  - [ ] merge operator
 - [ ] ``rocksdb/metadata.h``
 - [x] ``rocksdb/options.h``
   - [x] builder style

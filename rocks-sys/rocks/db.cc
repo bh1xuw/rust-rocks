@@ -1,6 +1,8 @@
 #include "rocksdb/db.h"
 #include "rocks/ctypes.hpp"
 
+#include "rocks/rust_export.h"
+
 #include <iostream>
 
 using namespace rocksdb;
@@ -393,6 +395,39 @@ extern "C" {
     }
   }
 
+  unsigned char rocks_db_key_may_exist(rocks_db_t* db, const rocks_readoptions_t* options,
+                                       const char* key, size_t key_len, char* value,
+                                       size_t* value_len, unsigned char* value_found) {
+    bool found;
+    std::string val;
+    bool ret = db->rep->KeyMayExist(options->rep, Slice(key, key_len), &val, &found);
+    if (ret && value != nullptr) {
+      *value_len = val.size();
+      value = CopyString(val);
+    }
+    if (value_found != nullptr) {
+      *value_found = found;
+    }
+    return ret;
+  }
+
+  unsigned char rocks_db_key_may_exist_cf(rocks_db_t* db, const rocks_readoptions_t* options,
+                                          const rocks_column_family_handle_t* column_family,
+                                          const char* key, size_t key_len, char* value,
+                                          size_t* value_len, unsigned char* value_found) {
+    if (value_found != nullptr) {
+      std::string val;
+      bool ret = db->rep->KeyMayExist(options->rep, column_family->rep, Slice(key, key_len), &val, (bool*)value_found);
+      if (ret) {
+        *value_len = val.size();
+        value = CopyString(val);
+      }
+      return ret;
+    } else {
+      return db->rep->KeyMayExist(options->rep, column_family->rep, Slice(key, key_len), nullptr);
+    }
+  }
+
   rocks_iterator_t* rocks_db_create_iterator(
                                               rocks_db_t* db,
                                               const rocks_readoptions_t* options) {
@@ -515,6 +550,5 @@ extern "C" {
     auto st = RepairDB(name, options->rep);
     rocks_status_convert(&st, status);
   }
-
 }
 
