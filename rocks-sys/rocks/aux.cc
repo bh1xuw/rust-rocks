@@ -2,12 +2,25 @@
 #include <vector>
 
 #include "rocksdb/slice.h"
+#include "rocksdb/version.h"
 
 using namespace rocksdb;
 
-using std::shared_ptr;
-
 extern "C" {
+  /* version */
+  int rocks_version_major() {
+    return ROCKSDB_MAJOR;
+  }
+  int rocks_version_minor() {
+    return ROCKSDB_MINOR;
+  }
+  int rocks_version_patch() {
+    return ROCKSDB_PATCH;
+  }
+
+
+
+
   size_t cxx_vector_slice_size(const void* list) {
     auto p = reinterpret_cast<const std::vector<Slice>*>(list);
     return p->size();
