@@ -424,11 +424,12 @@ extern "C" {
 
   void rocks_dboptions_set_db_paths(rocks_dboptions_t* opt,
                                     const char* const* paths,
+                                    const size_t* path_lens,
                                     const uint64_t* target_sizes,
                                     int size) {
     std::vector<DbPath> dbpaths;
     for (int i = 0; i < size; i++) {
-      dbpaths.push_back(DbPath(std::string(paths[i]), target_sizes[i]));
+      dbpaths.push_back(DbPath(std::string(paths[i], path_lens[i]), target_sizes[i]));
     }
     opt->rep.db_paths = dbpaths;
   }
@@ -843,6 +844,29 @@ extern "C" {
 
   void rocks_compactrange_options_set_bottommost_level_compaction(rocks_compactrange_options_t* opt, int v) {
     opt->rep.bottommost_level_compaction = static_cast<BottommostLevelCompaction>(v);
+  }
+}
+
+extern "C" {
+  rocks_ingestexternalfile_options_t* rocks_ingestexternalfile_options_create() {
+    return new rocks_ingestexternalfile_options_t;
+  }
+
+  void rocks_ingestexternalfile_options_destroy(rocks_ingestexternalfile_options_t* opt) {
+    delete opt;
+  }
+
+  void rocks_ingestexternalfile_options_set_move_files(rocks_ingestexternalfile_options_t* opt, unsigned char v) {
+    opt->rep.move_files = v;
+  }
+  void rocks_ingestexternalfile_options_set_snapshot_consistency(rocks_ingestexternalfile_options_t* opt, unsigned char v) {
+    opt->rep.snapshot_consistency = v;
+  }
+  void rocks_ingestexternalfile_options_set_allow_global_seqno(rocks_ingestexternalfile_options_t* opt, unsigned char v) {
+    opt->rep.allow_global_seqno = v;
+  }
+  void rocks_ingestexternalfile_options_set_allow_blocking_flush(rocks_ingestexternalfile_options_t* opt, unsigned char v) {
+    opt->rep.allow_blocking_flush = v;
   }
 }
 

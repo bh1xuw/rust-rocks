@@ -276,6 +276,7 @@ extern "C" {
 
   void rocks_dboptions_set_db_paths(rocks_dboptions_t* opt,
                                     const char* const* paths,
+                                    const size_t* path_lens,
                                     const uint64_t* target_sizes,
                                     int size);
 
@@ -482,6 +483,17 @@ extern "C" {
   void rocks_compactrange_options_set_target_path_id(rocks_compactrange_options_t* opt, uint32_t v);
 
   void rocks_compactrange_options_set_bottommost_level_compaction(rocks_compactrange_options_t* opt, int v);
+
+
+  /* > ingestexternalfile_options */
+  rocks_ingestexternalfile_options_t* rocks_ingestexternalfile_options_create();
+
+  void rocks_ingestexternalfile_options_destroy(rocks_ingestexternalfile_options_t* opt);
+
+  void rocks_ingestexternalfile_options_set_move_files(rocks_ingestexternalfile_options_t* opt, unsigned char v);
+  void rocks_ingestexternalfile_options_set_snapshot_consistency(rocks_ingestexternalfile_options_t* opt, unsigned char v);
+  void rocks_ingestexternalfile_options_set_allow_global_seqno(rocks_ingestexternalfile_options_t* opt, unsigned char v);
+  void rocks_ingestexternalfile_options_set_allow_blocking_flush(rocks_ingestexternalfile_options_t* opt, unsigned char v);
 
   /* > misc */
   rocks_logger_t *rocks_create_logger_from_options(const char *path,

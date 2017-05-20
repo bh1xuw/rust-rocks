@@ -692,6 +692,7 @@ extern "C" {
     pub fn rocks_dboptions_set_db_paths(opt: *mut rocks_dboptions_t,
                                         paths:
                                             *const *const ::std::os::raw::c_char,
+                                        path_lens: *const usize,
                                         target_sizes: *const u64,
                                         size: ::std::os::raw::c_int);
 }
@@ -1063,6 +1064,38 @@ extern "C" {
                                                                           *mut rocks_compactrange_options_t,
                                                                       v:
                                                                           ::std::os::raw::c_int);
+}
+extern "C" {
+    pub fn rocks_ingestexternalfile_options_create()
+     -> *mut rocks_ingestexternalfile_options_t;
+}
+extern "C" {
+    pub fn rocks_ingestexternalfile_options_destroy(opt:
+                                                        *mut rocks_ingestexternalfile_options_t);
+}
+extern "C" {
+    pub fn rocks_ingestexternalfile_options_set_move_files(opt:
+                                                               *mut rocks_ingestexternalfile_options_t,
+                                                           v:
+                                                               ::std::os::raw::c_uchar);
+}
+extern "C" {
+    pub fn rocks_ingestexternalfile_options_set_snapshot_consistency(opt:
+                                                                         *mut rocks_ingestexternalfile_options_t,
+                                                                     v:
+                                                                         ::std::os::raw::c_uchar);
+}
+extern "C" {
+    pub fn rocks_ingestexternalfile_options_set_allow_global_seqno(opt:
+                                                                       *mut rocks_ingestexternalfile_options_t,
+                                                                   v:
+                                                                       ::std::os::raw::c_uchar);
+}
+extern "C" {
+    pub fn rocks_ingestexternalfile_options_set_allow_blocking_flush(opt:
+                                                                         *mut rocks_ingestexternalfile_options_t,
+                                                                     v:
+                                                                         ::std::os::raw::c_uchar);
 }
 extern "C" {
     pub fn rocks_create_logger_from_options(path:

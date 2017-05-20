@@ -2,6 +2,7 @@
 use std::u64;
 use std::path::{Path, PathBuf};
 use std::ops::Deref;
+use std::ffi::CString;
 use std::mem;
 use std::ptr;
 use std::os::raw::c_int;
@@ -1277,6 +1278,7 @@ impl DBOptions {
         let num_paths = val.len();
         let paths = val.into_iter().map(|p| p.into()).collect::<Vec<_>>();
         let mut cpaths = Vec::with_capacity(num_paths);
+        let mut cpath_lens = Vec::with_capacity(num_paths);
         let mut sizes = Vec::with_capacity(num_paths);
         for dbpath in &paths {
             cpaths.push(dbpath
@@ -1284,12 +1286,14 @@ impl DBOptions {
                             .to_str()
                             .map(|s| s.as_ptr() as _)
                             .unwrap_or_else(ptr::null));
+            cpath_lens.push(dbpath.path.to_str().map(|s| s.len()).unwrap_or_default());
             sizes.push(dbpath.target_size);
         }
 
         unsafe {
             ll::rocks_dboptions_set_db_paths(self.raw,
                                              cpaths.as_ptr(),
+                                             cpath_lens.as_ptr(),
                                              sizes.as_ptr(),
                                              num_paths as c_int);
         }
@@ -2441,29 +2445,61 @@ impl Default for CompactRangeOptions {
     }
 }
 
+
 /// IngestExternalFileOptions is used by IngestExternalFile()
 #[repr(C)]
 pub struct IngestExternalFileOptions {
+    raw: *mut ll::rocks_ingestexternalfile_options_t,
+}
+
+impl Drop for IngestExternalFileOptions {
+    fn drop(&mut self) {
+        unsafe {
+            ll::rocks_ingestexternalfile_options_destroy(self.raw);
+        }
+    }
+}
+
+impl IngestExternalFileOptions {
     /// Can be set to true to move the files instead of copying them.
-    pub move_files: bool,
+    pub fn move_files(self, val: bool) -> Self {
+        unsafe {
+            ll::rocks_ingestexternalfile_options_set_move_files(self.raw, val as u8);
+        }
+        self
+    }
+
     /// If set to false, an ingested file keys could appear in existing snapshots
     /// that where created before the file was ingested.
-    pub snapshot_consistency: bool,
+    pub fn snapshot_consistency(self, val: bool) -> Self {
+        unsafe {
+            ll::rocks_ingestexternalfile_options_set_snapshot_consistency(self.raw, val as u8);
+        }
+        self
+    }
+
     /// If set to false, IngestExternalFile() will fail if the file key range
     /// overlaps with existing keys or tombstones in the DB.
-    pub allow_global_seqno: bool,
+    pub fn allow_global_seqno(self, val: bool) -> Self {
+        unsafe {
+            ll::rocks_ingestexternalfile_options_set_allow_global_seqno(self.raw, val as u8);
+        }
+        self
+    }
     /// If set to false and the file key range overlaps with the memtable key range
     /// (memtable flush required), IngestExternalFile will fail.
-    pub allow_blocking_flush: bool,
+    pub fn allow_blocking_flush(self, val: bool) -> Self {
+        unsafe {
+            ll::rocks_ingestexternalfile_options_set_allow_blocking_flush(self.raw, val as u8);
+        }
+        self
+    }
 }
 
 impl Default for IngestExternalFileOptions {
     fn default() -> Self {
         IngestExternalFileOptions {
-            move_files: false,
-            snapshot_consistency: true,
-            allow_global_seqno: true,
-            allow_blocking_flush: true,
+            raw: unsafe { ll::rocks_ingestexternalfile_options_create() },
         }
     }
 }
