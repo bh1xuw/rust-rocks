@@ -19,8 +19,6 @@ extern "C" {
   }
 
 
-
-
   size_t cxx_vector_slice_size(const void* list) {
     auto p = reinterpret_cast<const std::vector<Slice>*>(list);
     return p->size();

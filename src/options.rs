@@ -2498,8 +2498,6 @@ impl IngestExternalFileOptions {
 
 impl Default for IngestExternalFileOptions {
     fn default() -> Self {
-        IngestExternalFileOptions {
-            raw: unsafe { ll::rocks_ingestexternalfile_options_create() },
-        }
+        IngestExternalFileOptions { raw: unsafe { ll::rocks_ingestexternalfile_options_create() } }
     }
 }

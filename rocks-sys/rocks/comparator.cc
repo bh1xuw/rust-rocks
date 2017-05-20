@@ -6,11 +6,11 @@
 using namespace rocksdb;
 
 extern "C" {
-  const Comparator* rocks_comparater_bytewise() {
+  const Comparator* rocks_comparator_bytewise() {
     return BytewiseComparator();
   }
 
-  const Comparator* rocks_comparater_bytewise_reversed() {
+  const Comparator* rocks_comparator_bytewise_reversed() {
     return ReverseBytewiseComparator();
   }
 }

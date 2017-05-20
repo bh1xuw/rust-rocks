@@ -21,7 +21,7 @@ extern "C" {
                                     env_options->rep,
                                     options->rep,
                                     comparator,
-                                    column_family->rep,
+                                    (column_family != nullptr) ? column_family->rep : nullptr,
                                     invalidate_page_cache != 0);
     return result;
   }
@@ -37,7 +37,7 @@ extern "C" {
                                     env_options->rep,
                                     options->rep,
                                     new rocks_comparator_t { (void *)comparator_trait_obj }, // FIXME: memory leaks
-                                    column_family->rep,
+                                    (column_family != nullptr) ? column_family->rep : nullptr,
                                     invalidate_page_cache != 0);
     return result;
   }

@@ -40,31 +40,37 @@ pub struct SstFileWriterBuilder {
 
 impl SstFileWriterBuilder {
     pub fn build(&mut self) -> SstFileWriter {
-        SstFileWriter {
-            raw: unsafe {
-                if self.use_rust_comparator {
-                    ll::rocks_sst_file_writer_create_from_rust_comparator(
-                        self.env_options.take().unwrap_or_default().raw(),
-                        self.options.take().unwrap_or_default().raw(),
-                        self.rust_comparator as *const _,
-                        self.column_family,
-                        self.invalidate_page_cache as u8)
-                } else {
-                    ll::rocks_sst_file_writer_create_from_c_comparator(self.env_options
-                                                                           .take()
-                                                                           .unwrap_or_default()
-                                                                           .raw(),
-                                                                       self.options
-                                                                           .take()
-                                                                           .unwrap_or_default()
-                                                                           .raw(),
-                                                                       self.c_comparator as
-                                                                       *const _,
-                                                                       self.column_family,
-                                                                       self.invalidate_page_cache as
-                                                                       u8)
+        let ptr =
+            if self.use_rust_comparator {
+                unsafe {
+                ll::rocks_sst_file_writer_create_from_rust_comparator(
+                    self.env_options.take().unwrap_or_default().raw(),
+                    self.options.take().unwrap_or_default().raw(),
+                    self.rust_comparator as *const _,
+                    self.column_family,
+                    self.invalidate_page_cache as u8)
                 }
-            },
-        }
+            } else {
+                unsafe {
+                ll::rocks_sst_file_writer_create_from_c_comparator(
+                    self.env_options.take().unwrap_or_default().raw(),
+                    self.options.take().unwrap_or_default().raw(),
+                    self.c_comparator as *const _,
+                    self.column_family,
+                    self.invalidate_page_cache as u8)
+            }
+            };
+        SstFileWriter { raw: ptr }
+    }
+}
+
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn create() {
+        let writer = SstFileWriter::builder().build();
     }
 }
