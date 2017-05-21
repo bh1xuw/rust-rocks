@@ -64,7 +64,7 @@ working in progress.
 - [x] ``rocksdb/snapshot.h``
 - [ ] ``rocksdb/sst_dump_tool.h``
 - [ ] ``rocksdb/sst_file_manager.h``
-- [ ] ``rocksdb/sst_file_writer.h``
+- [x] ``rocksdb/sst_file_writer.h``
 - [ ] ``rocksdb/statistics.h``
 - [x] ``rocksdb/status.h``
   - [ ] Rust style Error? (i.e. remove Status::OK)
