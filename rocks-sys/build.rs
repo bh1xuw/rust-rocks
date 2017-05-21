@@ -7,12 +7,15 @@ fn main() {
     println!("cargo:rerun-if-changed=./");
     println!("cargo:rerun-if-changed=./rocks");
 
-    println!("cargo:rustc-link-lib=rocksdb");
-    println!("cargo:rustc-link-search=native=/usr/local/lib");
+    // println!("cargo:rustc-link-lib=rocksdb");
+    //println!("cargo:rustc-link-search=native=/usr/local/lib");
+
+    println!("cargo:rustc-link-lib=static=rocksdb_debug");
+    println!("cargo:rustc-link-search=native=/Users/wangshuyu/Workspace/PingCAP/rocksdb");
 
     println!("cargo:rustc-link-lib=bz2");
     println!("cargo:rustc-link-lib=z");
-    println!("cargo:rustc-link-lib=snappy");
+    // println!("cargo:rustc-link-lib=snappy");
 
     env::set_var("CXXFLAGS", "-std=c++11");
 

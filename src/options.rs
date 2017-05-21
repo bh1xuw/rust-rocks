@@ -1082,6 +1082,20 @@ pub struct DBOptions {
     raw: *mut ll::rocks_dboptions_t,
 }
 
+impl Default for DBOptions {
+    fn default() -> Self {
+        DBOptions { raw: unsafe { ll::rocks_dboptions_create() } }
+    }
+}
+
+impl Drop for DBOptions {
+    fn drop(&mut self) {
+        unsafe {
+            ll::rocks_dboptions_destroy(self.raw);
+        }
+    }
+}
+
 impl DBOptions {
     pub fn raw(&self) -> *mut ll::rocks_dboptions_t {
         self.raw
@@ -1940,12 +1954,6 @@ impl DBOptions {
     }
 }
 
-impl Default for DBOptions {
-    fn default() -> Self {
-        DBOptions { raw: unsafe { ll::rocks_dboptions_create() } }
-    }
-}
-
 /// Options to control the behavior of a database (passed to DB::Open)
 pub struct Options {
     raw: *mut ll::rocks_options_t,
@@ -1954,6 +1962,20 @@ pub struct Options {
 impl AsRef<Options> for Options {
     fn as_ref(&self) -> &Options {
         self
+    }
+}
+
+impl Default for Options {
+    fn default() -> Self {
+        Options { raw: unsafe { ll::rocks_options_create() } }
+    }
+}
+
+impl Drop for Options {
+    fn drop(&mut self) {
+        unsafe {
+            ll::rocks_options_destroy(self.raw);
+        }
     }
 }
 
@@ -2027,20 +2049,6 @@ impl Options {
     pub fn optimize_for_small_db(self) -> Self {
         unsafe { ll::rocks_options_optimize_for_small_db(self.raw) };
         self
-    }
-}
-
-impl Default for Options {
-    fn default() -> Self {
-        Options { raw: unsafe { ll::rocks_options_create() } }
-    }
-}
-
-impl Drop for Options {
-    fn drop(&mut self) {
-        unsafe {
-            ll::rocks_options_destroy(self.raw);
-        }
     }
 }
 
@@ -2281,6 +2289,20 @@ impl AsRef<WriteOptions> for WriteOptions {
     }
 }
 
+impl Default for WriteOptions {
+    fn default() -> Self {
+        WriteOptions { raw: unsafe { ll::rocks_writeoptions_create() } }
+    }
+}
+
+impl Drop for WriteOptions {
+    fn drop(&mut self) {
+        unsafe {
+            ll::rocks_writeoptions_destroy(self.raw);
+        }
+    }
+}
+
 impl WriteOptions {
     pub fn raw(&self) -> *mut ll::rocks_writeoptions_t {
         self.raw
@@ -2338,13 +2360,6 @@ impl WriteOptions {
         self
     }
 }
-
-impl Default for WriteOptions {
-    fn default() -> Self {
-        WriteOptions { raw: unsafe { ll::rocks_writeoptions_create() } }
-    }
-}
-
 
 /// Options that control flush operations
 #[repr(C)]

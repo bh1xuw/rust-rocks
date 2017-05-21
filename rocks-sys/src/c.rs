@@ -327,6 +327,9 @@ pub struct rocks_c_comparator_t([u8; 0]);
 #[repr(C)]
 #[derive(Debug, Copy, Clone)]
 pub struct rocks_sst_file_writer_t([u8; 0]);
+#[repr(C)]
+#[derive(Debug, Copy, Clone)]
+pub struct rocks_external_sst_file_info_t([u8; 0]);
 extern "C" {
     pub fn rocks_options_create() -> *mut rocks_options_t;
 }
@@ -1814,6 +1817,52 @@ extern "C" {
      -> *const ::std::os::raw::c_char;
 }
 extern "C" {
+    pub fn rocks_external_sst_file_info_create()
+     -> *mut rocks_external_sst_file_info_t;
+}
+extern "C" {
+    pub fn rocks_external_sst_file_info_destroy(info:
+                                                    *mut rocks_external_sst_file_info_t);
+}
+extern "C" {
+    pub fn rocks_external_sst_file_info_get_file_path(info:
+                                                          *mut rocks_external_sst_file_info_t,
+                                                      len: *mut usize)
+     -> *const ::std::os::raw::c_char;
+}
+extern "C" {
+    pub fn rocks_external_sst_file_info_get_smallest_key(info:
+                                                             *mut rocks_external_sst_file_info_t,
+                                                         len: *mut usize)
+     -> *const ::std::os::raw::c_char;
+}
+extern "C" {
+    pub fn rocks_external_sst_file_info_get_largest_key(info:
+                                                            *mut rocks_external_sst_file_info_t,
+                                                        len: *mut usize)
+     -> *const ::std::os::raw::c_char;
+}
+extern "C" {
+    pub fn rocks_external_sst_file_info_get_sequence_number(info:
+                                                                *mut rocks_external_sst_file_info_t)
+     -> u64;
+}
+extern "C" {
+    pub fn rocks_external_sst_file_info_get_file_size(info:
+                                                          *mut rocks_external_sst_file_info_t)
+     -> u64;
+}
+extern "C" {
+    pub fn rocks_external_sst_file_info_get_num_entries(info:
+                                                            *mut rocks_external_sst_file_info_t)
+     -> u64;
+}
+extern "C" {
+    pub fn rocks_external_sst_file_info_get_version(info:
+                                                        *mut rocks_external_sst_file_info_t)
+     -> i32;
+}
+extern "C" {
     pub fn rocks_sst_file_writer_create_from_c_comparator(env_options:
                                                               *const rocks_envoptions_t,
                                                           options:
@@ -1842,6 +1891,32 @@ extern "C" {
 extern "C" {
     pub fn rocks_sst_file_writer_destroy(writer:
                                              *mut rocks_sst_file_writer_t);
+}
+extern "C" {
+    pub fn rocks_sst_file_writer_open(writer: *mut rocks_sst_file_writer_t,
+                                      file_path:
+                                          *const ::std::os::raw::c_char,
+                                      file_path_len: usize,
+                                      status: *mut rocks_status_t);
+}
+extern "C" {
+    pub fn rocks_sst_file_writer_add(writer: *mut rocks_sst_file_writer_t,
+                                     key: *const ::std::os::raw::c_char,
+                                     key_len: usize,
+                                     value: *const ::std::os::raw::c_char,
+                                     value_len: usize,
+                                     status: *mut rocks_status_t);
+}
+extern "C" {
+    pub fn rocks_sst_file_writer_finish(writer: *mut rocks_sst_file_writer_t,
+                                        info:
+                                            *mut rocks_external_sst_file_info_t,
+                                        status: *mut rocks_status_t);
+}
+extern "C" {
+    pub fn rocks_sst_file_writer_file_size(writer:
+                                               *mut rocks_sst_file_writer_t)
+     -> u64;
 }
 extern "C" {
     pub fn rocks_comparator_bytewise() -> *const rocks_c_comparator_t;

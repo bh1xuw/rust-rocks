@@ -183,6 +183,7 @@ extern "C" {
 
   /* sst_file_writer */
   struct rocks_sst_file_writer_t { SstFileWriter* rep; };
+  struct rocks_external_sst_file_info_t { ExternalSstFileInfo rep; };
 
   /* aux */
   static bool SaveError(rocks_status_t* status, const Status& s) {

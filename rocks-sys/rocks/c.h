@@ -68,6 +68,7 @@ extern "C" {
 
   /* sst_file_writer.h */
   typedef struct rocks_sst_file_writer_t rocks_sst_file_writer_t;
+  typedef struct rocks_external_sst_file_info_t rocks_external_sst_file_info_t;
 
   /* ****************************** functions ****************************** */
   /* options.h */
@@ -965,7 +966,18 @@ extern "C" {
   const char* rocks_cache_name(rocks_cache_t* cache);
 
   /* sst_file_writer */
-    rocks_sst_file_writer_t* rocks_sst_file_writer_create_from_c_comparator(
+  rocks_external_sst_file_info_t* rocks_external_sst_file_info_create();
+  void rocks_external_sst_file_info_destroy(rocks_external_sst_file_info_t* info);
+
+  const char* rocks_external_sst_file_info_get_file_path(rocks_external_sst_file_info_t* info, size_t* len);
+  const char* rocks_external_sst_file_info_get_smallest_key(rocks_external_sst_file_info_t* info, size_t* len);
+  const char* rocks_external_sst_file_info_get_largest_key(rocks_external_sst_file_info_t* info, size_t* len);
+  uint64_t rocks_external_sst_file_info_get_sequence_number(rocks_external_sst_file_info_t* info);
+  uint64_t rocks_external_sst_file_info_get_file_size(rocks_external_sst_file_info_t* info);
+  uint64_t rocks_external_sst_file_info_get_num_entries(rocks_external_sst_file_info_t* info);
+  int32_t rocks_external_sst_file_info_get_version(rocks_external_sst_file_info_t* info);
+
+  rocks_sst_file_writer_t* rocks_sst_file_writer_create_from_c_comparator(
                                                         const rocks_envoptions_t* env_options,
                                                         const rocks_options_t* options,
                                                         const rocks_c_comparator_t* comparator, /* avoid export rocksdb::Comparator type */
@@ -981,7 +993,23 @@ extern "C" {
 
   void rocks_sst_file_writer_destroy(rocks_sst_file_writer_t* writer);
 
-  /* comparator */
+  void rocks_sst_file_writer_open(rocks_sst_file_writer_t* writer,
+                                  const char* file_path,
+                                  const size_t file_path_len,
+                                  rocks_status_t *status);
+
+  void rocks_sst_file_writer_add(rocks_sst_file_writer_t* writer,
+                                 const char* key, const size_t key_len,
+                                 const char* value, const size_t value_len,
+                                 rocks_status_t *status);
+
+  void rocks_sst_file_writer_finish(rocks_sst_file_writer_t* writer,
+                                    rocks_external_sst_file_info_t* info,
+                                    rocks_status_t *status);
+
+  uint64_t rocks_sst_file_writer_file_size(rocks_sst_file_writer_t* writer);
+
+/* comparator */
   /* avoid export rocksdb::Comparator type */
   const rocks_c_comparator_t* rocks_comparator_bytewise();
   const rocks_c_comparator_t* rocks_comparator_bytewise_reversed();
