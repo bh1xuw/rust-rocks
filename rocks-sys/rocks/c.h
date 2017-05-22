@@ -729,6 +729,8 @@ extern "C" {
                                      const char* start_key, size_t start_key_len,
                                      const char* limit_key, size_t limit_key_len);
 
+  const char* rocks_db_get_name(rocks_db_t* db, size_t* len);
+  
   void rocks_db_ingest_external_file(rocks_db_t* db,
                                      const char* const* file_list,
                                      const size_t* file_list_sizes,

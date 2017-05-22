@@ -1412,6 +1412,10 @@ extern "C" {
                                          limit_key_len: usize);
 }
 extern "C" {
+    pub fn rocks_db_get_name(db: *mut rocks_db_t, len: *mut usize)
+     -> *const ::std::os::raw::c_char;
+}
+extern "C" {
     pub fn rocks_db_ingest_external_file(db: *mut rocks_db_t,
                                          file_list:
                                              *const *const ::std::os::raw::c_char,

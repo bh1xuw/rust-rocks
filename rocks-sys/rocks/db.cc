@@ -534,6 +534,12 @@ extern "C" {
                           (limit_key ? (b = Slice(limit_key, limit_key_len), &b) : nullptr));
   }
 
+  const char* rocks_db_get_name(rocks_db_t* db, size_t* len) {
+    auto name = db->rep->GetName();
+    *len = name.size();
+    return name.data();
+  }
+
   void rocks_db_ingest_external_file(rocks_db_t* db,
                                      const char* const* file_list,
                                      const size_t* file_list_sizes,

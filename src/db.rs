@@ -927,10 +927,14 @@ impl<'a> DB<'a> {
 
     // level0 stop write trigger
 
-    // Get DB name -- the exact same name that was provided as an argument to
-    // DB::Open()
+    /// Get DB name -- the exact same name that was provided as an argument to
+    /// DB::Open()
     pub fn get_name(&self) -> &str {
-        unimplemented!()
+        unsafe {
+            let mut len = 0;
+            let ptr = ll::rocks_db_get_name(self.raw(), &mut len);
+            str::from_utf8_unchecked(slice::from_raw_parts(ptr as *const _, len))
+        }
     }
 
     // get options
@@ -940,19 +944,18 @@ impl<'a> DB<'a> {
 
     // flush
 
-    // Sync the wal. Note that Write() followed by SyncWAL() is not exactly the
-    // same as Write() with sync=true: in the latter case the changes won't be
-    // visible until the sync is done.
-    // Currently only works if allow_mmap_writes = false in Options.
+    /// Sync the wal. Note that Write() followed by SyncWAL() is not exactly the
+    /// same as Write() with sync=true: in the latter case the changes won't be
+    /// visible until the sync is done.
+    /// Currently only works if allow_mmap_writes = false in Options.
     pub fn sync_wal(&self) -> Result<(), Status> {
         unimplemented!()
     }
 
-    // The sequence number of the most recent transaction.
+    /// The sequence number of the most recent transaction.
     pub fn get_latest_sequence_number(&self) -> SequenceNumber {
         unimplemented!()
     }
-
 
     // disable file deletions
 
@@ -970,15 +973,15 @@ impl<'a> DB<'a> {
 
     // get column family meta data
 
-    // IngestExternalFile() will load a list of external SST files (1) into the DB
-    // We will try to find the lowest possible level that the file can fit in, and
-    // ingest the file into this level (2). A file that have a key range that
-    // overlap with the memtable key range will require us to Flush the memtable
-    // first before ingesting the file.
-    //
-    // (1) External SST files can be created using SstFileWriter
-    // (2) We will try to ingest the files to the lowest possible level
-    //     even if the file compression dont match the level compression
+    /// IngestExternalFile() will load a list of external SST files (1) into the DB
+    /// We will try to find the lowest possible level that the file can fit in, and
+    /// ingest the file into this level (2). A file that have a key range that
+    /// overlap with the memtable key range will require us to Flush the memtable
+    /// first before ingesting the file.
+    ///
+    /// (1) External SST files can be created using SstFileWriter
+    /// (2) We will try to ingest the files to the lowest possible level
+    ///     even if the file compression dont match the level compression
     pub fn ingest_external_file(&self, external_files: &[String], options: &IngestExternalFileOptions) -> Result<(), Status> {
         unsafe {
             let mut status = mem::zeroed();
@@ -1131,6 +1134,8 @@ fn it_works() {
     let db = db.unwrap();
     let cfhandle = db.create_column_family(&ColumnFamilyOptions::default(), "lock");
     println!("cf => {:?}", cfhandle);
+
+    assert!(db.get_name().contains("rocks"));
 }
 
 #[test]
