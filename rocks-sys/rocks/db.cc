@@ -522,8 +522,8 @@ extern "C" {
   }
 
   void rocks_db_compact_range_cf_opt(rocks_db_t* db,
-                                    rocks_column_family_handle_t* column_family,
-                                    rocks_compactrange_options_t* opt,
+                                     rocks_column_family_handle_t* column_family,
+                                     rocks_compactrange_options_t* opt,
                                      const char* start_key, size_t start_key_len,
                                      const char* limit_key, size_t limit_key_len) {
     Slice a, b;
@@ -532,6 +532,35 @@ extern "C" {
                           // Pass nullptr Slice if corresponding "const char*" is nullptr
                           (start_key ? (a = Slice(start_key, start_key_len), &a) : nullptr),
                           (limit_key ? (b = Slice(limit_key, limit_key_len), &b) : nullptr));
+  }
+
+  void rocks_db_ingest_external_file(rocks_db_t* db,
+                                     const char* const* file_list,
+                                     const size_t* file_list_sizes,
+                                     size_t file_len,
+                                     const rocks_ingestexternalfile_options_t* options,
+                                     rocks_status_t* status) {
+    std::vector<std::string> external_files;
+    for (auto i = 0; i < file_len; i++) {
+      external_files.push_back(std::string(file_list[i], file_list_sizes[i]));
+    }
+    auto st = db->rep->IngestExternalFile(external_files, options->rep);
+    SaveError(status, st);
+  }
+
+  void rocks_db_ingest_external_file_cf(rocks_db_t* db,
+                                     rocks_column_family_handle_t* column_family,
+                                     const char* const* file_list,
+                                     const size_t* file_list_sizes,
+                                     size_t file_len,
+                                     const rocks_ingestexternalfile_options_t* options,
+                                     rocks_status_t* status) {
+    std::vector<std::string> external_files;
+    for (auto i = 0; i < file_len; i++) {
+      external_files.push_back(std::string(file_list[i], file_list_sizes[i]));
+    }
+    auto st = db->rep->IngestExternalFile(column_family->rep, external_files, options->rep);
+    SaveError(status, st);
   }
 
   // public functions

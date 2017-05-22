@@ -11,6 +11,7 @@ use status::Status;
 use env::EnvOptions;
 use options::Options;
 use db::ColumnFamilyHandle;
+use types::SequenceNumber;
 
 // ExternalSstFileInfo include information about sst files created
 // using SstFileWriter
@@ -75,9 +76,9 @@ impl ExternalSstFileInfo {
         }
     }
 
-    pub fn sequence_number(&self) -> u64 {
+    pub fn sequence_number(&self) -> SequenceNumber {
         unsafe {
-            ll::rocks_external_sst_file_info_get_sequence_number(self.raw)
+            ll::rocks_external_sst_file_info_get_sequence_number(self.raw) as SequenceNumber
         }
     }
 
@@ -242,8 +243,10 @@ mod tests {
 
     #[test]
     fn sst_file_create() {
+        let sst_dir = ::tempdir::TempDir::new_in(".", "sst").unwrap();
+
         let writer = SstFileWriter::builder().build();
-        writer.open("./23333.sst").unwrap();
+        writer.open(sst_dir.path().join("./23333.sst")).unwrap();
         for i in 0 .. 999 {
             let key = format!("B{:010}", i);
             let value = format!("ABCDEFGH{:x}IJKLMN", i);
@@ -253,5 +256,16 @@ mod tests {
         println!("info => {:?}", info);
         assert_eq!(info.num_entries(), 999);
         // assert_eq!(info.version(), 2);
+    }
+
+    #[test]
+    fn sst_file_create_error() {
+        let sst_dir = ::tempdir::TempDir::new_in(".", "sst").unwrap();
+
+        let writer = SstFileWriter::builder().build();
+        writer.open(sst_dir.path().join("./23333.sst")).unwrap();
+        assert!(writer.add(b"0000001", b"hello world").is_ok());
+        let ret = writer.add(b"0000000", b"hello rust");
+        assert!(ret.is_err());  // "Keys must be added in order"
     }
 }

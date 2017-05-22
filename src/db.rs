@@ -18,13 +18,14 @@ use rocks_sys as ll;
 use status::Status;
 use comparator::Comparator;
 use options::{Options, DBOptions, ColumnFamilyOptions, ReadOptions, WriteOptions,
-              CompactRangeOptions};
+              CompactRangeOptions, IngestExternalFileOptions};
 use table_properties::TableProperties;
 use snapshot::Snapshot;
 use write_batch::WriteBatch;
 use iterator::Iterator;
 use merge_operator::{MergeOperator, AssociativeMergeOperator};
 use env::Logger;
+use types::SequenceNumber;
 
 const DEFAULT_COLUMN_FAMILY_NAME: &'static str = "default";
 
@@ -887,6 +888,120 @@ impl<'a> DB<'a> {
             }
         }
     }
+
+    // set dboptions via Map<K,V>
+
+    // compact files
+
+
+    /// This function will wait until all currently running background processes
+    /// finish. After it returns, no background process will be run until
+    /// UnblockBackgroundWork is called
+    pub fn pause_background_work(&self) -> Result<(), Status> {
+        unimplemented!()
+    }
+
+    pub fn continue_background_work(&self) -> Result<(), Status> {
+        unimplemented!()
+    }
+
+    // This function will enable automatic compactions for the given column
+    // families if they were previously disabled. The function will first set the
+    // disable_auto_compactions option for each column family to 'false', after
+    // which it will schedule a flush/compaction.
+    //
+    // NOTE: Setting disable_auto_compactions to 'false' through SetOptions() API
+    // does NOT schedule a flush/compaction afterwards, and only changes the
+    // parameter itself within the column family option.
+    //
+    pub fn enable_auto_compaction(&self, column_family_handles: &[ColumnFamilyHandle]) -> Result<(), Status> {
+        unimplemented!()
+    }
+
+    // Number of levels used for this DB.
+    pub fn number_levels(&self) -> usize {
+        unimplemented!()
+    }
+
+    // max mem compaction level
+
+    // level0 stop write trigger
+
+    // Get DB name -- the exact same name that was provided as an argument to
+    // DB::Open()
+    pub fn get_name(&self) -> &str {
+        unimplemented!()
+    }
+
+    // get options
+
+
+    // get db options
+
+    // flush
+
+    // Sync the wal. Note that Write() followed by SyncWAL() is not exactly the
+    // same as Write() with sync=true: in the latter case the changes won't be
+    // visible until the sync is done.
+    // Currently only works if allow_mmap_writes = false in Options.
+    pub fn sync_wal(&self) -> Result<(), Status> {
+        unimplemented!()
+    }
+
+    // The sequence number of the most recent transaction.
+    pub fn get_latest_sequence_number(&self) -> SequenceNumber {
+        unimplemented!()
+    }
+
+
+    // disable file deletions
+
+    // enable file deletions
+
+    // get live files
+
+    // get sorted wal files
+
+    // get update since
+
+    // delete file
+
+    // get live files meta data
+
+    // get column family meta data
+
+    // IngestExternalFile() will load a list of external SST files (1) into the DB
+    // We will try to find the lowest possible level that the file can fit in, and
+    // ingest the file into this level (2). A file that have a key range that
+    // overlap with the memtable key range will require us to Flush the memtable
+    // first before ingesting the file.
+    //
+    // (1) External SST files can be created using SstFileWriter
+    // (2) We will try to ingest the files to the lowest possible level
+    //     even if the file compression dont match the level compression
+    pub fn ingest_external_file(&self, external_files: &[String], options: &IngestExternalFileOptions) -> Result<(), Status> {
+        unsafe {
+            let mut status = mem::zeroed();
+            let num_files = external_files.len();
+            let mut c_files = Vec::with_capacity(num_files);
+            let mut c_files_lens = Vec::with_capacity(num_files);
+            for f in external_files {
+                c_files.push(f.as_ptr() as *const _);
+                c_files_lens.push(f.len());
+            }
+            ll::rocks_db_ingest_external_file(self.raw(),
+                                              c_files.as_ptr() as *const _,
+                                              c_files_lens.as_ptr(),
+                                              num_files,
+                                              options.raw(),
+                                              &mut status);
+            if status.code == 0 {
+                Ok(())
+            } else {
+                Err(Status::from_ll(&status))
+            }
+        }
+    }
 }
 
 
@@ -992,7 +1107,11 @@ impl<T> Drop for CVec<T> {
     }
 }
 
-
+impl<'a, T: PartialEq> PartialEq<&'a [T]> for CVec<T> {
+    fn eq(&self, rhs: &&[T]) -> bool {
+        &self.as_ref() == rhs
+    }
+}
 
 #[test]
 fn it_works() {
@@ -1094,11 +1213,11 @@ fn test_db_get() {
 fn test_db_paths() {
 
     let opt = Options::default().map_db_options(|dbopt| {
-                                                    dbopt
+        dbopt
             .create_if_missing(true)
             .db_paths(vec!["./sample1", "./sample2"])        /* only puts sst file */
             .wal_dir("./my_wal")
-                                                });
+    });
 
     let db = DB::open(opt, "multi");
     if db.is_err() {
@@ -1111,8 +1230,8 @@ fn test_db_paths() {
     for i in 0..100 {
         let key = format!("test2-key-{}", i);
         let val = format!("rocksdb-value-{}", i * 10);
-        let value: String = iter::repeat(val).take(100000).collect::<Vec<_>>().concat();
-        if i == 500 {
+        let value: String = iter::repeat(val).take(10).collect::<Vec<_>>().concat();
+        if i == 50 {
             let s = db.get_snapshot();
             println!("debug snapshot => {:?}", s);
         }
@@ -1260,15 +1379,17 @@ fn test_compact_range() {
     let s = b"123123123";
     let e = b"asdfasfasfasf";
 
-    let a: ::std::ops::Range<&[u8]> = s.as_ref()..e.as_ref();
+    let _: ::std::ops::Range<&[u8]> = s.as_ref()..e.as_ref();
+
+    let tmp_db_dir = ::tempdir::TempDir::new_in(".", "rocks").unwrap();
 
     let opt = Options::default().map_db_options(|dbopt| dbopt.create_if_missing(true));
 
-    let db = DB::open(opt, "compact_test").unwrap();
+    let db = DB::open(opt, &tmp_db_dir).unwrap();
 
     let _ = db.put(&WriteOptions::default(), b"name", b"BH1XUW")
         .unwrap();
-    for i in 0..10000 {
+    for i in 0..100 {
         let key = format!("test2-key-{}", i);
         let val = format!("rocksdb-value-{}", i * 10);
         let value: String = iter::repeat(val).take(1000).collect::<Vec<_>>().concat();
@@ -1284,6 +1405,8 @@ fn test_compact_range() {
 
     let ret = db.compact_range(&CompactRangeOptions::default(), ..);
     assert!(ret.is_ok());
+
+    drop(tmp_db_dir);
 }
 
 
@@ -1450,4 +1573,40 @@ fn test_db_merge_assign_existing_operand() {
     let ret = db.get(&ReadOptions::default(), b"name");
     // println!("ret => {:?}", ret.as_ref().map(|s| String::from_utf8_lossy(s)));
     assert_eq!(ret.unwrap().as_ref(), b"I-am-the-test-233");
+}
+
+#[test]
+fn test_ingest_sst_file() {
+    use sst_file_writer::SstFileWriter;
+
+    let sst_dir = ::tempdir::TempDir::new_in(".", "sst").unwrap();
+
+    let writer = SstFileWriter::builder().build();
+    writer.open(sst_dir.path().join("2333.sst")).unwrap();
+    for i in 0 .. 999 {
+        let key = format!("B{:05}", i);
+        let value = format!("ABCDEFGH{:03}IJKLMN", i);
+        writer.add(key.as_bytes(), value.as_bytes()).unwrap();
+    }
+    let info = writer.finish().unwrap();
+    assert_eq!(info.num_entries(), 999);
+
+    let tmp_db_dir = ::tempdir::TempDir::new_in(".", "rocks").unwrap();
+
+    let db = DB::open(Options::default()
+                      .map_db_options(|db| db.create_if_missing(true)),
+                      &tmp_db_dir)
+        .unwrap();
+
+    let ret = db.ingest_external_file(&[sst_dir.path().join("2333.sst").to_string_lossy().into_owned()],
+                                      &IngestExternalFileOptions::default());
+    assert!(ret.is_ok(), "ingest external file: {:?}", ret);
+
+    assert!(db.get(&ReadOptions::default(), b"B00000").is_ok());
+    assert_eq!(db.get(&ReadOptions::default(), b"B00000").unwrap(), b"ABCDEFGH000IJKLMN");
+    assert_eq!(db.get(&ReadOptions::default(), b"B00998").unwrap(), b"ABCDEFGH998IJKLMN");
+    assert!(db.get(&ReadOptions::default(), b"B00999").is_err());
+
+    drop(sst_dir);
+    drop(tmp_db_dir);
 }

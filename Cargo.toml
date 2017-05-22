@@ -8,3 +8,4 @@ rocks-sys = { path = "./rocks-sys" }
 
 [dev-dependencies]
 tempdir = "0.3"
+# tempfile = "2"

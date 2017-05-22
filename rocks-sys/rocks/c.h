@@ -729,6 +729,21 @@ extern "C" {
                                      const char* start_key, size_t start_key_len,
                                      const char* limit_key, size_t limit_key_len);
 
+  void rocks_db_ingest_external_file(rocks_db_t* db,
+                                     const char* const* file_list,
+                                     const size_t* file_list_sizes,
+                                     size_t file_len,
+                                     const rocks_ingestexternalfile_options_t* options,
+                                     rocks_status_t* status);
+    
+  void rocks_db_ingest_external_file_cf(rocks_db_t* db,
+                                        rocks_column_family_handle_t* column_family,
+                                        const char* const* file_list,
+                                        const size_t* file_list_sizes,
+                                        size_t file_len,
+                                        const rocks_ingestexternalfile_options_t* options,
+                                        rocks_status_t* status);
+  
   /*    pub fn */
   void rocks_destroy_db(
                         const rocks_options_t* options,

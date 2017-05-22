@@ -31,6 +31,7 @@ working in progress.
   - [ ] KeyMayExist
   - [ ] properties
   - [ ] compact range
+  - [x] ingest sst file
 - [ ] ``rocksdb/db_bench_tool.h``
 - [ ] ``rocksdb/db_dump_tool.h``
 - [ ] ``rocksdb/env.h``

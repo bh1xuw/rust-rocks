@@ -1412,6 +1412,28 @@ extern "C" {
                                          limit_key_len: usize);
 }
 extern "C" {
+    pub fn rocks_db_ingest_external_file(db: *mut rocks_db_t,
+                                         file_list:
+                                             *const *const ::std::os::raw::c_char,
+                                         file_list_sizes: *const usize,
+                                         file_len: usize,
+                                         options:
+                                             *const rocks_ingestexternalfile_options_t,
+                                         status: *mut rocks_status_t);
+}
+extern "C" {
+    pub fn rocks_db_ingest_external_file_cf(db: *mut rocks_db_t,
+                                            column_family:
+                                                *mut rocks_column_family_handle_t,
+                                            file_list:
+                                                *const *const ::std::os::raw::c_char,
+                                            file_list_sizes: *const usize,
+                                            file_len: usize,
+                                            options:
+                                                *const rocks_ingestexternalfile_options_t,
+                                            status: *mut rocks_status_t);
+}
+extern "C" {
     pub fn rocks_destroy_db(options: *const rocks_options_t,
                             name: *const ::std::os::raw::c_char,
                             status: *mut rocks_status_t);

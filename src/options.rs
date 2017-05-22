@@ -2089,6 +2089,11 @@ impl AsRef<ReadOptions> for ReadOptions {
     }
 }
 
+impl Drop for ReadOptions {
+    fn drop(&mut self) {
+        unsafe { ll::rocks_readoptions_destroy(self.raw); }
+    }
+}
 
 impl ReadOptions {
     pub fn raw(&self) -> *mut ll::rocks_readoptions_t {
@@ -2418,6 +2423,18 @@ pub struct CompactRangeOptions {
     raw: *mut ll::rocks_compactrange_options_t,
 }
 
+impl Default for CompactRangeOptions {
+    fn default() -> Self {
+        CompactRangeOptions { raw: unsafe { ll::rocks_compactrange_options_create() } }
+    }
+}
+
+impl Drop for CompactRangeOptions {
+    fn drop(&mut self) {
+        unsafe { ll::rocks_compactrange_options_destroy(self.raw); }
+    }
+}
+
 impl CompactRangeOptions {
     pub fn raw(&self) -> *mut ll::rocks_compactrange_options_t {
         self.raw
@@ -2454,17 +2471,17 @@ impl CompactRangeOptions {
     }
 }
 
-impl Default for CompactRangeOptions {
-    fn default() -> Self {
-        CompactRangeOptions { raw: unsafe { ll::rocks_compactrange_options_create() } }
-    }
-}
-
 
 /// IngestExternalFileOptions is used by IngestExternalFile()
 #[repr(C)]
 pub struct IngestExternalFileOptions {
     raw: *mut ll::rocks_ingestexternalfile_options_t,
+}
+
+impl Default for IngestExternalFileOptions {
+    fn default() -> Self {
+        IngestExternalFileOptions { raw: unsafe { ll::rocks_ingestexternalfile_options_create() } }
+    }
 }
 
 impl Drop for IngestExternalFileOptions {
@@ -2476,6 +2493,10 @@ impl Drop for IngestExternalFileOptions {
 }
 
 impl IngestExternalFileOptions {
+    pub fn raw(&self) -> *mut ll::rocks_ingestexternalfile_options_t {
+        self.raw
+    }
+    
     /// Can be set to true to move the files instead of copying them.
     pub fn move_files(self, val: bool) -> Self {
         unsafe {
@@ -2511,8 +2532,3 @@ impl IngestExternalFileOptions {
     }
 }
 
-impl Default for IngestExternalFileOptions {
-    fn default() -> Self {
-        IngestExternalFileOptions { raw: unsafe { ll::rocks_ingestexternalfile_options_create() } }
-    }
-}
