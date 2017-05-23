@@ -264,12 +264,12 @@ impl ColumnFamilyOptions {
     /// thread-safe.
     ///
     /// Default: nullptr
-    pub fn compaction_filter(self, filter: Option<CompactionFilter>) -> Self {
-        // unsafe {
-        //     ll::rocks_cfoptions_set_compaction_filter(self.raw, None);
-        // }
-        // self
-        unimplemented!()
+    pub fn compaction_filter(self, filter: Box<CompactionFilter>) -> Self {
+        unsafe {
+            let raw_ptr = Box::into_raw(Box::new(filter)); // Box<Box<CompactionFilter>>
+            ll::rocks_cfoptions_set_compaction_filter_by_trait(self.raw, raw_ptr as *mut _);
+        }
+        self
     }
 
     /// This is a factory that provides compaction filter objects which allow
@@ -281,16 +281,16 @@ impl ColumnFamilyOptions {
     ///
     /// Default: nullptr
     pub fn compaction_filter_factory(self, factory: Option<CompactionFilterFactory>) -> Self {
-        // unsafe {
-        //     ll::rocks_cfoptions_set_compaction_filter_factory(self.raw, )
-        // }
-        // self
+        /*unsafe {
+            ll::rocks_cfoptions_set_compaction_filter_factory(self.raw, )
+        }
+        self*/
         unimplemented!()
     }
 
-    /// -------------------
-    /// Parameters that affect performance
-    /// -------------------
+    // -------------------
+    // Parameters that affect performance
+    // -------------------
 
     /// Amount of data to build up in memory (backed by an unsorted log
     /// on disk) before converting to a sorted on-disk file.
@@ -1902,7 +1902,7 @@ impl DBOptions {
     // /// The filter is invoked at startup and is invoked from a single-thread
     // /// currently.
     // WalFilter* wal_filter ,
-    // #endif  /// ROCKSDB_LITE
+
     /// If true, then DB::Open / CreateColumnFamily / DropColumnFamily
     /// / SetOptions will fail if options file is not detected or properly
     /// persisted.
@@ -2091,7 +2091,9 @@ impl AsRef<ReadOptions> for ReadOptions {
 
 impl Drop for ReadOptions {
     fn drop(&mut self) {
-        unsafe { ll::rocks_readoptions_destroy(self.raw); }
+        unsafe {
+            ll::rocks_readoptions_destroy(self.raw);
+        }
     }
 }
 
@@ -2431,7 +2433,9 @@ impl Default for CompactRangeOptions {
 
 impl Drop for CompactRangeOptions {
     fn drop(&mut self) {
-        unsafe { ll::rocks_compactrange_options_destroy(self.raw); }
+        unsafe {
+            ll::rocks_compactrange_options_destroy(self.raw);
+        }
     }
 }
 
@@ -2496,7 +2500,7 @@ impl IngestExternalFileOptions {
     pub fn raw(&self) -> *mut ll::rocks_ingestexternalfile_options_t {
         self.raw
     }
-    
+
     /// Can be set to true to move the files instead of copying them.
     pub fn move_files(self, val: bool) -> Self {
         unsafe {
@@ -2531,4 +2535,3 @@ impl IngestExternalFileOptions {
         self
     }
 }
-

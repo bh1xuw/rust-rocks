@@ -30,6 +30,7 @@ pub mod types;
 pub mod universal_compaction;
 pub mod write_batch;
 pub mod write_buffer_manager;
+pub mod metadata;
 
 pub mod rocksdb;
 

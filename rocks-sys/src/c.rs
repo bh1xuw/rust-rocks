@@ -403,6 +403,12 @@ extern "C" {
                                                        *mut ::std::os::raw::c_void);
 }
 extern "C" {
+    pub fn rocks_cfoptions_set_compaction_filter_by_trait(opt:
+                                                              *mut rocks_cfoptions_t,
+                                                          filter_trait_obj:
+                                                              *mut ::std::os::raw::c_void);
+}
+extern "C" {
     pub fn rocks_cfoptions_set_bitwise_comparator(opt: *mut rocks_cfoptions_t,
                                                   reversed:
                                                       ::std::os::raw::c_uchar);

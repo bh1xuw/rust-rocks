@@ -107,6 +107,8 @@ extern "C" {
 
   void rocks_cfoptions_set_comparator_by_trait(rocks_cfoptions_t* opt, void* cp_trait_obj);
 
+  void rocks_cfoptions_set_compaction_filter_by_trait(rocks_cfoptions_t* opt, void* filter_trait_obj);
+
   void rocks_cfoptions_set_bitwise_comparator(rocks_cfoptions_t* opt, unsigned char reversed);
 
     /*

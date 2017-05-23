@@ -1,12 +1,14 @@
 
 #include "rocksdb/slice.h"
 #include "rocksdb/env.h"
+#include "rocksdb/compaction_filter.h"
 
 #include <cstdint>
 #include <string>
 
 using rocksdb::Slice;
 using rocksdb::Logger;
+using rocksdb::CompactionFilter;
 
 #ifdef __cplusplus
 extern "C" {
@@ -16,6 +18,24 @@ extern "C" {
   extern void rust_hello_world();
 
   extern void rust_drop_vec_u8(char* op, size_t len);
+
+
+  /* compaction filter */
+  extern int rust_compaction_filter_call(void* f,
+                                         int level,
+                                         const Slice* key, // &&[u8]
+                                         CompactionFilter::ValueType value_type,
+                                         const Slice* existing_value, // &&[u8]
+                                         std::string* new_value,
+                                         std::string* skip_until);
+
+  extern const char* rust_compaction_filter_name(void *f);
+
+  extern char rust_compaction_filter_ignore_snapshots(void *f);
+
+  extern void rust_compaction_filter_drop(void* f);
+
+  /* merge operator*/
 
   extern int32_t rust_associative_merge_operator_call(
                                                     void* op,

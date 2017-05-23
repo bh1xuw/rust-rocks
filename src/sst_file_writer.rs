@@ -29,7 +29,8 @@ impl Drop for ExternalSstFileInfo {
 
 impl fmt::Debug for ExternalSstFileInfo {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        write!(f, "ExternalSstFileInfo#{} <path: {}, key: {:?}..{:?}, entries: {}>",
+        write!(f,
+               "ExternalSstFileInfo#{} <path: {}, key: {:?}..{:?}, entries: {}>",
                self.sequence_number(),
                self.file_path(),
                String::from_utf8_lossy(self.smallest_key()),
@@ -41,15 +42,11 @@ impl fmt::Debug for ExternalSstFileInfo {
 
 impl ExternalSstFileInfo {
     fn new() -> ExternalSstFileInfo {
-        ExternalSstFileInfo {
-            raw: unsafe { ll::rocks_external_sst_file_info_create() },
-        }
+        ExternalSstFileInfo { raw: unsafe { ll::rocks_external_sst_file_info_create() } }
     }
 
     pub unsafe fn from_ll(raw: *mut ll::rocks_external_sst_file_info_t) -> ExternalSstFileInfo {
-        ExternalSstFileInfo {
-            raw: raw,
-        }
+        ExternalSstFileInfo { raw: raw }
     }
 
     pub fn file_path(&self) -> &str {
@@ -77,27 +74,19 @@ impl ExternalSstFileInfo {
     }
 
     pub fn sequence_number(&self) -> SequenceNumber {
-        unsafe {
-            ll::rocks_external_sst_file_info_get_sequence_number(self.raw) as SequenceNumber
-        }
+        unsafe { ll::rocks_external_sst_file_info_get_sequence_number(self.raw) as SequenceNumber }
     }
 
     pub fn file_size(&self) -> u64 {
-        unsafe {
-            ll::rocks_external_sst_file_info_get_file_size(self.raw)
-        }
+        unsafe { ll::rocks_external_sst_file_info_get_file_size(self.raw) }
     }
 
     pub fn num_entries(&self) -> u64 {
-        unsafe {
-            ll::rocks_external_sst_file_info_get_num_entries(self.raw)
-        }
+        unsafe { ll::rocks_external_sst_file_info_get_num_entries(self.raw) }
     }
 
     pub fn version(&self) -> u32 {
-        unsafe {
-            ll::rocks_external_sst_file_info_get_version(self.raw) as u32
-        }
+        unsafe { ll::rocks_external_sst_file_info_get_version(self.raw) as u32 }
     }
 }
 
@@ -208,26 +197,25 @@ impl SstFileWriterBuilder {
     pub fn build(&mut self) -> SstFileWriter {
         let env_options = self.env_options.take().unwrap_or_default();
         let options = self.options.take().unwrap_or_default();
-        let ptr =
-            if self.use_rust_comparator {
-                unsafe {
-                ll::rocks_sst_file_writer_create_from_rust_comparator(
-                    env_options.raw(),
-                    options.raw(),
-                    self.rust_comparator as *const _,
-                    self.column_family,
-                    self.invalidate_page_cache as u8)
-                }
-            } else {
-                unsafe {
-                ll::rocks_sst_file_writer_create_from_c_comparator(
-                    env_options.raw(),
-                    options.raw(),
-                    self.c_comparator as *const _,
-                    self.column_family,
-                    self.invalidate_page_cache as u8)
-                }
-            };
+        let ptr = if self.use_rust_comparator {
+            unsafe {
+                ll::rocks_sst_file_writer_create_from_rust_comparator(env_options.raw(),
+                                                                      options.raw(),
+                                                                      self.rust_comparator as
+                                                                      *const _,
+                                                                      self.column_family,
+                                                                      self.invalidate_page_cache as
+                                                                      u8)
+            }
+        } else {
+            unsafe {
+                ll::rocks_sst_file_writer_create_from_c_comparator(env_options.raw(),
+                                                                   options.raw(),
+                                                                   self.c_comparator as *const _,
+                                                                   self.column_family,
+                                                                   self.invalidate_page_cache as u8)
+            }
+        };
         SstFileWriter {
             raw: ptr,
             env_options: env_options,
@@ -247,7 +235,7 @@ mod tests {
 
         let writer = SstFileWriter::builder().build();
         writer.open(sst_dir.path().join("./23333.sst")).unwrap();
-        for i in 0 .. 999 {
+        for i in 0..999 {
             let key = format!("B{:010}", i);
             let value = format!("ABCDEFGH{:x}IJKLMN", i);
             writer.add(key.as_bytes(), value.as_bytes()).unwrap();
@@ -266,6 +254,6 @@ mod tests {
         writer.open(sst_dir.path().join("./23333.sst")).unwrap();
         assert!(writer.add(b"0000001", b"hello world").is_ok());
         let ret = writer.add(b"0000000", b"hello rust");
-        assert!(ret.is_err());  // "Keys must be added in order"
+        assert!(ret.is_err()); // "Keys must be added in order"
     }
 }

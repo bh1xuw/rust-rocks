@@ -11,15 +11,12 @@ use std::ffi::CStr;
 
 use rocks_sys as ll;
 
-// #[derive(Copy, Clone, Eq, PartialEq, Hash, Debug)]
-// pub enum Priority {
-// High,
-// Low,
-// }
-//
+#[derive(Copy, Clone, Eq, PartialEq, Hash, Debug)]
+pub enum Priority {
+    High,
+    Low,
+}
 
-/// Opaque handle to an entry stored in the cache.
-pub struct Handle;
 
 /// A builtin cache implementation with a least-recently-used eviction
 /// policy is provided.  Clients may use their own implementations if

@@ -11,8 +11,12 @@ working in progress.
 
 - [x] ~~``rocksdb/c.h``~~
   - [x] we use c++ API
-- [ ] ``rocksdb/cache.h``
-- [ ] ``rocksdb/compaction_filter.h``
+- [x] ``rocksdb/cache.h``
+  - [ ] customized cache support?
+- [x] ``rocksdb/compaction_filter.h``
+  - [x] use v2 style api, via rust trait
+  - [ ] compaction filter factory
+  - [ ] is `Sync` needed?
 - [ ] ``rocksdb/compaction_job_stats.h``
 - [x] ``rocksdb/comparator.h``
   - [x] bitwise as new options
@@ -74,7 +78,7 @@ working in progress.
 - [ ] ``rocksdb/thread_status.h``
 - [ ] ``rocksdb/threadpool.h``
 - [ ] ``rocksdb/transaction_log.h``
-- [x] ~~``rocksdb/types.h``~~
+- [x] ``rocksdb/types.h``
   - [x] a sequence number type, wrapped in Snapshot
 - [x] ``rocksdb/version.h``
 - [ ] ``rocksdb/wal_filter.h``

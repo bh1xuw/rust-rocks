@@ -94,12 +94,11 @@ extern "C" {
                                                              );
   }
 
-  /*
-  void rocks_cfoptions_set_compaction_filter(
-                                           rocks_options_t* opt,
-                                           rocks_compactionfilter_t* filter) {
-    opt->rep.compaction_filter = filter;
+  // FIXME: mem leaks?
+  void rocks_cfoptions_set_compaction_filter_by_trait(rocks_cfoptions_t* opt, void* filter_trait_obj) {
+    opt->rep.compaction_filter = new rocks_compaction_filter_t { filter_trait_obj };
   }
+  /*
   void rocks_cfoptions_set_compaction_filter_factory(
                                                    rocks_options_t* opt, rocks_compactionfilterfactory_t* factory) {
     opt->rep.compaction_filter_factory =

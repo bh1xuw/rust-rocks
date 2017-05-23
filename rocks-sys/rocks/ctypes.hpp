@@ -14,6 +14,7 @@
 #include "rocksdb/cache.h"
 #include "rocksdb/merge_operator.h"
 #include "rocksdb/sst_file_writer.h"
+#include "rocksdb/compaction_filter.h"
 
 #include "rust_export.h"
 
@@ -43,7 +44,7 @@ extern "C" {
   struct rocks_column_family_handle_t     { ColumnFamilyHandle* rep; };
   struct rocks_db_t                       { DB*                 rep; };
 
-  /* options */ 
+  /* options */
   struct rocks_dbpath_t                { DbPath                        rep; };
   struct rocks_dboptions_t             { DBOptions                     rep; };
   struct rocks_cfoptions_t             { ColumnFamilyOptions           rep; };
@@ -123,7 +124,7 @@ extern "C" {
   /* comparator */
   struct rocks_comparator_t: public Comparator {
     void* obj;                  // rust Box<trait obj>
-    
+
     rocks_comparator_t(void *trait_obj): obj(trait_obj) {}
 
     ~rocks_comparator_t() {
@@ -157,7 +158,6 @@ extern "C" {
   };
 
   /* rate_limiter */
-
   struct rocks_ratelimiter_t { RateLimiter* rep; };
 
   /* env */
@@ -185,6 +185,43 @@ extern "C" {
   struct rocks_sst_file_writer_t { SstFileWriter* rep; };
   struct rocks_external_sst_file_info_t { ExternalSstFileInfo rep; };
 
+  /* compaction_filter */
+  struct rocks_compaction_filter_t: public CompactionFilter {
+    void* obj;                  // rust Box<trait obj>
+
+    rocks_compaction_filter_t(void *trait_obj): obj(trait_obj) {}
+
+    ~rocks_compaction_filter_t() {
+      rust_compaction_filter_drop(this->obj);
+    }
+
+    Decision FilterV2(int level, const Slice& key, ValueType value_type,
+                      const Slice& existing_value, std::string* new_value,
+                      std::string* skip_until) const override {
+
+      auto ret = rust_compaction_filter_call(this->obj,
+                                             level,
+                                             &key,
+                                             value_type,
+                                             &existing_value,
+                                             new_value,
+                                             skip_until);
+
+      return static_cast<CompactionFilter::Decision>(ret);
+
+    }
+
+    bool IgnoreSnapshots() const override {
+      return rust_compaction_filter_ignore_snapshots(this->obj) != 0;
+    }
+
+    const char* Name() const override {
+      return rust_compaction_filter_name(this->obj);
+    }
+
+  };
+
+
   /* aux */
   static bool SaveError(rocks_status_t* status, const Status& s) {
     assert(status != nullptr);
@@ -204,4 +241,3 @@ extern "C" {
 #endif
 
 #endif /* __RUST_ROCSK_SYS_H____ */
-

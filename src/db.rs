@@ -914,7 +914,9 @@ impl<'a> DB<'a> {
     // does NOT schedule a flush/compaction afterwards, and only changes the
     // parameter itself within the column family option.
     //
-    pub fn enable_auto_compaction(&self, column_family_handles: &[ColumnFamilyHandle]) -> Result<(), Status> {
+    pub fn enable_auto_compaction(&self,
+                                  column_family_handles: &[ColumnFamilyHandle])
+                                  -> Result<(), Status> {
         unimplemented!()
     }
 
@@ -982,7 +984,10 @@ impl<'a> DB<'a> {
     /// (1) External SST files can be created using SstFileWriter
     /// (2) We will try to ingest the files to the lowest possible level
     ///     even if the file compression dont match the level compression
-    pub fn ingest_external_file(&self, external_files: &[String], options: &IngestExternalFileOptions) -> Result<(), Status> {
+    pub fn ingest_external_file(&self,
+                                external_files: &[String],
+                                options: &IngestExternalFileOptions)
+                                -> Result<(), Status> {
         unsafe {
             let mut status = mem::zeroed();
             let num_files = external_files.len();
@@ -1218,11 +1223,11 @@ fn test_db_get() {
 fn test_db_paths() {
 
     let opt = Options::default().map_db_options(|dbopt| {
-        dbopt
+                                                    dbopt
             .create_if_missing(true)
             .db_paths(vec!["./sample1", "./sample2"])        /* only puts sst file */
             .wal_dir("./my_wal")
-    });
+                                                });
 
     let db = DB::open(opt, "multi");
     if db.is_err() {
@@ -1588,7 +1593,7 @@ fn test_ingest_sst_file() {
 
     let writer = SstFileWriter::builder().build();
     writer.open(sst_dir.path().join("2333.sst")).unwrap();
-    for i in 0 .. 999 {
+    for i in 0..999 {
         let key = format!("B{:05}", i);
         let value = format!("ABCDEFGH{:03}IJKLMN", i);
         writer.add(key.as_bytes(), value.as_bytes()).unwrap();
@@ -1598,18 +1603,23 @@ fn test_ingest_sst_file() {
 
     let tmp_db_dir = ::tempdir::TempDir::new_in(".", "rocks").unwrap();
 
-    let db = DB::open(Options::default()
-                      .map_db_options(|db| db.create_if_missing(true)),
+    let db = DB::open(Options::default().map_db_options(|db| db.create_if_missing(true)),
                       &tmp_db_dir)
-        .unwrap();
+            .unwrap();
 
-    let ret = db.ingest_external_file(&[sst_dir.path().join("2333.sst").to_string_lossy().into_owned()],
+    let ret = db.ingest_external_file(&[sst_dir
+                                            .path()
+                                            .join("2333.sst")
+                                            .to_string_lossy()
+                                            .into_owned()],
                                       &IngestExternalFileOptions::default());
     assert!(ret.is_ok(), "ingest external file: {:?}", ret);
 
     assert!(db.get(&ReadOptions::default(), b"B00000").is_ok());
-    assert_eq!(db.get(&ReadOptions::default(), b"B00000").unwrap(), b"ABCDEFGH000IJKLMN");
-    assert_eq!(db.get(&ReadOptions::default(), b"B00998").unwrap(), b"ABCDEFGH998IJKLMN");
+    assert_eq!(db.get(&ReadOptions::default(), b"B00000").unwrap(),
+               b"ABCDEFGH000IJKLMN");
+    assert_eq!(db.get(&ReadOptions::default(), b"B00998").unwrap(),
+               b"ABCDEFGH998IJKLMN");
     assert!(db.get(&ReadOptions::default(), b"B00999").is_err());
 
     drop(sst_dir);
