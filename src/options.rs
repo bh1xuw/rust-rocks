@@ -393,8 +393,8 @@ impl ColumnFamilyOptions {
         unsafe {
             let raw_ptr = Box::into_raw(Box::new(val));
             ll::rocks_cfoptions_set_prefix_extractor_by_trait(self.raw, raw_ptr as *mut _);
-         }
-         self
+        }
+        self
     }
 
     pub fn prefix_extractor_fixed(self, len: usize) -> Self {
@@ -654,10 +654,14 @@ impl ColumnFamilyOptions {
     /// the prefix can be the key itself.
     ///
     /// Default: nullptr (disable)
-    pub fn memtable_insert_with_hint_prefix_extractor(self, val: Box<SliceTransform + Sync>) -> Self {
+    pub fn memtable_insert_with_hint_prefix_extractor(self,
+                                                      val: Box<SliceTransform + Sync>)
+                                                      -> Self {
         unsafe {
             let raw_ptr = Box::into_raw(Box::new(val));
-            ll::rocks_cfoptions_set_memtable_insert_with_hint_prefix_extractor_by_trait(self.raw, raw_ptr as *mut _);
+            ll::rocks_cfoptions_set_memtable_insert_with_hint_prefix_extractor_by_trait(self.raw,
+                                                                                        raw_ptr as
+                                                                                        *mut _);
         }
         self
     }

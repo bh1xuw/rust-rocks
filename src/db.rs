@@ -83,7 +83,21 @@ impl<'a> From<(&'a str, ColumnFamilyOptions)> for ColumnFamilyDescriptor {
 pub struct ColumnFamilyHandle<'a, 'b: 'a> {
     raw: *mut ll::rocks_column_family_handle_t,
     db: Rc<DBContext<'b>>, // 'b out lives 'a
+    owned: bool,
     _marker: PhantomData<&'a ()>,
+}
+
+impl<'a, 'b> Drop for ColumnFamilyHandle<'a, 'b> {
+    fn drop(&mut self) {
+        // unsafe { ll::rocks_column_family_handle_destroy(self.raw) }
+        unsafe {
+            if self.owned {
+                let mut status = mem::zeroed();
+                ll::rocks_db_destroy_column_family_handle(self.db.raw, self.raw(), &mut status);
+                assert!(status.code == 0);
+            }
+        }
+    }
 }
 
 
@@ -92,8 +106,6 @@ impl<'a, 'b> fmt::Debug for ColumnFamilyHandle<'a, 'b> {
         write!(f, "CFHandle({:?})", self.raw)
     }
 }
-
-
 
 impl<'a, 'b: 'a> ColumnFamilyHandle<'a, 'b> {
     pub fn raw(&self) -> *mut ll::rocks_column_family_handle_t {
@@ -141,18 +153,6 @@ impl<'a, 'b: 'a> ColumnFamilyHandle<'a, 'b> {
     //unimplemented!()
     //}
      */
-}
-
-impl<'a, 'b> Drop for ColumnFamilyHandle<'a, 'b> {
-    fn drop(&mut self) {
-        // TODO: use rocks_db_destroy_column_family_handle
-        // unsafe { ll::rocks_column_family_handle_destroy(self.raw) }
-        unsafe {
-            let mut status = mem::zeroed();
-            ll::rocks_db_destroy_column_family_handle(self.db.raw, self.raw(), &mut status);
-            assert!(status.code == 0);
-        }
-    }
 }
 
 pub struct DBContext<'a> {
@@ -284,6 +284,7 @@ impl<'a> DB<'a> {
                                  ColumnFamilyHandle {
                                      raw: p,
                                      db: db_ctx.clone(),
+                                     owned: true,
                                      _marker: PhantomData,
                                  }
                              })
@@ -354,6 +355,16 @@ impl<'a> DB<'a> {
         }
     }
 
+    // FIXME: do not own this handle, should return &ColumnFamilyHandle
+    pub fn default_column_family(&self) -> ColumnFamilyHandle {
+        ColumnFamilyHandle {
+            raw: unsafe { ll::rocks_db_default_column_family(self.raw()) },
+            db: self.context.clone(),
+            owned: false,
+            _marker: PhantomData,
+        }
+    }
+
     /// Create a column_family and return the handle of column family
     /// through the argument handle.
     pub fn create_column_family(&self,
@@ -372,6 +383,7 @@ impl<'a> DB<'a> {
                 Ok(ColumnFamilyHandle {
                        raw: handle,
                        db: self.context.clone(),
+                       owned: true,
                        _marker: PhantomData,
                    })
             } else {
@@ -724,7 +736,7 @@ impl<'a> DB<'a> {
             let mut vals = vec![ptr::null_mut(); num_keys];
             let mut vals_lens = vec![0_usize; num_keys];
 
-            for i in 0 .. num_keys {
+            for i in 0..num_keys {
                 c_keys.push(keys[i].as_ptr() as *const c_char);
                 c_keys_lens.push(keys[i].len());
             }
@@ -735,11 +747,13 @@ impl<'a> DB<'a> {
             ll::rocks_db_multi_get(self.raw(),
                                    options.raw(),
                                    num_keys,
-                                   c_keys.as_ptr(), c_keys_lens.as_ptr(),
-                                   vals.as_mut_ptr(), vals_lens.as_mut_ptr(),
+                                   c_keys.as_ptr(),
+                                   c_keys_lens.as_ptr(),
+                                   vals.as_mut_ptr(),
+                                   vals_lens.as_mut_ptr(),
                                    &mut status[0] as *mut _);
 
-            for i in 0 .. num_keys {
+            for i in 0..num_keys {
                 if status[i].code == 0 {
                     ret.push(Ok(CVec::from_raw_parts(vals[i] as *mut u8, vals_lens[i])));
                 } else {
@@ -750,12 +764,48 @@ impl<'a> DB<'a> {
         }
     }
 
-    pub fn multi_get_cf<R: AsRef<ReadOptions>>(&self,
-                                               options: R,
-                                               column_families: &[ColumnFamilyHandle],
-                                               keys: &[&[u8]])
-                                               -> Vec<Result<CVec<u8>, Status>> {
-        unimplemented!()
+    pub fn multi_get_cf(&self,
+                        options: &ReadOptions,
+                        column_families: &[&ColumnFamilyHandle],
+                        keys: &[&[u8]])
+                        -> Vec<Result<CVec<u8>, Status>> {
+        unsafe {
+            let num_keys = keys.len();
+            let mut c_keys: Vec<*const c_char> = Vec::with_capacity(num_keys);
+            let mut c_keys_lens = Vec::with_capacity(num_keys);
+            let mut c_cfs = Vec::with_capacity(num_keys);
+
+            let mut vals = vec![ptr::null_mut(); num_keys];
+            let mut vals_lens = vec![0_usize; num_keys];
+
+            for i in 0..num_keys {
+                c_keys.push(keys[i].as_ptr() as *const c_char);
+                c_keys_lens.push(keys[i].len());
+                c_cfs.push(column_families[i].raw() as *const _);
+            }
+
+            let mut status: Vec<ll::rocks_status_t> = vec![mem::zeroed(); num_keys];
+            let mut ret = Vec::with_capacity(num_keys);
+
+            ll::rocks_db_multi_get_cf(self.raw(),
+                                      options.raw(),
+                                      c_cfs.as_ptr(),
+                                      num_keys,
+                                      c_keys.as_ptr(),
+                                      c_keys_lens.as_ptr(),
+                                      vals.as_mut_ptr(),
+                                      vals_lens.as_mut_ptr(),
+                                      &mut status[0] as *mut _);
+
+            for i in 0..num_keys {
+                if status[i].code == 0 {
+                    ret.push(Ok(CVec::from_raw_parts(vals[i] as *mut u8, vals_lens[i])));
+                } else {
+                    ret.push(Err(Status::from_ll(&status[i])))
+                }
+            }
+            ret
+        }
     }
 
     /// If the key definitely does not exist in the database, then this method
@@ -1689,15 +1739,15 @@ mod tests {
     #[test]
     fn multi_get() {
         let tmp_dir = ::tempdir::TempDir::new_in(".", "rocks").unwrap();
-        let db = DB::open(Options::default()
-                          .map_db_options(|db| db.create_if_missing(true)),
+        let db = DB::open(Options::default().map_db_options(|db| db.create_if_missing(true)),
                           &tmp_dir)
-            .unwrap();
+                .unwrap();
 
         assert!(db.put(&Default::default(), b"a", b"1").is_ok());
         assert!(db.put(&Default::default(), b"b", b"2").is_ok());
         assert!(db.put(&Default::default(), b"c", b"3").is_ok());
-        assert!(db.put(&Default::default(), b"long-key", b"long-value").is_ok());
+        assert!(db.put(&Default::default(), b"long-key", b"long-value")
+                    .is_ok());
         assert!(db.put(&Default::default(), b"e", b"5").is_ok());
         assert!(db.put(&Default::default(), b"f", b"6").is_ok());
 
@@ -1715,20 +1765,56 @@ mod tests {
     }
 
     #[test]
+    fn multi_get_cf() {
+        let tmp_dir = ::tempdir::TempDir::new_in(".", "rocks").unwrap();
+        let db = DB::open(Options::default().map_db_options(|db| db.create_if_missing(true)),
+                          &tmp_dir)
+                .unwrap();
+
+        let def = db.default_column_family();
+        let cf1 = db.create_column_family(&Default::default(), "db1").unwrap();
+        let cf2 = db.create_column_family(&Default::default(), "db2").unwrap();
+        let cf3 = db.create_column_family(&Default::default(), "db3").unwrap();
+        let cf4 = db.create_column_family(&Default::default(), "db4").unwrap();
+
+        assert!(db.put_cf(&WriteOptions::default(), &def, b"AA", b"aa")
+                    .is_ok());
+        assert!(db.put_cf(&WriteOptions::default(), &cf1, b"BB", b"bb")
+                    .is_ok());
+        assert!(db.put_cf(&WriteOptions::default(), &cf2, b"CC", b"cc")
+                    .is_ok());
+        assert!(db.put_cf(&WriteOptions::default(), &cf3, b"DD", b"dd")
+                    .is_ok());
+        assert!(db.put_cf(&WriteOptions::default(), &cf4, b"EE", b"ee")
+                    .is_ok());
+
+        assert!(db.compact_range(&Default::default(), ..).is_ok());
+
+        let ret = db.multi_get_cf(&ReadOptions::default(),
+                                  &[&def, &cf1, &cf2, &cf3, &cf4, &def],
+                                  &[b"AA", b"BB", b"CC", b"DD", b"EE", b"233"]);
+
+        assert_eq!(ret[0].as_ref().unwrap(), b"aa".as_ref());
+        assert_eq!(ret[2].as_ref().unwrap(), b"cc".as_ref());
+        assert_eq!(ret[4].as_ref().unwrap(), b"ee".as_ref());
+        assert!(ret[5].as_ref().unwrap_err().is_not_found());
+
+        // mem::forget(def);
+    }
+
+    #[test]
     fn key_may_exist() {
         let tmp_dir = ::tempdir::TempDir::new_in(".", "rocks").unwrap();
-        let db = DB::open(Options::default()
-                          .map_db_options(|db| db.create_if_missing(true)),
+        let db = DB::open(Options::default().map_db_options(|db| db.create_if_missing(true)),
                           &tmp_dir)
-            .unwrap();
+                .unwrap();
 
         // TODO: key_may_get when to return (true, None)?
-
-        assert!(db.put(&Default::default(), b"long-key", b"long-value").is_ok());
+        assert!(db.put(&Default::default(), b"long-key", b"long-value")
+                    .is_ok());
         assert!(db.compact_range(&Default::default(), ..).is_ok());
 
         assert!(db.key_may_exist(&ReadOptions::default(), b"long-key"));
-
         assert!(!db.key_may_exist(&ReadOptions::default(), b"long-key-not-exist"));
 
         let (found, maybe_val) = db.key_may_get(&ReadOptions::default(), b"long-key");

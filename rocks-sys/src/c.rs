@@ -1237,6 +1237,10 @@ extern "C" {
      -> *mut rocks_column_family_handle_t;
 }
 extern "C" {
+    pub fn rocks_db_default_column_family(db: *mut rocks_db_t)
+     -> *mut rocks_column_family_handle_t;
+}
+extern "C" {
     pub fn rocks_db_drop_column_family(db: *mut rocks_db_t,
                                        handle:
                                            *mut rocks_column_family_handle_t,

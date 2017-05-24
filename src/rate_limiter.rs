@@ -45,7 +45,7 @@ impl RateLimiter {
         RateLimiter {
             raw: unsafe {
                 ll::rocks_ratelimiter_create(rate_bytes_per_sec, refill_period_us, fairness)
-            }
+            },
         }
     }
 }
@@ -60,15 +60,16 @@ mod tests {
     #[test]
     fn rate_limiter() {
         let tmp_dir = ::tempdir::TempDir::new_in(".", "rocks").unwrap();
-        let db = DB::open(Options::default()
-                          .map_db_options(|db| {
-                              db.create_if_missing(true)
-                                  .rate_limiter(Some(RateLimiter::new(4096, // 4 KiB/s
-                                                                      10_000, // 10 ms
-                                                                      10)))
-                          })
-                          .map_cf_options(|cf| cf.compression(CompressionType::NoCompression)),
-                          &tmp_dir)
+        let db =
+            DB::open(Options::default()
+                     .map_db_options(|db| {
+                         db.create_if_missing(true)
+                             .rate_limiter(Some(RateLimiter::new(4096, // 4 KiB/s
+                                                                 10_000, // 10 ms
+                                                                 10)))
+                     })
+                     .map_cf_options(|cf| cf.compression(CompressionType::NoCompression)),
+                     &tmp_dir)
             .unwrap();
 
         let now = SystemTime::now();
@@ -79,7 +80,10 @@ mod tests {
 
         let now = SystemTime::now();
         // no compression, 8K
-        assert!(db.put(&Default::default(), &vec![b'A'; 4 * 1024], &vec![b'B'; 4 * 1024]).is_ok());
+        assert!(db.put(&Default::default(),
+                       &vec![b'A'; 4 * 1024],
+                       &vec![b'B'; 4 * 1024])
+                .is_ok());
         assert!(db.compact_range(&Default::default(), ..).is_ok());
         assert!(now.elapsed().unwrap() > Duration::from_secs(1));
     }

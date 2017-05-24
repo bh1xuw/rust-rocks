@@ -34,7 +34,7 @@ pub trait SliceTransform {
     /// https://github.com/facebook/rocksdb/wiki/Prefix-Seek-API-Changes
     ///
     fn in_domain(&self, key: &[u8]) -> bool {
-        true                    // default: use transform
+        true // default: use transform
     }
 
     /// Return the name of this transformation.
@@ -107,12 +107,18 @@ mod tests {
         // if use another prefix, iterator may be wrong.
         // since it will find a non-included key and skip following.
         // FOR TEST ONLY, this kind of prefix extractor is joking!
-        assert!(db.put(&WriteOptions::default(), b"AA-abcdef-003", b"23333").is_ok());
-        assert!(db.put(&WriteOptions::default(), b"AA-abcdef-001", b"23333").is_ok());
-        assert!(db.put(&WriteOptions::default(), b"AA-abcdef-002", b"23333").is_ok());
-        assert!(db.put(&WriteOptions::default(), b"BB-abcdef-005", b"23333").is_ok());
-        assert!(db.put(&WriteOptions::default(), b"AA-abcdef-002", b"23333").is_ok());
-        assert!(db.put(&WriteOptions::default(), b"CC-abcdef-001", b"23333").is_ok());
+        assert!(db.put(&WriteOptions::default(), b"AA-abcdef-003", b"23333")
+                .is_ok());
+        assert!(db.put(&WriteOptions::default(), b"AA-abcdef-001", b"23333")
+                .is_ok());
+        assert!(db.put(&WriteOptions::default(), b"AA-abcdef-002", b"23333")
+                .is_ok());
+        assert!(db.put(&WriteOptions::default(), b"BB-abcdef-005", b"23333")
+                .is_ok());
+        assert!(db.put(&WriteOptions::default(), b"AA-abcdef-002", b"23333")
+                .is_ok());
+        assert!(db.put(&WriteOptions::default(), b"CC-abcdef-001", b"23333")
+                .is_ok());
 
         let mut it = db.new_iterator(&ReadOptions::default().prefix_same_as_start(true));
         it.seek(b"---abcdef--");
@@ -143,13 +149,20 @@ mod tests {
                           &tmp_dir)
             .unwrap();
 
-        assert!(db.put(&WriteOptions::default(), b"abc-003", b"23333").is_ok());
-        assert!(db.put(&WriteOptions::default(), b"abc-001", b"23333").is_ok());
-        assert!(db.put(&WriteOptions::default(), b"abc-002", b"23333").is_ok());
-        assert!(db.put(&WriteOptions::default(), b"abc-005", b"23333").is_ok());
-        assert!(db.put(&WriteOptions::default(), b"abc-002", b"23333").is_ok());
-        assert!(db.put(&WriteOptions::default(), b"abc-006", b"23333").is_ok());
-        assert!(db.put(&WriteOptions::default(), b"def-000", b"23333").is_ok());
+        assert!(db.put(&WriteOptions::default(), b"abc-003", b"23333")
+                .is_ok());
+        assert!(db.put(&WriteOptions::default(), b"abc-001", b"23333")
+                .is_ok());
+        assert!(db.put(&WriteOptions::default(), b"abc-002", b"23333")
+                .is_ok());
+        assert!(db.put(&WriteOptions::default(), b"abc-005", b"23333")
+                .is_ok());
+        assert!(db.put(&WriteOptions::default(), b"abc-002", b"23333")
+                .is_ok());
+        assert!(db.put(&WriteOptions::default(), b"abc-006", b"23333")
+                .is_ok());
+        assert!(db.put(&WriteOptions::default(), b"def-000", b"23333")
+                .is_ok());
 
         let mut it = db.new_iterator(&ReadOptions::default().prefix_same_as_start(true));
         it.seek(b"abc-");

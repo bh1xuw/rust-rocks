@@ -167,6 +167,10 @@ extern "C" {
     return handle;
   }
 
+  rocks_column_family_handle_t* rocks_db_default_column_family(rocks_db_t* db) {
+    return new rocks_column_family_handle_t { db->rep->DefaultColumnFamily() };
+  }
+
   void rocks_db_drop_column_family(rocks_db_t* db,
                                    rocks_column_family_handle_t* handle,
                                    rocks_status_t* status) {

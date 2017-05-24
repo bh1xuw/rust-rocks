@@ -561,6 +561,8 @@ extern "C" {
                                                                  const char* column_family_name,
                                                                  rocks_status_t* status);
 
+  rocks_column_family_handle_t* rocks_db_default_column_family(rocks_db_t* db);
+
   void rocks_db_drop_column_family(
                                    rocks_db_t* db,
                                    rocks_column_family_handle_t* handle,
