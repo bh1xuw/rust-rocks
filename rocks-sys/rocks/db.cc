@@ -639,18 +639,29 @@ extern "C" {
   }
 
   void rocks_db_ingest_external_file_cf(rocks_db_t* db,
-                                     rocks_column_family_handle_t* column_family,
-                                     const char* const* file_list,
-                                     const size_t* file_list_sizes,
-                                     size_t file_len,
-                                     const rocks_ingestexternalfile_options_t* options,
-                                     rocks_status_t* status) {
+                                        rocks_column_family_handle_t* column_family,
+                                        const char* const* file_list,
+                                        const size_t* file_list_sizes,
+                                        size_t file_len,
+                                        const rocks_ingestexternalfile_options_t* options,
+                                        rocks_status_t* status) {
     std::vector<std::string> external_files;
     for (auto i = 0; i < file_len; i++) {
       external_files.push_back(std::string(file_list[i], file_list_sizes[i]));
     }
     auto st = db->rep->IngestExternalFile(column_family->rep, external_files, options->rep);
     SaveError(status, st);
+  }
+
+  void rocks_db_get_db_identity(rocks_db_t* db,
+                                void* identity, // *mut String
+                                rocks_status_t* status) {
+    std::string id;
+    auto st = db->rep->GetDbIdentity(id);
+    SaveError(status, st);
+    if (st.ok()) {
+      rust_string_assign(identity, id.data(), id.size());
+    }
   }
 
   // public functions

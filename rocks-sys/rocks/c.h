@@ -778,7 +778,7 @@ extern "C" {
   void rocks_db_sync_wal(rocks_db_t* db, rocks_status_t* status);
 
   uint64_t rocks_db_get_latest_sequence_number(rocks_db_t* db);
-  
+
   void rocks_db_ingest_external_file(rocks_db_t* db,
                                      const char* const* file_list,
                                      const size_t* file_list_sizes,
@@ -794,6 +794,10 @@ extern "C" {
                                         const rocks_ingestexternalfile_options_t* options,
                                         rocks_status_t* status);
 
+  void rocks_db_get_db_identity(rocks_db_t* db,
+                                void* identity, // *mut String
+                                rocks_status_t* status);
+  
   /*    pub fn */
   void rocks_destroy_db(
                         const rocks_options_t* options,

@@ -360,16 +360,6 @@ impl<'a> DB<'a> {
         }
     }
 
-    // FIXME: do not own this handle, should return &ColumnFamilyHandle
-    pub fn default_column_family(&self) -> ColumnFamilyHandle {
-        ColumnFamilyHandle {
-            raw: unsafe { ll::rocks_db_default_column_family(self.raw()) },
-            db: self.context.clone(),
-            owned: false,
-            _marker: PhantomData,
-        }
-    }
-
     /// Create a column_family and return the handle of column family
     /// through the argument handle.
     pub fn create_column_family(&self,
@@ -1235,34 +1225,27 @@ impl<'a> DB<'a> {
         unimplemented!()
     }
 
-    // Allow compactions to delete obsolete files.
-    // If force == true, the call to EnableFileDeletions() will guarantee that
-    // file deletions are enabled after the call, even if DisableFileDeletions()
-    // was called multiple times before.
-    // If force == false, EnableFileDeletions will only enable file deletion
-    // after it's been called at least as many times as DisableFileDeletions(),
-    // enabling the two methods to be called by two threads concurrently without
-    // synchronization -- i.e., file deletions will be enabled only after both
-    // threads call EnableFileDeletions()
+    /// Allow compactions to delete obsolete files.
+    /// If force == true, the call to EnableFileDeletions() will guarantee that
+    /// file deletions are enabled after the call, even if DisableFileDeletions()
+    /// was called multiple times before.
+    /// If force == false, EnableFileDeletions will only enable file deletion
+    /// after it's been called at least as many times as DisableFileDeletions(),
+    /// enabling the two methods to be called by two threads concurrently without
+    /// synchronization -- i.e., file deletions will be enabled only after both
+    /// threads call EnableFileDeletions()
     pub fn enable_file_deletions(&self, force: bool) -> Result<(), Status> {
         unimplemented!()
     }
-    
-    // disable file deletions
 
-    // enable file deletions
 
-    // get live files
-
-    // get sorted wal files
-
-    // get update since
-
-    // delete file
-
-    // get live files meta data
-
-    // get column family meta data
+    // TODO:
+    // get_live_files
+    // get_sorted_wal_files
+    // get_updates_since
+    // delete_file
+    // get_live_files_metadata
+    // get_column_family_metadata
 
     /// IngestExternalFile() will load a list of external SST files (1) into the DB
     /// We will try to find the lowest possible level that the file can fit in, and
@@ -1299,6 +1282,76 @@ impl<'a> DB<'a> {
             }
         }
     }
+
+    /// Sets the globally unique ID created at database creation time by invoking
+    /// Env::GenerateUniqueId(), in identity. Returns Status::OK if identity could
+    /// be set properly
+    pub fn get_db_identity(&self) -> Result<String, Status> {
+        unsafe {
+            let mut identity = String::new();
+            let mut status = mem::zeroed();
+            ll::rocks_db_get_db_identity(self.raw(),
+                                         &mut identity as *mut String as *mut _,
+                                         &mut status);
+            if status.code == 0 {
+                Ok(identity)
+            } else {
+                Err(Status::from_ll(&status))
+            }
+        }
+    }
+
+    /// Returns default column family handle
+    pub fn default_column_family(&self) -> ColumnFamilyHandle {
+        ColumnFamilyHandle {
+            raw: unsafe { ll::rocks_db_default_column_family(self.raw()) },
+            db: self.context.clone(),
+            owned: false,
+            _marker: PhantomData,
+        }
+    }
+
+    // TODO:
+    // GetPropertiesOfAllTables
+    // GetPropertiesOfTablesInRange
+}
+
+
+// public functions
+
+/// Destroy the contents of the specified database.
+/// Be very careful using this method.
+pub fn destroy_db(name: &str, options: &Options) -> Result<(), Status> {
+    unimplemented!()
+}
+
+
+/// If a DB cannot be opened, you may attempt to call this method to
+/// resurrect as much of the contents of the database as possible.
+/// Some data may be lost, so be careful when calling this function
+/// on a database that contains important information.
+///
+/// With this API, we will warn and skip data associated with column families not
+/// specified in column_families.
+///
+/// @param column_families Descriptors for known column families
+pub fn repair_db(dbname: &str, db_options: &DBOptions,
+                 column_families: &[&ColumnFamilyDescriptor]) -> Result<(), Status> {
+    unimplemented!()
+}
+
+/// @param unknown_cf_opts Options for column families encountered during the
+///                        repair that were not specified in column_families.
+pub fn repair_db_with_unknown_cf_opts(dbname: &str, db_options: &DBOptions,
+                                      column_families: &[&ColumnFamilyDescriptor],
+                                      unknown_cf_opts: &ColumnFamilyOptions) -> Result<(), Status> {
+    unimplemented!()
+}
+
+/// @param options These options will be used for the database and for ALL column
+///                families encountered during the repair
+pub fn repair_db_all_cfs(dbname: &str, options: &Options) -> Result<(), Status> {
+    unimplemented!()
 }
 
 
@@ -2074,6 +2127,9 @@ mod tests {
         assert_eq!(db.number_levels(), 7); // default
         assert_eq!(db.max_mem_compaction_level(), 0); // TODO: wtf
         assert_eq!(db.level0_stop_write_trigger(), 36); // default
+
+        assert!(db.get_db_identity().is_ok());
+        println!("id => {:?}", db.get_db_identity());
     }
 
     #[test]

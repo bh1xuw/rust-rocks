@@ -121,26 +121,26 @@ pub trait CompactionFilter {
     ///  * kRemove - remove the key-value pair or merge operand.
     ///  * kChangeValue - keep the key and change the value/operand to *new_value.
     ///  * kRemoveAndSkipUntil - remove this key-value pair, and also remove
-    ///      all key-value pairs with key in [key, *skip_until). This range
-    ///      of keys will be skipped without reading, potentially saving some
-    ///      IO operations compared to removing the keys one by one.
+    ///    all key-value pairs with key in [key, *skip_until). This range
+    ///    of keys will be skipped without reading, potentially saving some
+    ///    IO operations compared to removing the keys one by one.
     ///
-    ///      *skip_until <= key is treated the same as Decision::kKeep
-    ///      (since the range [key, *skip_until) is empty).
+    ///    *skip_until <= key is treated the same as Decision::kKeep
+    ///    (since the range [key, *skip_until) is empty).
     ///
-    ///      The keys are skipped even if there are snapshots containing them,
-    ///      as if IgnoreSnapshots() was true; i.e. values removed
-    ///      by kRemoveAndSkipUntil can disappear from a snapshot - beware
-    ///      if you're using TransactionDB or DB::GetSnapshot().
+    ///    The keys are skipped even if there are snapshots containing them,
+    ///    as if IgnoreSnapshots() was true; i.e. values removed
+    ///    by kRemoveAndSkipUntil can disappear from a snapshot - beware
+    ///    if you're using TransactionDB or DB::GetSnapshot().
     ///
-    ///      Another warning: if value for a key was overwritten or merged into
-    ///      (multiple Put()s or Merge()s), and compaction filter skips this key
-    ///      with kRemoveAndSkipUntil, it's possible that it will remove only
-    ///      the new value, exposing the old value that was supposed to be
-    ///      overwritten.
+    ///    Another warning: if value for a key was overwritten or merged into
+    ///    (multiple Put()s or Merge()s), and compaction filter skips this key
+    ///    with kRemoveAndSkipUntil, it's possible that it will remove only
+    ///    the new value, exposing the old value that was supposed to be
+    ///    overwritten.
     ///
-    ///      If you use kRemoveAndSkipUntil, consider also reducing
-    ///      compaction_readahead_size option.
+    ///    If you use kRemoveAndSkipUntil, consider also reducing
+    ///    compaction_readahead_size option.
     ///
     /// Note: If you are using a TransactionDB, it is not recommended to filter
     /// out or modify merge operands (ValueType::kMergeOperand).

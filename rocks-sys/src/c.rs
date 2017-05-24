@@ -1585,6 +1585,11 @@ extern "C" {
                                             status: *mut rocks_status_t);
 }
 extern "C" {
+    pub fn rocks_db_get_db_identity(db: *mut rocks_db_t,
+                                    identity: *mut ::std::os::raw::c_void,
+                                    status: *mut rocks_status_t);
+}
+extern "C" {
     pub fn rocks_destroy_db(options: *const rocks_options_t,
                             name: *const ::std::os::raw::c_char,
                             status: *mut rocks_status_t);
