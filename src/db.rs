@@ -777,8 +777,26 @@ impl<'a> DB<'a> {
         }
     }
 
-    pub fn key_may_get(&self, options: &ReadOptions, key: &[u8]) -> bool {
-        unimplemented!()
+    pub fn key_may_get(&self, options: &ReadOptions, key: &[u8]) -> (bool, Option<CVec<u8>>) {
+        unsafe {
+            let mut found = 0;
+            let mut value: *mut c_char = ptr::null_mut();
+            let mut value_len: usize = 0;
+            let ret = ll::rocks_db_key_may_exist(self.raw(),
+                                                 options.raw(),
+                                                 key.as_ptr() as *const _,
+                                                 key.len(),
+                                                 &mut value,
+                                                 &mut value_len,
+                                                 &mut found);
+            if ret == 0 {
+                (false, None)
+            } else if found == 0 {
+                (true, None)
+            } else {
+                (true, Some(CVec::from_raw_parts(value as *mut _, value_len)))
+            }
+        }
     }
 
     pub fn key_may_exist_cf(&self,
@@ -1694,5 +1712,31 @@ mod tests {
         assert_eq!(ret[3].as_ref().unwrap(), b"6".as_ref());
         assert_eq!(ret[4].as_ref().unwrap(), b"long-value".as_ref());
         assert!(ret[5].as_ref().unwrap_err().is_not_found());
+    }
+
+    #[test]
+    fn key_may_exist() {
+        let tmp_dir = ::tempdir::TempDir::new_in(".", "rocks").unwrap();
+        let db = DB::open(Options::default()
+                          .map_db_options(|db| db.create_if_missing(true)),
+                          &tmp_dir)
+            .unwrap();
+
+        // TODO: key_may_get when to return (true, None)?
+
+        assert!(db.put(&Default::default(), b"long-key", b"long-value").is_ok());
+        assert!(db.compact_range(&Default::default(), ..).is_ok());
+
+        assert!(db.key_may_exist(&ReadOptions::default(), b"long-key"));
+
+        assert!(!db.key_may_exist(&ReadOptions::default(), b"long-key-not-exist"));
+
+        let (found, maybe_val) = db.key_may_get(&ReadOptions::default(), b"long-key");
+        assert!(found);
+        assert!(maybe_val.is_some());
+
+        let (found, maybe_val) = db.key_may_get(&ReadOptions::default(), b"not-exist");
+        assert!(!found);
+        assert!(!maybe_val.is_some());
     }
 }

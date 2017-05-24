@@ -1373,7 +1373,7 @@ extern "C" {
                                   options: *const rocks_readoptions_t,
                                   key: *const ::std::os::raw::c_char,
                                   key_len: usize,
-                                  value: *mut ::std::os::raw::c_char,
+                                  value: *mut *mut ::std::os::raw::c_char,
                                   value_len: *mut usize,
                                   value_found: *mut ::std::os::raw::c_uchar)
      -> ::std::os::raw::c_uchar;

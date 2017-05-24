@@ -396,14 +396,14 @@ extern "C" {
   }
 
   unsigned char rocks_db_key_may_exist(rocks_db_t* db, const rocks_readoptions_t* options,
-                                       const char* key, size_t key_len, char* value,
+                                       const char* key, size_t key_len, char** value,
                                        size_t* value_len, unsigned char* value_found) {
     bool found;
     std::string val;
     bool ret = db->rep->KeyMayExist(options->rep, Slice(key, key_len), &val, &found);
     if (ret && value != nullptr) {
       *value_len = val.size();
-      value = CopyString(val);
+      *value = CopyString(val);
     }
     if (value_found != nullptr) {
       *value_found = found;

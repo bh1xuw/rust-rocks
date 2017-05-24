@@ -32,7 +32,7 @@ working in progress.
   - [x] merge
   - [x] MultiGet
   - [x] KeyMayExist - bool return 
-  - [ ] KeyMayExist - get return
+  - [x] KeyMayExist - get return
   - [ ] properties
   - [x] compact range
   - [x] ingest sst file
