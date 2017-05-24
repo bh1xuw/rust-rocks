@@ -2,6 +2,13 @@
 name = "rocks-sys"
 version = "0.0.1"
 authors = ["BH1XUW <bh1xuw@gmail.com>"]
+description = "Raw RocksDB bindings for Rust, used internally in rust-rocks"
+repository = "https://github.com/bh1xuw/rust-rocks"
+keywords = ["ffi", "rocksdb", "facebook", "database"]
+categories = ["external-ffi-bindings", "database"]
+license = "Apache-2.0"
+
+build = "build.rs"
 
 [dependencies]
 
