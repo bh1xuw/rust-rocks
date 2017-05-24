@@ -1,7 +1,6 @@
-
 use std::mem;
 use std::ffi::{CStr, CString};
-use std::os::raw::{c_int, c_char};
+use std::os::raw::{c_int, c_char, c_void};
 use std::ptr;
 use std::iter;
 use std::str;
@@ -100,6 +99,12 @@ impl<'a, 'b> Drop for ColumnFamilyHandle<'a, 'b> {
     }
 }
 
+// FIXME: is this right?
+impl<'a, 'b> AsRef<ColumnFamilyHandle<'a, 'b>> for ColumnFamilyHandle<'a, 'b> {
+    fn as_ref(&self) -> &ColumnFamilyHandle<'a, 'b> {
+        self
+    }
+}
 
 impl<'a, 'b> fmt::Debug for ColumnFamilyHandle<'a, 'b> {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
@@ -894,12 +899,12 @@ impl<'a> DB<'a> {
         }
     }
 
-    pub fn new_iterators(&self,
+    pub fn new_iterators<'c, 'b: 'c, T: AsRef<ColumnFamilyHandle<'c, 'b>>>(&'b self,
                          options: &ReadOptions,
-                         cfs: &[ColumnFamilyHandle])
+                         cfs: &[T])
                          -> Result<Vec<Iterator>, Status> {
         unsafe {
-            let c_cfs = cfs.iter().map(|cf| cf.raw()).collect::<Vec<_>>();
+            let c_cfs = cfs.iter().map(|cf| cf.as_ref().raw()).collect::<Vec<_>>();
             let cfs_len = cfs.len();
             let mut status = mem::zeroed();
 
@@ -910,7 +915,6 @@ impl<'a> DB<'a> {
                                           c_iters.as_mut_ptr(),
                                           cfs_len,
                                           &mut status);
-
             if status.code == 0 {
                 Ok(c_iters
                        .into_iter()
@@ -946,6 +950,89 @@ impl<'a> DB<'a> {
     pub fn release_snapshot(&self, snapshot: Snapshot) {
         unsafe {
             ll::rocks_db_release_snapshot(self.raw(), snapshot.raw());
+        }
+    }
+
+    /// DB implementations can export properties about their state via this method.
+    /// If "property" is a valid property understood by this DB implementation (see
+    /// Properties struct above for valid options), fills "*value" with its current
+    /// value and returns true.  Otherwise, returns false.
+    pub fn get_property(&self, property: &str) -> Option<String> {
+        unsafe {
+            let mut ret = String::new();
+            if ll::rocks_db_get_property(self.raw(),
+                                         property.as_bytes().as_ptr() as *const _,
+                                         property.len(),
+                                         &mut ret as *mut String as *mut c_void) != 0 {
+                Some(ret)
+            } else {
+                None
+            }
+        }
+    }
+
+    // TODO:
+    pub fn get_map_property(&self, property: &str) -> Option<()> {
+        unimplemented!()
+    }
+
+    /// Similar to GetProperty(), but only works for a subset of properties whose
+    /// return value is an integer. Return the value by integer. Supported
+    /// properties:
+    ///  "rocksdb.num-immutable-mem-table"
+    ///  "rocksdb.mem-table-flush-pending"
+    ///  "rocksdb.compaction-pending"
+    ///  "rocksdb.background-errors"
+    ///  "rocksdb.cur-size-active-mem-table"
+    ///  "rocksdb.cur-size-all-mem-tables"
+    ///  "rocksdb.size-all-mem-tables"
+    ///  "rocksdb.num-entries-active-mem-table"
+    ///  "rocksdb.num-entries-imm-mem-tables"
+    ///  "rocksdb.num-deletes-active-mem-table"
+    ///  "rocksdb.num-deletes-imm-mem-tables"
+    ///  "rocksdb.estimate-num-keys"
+    ///  "rocksdb.estimate-table-readers-mem"
+    ///  "rocksdb.is-file-deletions-enabled"
+    ///  "rocksdb.num-snapshots"
+    ///  "rocksdb.oldest-snapshot-time"
+    ///  "rocksdb.num-live-versions"
+    ///  "rocksdb.current-super-version-number"
+    ///  "rocksdb.estimate-live-data-size"
+    ///  "rocksdb.min-log-number-to-keep"
+    ///  "rocksdb.total-sst-files-size"
+    ///  "rocksdb.base-level"
+    ///  "rocksdb.estimate-pending-compaction-bytes"
+    ///  "rocksdb.num-running-compactions"
+    ///  "rocksdb.num-running-flushes"
+    ///  "rocksdb.actual-delayed-write-rate"
+    ///  "rocksdb.is-write-stopped"
+    pub fn get_int_property(&self, property: &str) -> Option<u64> {
+        unsafe {
+            let mut val = 0;
+            if ll::rocks_db_get_int_property(self.raw(),
+                                             property.as_bytes().as_ptr() as *const _,
+                                             property.len(),
+                                             &mut val) != 0 {
+                Some(val)
+            } else {
+                None
+            }
+        }
+    }
+
+    /// Same as GetIntProperty(), but this one returns the aggregated int
+    /// property from all column families.
+    pub fn get_aggregated_int_property(&self, property: &str) -> Option<u64> {
+        unsafe {
+            let mut val = 0;
+            if ll::rocks_db_get_aggregated_int_property(self.raw(),
+                                                        property.as_bytes().as_ptr() as *const _,
+                                                        property.len(),
+                                                        &mut val) != 0 {
+                Some(val)
+            } else {
+                None
+            }
         }
     }
 
@@ -1112,6 +1199,7 @@ impl<'a> DB<'a> {
 }
 
 
+// TODO: reimpl with std::collections::range::RangeArgument
 pub trait ToCompactRange {
     fn start_key(&self) -> *const u8 {
         ptr::null()
@@ -1809,7 +1897,6 @@ mod tests {
                           &tmp_dir)
                 .unwrap();
 
-        // TODO: key_may_get when to return (true, None)?
         assert!(db.put(&Default::default(), b"long-key", b"long-value")
                     .is_ok());
         assert!(db.compact_range(&Default::default(), ..).is_ok());
@@ -1819,10 +1906,43 @@ mod tests {
 
         let (found, maybe_val) = db.key_may_get(&ReadOptions::default(), b"long-key");
         assert!(found);
-        assert!(maybe_val.is_some());
+        // it depends, Some/None are all OK
+        // assert!(maybe_val.is_some());
 
         let (found, maybe_val) = db.key_may_get(&ReadOptions::default(), b"not-exist");
         assert!(!found);
         assert!(!maybe_val.is_some());
+    }
+
+    #[test]
+    fn get_prop() {
+        let tmp_dir = ::tempdir::TempDir::new_in(".", "rocks").unwrap();
+        let db = DB::open(Options::default().map_db_options(|db| db.create_if_missing(true)),
+                          &tmp_dir)
+            .unwrap();
+
+        assert!(db.put(&Default::default(), b"long-key", vec![b'A'; 1024 * 1024].as_ref())
+                .is_ok());
+
+        let cf1 = db.create_column_family(&Default::default(), "db1").unwrap();
+
+        assert!(db.compact_range(&Default::default(), ..).is_ok());
+
+        let snap = db.get_snapshot();
+        assert_eq!(db.get_property("rocksdb.num-snapshots"), Some("1".to_string()));
+
+        // dump status
+        println!("stats => {}", db.get_property("rocksdb.stats").unwrap());
+        assert_eq!(db.get_int_property("rocksdb.num-snapshots"), Some(1));
+
+        assert!(db.put(&Default::default(), b"long-key2", vec![b'A'; 1024 * 1024].as_ref())
+                .is_ok());
+
+        assert!(db.put_cf(&Default::default(), &cf1, b"long-key2", vec![b'A'; 1024 * 1024].as_ref())
+                .is_ok());
+
+        assert!(db.get_int_property("rocksdb.size-all-mem-tables").unwrap() < 2 * 1024 * 1024);
+
+        assert!(db.get_aggregated_int_property("rocksdb.size-all-mem-tables").unwrap() > 2 * 1024 * 1024);
     }
 }

@@ -486,6 +486,26 @@ extern "C" {
     delete snapshot;
   }
 
+  // property
+
+  unsigned char rocks_db_get_property(rocks_db_t* db, const char* prop, const size_t prop_len, void* value) {
+    std::string cval;
+    auto has = db->rep->GetProperty(Slice(prop, prop_len), &cval);
+    if (has) {
+      rust_string_assign(value, cval.data(), cval.size());
+    }
+    return has;
+  }
+
+  unsigned char rocks_db_get_int_property(rocks_db_t* db, const char* prop, const size_t prop_len, uint64_t* value) {
+    auto has = db->rep->GetIntProperty(Slice(prop, prop_len), value);
+    return has;
+  }
+
+  unsigned char rocks_db_get_aggregated_int_property(rocks_db_t* db, const char* prop, const size_t prop_len, uint64_t* value) {
+    auto has = db->rep->GetAggregatedIntProperty(Slice(prop, prop_len), value);
+    return has;
+  }
 
   void rocks_db_compact_range(
                               rocks_db_t* db,
@@ -590,4 +610,3 @@ extern "C" {
     rocks_status_convert(&st, status);
   }
 }
-

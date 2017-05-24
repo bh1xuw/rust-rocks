@@ -33,7 +33,8 @@ working in progress.
   - [x] MultiGet
   - [x] KeyMayExist - bool return 
   - [x] KeyMayExist - get return
-  - [ ] properties
+  - [x] properties
+    - [ ] get map properties
   - [x] compact range
   - [x] ingest sst file
 - [ ] ``rocksdb/db_bench_tool.h``

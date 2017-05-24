@@ -714,6 +714,14 @@ extern "C" {
 
   void rocks_db_release_snapshot(rocks_db_t* db, rocks_snapshot_t* snapshot);
 
+  unsigned char rocks_db_get_property(rocks_db_t* db,
+                                      const char* prop, const size_t prop_len,
+                                      void* value); /* *mut String */
+
+  unsigned char rocks_db_get_int_property(rocks_db_t* db, const char* prop, const size_t prop_len, uint64_t* value);
+
+  unsigned char rocks_db_get_aggregated_int_property(rocks_db_t* db, const char* prop, const size_t prop_len, uint64_t* value);
+
   void rocks_db_compact_range(
                               rocks_db_t* db,
                               const char* start_key, size_t start_key_len,
@@ -729,7 +737,7 @@ extern "C" {
                                   const char* start_key, size_t start_key_len,
                                   const char* limit_key, size_t limit_key_len,
                                   rocks_status_t *status);
-   
+
   void rocks_db_compact_range_cf_opt(rocks_db_t* db,
                                      rocks_column_family_handle_t* column_family,
                                      rocks_compactrange_options_t* opt,
@@ -737,14 +745,14 @@ extern "C" {
                                      const char* limit_key, size_t limit_key_len);
 
   const char* rocks_db_get_name(rocks_db_t* db, size_t* len);
-  
+
   void rocks_db_ingest_external_file(rocks_db_t* db,
                                      const char* const* file_list,
                                      const size_t* file_list_sizes,
                                      size_t file_len,
                                      const rocks_ingestexternalfile_options_t* options,
                                      rocks_status_t* status);
-    
+
   void rocks_db_ingest_external_file_cf(rocks_db_t* db,
                                         rocks_column_family_handle_t* column_family,
                                         const char* const* file_list,
@@ -752,7 +760,7 @@ extern "C" {
                                         size_t file_len,
                                         const rocks_ingestexternalfile_options_t* options,
                                         rocks_status_t* status);
-  
+
   /*    pub fn */
   void rocks_destroy_db(
                         const rocks_options_t* options,

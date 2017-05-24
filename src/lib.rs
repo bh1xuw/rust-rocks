@@ -35,7 +35,19 @@ pub mod metadata;
 pub mod rocksdb;
 
 
-#[no_mangle]
-pub extern "C" fn rust_hello_world() {
-    println!("Hello World! from rust");
+pub mod c {
+    use std::ptr;
+
+    #[no_mangle]
+    pub extern "C" fn rust_hello_world() {
+        println!("Hello World! from rust");
+    }
+
+
+    #[no_mangle]
+    pub unsafe extern "C" fn rust_string_assign(s: *mut String, p: *const u8, len: usize) {
+        (*s).reserve(len);
+        ptr::copy(p, (*s).as_mut_vec().as_mut_ptr(), len);
+        (*s).as_mut_vec().set_len(len);
+    }
 }

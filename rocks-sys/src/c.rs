@@ -1425,6 +1425,27 @@ extern "C" {
                                      snapshot: *mut rocks_snapshot_t);
 }
 extern "C" {
+    pub fn rocks_db_get_property(db: *mut rocks_db_t,
+                                 prop: *const ::std::os::raw::c_char,
+                                 prop_len: usize,
+                                 value: *mut ::std::os::raw::c_void)
+     -> ::std::os::raw::c_uchar;
+}
+extern "C" {
+    pub fn rocks_db_get_int_property(db: *mut rocks_db_t,
+                                     prop: *const ::std::os::raw::c_char,
+                                     prop_len: usize, value: *mut u64)
+     -> ::std::os::raw::c_uchar;
+}
+extern "C" {
+    pub fn rocks_db_get_aggregated_int_property(db: *mut rocks_db_t,
+                                                prop:
+                                                    *const ::std::os::raw::c_char,
+                                                prop_len: usize,
+                                                value: *mut u64)
+     -> ::std::os::raw::c_uchar;
+}
+extern "C" {
     pub fn rocks_db_compact_range(db: *mut rocks_db_t,
                                   start_key: *const ::std::os::raw::c_char,
                                   start_key_len: usize,
