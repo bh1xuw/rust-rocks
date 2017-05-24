@@ -400,8 +400,11 @@ extern "C" {
   }
 
   void rocks_dboptions_set_ratelimiter(rocks_dboptions_t *opt, rocks_ratelimiter_t *limiter) {
-    opt->rep.rate_limiter.reset(limiter->rep);
-    limiter->rep = nullptr;
+    if (limiter != nullptr) {
+      opt->rep.rate_limiter.reset(limiter->rep);
+    } else {
+      opt->rep.rate_limiter.reset((RateLimiter*)nullptr);
+    }
   }
 
   // sst_file_manager

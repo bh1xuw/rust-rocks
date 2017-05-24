@@ -31,7 +31,8 @@ working in progress.
   - [x] delete
   - [x] merge
   - [ ] MultiGet
-  - [ ] KeyMayExist
+  - [x] KeyMayExist - bool return 
+  - [ ] KeyMayExist - get return 
   - [ ] properties
   - [x] compact range
   - [x] ingest sst file
@@ -61,7 +62,7 @@ working in progress.
 - [ ] ``rocksdb/perf_context.h``
 - [ ] ``rocksdb/perf_level.h``
 - [ ] ``rocksdb/persistent_cache.h``
-- [ ] ``rocksdb/rate_limiter.h``
+- [x] ``rocksdb/rate_limiter.h``
 - [x] ~~``rocksdb/slice.h``~~
   - [x] use ``&[u8]`` to replace
 - [x] ``rocksdb/slice_transform.h``

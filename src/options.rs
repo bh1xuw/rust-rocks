@@ -1188,16 +1188,26 @@ impl DBOptions {
     /// e.g. to read/write files, schedule background work, etc.
     /// Default: Env::Default()
     // env: Env,
+    pub fn env(self, e: ()) -> Self {
+        unimplemented!()
+    }
+
     /// Use to control write rate of flush and compaction. Flush has higher
     /// priority than compaction. Rate limiting is disabled if nullptr.
     /// If rate limiter is enabled, bytes_per_sync is set to 1MB by default.
     /// Default: nullptr
     pub fn rate_limiter(self, val: Option<RateLimiter>) -> Self {
-        // unsafe {
-        //     ll::rocks_dboptions_set_rate_limiter(self.raw, val);
-        // }
-        // self
-        unimplemented!()
+        unsafe {
+            if let Some(limiter) = val {
+                ll::rocks_dboptions_set_ratelimiter(self.raw, limiter.raw());
+                mem::forget(limiter); // FIXME: leaks? or not
+                // since the inner RateLimiter will be freed by DBImpl::~DBImpl()
+                // outer rocks_ratelimiter_t leaks.
+            } else {
+                ll::rocks_dboptions_set_ratelimiter(self.raw, ptr::null_mut());
+            }
+        }
+        self
     }
 
     /// Use to track SST files and control their file deletion rate.
