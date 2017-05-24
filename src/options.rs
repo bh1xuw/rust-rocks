@@ -169,14 +169,17 @@ impl ColumnFamilyOptions {
     /// optimized for heavy workloads and big datasets, which means you might
     /// observe write stalls under some conditions. As a starting point for tuning
     /// RocksDB options, use the following two functions:
+    ///
     /// * OptimizeLevelStyleCompaction -- optimizes level style compaction
     /// * OptimizeUniversalStyleCompaction -- optimizes universal style compaction
+    ///
     /// Universal style compaction is focused on reducing Write Amplification
     /// Factor for big data sets, but increases Space Amplification. You can learn
     /// more about the different styles here:
     /// https://github.com/facebook/rocksdb/wiki/Rocksdb-Architecture-Guide
     /// Make sure to also call IncreaseParallelism(), which will provide the
     /// biggest performance gains.
+    ///
     /// Note: we might use more memory than memtable_memory_budget during high
     /// write rate period
     ///
@@ -215,6 +218,7 @@ impl ColumnFamilyOptions {
     }
 
     /// rust-rocks extension.
+    ///
     /// use bitwise comparator and set if reversed.
     pub fn bitwise_comparator_reversed(self, val: bool) -> Self {
         unsafe {
@@ -232,6 +236,7 @@ impl ColumnFamilyOptions {
     /// previously without a merge operator is introduced to Merge operation
     /// for the first time. It's necessary to specify a merge operator when
     /// openning the DB in this case.
+    ///
     /// Default: nullptr
     pub fn merge_operator(self, val: Box<MergeOperator>) -> Self {
         unsafe {
@@ -323,8 +328,10 @@ impl ColumnFamilyOptions {
     /// with the library, the default is kNoCompression.
     ///
     /// Typical speeds of kSnappyCompression on an Intel(R) Core(TM)2 2.4GHz:
-    ///    ~200-500MB/s compression
-    ///    ~400-800MB/s decompression
+    ///
+    /// - ~200-500MB/s compression
+    /// - ~400-800MB/s decompression
+    ///
     /// Note that these speeds are significantly faster than most
     /// persistent storage speeds, and therefore it is typically never
     /// worth switching to kNoCompression.  Even if the input data is
@@ -486,7 +493,9 @@ impl ColumnFamilyOptions {
     /// read amplification because a get request has to check in all of these
     /// files. Also, an in-memory merge may result in writing lesser
     /// data to storage if there are duplicate records in each of these
-    /// individual write buffers.  Default: 1
+    /// individual write buffers.
+    ///
+    /// Default: 1
     pub fn min_write_buffer_number_to_merge(self, val: i32) -> Self {
         unsafe {
             ll::rocks_cfoptions_set_min_write_buffer_number_to_merge(self.raw, val);
@@ -512,6 +521,7 @@ impl ColumnFamilyOptions {
     ///
     /// Setting this value to 0 will cause write buffers to be freed immediately
     /// after they are flushed.
+    ///
     /// If this value is set to -1, 'max_write_buffer_number' will be used.
     ///
     /// Default:
@@ -530,11 +540,14 @@ impl ColumnFamilyOptions {
     /// concurrent updates). Hence iterator and multi-get will return results
     /// which are not consistent as of any point-in-time.
     /// If inplace_callback function is not set,
-    ///   Put(key, new_value) will update inplace the existing_value iff
-    ///   * key exists in current memtable
-    ///   * new sizeof(new_value) <= sizeof(existing_value)
-    ///   * existing_value for that key is a put i.e. kTypeValue
+    /// Put(key, new_value) will update inplace the existing_value iff
+    ///
+    /// * key exists in current memtable
+    /// * new sizeof(new_value) <= sizeof(existing_value)
+    /// * existing_value for that key is a put i.e. kTypeValue
+    ///
     /// If inplace_callback function is set, check doc for inplace_callback.
+    ///
     /// Default: false.
     pub fn inplace_update_support(self, val: bool) -> Self {
         unsafe {
@@ -623,7 +636,9 @@ impl ColumnFamilyOptions {
     /// won't allocate from huge page but from malloc.
     /// Users are responsible to reserve huge pages for it to be allocated. For
     /// example:
-    ///      pub sysctl -w vm.nr_hugepages=20
+    ///
+    /// > `pub sysctl -w vm.nr_hugepages=20`
+    ///
     /// See linux doc Documentation/vm/hugetlbpage.txt
     /// If there isn't enough free huge page available, it will fall back to
     /// malloc.
@@ -704,9 +719,10 @@ impl ColumnFamilyOptions {
     /// writer_buffer_size, rounded up to a multiple of 4KB).
     ///
     /// There are two additional restriction of the The specified size:
+    ///
     /// (1) size should be in the range of [4096, 2 << 30] and
     /// (2) be the multiple of the CPU word (which helps with the memory
-    /// alignment).
+    ///     alignment).
     ///
     /// We'll automatically check and adjust the size number to make sure it
     /// conforms to the restrictions.
@@ -736,9 +752,11 @@ impl ColumnFamilyOptions {
     /// to), and may not match the level users see from info log for metadata.
     /// If L0 files are merged to level-n, then, for i>0, compression_per_level[i]
     /// determines compaction type for level n+i-1.
+    ///
     /// For example, if we have three 5 levels, and we determine to merge L0
     /// data to L4 (which means L1..L3 will be empty), then the new files go to
     /// L4 uses compression type compression_per_level[1].
+    ///
     /// If now L0 is merged to L2. Data goes to L2 will be compressed
     /// according to compression_per_level[1], L3 using compression_per_level[2]
     /// and L4 using compression_per_level[3]. Compaction for each level can
@@ -787,6 +805,7 @@ impl ColumnFamilyOptions {
     }
 
     /// Target file size for compaction.
+    ///
     /// target_file_size_base is per-file size for level-1.
     /// Target file size for level L can be calculated by
     /// target_file_size_base * (target_file_size_multiplier ^ (L-1))
@@ -820,11 +839,13 @@ impl ColumnFamilyOptions {
     /// We will pick a base level b >= 1. L0 will be directly merged into level b,
     /// instead of always into level 1. Level 1 to b-1 need to be empty.
     /// We try to pick b and its target size so that
+    ///
     /// 1. target size is in the range of
-    ///   (max_bytes_for_level_base / max_bytes_for_level_multiplier,
+    ///    (max_bytes_for_level_base / max_bytes_for_level_multiplier,
     ///    pub max_bytes_for_level_base]
     /// 2. target size of the last level (level num_levels-1) equals to extra size
     ///    pub of the level.
+    ///
     /// At the same time max_bytes_for_level_multiplier and
     /// max_bytes_for_level_multiplier_additional are still satisfied.
     ///
@@ -838,27 +859,41 @@ impl ColumnFamilyOptions {
     ///
     /// For example, assume max_bytes_for_level_multiplier=10, num_levels=6,
     /// and max_bytes_for_level_base=10MB.
+    ///
     /// Target sizes of level 1 to 5 starts with:
-    /// [- - - - 10MB]
+    ///
+    /// > `[- - - - 10MB]`
+    ///
     /// with base level is level. Target sizes of level 1 to 4 are not applicable
     /// because they will not be used.
+    ///
     /// Until the size of Level 5 grows to more than 10MB, say 11MB, we make
     /// base target to level 4 and now the targets looks like:
-    /// [- - - 1.1MB 11MB]
+    ///
+    /// > `[- - - 1.1MB 11MB]`
+    ///
     /// While data are accumulated, size targets are tuned based on actual data
     /// of level 5. When level 5 has 50MB of data, the target is like:
-    /// [- - - 5MB 50MB]
+    ///
+    /// > `[- - - 5MB 50MB]`
+    ///
     /// Until level 5's actual size is more than 100MB, say 101MB. Now if we keep
     /// level 4 to be the base level, its target size needs to be 10.1MB, which
     /// doesn't satisfy the target size range. So now we make level 3 the target
     /// size and the target sizes of the levels look like:
-    /// [- - 1.01MB 10.1MB 101MB]
+    ///
+    /// > `[- - 1.01MB 10.1MB 101MB]`
+    ///
     /// In the same way, while level 5 further grows, all levels' targets grow,
     /// like
-    /// [- - 5MB 50MB 500MB]
+    ///
+    /// > `[- - 5MB 50MB 500MB]`
+    ///
     /// Until level 5 exceeds 1000MB and becomes 1001MB, we make level 2 the
     /// base level and make levels' target sizes like this:
-    /// [- 1.001MB 10.01MB 100.1MB 1001MB]
+    ///
+    /// > `[- 1.001MB 10.01MB 100.1MB 1001MB]`
+    ///
     /// and go on...
     ///
     /// By doing it, we give max_bytes_for_level_multiplier a priority against
@@ -950,6 +985,7 @@ impl ColumnFamilyOptions {
 
     /// If level compaction_style = kCompactionStyleLevel, for each level,
     /// which files are prioritized to be picked to compact.
+    ///
     /// Default: kByCompensatedSize
     pub fn compaction_pri(self, val: CompactionPri) -> Self {
         unsafe {
@@ -1000,19 +1036,22 @@ impl ColumnFamilyOptions {
 
     /// Block-based table related options are moved to BlockBasedTableOptions.
     /// Related options that were originally here but now moved include:
-    ///   no_block_cache
-    ///   block_cache
-    ///   block_cache_compressed
-    ///   block_size
-    ///   block_size_deviation
-    ///   block_restart_interval
-    ///   filter_policy
-    ///   whole_key_filtering
+    ///
+    /// * no_block_cache
+    /// * block_cache
+    /// * block_cache_compressed
+    /// * block_size
+    /// * block_size_deviation
+    /// * block_restart_interval
+    /// * filter_policy
+    /// * whole_key_filtering
+    ///
     /// If you'd like to customize some of these options, you will need to
     /// use NewBlockBasedTableFactory() to construct a new table factory.
 
     /// This option allows user to collect their own interested statistics of
     /// the tables.
+    ///
     /// Default: empty vector -- no user-defined statistics collection will be
     /// performed.
     pub fn table_properties_collector_factories(self, val: Vec<()>) -> Self {
@@ -1063,6 +1102,7 @@ impl ColumnFamilyOptions {
     }
 
     /// After writing every SST file, reopen it and read all the keys.
+    ///
     /// Default: false
     pub fn paranoid_file_checks(self, val: bool) -> Self {
         unsafe {
@@ -1074,6 +1114,7 @@ impl ColumnFamilyOptions {
     /// In debug mode, RocksDB run consistency checks on the LSM everytime the LSM
     /// change (Flush, Compaction, AddFile). These checks are disabled in release
     /// mode, use this option to enable them in release mode as well.
+    ///
     /// Default: false
     pub fn force_consistency_checks(self, val: bool) -> Self {
         unsafe {
@@ -1083,6 +1124,7 @@ impl ColumnFamilyOptions {
     }
 
     /// Measure IO stats in compactions and flushes, if true.
+    ///
     /// Default: false
     pub fn report_bg_io_stats(self, val: bool) -> Self {
         unsafe {
@@ -1113,6 +1155,7 @@ impl Drop for ColumnFamilyOptions {
 
 /// Specify the file access pattern once a compaction is started.
 /// It will be applied to all input files of a compaction.
+///
 /// Default: NORMAL
 #[repr(C)]
 pub enum AccessHint {
@@ -1150,6 +1193,7 @@ impl DBOptions {
     }
 
     /// If true, the database will be created if it is missing.
+    ///
     /// Default: false
     pub fn create_if_missing(self, val: bool) -> Self {
         unsafe {
@@ -1159,6 +1203,7 @@ impl DBOptions {
     }
 
     /// If true, missing column families will be automatically created.
+    ///
     /// Default: false
     pub fn create_missing_column_families(self, val: bool) -> Self {
         unsafe {
@@ -1168,6 +1213,7 @@ impl DBOptions {
     }
 
     /// If true, an error is raised if the database already exists.
+    ///
     /// Default: false
     pub fn error_if_exists(self, val: bool) -> Self {
         unsafe {
@@ -1180,7 +1226,9 @@ impl DBOptions {
     /// Also, if any of the  writes to the database fails (Put, Delete, Merge,
     /// Write), the database will switch to read-only mode and fail all other
     /// Write operations.
+    ///
     /// In most cases you want this to be set to true.
+    ///
     /// Default: true
     pub fn paranoid_checks(self, val: bool) -> Self {
         unsafe {
@@ -1191,6 +1239,7 @@ impl DBOptions {
 
     /// Use the specified object to interact with the environment,
     /// e.g. to read/write files, schedule background work, etc.
+    ///
     /// Default: Env::Default()
     // env: Env,
     pub fn env(self, e: ()) -> Self {
@@ -1200,6 +1249,7 @@ impl DBOptions {
     /// Use to control write rate of flush and compaction. Flush has higher
     /// priority than compaction. Rate limiting is disabled if nullptr.
     /// If rate limiter is enabled, bytes_per_sync is set to 1MB by default.
+    ///
     /// Default: nullptr
     pub fn rate_limiter(self, val: Option<RateLimiter>) -> Self {
         unsafe {
@@ -1218,13 +1268,16 @@ impl DBOptions {
     /// Use to track SST files and control their file deletion rate.
     ///
     /// Features:
+    ///
     ///  - Throttle the deletion rate of the SST files.
     ///  - Keep track the total size of all SST files.
     ///  - Set a maximum allowed space limit for SST files that when reached
     ///    the DB wont do any further flushes or compactions and will set the
     ///    background error.
     ///  - Can be shared between multiple dbs.
+    ///
     /// Limitations:
+    ///
     ///  - Only track and throttle deletes of SST files in
     ///    first db_path (db_name if db_paths is empty).
     ///
@@ -1240,6 +1293,7 @@ impl DBOptions {
     /// Any internal progress/error information generated by the db will
     /// be written to info_log if it is non-nullptr, or to a file stored
     /// in the same directory as the DB contents if info_log is nullptr.
+    ///
     /// Default: nullptr
     pub fn info_log(self, val: Option<Logger>) -> Self {
         unsafe {
@@ -1264,6 +1318,7 @@ impl DBOptions {
     /// files opened are always kept open. You can estimate number of files based
     /// on target_file_size_base and target_file_size_multiplier for level-based
     /// compaction. For universal-style compaction, you can usually set it to -1.
+    ///
     /// Default: -1
     pub fn max_open_files(self, val: i32) -> Self {
         unsafe {
@@ -1274,6 +1329,7 @@ impl DBOptions {
 
     /// If max_open_files is -1, DB will open all files on DB::Open(). You can
     /// use this option to increase the number of threads used to open the files.
+    ///
     /// Default: 16
     pub fn max_file_opening_threads(self, val: i32) -> Self {
         unsafe {
@@ -1287,6 +1343,7 @@ impl DBOptions {
     /// (i.e. the ones that are causing all the space amplification). If set to 0
     /// (default), we will dynamically choose the WAL size limit to be
     /// [sum of all write_buffer_size * max_write_buffer_number] * 4
+    ///
     /// Default: 0
     pub fn max_total_wal_size(self, val: u64) -> Self {
         unsafe {
@@ -1308,7 +1365,9 @@ impl DBOptions {
     /// If false, then every store to stable storage will issue a fdatasync.
     /// This parameter should be set to true while storing data to
     /// filesystem like ext3 that can lose files after a reboot.
+    ///
     /// Default: false
+    ///
     /// Note: on many platforms fdatasync is defined as fsync, so this parameter
     /// would make no difference. Refer to fdatasync definition in this code base.
     pub fn use_fsync(self, val: bool) -> Self {
@@ -1324,7 +1383,8 @@ impl DBOptions {
     ///
     /// For example, you have a flash device with 10GB allocated for the DB,
     /// as well as a hard drive of 2TB, you should config it to be:
-    ///   [{"/flash_path", 10GB}, {"/hard_drive", 2TB}]
+    ///
+    /// > [{"/flash_path", 10GB}, {"/hard_drive", 2TB}]
     ///
     /// The system will try to guarantee data under each path is close to but
     /// not larger than the target size. But current and future file sizes used
@@ -1341,6 +1401,7 @@ impl DBOptions {
     ///
     /// If left empty, only one path will be used, which is db_name passed when
     /// opening the DB.
+    ///
     /// Default: empty
     pub fn db_paths<P: Into<DbPath>>(self, val: Vec<P>) -> Self {
         let num_paths = val.len();
@@ -1369,6 +1430,7 @@ impl DBOptions {
     }
 
     /// This specifies the info LOG dir.
+    ///
     /// If it is empty, the log files will be in the same dir as data.
     /// If it is non empty, the log files will be in the specified dir,
     /// and the db data dir's absolute path will be used as the log file
@@ -1382,8 +1444,10 @@ impl DBOptions {
     }
 
     /// This specifies the absolute dir path for write-ahead logs (WAL).
+    ///
     /// If it is empty, the log files will be in the same dir as data,
     ///   dbname is used as the data dir by default
+    ///
     /// If it is non empty, the log files will be in kept the specified dir.
     /// When destroying the db,
     ///   all log files in wal_dir and the dir itself is deleted
@@ -1419,6 +1483,7 @@ impl DBOptions {
 
     /// Maximum number of concurrent background compaction jobs, submitted to
     /// the default LOW priority thread pool.
+    ///
     /// We first try to schedule compactions based on
     /// `base_background_compactions`. If the compaction cannot catch up , we
     /// will increase number of compaction threads up to
@@ -1427,6 +1492,7 @@ impl DBOptions {
     /// If you're increasing this, also consider increasing number of threads in
     /// LOW priority thread pool. For more information, see
     /// Env::SetBackgroundThreads
+    ///
     /// Default: 1
     pub fn max_background_compactions(self, val: i32) -> Self {
         unsafe {
@@ -1438,6 +1504,7 @@ impl DBOptions {
     /// This value represents the maximum number of threads that will
     /// concurrently perform a compaction job by breaking it into multiple,
     /// smaller ones that are run simultaneously.
+    ///
     /// Default: 1 (i.e. no subcompactions)
     pub fn max_subcompactions(self, val: u32) -> Self {
         unsafe {
@@ -1460,6 +1527,7 @@ impl DBOptions {
     /// If you're increasing this, also consider increasing number of threads in
     /// HIGH priority thread pool. For more information, see
     /// Env::SetBackgroundThreads
+    ///
     /// Default: 1
     pub fn max_background_flushes(self, val: i32) -> Self {
         unsafe {
@@ -1471,6 +1539,7 @@ impl DBOptions {
     /// Specify the maximal size of the info log file. If the log file
     /// is larger than `max_log_file_size`, a new info log file will
     /// be created.
+    ///
     /// If max_log_file_size == 0, all logs will be written to one
     /// log file.
     pub fn max_log_file_size(self, val: usize) -> Self {
@@ -1483,7 +1552,9 @@ impl DBOptions {
     /// Time for the info log file to roll (in seconds).
     /// If specified with non-zero value, log file will be rolled
     /// if it has been active longer than `log_file_time_to_roll`.
+    ///
     /// Default: 0 (disabled)
+    ///
     /// Not supported in ROCKSDB_LITE mode!
     pub fn log_file_time_to_roll(self, val: usize) -> Self {
         unsafe {
@@ -1493,6 +1564,7 @@ impl DBOptions {
     }
 
     /// Maximal info log files to be kept.
+    ///
     /// Default: 1000
     pub fn keep_log_file_num(self, val: usize) -> Self {
         unsafe {
@@ -1502,12 +1574,14 @@ impl DBOptions {
     }
 
     /// Recycle log files.
+    ///
     /// If non-zero, we will reuse previously written log files for new
     /// logs, overwriting the old data.  The value indicates how many
     /// such files we will keep around at any point in time for later
     /// use.  This is more efficient because the blocks are already
     /// allocated and fdatasync does not need to update the inode after
     /// each write.
+    ///
     /// Default: 0
     pub fn recycle_log_file_num(self, val: usize) -> Self {
         unsafe {
@@ -1517,7 +1591,9 @@ impl DBOptions {
     }
 
     /// manifest file is rolled over on reaching this limit.
+    ///
     /// The older manifest file be deleted.
+    ///
     /// The default value is MAX_INT so that roll-over does not take place.
     pub fn max_manifest_file_size(self, val: u64) -> Self {
         unsafe {
@@ -1535,6 +1611,7 @@ impl DBOptions {
     }
 
     /// The following two fields affect how archived logs will be deleted.
+    ///
     /// 1. If both set to 0, logs will be deleted asap and will not get into
     ///    the archive.
     /// 2. If WAL_ttl_seconds is 0 and WAL_size_limit_MB is not 0,
@@ -1579,7 +1656,9 @@ impl DBOptions {
     }
 
     /// Allow the OS to mmap file for writing.
+    ///
     /// DB::SyncWAL() only works if this is set to false.
+    ///
     /// Default: false
     pub fn allow_mmap_writes(self, val: bool) -> Self {
         unsafe {
@@ -1597,7 +1676,9 @@ impl DBOptions {
     /// be used. Memory mapped files are not impacted by these parameters.
 
     /// Use O_DIRECT for user reads
+    ///
     /// Default: false
+    ///
     /// Not supported in ROCKSDB_LITE mode!
     pub fn use_direct_reads(self, val: bool) -> Self {
         unsafe {
@@ -1626,7 +1707,9 @@ impl DBOptions {
         self
     }
 
-    /// Disable child process inherit open files. Default: true
+    /// Disable child process inherit open files.
+    ///
+    /// Default: true
     pub fn is_fd_close_on_exec(self, val: bool) -> Self {
         unsafe {
             ll::rocks_dboptions_set_is_fd_close_on_exec(self.raw, val as u8);
@@ -1635,6 +1718,7 @@ impl DBOptions {
     }
 
     /// if not zero, dump rocksdb.stats to LOG every stats_dump_period_sec
+    ///
     /// Default: 600 (10 min)
     pub fn stats_dump_period_sec(self, val: u32) -> Self {
         unsafe {
@@ -1645,6 +1729,7 @@ impl DBOptions {
 
     /// If set true, will hint the underlying file system that the file
     /// access pattern is random, when a sst file is opened.
+    ///
     /// Default: true
     pub fn advise_random_on_open(self, val: bool) -> Self {
         unsafe {
@@ -1694,6 +1779,7 @@ impl DBOptions {
 
     /// Specify the file access pattern once a compaction is started.
     /// It will be applied to all input files of a compaction.
+    ///
     /// Default: NORMAL
     pub fn access_hint_on_compaction_start(self, val: AccessHint) -> Self {
         unsafe {
@@ -1774,6 +1860,7 @@ impl DBOptions {
     /// to kernel. This could reduce context switch when the mutex is not
     /// heavily contended. However, if the mutex is hot, we could end up
     /// wasting spin time.
+    ///
     /// Default: false
     pub fn use_adaptive_mutex(self, val: bool) -> Self {
         unsafe {
@@ -1802,6 +1889,7 @@ impl DBOptions {
     }
 
     /// Same as bytes_per_sync, but applies to WAL files
+    ///
     /// Default: 0, turned off
     pub fn wal_bytes_per_sync(self, val: u64) -> Self {
         unsafe {
@@ -1837,6 +1925,7 @@ impl DBOptions {
     /// calculated using size of user write requests before compression.
     /// RocksDB may decide to slow down more if the compaction still
     /// gets behind further.
+    ///
     /// Unit: byte per second.
     ///
     /// Default: 16MB/s
@@ -1918,6 +2007,7 @@ impl DBOptions {
     }
 
     /// Recovery mode to control the consistency while replaying WAL
+    ///
     /// Default: kPointInTimeRecovery
     pub fn wal_recovery_mode(self, val: WALRecoveryMode) -> Self {
         unsafe {
@@ -1936,7 +2026,9 @@ impl DBOptions {
     }
 
     /// A global cache for table-level rows.
+    ///
     /// Default: nullptr (disabled)
+    ///
     /// Not supported in ROCKSDB_LITE mode!
     pub fn row_cache(self, val: Option<Cache>) -> Self {
         unsafe {
@@ -1971,6 +2063,7 @@ impl DBOptions {
 
     /// If true, then print malloc stats together with rocksdb.stats
     /// when printing to LOG.
+    ///
     /// DEFAULT: false
     pub fn dump_malloc_stats(self, val: bool) -> Self {
         unsafe {
@@ -2158,6 +2251,7 @@ impl ReadOptions {
 
     /// If true, all data read from underlying storage will be
     /// verified against corresponding checksums.
+    ///
     /// Default: true
     pub fn verify_checksums(self, val: bool) -> Self {
         unsafe {
@@ -2168,7 +2262,9 @@ impl ReadOptions {
 
     /// Should the "data block"/"index block"/"filter block" read for this
     /// iteration be cached in memory?
+    ///
     /// Callers may wish to set this field to false for bulk scans.
+    ///
     /// Default: true
     pub fn fill_cache(self, val: bool) -> Self {
         unsafe {
@@ -2181,6 +2277,7 @@ impl ReadOptions {
     /// (which must belong to the DB that is being read and which must
     /// not have been released).  If "snapshot" is nullptr, use an implicit
     /// snapshot of the state at the beginning of this read operation.
+    ///
     /// Default: nullptr
     // FIXME: lifetime, val should be longer than self
     pub fn snapshot(self, val: Option<&Snapshot>) -> Self {
@@ -2212,6 +2309,7 @@ impl ReadOptions {
     /// Specify if this read request should process data that ALREADY
     /// resides on a particular cache. If the required data is not
     /// found at the specified cache, then Status::Incomplete is returned.
+    ///
     /// Default: kReadAllTier
     pub fn read_tier(self, val: ReadTier) -> Self {
         unsafe {
@@ -2224,7 +2322,9 @@ impl ReadOptions {
     /// view of the complete database (i.e. it can also be used to read newly
     /// added data) and is optimized for sequential reads. It will return records
     /// that were inserted into the database after the creation of the iterator.
+    ///
     /// Default: false
+    ///
     /// Not supported in ROCKSDB_LITE mode!
     pub fn tailing(self, val: bool) -> Self {
         unsafe {
@@ -2236,7 +2336,9 @@ impl ReadOptions {
     /// Specify to create a managed iterator -- a special iterator that
     /// uses less resources by having the ability to free its underlying
     /// resources on request.
+    ///
     /// Default: false
+    ///
     /// Not supported in ROCKSDB_LITE mode!
     pub fn managed(self, val: bool) -> Self {
         unsafe {
@@ -2248,6 +2350,7 @@ impl ReadOptions {
     /// Enable a total order seek regardless of index format (e.g. hash index)
     /// used in the table. Some table format (e.g. plain table) may not support
     /// this option.
+    ///
     /// If true when calling Get(), we also skip prefix bloom when reading from
     /// block based table. It provides a way to read existing data after
     /// changing implementation of prefix extractor.
@@ -2263,6 +2366,7 @@ impl ReadOptions {
     /// non-null for the column family and total_order_seek is false.  Unlike
     /// iterate_upper_bound, prefix_same_as_start only works within a prefix
     /// but in both directions.
+    ///
     /// Default: false
     pub fn prefix_same_as_start(self, val: bool) -> Self {
         unsafe {
@@ -2276,6 +2380,7 @@ impl ReadOptions {
     /// BlockBasedTableOptions::use_delta_encoding = false,
     /// Iterator's property "rocksdb.iterator.is-key-pinned" is guaranteed to
     /// return 1.
+    ///
     /// Default: false
     pub fn pin_data(self, val: bool) -> Self {
         unsafe {
@@ -2287,6 +2392,7 @@ impl ReadOptions {
     /// If true, when PurgeObsoleteFile is called in CleanupIteratorState, we
     /// schedule a background job in the flush job queue and delete obsolete files
     /// in background.
+    ///
     /// Default: false
     pub fn background_purge_on_iterator_cleanup(self, val: bool) -> Self {
         unsafe {
@@ -2298,6 +2404,7 @@ impl ReadOptions {
     /// If non-zero, NewIterator will create a new table reader which
     /// performs reads of the given size. Using a large size (> 2MB) can
     /// improve the performance of forward iteration on spinning disks.
+    ///
     /// Default: 0
     pub fn readahead_size(self, val: usize) -> Self {
         unsafe {
@@ -2309,6 +2416,7 @@ impl ReadOptions {
     /// If true, keys deleted using the DeleteRange() API will be visible to
     /// readers until they are naturally deleted during compaction. This improves
     /// read performance in DBs with many range deletions.
+    ///
     /// Default: false
     pub fn ignore_range_deletions(self, val: bool) -> Self {
         unsafe {
@@ -2404,6 +2512,7 @@ impl WriteOptions {
     /// If true and if user is trying to write to column families that don't exist
     /// (they were dropped),  ignore the write (don't return an error). If there
     /// are multiple writes in a WriteBatch, other writes will succeed.
+    ///
     /// Default: false
     pub fn ignore_missing_column_families(self, val: bool) -> Self {
         unsafe {
@@ -2466,9 +2575,11 @@ impl FlushOptions {
 #[repr(C)]
 pub struct CompactionOptions {
     /// Compaction output compression type
+    ///
     /// Default: snappy
     pub compression: CompressionType,
     /// Compaction will create files of size `output_file_size_limit`.
+    ///
     /// Default: MAX, which means that compaction will create a single file
     pub output_file_size_limit: u64,
 }
