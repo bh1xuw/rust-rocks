@@ -4,7 +4,7 @@ version = "0.0.1"
 authors = ["BH1XUW <bh1xuw@gmail.com>"]
 description = "RocksDB bindings for Rust."
 repository = "https://github.com/bh1xuw/rust-rocks"
-keywords = ["ffi", "rocksdb", "facebook", "database"]
+keywords = ["ffi", "RocksDB", "facebook", "database"]
 categories = ["external-ffi-bindings", "database"]
 license = "Apache-2.0"
 

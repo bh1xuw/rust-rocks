@@ -1,3 +1,4 @@
+//! The RocksDB prelude entry.
 
 use rocks_sys as ll;
 

@@ -1,5 +1,6 @@
-//! A Cache is an interface that maps keys to values.  It has internal
-//! synchronization and may be safely accessed concurrently from
+//! A Cache is an interface that maps keys to values.
+//!
+//! It has internal synchronization and may be safely accessed concurrently from
 //! multiple threads.  It may automatically evict entries to make room
 //! for new entries.  Values have a specified charge against the cache
 //! capacity.  For example, a cache where the values are variable

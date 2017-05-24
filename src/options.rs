@@ -1,3 +1,4 @@
+//! Common options for DB, CF, read/write/flush/compact...
 
 use std::u64;
 use std::path::{Path, PathBuf};

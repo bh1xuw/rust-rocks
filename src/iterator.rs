@@ -1,12 +1,8 @@
-/// An iterator yields a sequence of key/value pairs from a source.
-/// The following class defines the interface.  Multiple implementations
-/// are provided by this library.  In particular, iterators are provided
-/// to access the contents of a Table or a DB.
-///
-/// Multiple threads can invoke const methods on an Iterator without
-/// external synchronization, but if any of the threads may call a
-/// non-const method, all threads accessing the same Iterator must use
-/// external synchronization.
+//! An iterator yields a sequence of key/value pairs from a source.
+
+// The following class defines the interface.  Multiple implementations
+// are provided by this library.  In particular, iterators are provided
+// to access the contents of a Table or a DB.
 
 use std::mem;
 use std::slice;
@@ -18,6 +14,12 @@ use rocks_sys as ll;
 
 use status::Status;
 
+/// An iterator yields a sequence of key/value pairs from a source.
+///
+/// Multiple threads can invoke const methods on an Iterator without
+/// external synchronization, but if any of the threads may call a
+/// non-const method, all threads accessing the same Iterator must use
+/// external synchronization.
 pub struct Iterator {
     raw: *mut ll::rocks_iterator_t,
 }
@@ -92,7 +94,8 @@ impl Iterator {
 
     /// Moves to the next entry in the source.  After this call, Valid() is
     /// true iff the iterator was not positioned at the last entry in the source.
-    /// REQUIRES: Valid()
+    /// 
+    /// REQUIRES: `Valid()`
     pub fn next(&mut self) {
         unsafe {
             ll::rocks_iter_next(self.raw);
@@ -101,7 +104,8 @@ impl Iterator {
 
     /// Moves to the previous entry in the source.  After this call, Valid() is
     /// true iff the iterator was not positioned at the first entry in source.
-    /// REQUIRES: Valid()
+    /// 
+    /// REQUIRES: `Valid()`
     pub fn prev(&mut self) {
         unsafe {
             ll::rocks_iter_prev(self.raw);
@@ -111,7 +115,8 @@ impl Iterator {
     /// Return the key for the current entry.  The underlying storage for
     /// the returned slice is valid only until the next modification of
     /// the iterator.
-    /// REQUIRES: Valid()
+    /// 
+    /// REQUIRES: `Valid()`
     pub fn key(&self) -> &[u8] {
         unsafe {
             let mut len = 0;
@@ -123,7 +128,8 @@ impl Iterator {
     /// Return the value for the current entry.  The underlying storage for
     /// the returned slice is valid only until the next modification of
     /// the iterator.
-    /// REQUIRES: !AtEnd() && !AtStart()
+    /// 
+    /// REQUIRES: `!AtEnd() && !AtStart()`
     pub fn value(&self) -> &[u8] {
         unsafe {
             let mut len = 0;
@@ -134,7 +140,7 @@ impl Iterator {
 
     /// If an error has occurred, return it.  Else return an ok status.
     /// If non-blocking IO is requested and this operation cannot be
-    /// satisfied without doing some IO, then this returns Status::Incomplete().
+    /// satisfied without doing some IO, then this returns `Status::Incomplete()`.
     pub fn get_status(&self) -> Status {
         unsafe {
             let mut status = mem::zeroed();
@@ -143,16 +149,19 @@ impl Iterator {
         }
     }
 
-    /// Property "rocksdb.iterator.is-key-pinned":
-    ///   If returning "1", this means that the Slice returned by key() is valid
+    /// Property `"rocksdb.iterator.is-key-pinned"`:
+    /// 
+    /// - If returning "1", this means that the Slice returned by key() is valid
     ///   as long as the iterator is not deleted.
-    ///   It is guaranteed to always return "1" if
-    ///      - Iterator created with ReadOptions::pin_data = true
-    ///      - DB tables were created with
-    ///        BlockBasedTableOptions::use_delta_encoding = false.
+    /// - It is guaranteed to always return "1" if
+    ///   - Iterator created with `ReadOptions::pin_data = true`
+    ///   - DB tables were created with
+    ///     `BlockBasedTableOptions::use_delta_encoding = false`.
+    ///
     /// Property "rocksdb.iterator.super-version-number":
-    ///   LSM version used by the iterator. The same format as DB Property
-    ///   kCurrentSuperVersionNumber. See its comment for more information.
+    /// 
+    /// - LSM version used by the iterator. The same format as DB Property
+    /// - `kCurrentSuperVersionNumber`. See its comment for more information.
     pub fn get_property(&self, prop_name: &str) -> String {
         unimplemented!()
     }

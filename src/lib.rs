@@ -1,3 +1,7 @@
+//! Rust-Rocks
+//!
+//! The RocksDB API in Rustic Style.
+
 #![allow(unused_variables, unused_imports, dead_code)]
 
 extern crate rocks_sys;
@@ -35,6 +39,7 @@ pub mod metadata;
 pub mod rocksdb;
 
 
+#[doc(hidden)]
 pub mod c {
     use std::ptr;
 

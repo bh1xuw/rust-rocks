@@ -1,3 +1,4 @@
+//! Advanced Options
 
 use std::os::raw::{c_char, c_int};
 

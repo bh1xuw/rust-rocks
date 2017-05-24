@@ -1,4 +1,4 @@
-
+//! Analyze the performance of a DB
 
 #[repr(C)]
 pub struct HistogramData {

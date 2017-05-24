@@ -1,3 +1,4 @@
+//! Abstract handle to particular state of a DB.
 
 use std::fmt;
 use std::marker::PhantomData;
@@ -10,8 +11,9 @@ use types::SequenceNumber;
 /// A Snapshot is an immutable object and can therefore be safely
 /// accessed from multiple threads without any external synchronization.
 ///
-/// To Create a Snapshot, call DB::GetSnapshot().
-/// To Destroy a Snapshot, call DB::ReleaseSnapshot(snapshot).
+/// To Create a Snapshot, call `DB::GetSnapshot()`.
+///
+/// To Destroy a Snapshot, call `DB::ReleaseSnapshot(snapshot)`.
 pub struct Snapshot<'a> {
     raw: *mut ll::rocks_snapshot_t,
     _marker: PhantomData<&'a ()>,

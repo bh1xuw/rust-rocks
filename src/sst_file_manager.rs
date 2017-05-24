@@ -1,3 +1,5 @@
+//! SstFileManager is used to track SST files in the DB and control there
+//! deletion rate.
 
 use std::path::Path;
 

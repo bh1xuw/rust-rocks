@@ -1,5 +1,7 @@
 //! Class for specifying user-defined functions which perform a
-//! transformation on a slice.  It is not required that every slice
+//! transformation on a slice.
+//!
+//! It is not required that every slice
 //! belong to the domain and/or range of a function.  Subclasses should
 //! define InDomain and InRange to determine which slices are in either
 //! of these sets respectively.

@@ -1,3 +1,5 @@
+//! A DB is a persistent ordered map from keys to values.
+
 use std::mem;
 use std::ffi::{CStr, CString};
 use std::os::raw::{c_int, c_char, c_void};
@@ -160,7 +162,7 @@ impl<'a, 'b: 'a> ColumnFamilyHandle<'a, 'b> {
      */
 }
 
-pub struct DBContext<'a> {
+struct DBContext<'a> {
     raw: *mut ll::rocks_db_t,
     _marker: PhantomData<&'a ()>,
 }
@@ -175,8 +177,9 @@ impl<'a> Drop for DBContext<'a> {
 }
 
 
-/// A DB is a persistent ordered map from keys to values.
-/// A DB is safe for concurrent access from multiple threads without
+/// A `DB` is a persistent ordered map from keys to values.
+///
+/// A `DB` is safe for concurrent access from multiple threads without
 /// any external synchronization.
 pub struct DB<'a> {
     context: Rc<DBContext<'a>>,
@@ -188,6 +191,7 @@ impl<'a> fmt::Debug for DB<'a> {
     }
 }
 
+unsafe impl<'a> Sync for DB<'a> {}
 
 impl<'a> DB<'a> {
     pub unsafe fn from_ll<'b>(raw: *mut ll::rocks_db_t) -> DB<'b> {
@@ -202,9 +206,11 @@ impl<'a> DB<'a> {
         self.context.raw
     }
 
-    /// Open the database with the specified "name".
+    /// Open the database with the specified `name`.
+    ///
     /// Stores a pointer to a heap-allocated database in *dbptr and returns
     /// OK on success.
+    ///
     /// Stores nullptr in *dbptr and returns a non-OK status on error.
     /// Caller should delete *dbptr when it is no longer needed.
     pub fn open<'b, T: AsRef<Options>, P: AsRef<Path>>(options: T,
@@ -227,21 +233,26 @@ impl<'a> DB<'a> {
     }
 
     /// Open DB with column families.
-    /// db_options specify database specific options
-    /// column_families is the vector of all column families in the database,
+    ///
+    /// `db_options` specify database specific options
+    ///
+    /// `column_families` is the vector of all column families in the database,
     /// containing column family name and options. You need to open ALL column
     /// families in the database. To get the list of column families, you can use
     /// ListColumnFamilies(). Also, you can open only a subset of column families
     /// for read-only access.
-    /// The default column family name is 'default' and it's stored
-    /// in rocksdb::kDefaultColumnFamilyName.
+    ///
+    /// The default column family name is `'default'` and it's stored
+    /// in `rocksdb::kDefaultColumnFamilyName`.
+    ///
     /// If everything is OK, handles will on return be the same size
-    /// as column_families --- handles[i] will be a handle that you
-    /// will use to operate on column family column_family[i].
+    /// as `column_families` --- `handles[i]` will be a handle that you
+    /// will use to operate on column family `column_family[i]`.
+    ///
     /// Before delete DB, you have to close All column families by calling
-    /// DestroyColumnFamilyHandle() with all the handles.
+    /// `DestroyColumnFamilyHandle()` with all the handles.
     pub fn open_with_column_families<'b, 'c: 'b, CF: Into<ColumnFamilyDescriptor>>
-        (options: &Options,
+        (options: &Options,     // FIXME: this should be DBOptions
          name: &str,
          column_families: Vec<CF>)
          -> Result<(DB<'b>, Vec<ColumnFamilyHandle<'c, 'b>>), Status> {
@@ -301,12 +312,12 @@ impl<'a> DB<'a> {
     }
 
     /// Open the database for read only. All DB interfaces
-    /// that modify data, like put/delete, will return error.
+    /// that modify data, like `put/delete`, will return error.
     /// If the db is opened in read only mode, then no compactions
     /// will happen.
     ///
     /// Not supported in ROCKSDB_LITE, in which case the function will
-    /// return Status::NotSupported.
+    /// return `Status::NotSupported`.
     pub fn open_for_readonly<'b>(options: &Options,
                                  name: &str,
                                  error_if_log_file_exist: bool)
@@ -327,9 +338,9 @@ impl<'a> DB<'a> {
     }
 
 
-    /// ListColumnFamilies will open the DB specified by argument name
+    /// `ListColumnFamilies` will open the DB specified by argument name
     /// and return the list of all column families in that DB
-    /// through column_families argument. The ordering of
+    /// through `column_families` argument. The ordering of
     /// column families in column_families is unspecified.
     pub fn list_column_families(options: &Options, name: &str) -> Result<Vec<String>, Status> {
         unsafe {
@@ -387,10 +398,6 @@ impl<'a> DB<'a> {
         }
     }
 
-    // Set the database entry for "key" to "value".
-    // If "key" already exists, it will be overwritten.
-    // Returns OK on success, and a non-OK status on error.
-    // Note: consider setting options.sync = true.
     pub fn put_cf(&self,
                   options: &WriteOptions,
                   column_family: &ColumnFamilyHandle,
@@ -416,6 +423,11 @@ impl<'a> DB<'a> {
         }
     }
 
+    /// Set the database entry for `"key"` to `"value"`.
+    /// If `"key"` already exists, it will be overwritten.
+    /// Returns OK on success, and a non-OK status on error.
+    ///
+    /// Note: consider setting `options.sync = true`.
     pub fn put(&self, options: &WriteOptions, key: &[u8], value: &[u8]) -> Result<(), Status> {
         unsafe {
             let mut status = mem::zeroed::<ll::rocks_status_t>();
@@ -456,7 +468,8 @@ impl<'a> DB<'a> {
     /// Remove the database entry (if any) for "key".  Returns OK on
     /// success, and a non-OK status on error.  It is not an error if "key"
     /// did not exist in the database.
-    /// Note: consider setting options.sync = true.
+    ///
+    /// Note: consider setting `options.sync = true`.
     pub fn delete<W: AsRef<WriteOptions>>(&self, options: W, key: &[u8]) -> Result<(), Status> {
         unsafe {
             let mut status = mem::zeroed();
@@ -509,7 +522,7 @@ impl<'a> DB<'a> {
     /// written using Merge().  Mixing SingleDelete operations with Deletes and
     /// Merges can result in undefined behavior.
     ///
-    /// Note: consider setting options.sync = true.
+    /// Note: consider setting `options.sync = true`.
     pub fn single_delete<W: AsRef<WriteOptions>>(&self,
                                                  options: W,
                                                  key: &[u8])
@@ -563,7 +576,7 @@ impl<'a> DB<'a> {
     /// deleted ranges, and affects database operations involving scans, like flush
     /// and compaction.
     ///
-    /// Consider setting ReadOptions::ignore_range_deletions = true to speed
+    /// Consider setting `ReadOptions::ignore_range_deletions = true` to speed
     /// up reads for key(s) that are known to be unaffected by range deletions.
     pub fn delete_range_cf<W: AsRef<WriteOptions>>(&self,
                                                    options: W,
@@ -592,7 +605,8 @@ impl<'a> DB<'a> {
     /// Merge the database entry for "key" with "value".  Returns OK on success,
     /// and a non-OK status on error. The semantics of this operation is
     /// determined by the user provided merge_operator when opening DB.
-    /// Note: consider setting options.sync = true.
+    ///
+    /// Note: consider setting `options.sync = true`.
     pub fn merge<W: AsRef<WriteOptions>>(&self,
                                          options: W,
                                          key: &[u8],
@@ -639,7 +653,14 @@ impl<'a> DB<'a> {
         }
     }
 
-
+    /// Apply the specified updates to the database.
+    ///
+    /// If `updates` contains no update, WAL will still be synced if
+    /// `options.sync=true`.
+    ///
+    /// Returns OK on success, non-OK on failure.
+    ///
+    /// Note: consider setting `options.sync = true`.
     pub fn write<W: AsRef<WriteOptions>>(&self,
                                          options: W,
                                          updates: WriteBatch)
@@ -658,13 +679,13 @@ impl<'a> DB<'a> {
         }
     }
 
-    // If the database contains an entry for "key" store the
-    // corresponding value in *value and return OK.
-    //
-    // If there is no entry for "key" leave *value unchanged and return
-    // a status for which Status::IsNotFound() returns true.
-    //
-    // May return some other Status on an error.
+    /// If the database contains an entry for "key" store the
+    /// corresponding value in *value and return OK.
+    ///
+    /// If there is no entry for "key" leave *value unchanged and return
+    /// a status for which Status::IsNotFound() returns true.
+    ///
+    /// May return some other Status on an error.
     pub fn get<R: AsRef<ReadOptions>>(&self, options: R, key: &[u8]) -> Result<CVec<u8>, Status> {
         unsafe {
             let mut status = mem::zeroed::<ll::rocks_status_t>();
@@ -717,6 +738,7 @@ impl<'a> DB<'a> {
     ///
     /// (*values) will always be resized to be the same size as (keys).
     /// Similarly, the number of returned statuses will be the number of keys.
+    ///
     /// Note: keys will not be "de-duplicated". Duplicate keys will return
     /// duplicate values in order.
     pub fn multi_get(&self,
@@ -807,8 +829,10 @@ impl<'a> DB<'a> {
     /// returns false, else true. If the caller wants to obtain value when the key
     /// is found in memory, a bool for 'value_found' must be passed. 'value_found'
     /// will be true on return if value has been set properly.
+    ///
     /// This check is potentially lighter-weight than invoking DB::Get(). One way
     /// to make this lighter weight is to avoid doing any IOs.
+    ///
     /// Default implementation here returns true and sets 'value_found' to false
     pub fn key_may_exist(&self, options: &ReadOptions, key: &[u8]) -> bool {
         unsafe {
@@ -966,36 +990,37 @@ impl<'a> DB<'a> {
         unimplemented!()
     }
 
-    /// Similar to GetProperty(), but only works for a subset of properties whose
+    /// Similar to `GetProperty()`, but only works for a subset of properties whose
     /// return value is an integer. Return the value by integer. Supported
     /// properties:
-    ///  "rocksdb.num-immutable-mem-table"
-    ///  "rocksdb.mem-table-flush-pending"
-    ///  "rocksdb.compaction-pending"
-    ///  "rocksdb.background-errors"
-    ///  "rocksdb.cur-size-active-mem-table"
-    ///  "rocksdb.cur-size-all-mem-tables"
-    ///  "rocksdb.size-all-mem-tables"
-    ///  "rocksdb.num-entries-active-mem-table"
-    ///  "rocksdb.num-entries-imm-mem-tables"
-    ///  "rocksdb.num-deletes-active-mem-table"
-    ///  "rocksdb.num-deletes-imm-mem-tables"
-    ///  "rocksdb.estimate-num-keys"
-    ///  "rocksdb.estimate-table-readers-mem"
-    ///  "rocksdb.is-file-deletions-enabled"
-    ///  "rocksdb.num-snapshots"
-    ///  "rocksdb.oldest-snapshot-time"
-    ///  "rocksdb.num-live-versions"
-    ///  "rocksdb.current-super-version-number"
-    ///  "rocksdb.estimate-live-data-size"
-    ///  "rocksdb.min-log-number-to-keep"
-    ///  "rocksdb.total-sst-files-size"
-    ///  "rocksdb.base-level"
-    ///  "rocksdb.estimate-pending-compaction-bytes"
-    ///  "rocksdb.num-running-compactions"
-    ///  "rocksdb.num-running-flushes"
-    ///  "rocksdb.actual-delayed-write-rate"
-    ///  "rocksdb.is-write-stopped"
+    ///
+    /// + `"rocksdb.num-immutable-mem-table"`
+    /// + `"rocksdb.mem-table-flush-pending"`
+    /// + `"rocksdb.compaction-pending"`
+    /// + `"rocksdb.background-errors"`
+    /// + `"rocksdb.cur-size-active-mem-table"`
+    /// + `"rocksdb.cur-size-all-mem-tables"`
+    /// + `"rocksdb.size-all-mem-tables"`
+    /// + `"rocksdb.num-entries-active-mem-table"`
+    /// + `"rocksdb.num-entries-imm-mem-tables"`
+    /// + `"rocksdb.num-deletes-active-mem-table"`
+    /// + `"rocksdb.num-deletes-imm-mem-tables"`
+    /// + `"rocksdb.estimate-num-keys"`
+    /// + `"rocksdb.estimate-table-readers-mem"`
+    /// + `"rocksdb.is-file-deletions-enabled"`
+    /// + `"rocksdb.num-snapshots"`
+    /// + `"rocksdb.oldest-snapshot-time"`
+    /// + `"rocksdb.num-live-versions"`
+    /// + `"rocksdb.current-super-version-number"`
+    /// + `"rocksdb.estimate-live-data-size"`
+    /// + `"rocksdb.min-log-number-to-keep"`
+    /// + `"rocksdb.total-sst-files-size"`
+    /// + `"rocksdb.base-level"`
+    /// + `"rocksdb.estimate-pending-compaction-bytes"`
+    /// + `"rocksdb.num-running-compactions"`
+    /// + `"rocksdb.num-running-flushes"`
+    /// + `"rocksdb.actual-delayed-write-rate"`
+    /// + `"rocksdb.is-write-stopped"`
     pub fn get_int_property(&self, property: &str) -> Option<u64> {
         unsafe {
             let mut val = 0;
@@ -1048,17 +1073,19 @@ impl<'a> DB<'a> {
     }
 
 
-    /// Compact the underlying storage for the key range [*begin,*end].
-    /// The actual compaction interval might be superset of [*begin, *end].
+    /// Compact the underlying storage for the key range `[*begin,*end]`.
+    /// The actual compaction interval might be superset of `[*begin, *end]`.
     /// In particular, deleted and overwritten versions are discarded,
     /// and the data is rearranged to reduce the cost of operations
     /// needed to access the data.  This operation should typically only
     /// be invoked by users who understand the underlying implementation.
     ///
-    /// begin==nullptr is treated as a key before all keys in the database.
-    /// end==nullptr is treated as a key after all keys in the database.
+    /// `begin==nullptr` is treated as a key before all keys in the database.
+    /// `end==nullptr` is treated as a key after all keys in the database.
     /// Therefore the following call will compact the entire database:
-    ///    db->CompactRange(options, nullptr, nullptr);
+    ///
+    /// > `db->CompactRange(options, nullptr, nullptr);`
+    ///
     /// Note that after the entire database is compacted, all data are pushed
     /// down to the last level containing any data. If the total data size after
     /// compaction is reduced, that level might not be appropriate for hosting all
@@ -1126,7 +1153,6 @@ impl<'a> DB<'a> {
     /// NOTE: Setting disable_auto_compactions to 'false' through SetOptions() API
     /// does NOT schedule a flush/compaction afterwards, and only changes the
     /// parameter itself within the column family option.
-    ///
     pub fn enable_auto_compaction(&self,
                                   column_family_handles: &[&ColumnFamilyHandle])
                                   -> Result<(), Status> {
@@ -1169,7 +1195,7 @@ impl<'a> DB<'a> {
     }
 
     /// Get DB name -- the exact same name that was provided as an argument to
-    /// DB::Open()
+    /// `DB::Open()`
     pub fn get_name(&self) -> &str {
         unsafe {
             let mut len = 0;
@@ -1198,6 +1224,7 @@ impl<'a> DB<'a> {
     /// Sync the wal. Note that Write() followed by SyncWAL() is not exactly the
     /// same as Write() with sync=true: in the latter case the changes won't be
     /// visible until the sync is done.
+    ///
     /// Currently only works if allow_mmap_writes = false in Options.
     pub fn sync_wal(&self) -> Result<(), Status> {
         unsafe {
@@ -1226,10 +1253,12 @@ impl<'a> DB<'a> {
     }
 
     /// Allow compactions to delete obsolete files.
-    /// If force == true, the call to EnableFileDeletions() will guarantee that
+    ///
+    /// If `force == true`, the call to EnableFileDeletions() will guarantee that
     /// file deletions are enabled after the call, even if DisableFileDeletions()
     /// was called multiple times before.
-    /// If force == false, EnableFileDeletions will only enable file deletion
+    ///
+    /// If `force == false`, EnableFileDeletions will only enable file deletion
     /// after it's been called at least as many times as DisableFileDeletions(),
     /// enabling the two methods to be called by two threads concurrently without
     /// synchronization -- i.e., file deletions will be enabled only after both
@@ -1247,15 +1276,15 @@ impl<'a> DB<'a> {
     // get_live_files_metadata
     // get_column_family_metadata
 
-    /// IngestExternalFile() will load a list of external SST files (1) into the DB
+    /// `IngestExternalFile()` will load a list of external SST files (1) into the DB
     /// We will try to find the lowest possible level that the file can fit in, and
     /// ingest the file into this level (2). A file that have a key range that
     /// overlap with the memtable key range will require us to Flush the memtable
     /// first before ingesting the file.
     ///
-    /// (1) External SST files can be created using SstFileWriter
-    /// (2) We will try to ingest the files to the lowest possible level
-    ///     even if the file compression dont match the level compression
+    /// - External SST files can be created using SstFileWriter
+    /// - We will try to ingest the files to the lowest possible level
+    ///   even if the file compression dont match the level compression
     pub fn ingest_external_file(&self,
                                 external_files: &[String],
                                 options: &IngestExternalFileOptions)
@@ -1284,7 +1313,7 @@ impl<'a> DB<'a> {
     }
 
     /// Sets the globally unique ID created at database creation time by invoking
-    /// Env::GenerateUniqueId(), in identity. Returns Status::OK if identity could
+    /// `Env::GenerateUniqueId()`, in identity. Returns Status::OK if identity could
     /// be set properly
     pub fn get_db_identity(&self) -> Result<String, Status> {
         unsafe {
@@ -1320,6 +1349,7 @@ impl<'a> DB<'a> {
 // public functions
 
 /// Destroy the contents of the specified database.
+///
 /// Be very careful using this method.
 pub fn destroy_db(name: &str, options: &Options) -> Result<(), Status> {
     unimplemented!()
@@ -1332,24 +1362,24 @@ pub fn destroy_db(name: &str, options: &Options) -> Result<(), Status> {
 /// on a database that contains important information.
 ///
 /// With this API, we will warn and skip data associated with column families not
-/// specified in column_families.
+/// specified in `column_families`.
 ///
-/// @param column_families Descriptors for known column families
+/// `column_families` Descriptors for known column families
 pub fn repair_db(dbname: &str, db_options: &DBOptions,
                  column_families: &[&ColumnFamilyDescriptor]) -> Result<(), Status> {
     unimplemented!()
 }
 
-/// @param unknown_cf_opts Options for column families encountered during the
-///                        repair that were not specified in column_families.
+/// `unknown_cf_opts` Options for column families encountered during the
+/// repair that were not specified in `column_families`.
 pub fn repair_db_with_unknown_cf_opts(dbname: &str, db_options: &DBOptions,
                                       column_families: &[&ColumnFamilyDescriptor],
                                       unknown_cf_opts: &ColumnFamilyOptions) -> Result<(), Status> {
     unimplemented!()
 }
 
-/// @param options These options will be used for the database and for ALL column
-///                families encountered during the repair
+/// `options` These options will be used for the database and for ALL column
+/// families encountered during the repair.
 pub fn repair_db_all_cfs(dbname: &str, options: &Options) -> Result<(), Status> {
     unimplemented!()
 }

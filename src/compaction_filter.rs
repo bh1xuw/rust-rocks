@@ -1,3 +1,5 @@
+//! CompactionFilter allows an application to modify/delete a key-value at
+//! the time of compaction.
 
 use std::os::raw::{c_int, c_char};
 
@@ -181,54 +183,58 @@ pub trait CompactionFilter {
 
 
 // call rust fn in C
-#[no_mangle]
-pub unsafe extern "C" fn rust_compaction_filter_call(f: *mut (),
-                                                     level: c_int,
-                                                     key: &&[u8], // *Slice
-                                                     value_type: ValueType,
-                                                     existing_value: &&[u8], // *Slice
-                                                     new_value: *mut (), // *std::string
-                                                     skip_until: *mut ())
-                                                     -> c_int {
-    assert!(!f.is_null());
-    let filter = f as *mut Box<CompactionFilter>;
-    // must be the same as C part
-    match (*filter).filter(level as u32, key, value_type, existing_value) {
-        Decision::Keep => 0,
-        Decision::Remove => 1,
-        Decision::ChangeValue(nval) => {
-            ll::cxx_string_assign(new_value as *mut _, nval.as_ptr() as *const _, nval.len());
-            2
-        }
-        Decision::RemoveAndSkipUntil(skip) => {
-            ll::cxx_string_assign(skip_until as *mut _, skip.as_ptr() as *const _, skip.len());
-            3
+#[doc(hidden)]
+pub mod c {
+    use super::*;
+
+    #[no_mangle]
+    pub unsafe extern "C" fn rust_compaction_filter_call(f: *mut (),
+                                                         level: c_int,
+                                                         key: &&[u8], // *Slice
+                                                         value_type: ValueType,
+                                                         existing_value: &&[u8], // *Slice
+                                                         new_value: *mut (), // *std::string
+                                                         skip_until: *mut ())
+                                                         -> c_int {
+        assert!(!f.is_null());
+        let filter = f as *mut Box<CompactionFilter>;
+        // must be the same as C part
+        match (*filter).filter(level as u32, key, value_type, existing_value) {
+            Decision::Keep => 0,
+            Decision::Remove => 1,
+            Decision::ChangeValue(nval) => {
+                ll::cxx_string_assign(new_value as *mut _, nval.as_ptr() as *const _, nval.len());
+                2
+            }
+            Decision::RemoveAndSkipUntil(skip) => {
+                ll::cxx_string_assign(skip_until as *mut _, skip.as_ptr() as *const _, skip.len());
+                3
+            }
         }
     }
+
+    #[no_mangle]
+    pub unsafe extern "C" fn rust_compaction_filter_drop(f: *mut ()) {
+        assert!(!f.is_null());
+        let filter = f as *mut Box<CompactionFilter>;
+        Box::from_raw(filter);
+    }
+
+
+    #[no_mangle]
+    pub unsafe extern "C" fn rust_compaction_filter_name(f: *mut ()) -> *const c_char {
+        assert!(!f.is_null());
+        let filter = f as *mut Box<CompactionFilter>;
+        (*filter).name().as_ptr() as *const _
+    }
+
+    #[no_mangle]
+    pub unsafe extern "C" fn rust_compaction_filter_ignore_snapshots(f: *mut ()) -> c_char {
+        assert!(!f.is_null());
+        let filter = f as *mut Box<CompactionFilter>;
+        (*filter).ignore_snapshots() as c_char
+    }
 }
-
-#[no_mangle]
-pub unsafe extern "C" fn rust_compaction_filter_drop(f: *mut ()) {
-    assert!(!f.is_null());
-    let filter = f as *mut Box<CompactionFilter>;
-    Box::from_raw(filter);
-}
-
-
-#[no_mangle]
-pub unsafe extern "C" fn rust_compaction_filter_name(f: *mut ()) -> *const c_char {
-    assert!(!f.is_null());
-    let filter = f as *mut Box<CompactionFilter>;
-    (*filter).name().as_ptr() as *const _
-}
-
-#[no_mangle]
-pub unsafe extern "C" fn rust_compaction_filter_ignore_snapshots(f: *mut ()) -> c_char {
-    assert!(!f.is_null());
-    let filter = f as *mut Box<CompactionFilter>;
-    (*filter).ignore_snapshots() as c_char
-}
-
 
 /// Each compaction will create a new CompactionFilter allowing the
 /// application to know about different compactions

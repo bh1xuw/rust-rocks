@@ -1,11 +1,11 @@
+//! The metadata that describes a column family, a level, or a SST file,
+
 use std::ops::Deref;
 
 use rocks_sys as ll;
 
 use status::Status;
-
 use types::SequenceNumber;
-
 
 /// The metadata that describes a column family.
 pub struct ColumnFamilyMetaData {
