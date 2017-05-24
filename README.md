@@ -16,7 +16,6 @@ working in progress.
 - [x] ``rocksdb/compaction_filter.h``
   - [x] use v2 style api, via rust trait
   - [ ] compaction filter factory
-  - [ ] is `Sync` needed?
 - [ ] ``rocksdb/compaction_job_stats.h``
 - [x] ``rocksdb/comparator.h``
   - [x] bitwise as new options
@@ -34,7 +33,7 @@ working in progress.
   - [ ] MultiGet
   - [ ] KeyMayExist
   - [ ] properties
-  - [ ] compact range
+  - [x] compact range
   - [x] ingest sst file
 - [ ] ``rocksdb/db_bench_tool.h``
 - [ ] ``rocksdb/db_dump_tool.h``
@@ -65,7 +64,7 @@ working in progress.
 - [ ] ``rocksdb/rate_limiter.h``
 - [x] ~~``rocksdb/slice.h``~~
   - [x] use ``&[u8]`` to replace
-- [ ] ``rocksdb/slice_transform.h``
+- [x] ``rocksdb/slice_transform.h``
 - [x] ``rocksdb/snapshot.h``
 - [ ] ``rocksdb/sst_dump_tool.h``
 - [ ] ``rocksdb/sst_file_manager.h``

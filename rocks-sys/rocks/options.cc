@@ -131,12 +131,21 @@ extern "C" {
     opt->rep.level0_file_num_compaction_trigger = n;
   }
 
-  /*
-    void rocks_cfoptions_set_prefix_extractor(
-    rocks_options_t* opt, rocks_slicetransform_t* prefix_extractor) {
-    opt->rep.prefix_extractor.reset(prefix_extractor);
-    }
-  */
+  void rocks_cfoptions_set_prefix_extractor_by_trait(rocks_cfoptions_t* opt, void* trans_trait_obj) {
+    opt->rep.prefix_extractor.reset(new rocks_slice_transform_t { trans_trait_obj });
+  }
+
+  void rocks_cfoptions_set_prefix_extractor_fixed_prefix(rocks_cfoptions_t* opt, size_t prefix_len) {
+    opt->rep.prefix_extractor.reset(NewFixedPrefixTransform(prefix_len));
+  }
+
+  void rocks_cfoptions_set_prefix_extractor_capped_prefix(rocks_cfoptions_t* opt, size_t cap_len) {
+    opt->rep.prefix_extractor.reset(NewCappedPrefixTransform(cap_len));
+  }
+
+  void rocks_cfoptions_set_prefix_extractor_noop(rocks_cfoptions_t* opt) {
+    opt->rep.prefix_extractor.reset(NewNoopTransform());
+  }
 
   void rocks_cfoptions_set_max_bytes_for_level_base(rocks_cfoptions_t* opt, uint64_t n) {
     opt->rep.max_bytes_for_level_base = n;
@@ -198,7 +207,19 @@ extern "C" {
     opt->rep.memtable_huge_page_size = v;
   }
 
-  // memtable_insert_with_hint_prefix_extractor
+  // TODO: fix this style
+  void rocks_cfoptions_set_memtable_insert_with_hint_prefix_extractor_by_trait(rocks_cfoptions_t* opt, void* trans_trait_obj) {
+    opt->rep.memtable_insert_with_hint_prefix_extractor.reset(new rocks_slice_transform_t { trans_trait_obj });
+  }
+  void rocks_cfoptions_set_memtable_insert_with_hint_prefix_extractor_fixed_prefix(rocks_cfoptions_t* opt, size_t prefix_len) {
+    opt->rep.memtable_insert_with_hint_prefix_extractor.reset(NewFixedPrefixTransform(prefix_len));
+  }
+  void rocks_cfoptions_set_memtable_insert_with_hint_prefix_extractor_capped_prefix(rocks_cfoptions_t* opt, size_t cap_len) {
+    opt->rep.memtable_insert_with_hint_prefix_extractor.reset(NewCappedPrefixTransform(cap_len));
+  }
+  void rocks_cfoptions_set_memtable_insert_with_hint_prefix_extractor_noop(rocks_cfoptions_t* opt) {
+    opt->rep.memtable_insert_with_hint_prefix_extractor.reset(NewNoopTransform());
+  }
 
   void rocks_cfoptions_set_bloom_locality(
                                         rocks_cfoptions_t* opt, uint32_t v) {

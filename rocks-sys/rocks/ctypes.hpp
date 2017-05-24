@@ -15,6 +15,7 @@
 #include "rocksdb/merge_operator.h"
 #include "rocksdb/sst_file_writer.h"
 #include "rocksdb/compaction_filter.h"
+#include "rocksdb/slice_transform.h"
 
 #include "rust_export.h"
 
@@ -198,7 +199,6 @@ extern "C" {
     Decision FilterV2(int level, const Slice& key, ValueType value_type,
                       const Slice& existing_value, std::string* new_value,
                       std::string* skip_until) const override {
-
       auto ret = rust_compaction_filter_call(this->obj,
                                              level,
                                              &key,
@@ -206,9 +206,7 @@ extern "C" {
                                              &existing_value,
                                              new_value,
                                              skip_until);
-
       return static_cast<CompactionFilter::Decision>(ret);
-
     }
 
     bool IgnoreSnapshots() const override {
@@ -218,9 +216,38 @@ extern "C" {
     const char* Name() const override {
       return rust_compaction_filter_name(this->obj);
     }
-
   };
 
+  /* slice_transform */
+  struct rocks_slice_transform_t: public SliceTransform {
+    void* obj;                  // rust Box<trait obj>
+
+    rocks_slice_transform_t(void *trait_obj): obj(trait_obj) {}
+
+    ~rocks_slice_transform_t() {
+      rust_slice_transform_drop(this->obj);
+    }
+
+    const char* Name() const override {
+      return rust_slice_transform_name(this->obj);
+    }
+
+    Slice Transform(const Slice& key) const override {
+      char* const ret = nullptr;
+      size_t ret_len = 0;
+      rust_slice_transform_call(this->obj, &key, &ret, &ret_len);
+      return Slice(ret, ret_len);
+    }
+
+    bool InDomain(const Slice& key) const override {
+      return rust_slice_transform_in_domain(this->obj, &key) != 0;
+    }
+
+    // not used and remains here for backward compatibility.
+    bool InRange(const Slice& dst) const override {
+      return false;
+    }
+  };
 
   /* aux */
   static bool SaveError(rocks_status_t* status, const Status& s) {

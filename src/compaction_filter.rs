@@ -5,14 +5,14 @@ use rocks_sys as ll;
 
 /// Context information of a compaction run
 #[repr(C)]
-pub struct CompactionFilterContext {
+pub struct Context {
     /// Does this compaction run include all data files
-    is_full_compaction: bool,
+    pub is_full_compaction: bool,
     /// Is this compaction requested by the client (true),
     /// or is it occurring as an automatic compaction process
-    is_manual_compaction: bool,
+    pub is_manual_compaction: bool,
     /// Which column family this compaction is for.
-    column_family_id: u32,
+    pub column_family_id: u32,
 }
 
 #[repr(C)]
@@ -234,6 +234,17 @@ pub unsafe extern "C" fn rust_compaction_filter_ignore_snapshots(f: *mut ()) -> 
 /// application to know about different compactions
 pub struct CompactionFilterFactory;
 
+impl CompactionFilterFactory {
+    pub fn create_compaction_filter(&self, context: &Context) -> Box<CompactionFilter> {
+        unimplemented!()
+    }
+
+    /// Returns a name that identifies this compaction filter factory.
+    pub fn name(&self) -> &'static str {
+        "RustCompactionFilterFactory\0"
+    }
+}
+
 
 
 #[cfg(test)]
@@ -281,6 +292,7 @@ mod tests {
         assert!(db.put(&WriteOptions::default(), b"key-2", b"23333").is_ok());
         assert!(db.put(&WriteOptions::default(), b"key-3", b"23333").is_ok());
         assert!(db.put(&WriteOptions::default(), b"key-4", b"23333").is_ok());
+        // following will be reserved
         assert!(db.put(&WriteOptions::default(), b"key-5", b"23333").is_ok());
         assert!(db.put(&WriteOptions::default(), b"key-6", b"23333").is_ok());
         assert!(db.put(&WriteOptions::default(), b"key-7", b"23333").is_ok());

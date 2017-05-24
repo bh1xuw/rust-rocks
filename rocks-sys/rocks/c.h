@@ -131,10 +131,10 @@ extern "C" {
 
   void rocks_cfoptions_set_level0_file_num_compaction_trigger(rocks_cfoptions_t* opt, int n);
 
-  /*
-    void rocks_cfoptions_set_prefix_extractor(
-    rocks_options_t* opt, rocks_slicetransform_t* prefix_extractor);
-  */
+  void rocks_cfoptions_set_prefix_extractor_by_trait(rocks_cfoptions_t* opt, void* trans_trait_obj);
+  void rocks_cfoptions_set_prefix_extractor_fixed_prefix(rocks_cfoptions_t* opt, size_t prefix_len);
+  void rocks_cfoptions_set_prefix_extractor_capped_prefix(rocks_cfoptions_t* opt, size_t cap_len);
+  void rocks_cfoptions_set_prefix_extractor_noop(rocks_cfoptions_t* opt);
 
   void rocks_cfoptions_set_max_bytes_for_level_base(rocks_cfoptions_t* opt, uint64_t n);
 
@@ -164,7 +164,10 @@ extern "C" {
 
   void rocks_cfoptions_set_memtable_huge_page_size(rocks_cfoptions_t* opt, size_t v);
 
-  // memtable_insert_with_hint_prefix_extractor
+  void rocks_cfoptions_set_memtable_insert_with_hint_prefix_extractor_by_trait(rocks_cfoptions_t* opt, void* trans_trait_obj);
+  void rocks_cfoptions_set_memtable_insert_with_hint_prefix_extractor_fixed_prefix(rocks_cfoptions_t* opt, size_t prefix_len);
+  void rocks_cfoptions_set_memtable_insert_with_hint_prefix_extractor_capped_prefix(rocks_cfoptions_t* opt, size_t cap_len);
+  void rocks_cfoptions_set_memtable_insert_with_hint_prefix_extractor_noop(rocks_cfoptions_t* opt);
 
   void rocks_cfoptions_set_bloom_locality(rocks_cfoptions_t* opt, uint32_t v);
 

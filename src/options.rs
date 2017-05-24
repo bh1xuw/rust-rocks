@@ -264,7 +264,7 @@ impl ColumnFamilyOptions {
     /// thread-safe.
     ///
     /// Default: nullptr
-    pub fn compaction_filter(self, filter: Box<CompactionFilter>) -> Self {
+    pub fn compaction_filter(self, filter: Box<CompactionFilter + Sync>) -> Self {
         unsafe {
             let raw_ptr = Box::into_raw(Box::new(filter)); // Box<Box<CompactionFilter>>
             ll::rocks_cfoptions_set_compaction_filter_by_trait(self.raw, raw_ptr as *mut _);
@@ -388,12 +388,32 @@ impl ColumnFamilyOptions {
     /// 4) prefix(prefix(key)) == prefix(key)
     ///
     /// Default: nullptr
-    pub fn prefix_extractor(self, val: Option<SliceTransform>) -> Self {
-        // unsafe {
-        //     ll::rocks_cfoptions_set_prefix_extractor(self.raw, val);
-        // }
-        // self
-        unimplemented!()
+    // FIXME: split other prefix extractor variants
+    pub fn prefix_extractor(self, val: Box<SliceTransform + Sync>) -> Self {
+        unsafe {
+            let raw_ptr = Box::into_raw(Box::new(val));
+            ll::rocks_cfoptions_set_prefix_extractor_by_trait(self.raw, raw_ptr as *mut _);
+         }
+         self
+    }
+
+    pub fn prefix_extractor_fixed(self, len: usize) -> Self {
+        unsafe {
+            ll::rocks_cfoptions_set_prefix_extractor_fixed_prefix(self.raw, len);
+        }
+        self
+    }
+    pub fn prefix_extractor_capped(self, len: usize) -> Self {
+        unsafe {
+            ll::rocks_cfoptions_set_prefix_extractor_capped_prefix(self.raw, len);
+        }
+        self
+    }
+    pub fn prefix_extractor_noop(self) -> Self {
+        unsafe {
+            ll::rocks_cfoptions_set_prefix_extractor_noop(self.raw);
+        }
+        self
     }
 
     /// Control maximum total data size for a level.
@@ -634,12 +654,31 @@ impl ColumnFamilyOptions {
     /// the prefix can be the key itself.
     ///
     /// Default: nullptr (disable)
-    pub fn memtable_insert_with_hint_prefix_extractor(self, val: Option<SliceTransform>) -> Self {
-        unimplemented!()
-        // unsafe {
-        //     ll::rocks_cfoptions_set_memtable_insert_with_hint_prefix_extractor(self.raw, val);
-        // }
-        // self
+    pub fn memtable_insert_with_hint_prefix_extractor(self, val: Box<SliceTransform + Sync>) -> Self {
+        unsafe {
+            let raw_ptr = Box::into_raw(Box::new(val));
+            ll::rocks_cfoptions_set_memtable_insert_with_hint_prefix_extractor_by_trait(self.raw, raw_ptr as *mut _);
+        }
+        self
+    }
+
+    pub fn memtable_insert_with_hint_prefix_extractor_fixed(self, len: usize) -> Self {
+        unsafe {
+            ll::rocks_cfoptions_set_memtable_insert_with_hint_prefix_extractor_fixed_prefix(self.raw, len);
+        }
+        self
+    }
+    pub fn memtable_insert_with_hint_prefix_extractor_capped(self, len: usize) -> Self {
+        unsafe {
+            ll::rocks_cfoptions_set_memtable_insert_with_hint_prefix_extractor_capped_prefix(self.raw, len);
+        }
+        self
+    }
+    pub fn memtable_insert_with_hint_prefix_extractor_noop(self) -> Self {
+        unsafe {
+            ll::rocks_cfoptions_set_memtable_insert_with_hint_prefix_extractor_noop(self.raw);
+        }
+        self
     }
 
     /// Control locality of bloom filter probes to improve cache miss rate.

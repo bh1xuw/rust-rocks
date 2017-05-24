@@ -445,6 +445,27 @@ extern "C" {
                                                                       ::std::os::raw::c_int);
 }
 extern "C" {
+    pub fn rocks_cfoptions_set_prefix_extractor_by_trait(opt:
+                                                             *mut rocks_cfoptions_t,
+                                                         trans_trait_obj:
+                                                             *mut ::std::os::raw::c_void);
+}
+extern "C" {
+    pub fn rocks_cfoptions_set_prefix_extractor_fixed_prefix(opt:
+                                                                 *mut rocks_cfoptions_t,
+                                                             prefix_len:
+                                                                 usize);
+}
+extern "C" {
+    pub fn rocks_cfoptions_set_prefix_extractor_capped_prefix(opt:
+                                                                  *mut rocks_cfoptions_t,
+                                                              cap_len: usize);
+}
+extern "C" {
+    pub fn rocks_cfoptions_set_prefix_extractor_noop(opt:
+                                                         *mut rocks_cfoptions_t);
+}
+extern "C" {
     pub fn rocks_cfoptions_set_max_bytes_for_level_base(opt:
                                                             *mut rocks_cfoptions_t,
                                                         n: u64);
@@ -502,6 +523,28 @@ extern "C" {
     pub fn rocks_cfoptions_set_memtable_huge_page_size(opt:
                                                            *mut rocks_cfoptions_t,
                                                        v: usize);
+}
+extern "C" {
+    pub fn rocks_cfoptions_set_memtable_insert_with_hint_prefix_extractor_by_trait(opt:
+                                                                                       *mut rocks_cfoptions_t,
+                                                                                   trans_trait_obj:
+                                                                                       *mut ::std::os::raw::c_void);
+}
+extern "C" {
+    pub fn rocks_cfoptions_set_memtable_insert_with_hint_prefix_extractor_fixed_prefix(opt:
+                                                                                           *mut rocks_cfoptions_t,
+                                                                                       prefix_len:
+                                                                                           usize);
+}
+extern "C" {
+    pub fn rocks_cfoptions_set_memtable_insert_with_hint_prefix_extractor_capped_prefix(opt:
+                                                                                            *mut rocks_cfoptions_t,
+                                                                                        cap_len:
+                                                                                            usize);
+}
+extern "C" {
+    pub fn rocks_cfoptions_set_memtable_insert_with_hint_prefix_extractor_noop(opt:
+                                                                                   *mut rocks_cfoptions_t);
 }
 extern "C" {
     pub fn rocks_cfoptions_set_bloom_locality(opt: *mut rocks_cfoptions_t,

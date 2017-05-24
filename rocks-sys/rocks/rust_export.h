@@ -35,6 +35,18 @@ extern "C" {
 
   extern void rust_compaction_filter_drop(void* f);
 
+  /* slice transform */
+  extern void rust_slice_transform_call(void* t,
+                                        const Slice* key,
+                                        char* const* ret,
+                                        size_t* ret_len);
+
+  extern const char* rust_slice_transform_name(void* t);
+
+  extern char rust_slice_transform_in_domain(void* t, const Slice* key);
+
+  extern void rust_slice_transform_drop(void* t);
+
   /* merge operator*/
 
   extern int32_t rust_associative_merge_operator_call(
