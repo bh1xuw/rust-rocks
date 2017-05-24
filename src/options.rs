@@ -2424,14 +2424,38 @@ impl WriteOptions {
 /// Options that control flush operations
 #[repr(C)]
 pub struct FlushOptions {
-    /// If true, the flush will wait until the flush is done.
-    /// Default: true
-    pub wait: bool,
+    raw: *mut ll::rocks_flushoptions_t,
 }
 
 impl Default for FlushOptions {
     fn default() -> Self {
-        FlushOptions { wait: true }
+        FlushOptions {
+            raw: unsafe { ll::rocks_flushoptions_create() },
+        }
+    }
+}
+
+impl Drop for FlushOptions {
+    fn drop(&mut self) {
+        unsafe {
+            ll::rocks_flushoptions_destroy(self.raw);
+        }
+    }
+}
+
+
+impl FlushOptions {
+    pub fn raw(&self) -> *mut ll::rocks_flushoptions_t {
+        self.raw
+    }
+
+    /// If true, the flush will wait until the flush is done.
+    /// Default: true
+    pub fn wait(self, val: bool) -> Self {
+        unsafe {
+            ll::rocks_flushoptions_set_wait(self.raw, val as u8);
+        }
+        self
     }
 }
 

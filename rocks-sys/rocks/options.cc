@@ -894,6 +894,21 @@ extern "C" {
 }
 
 extern "C" {
+  rocks_flushoptions_t* rocks_flushoptions_create() {
+    return new rocks_flushoptions_t;
+  }
+
+  void rocks_flushoptions_destroy(rocks_flushoptions_t* opt) {
+    delete opt;
+  }
+
+  void rocks_flushoptions_set_wait(rocks_flushoptions_t* opt, unsigned char v) {
+    opt->rep.wait = v;
+  }
+}
+
+
+extern "C" {
   rocks_logger_t *rocks_create_logger_from_options(const char *path,
                                                    rocks_options_t *opts,
                                                    rocks_status_t *status) {

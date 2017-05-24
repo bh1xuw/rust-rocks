@@ -605,6 +605,25 @@ extern "C" {
     return name.data();
   }
 
+  void rocks_db_flush(rocks_db_t* db, rocks_flushoptions_t* options, rocks_status_t* status) {
+    SaveError(status, db->rep->Flush(options->rep));
+  }
+
+  void rocks_db_flush_cf(rocks_db_t* db,
+                      rocks_flushoptions_t* options,
+                      rocks_column_family_handle_t* column_family,
+                      rocks_status_t* status) {
+    SaveError(status, db->rep->Flush(options->rep, column_family->rep));
+  }
+
+  void rocks_db_sync_wal(rocks_db_t* db, rocks_status_t* status) {
+    SaveError(status, db->rep->SyncWAL());
+  }
+
+  uint64_t rocks_db_get_latest_sequence_number(rocks_db_t* db) {
+    return db->rep->GetLatestSequenceNumber();
+  }
+
   void rocks_db_ingest_external_file(rocks_db_t* db,
                                      const char* const* file_list,
                                      const size_t* file_list_sizes,

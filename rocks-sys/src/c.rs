@@ -1150,6 +1150,16 @@ extern "C" {
                                                                          ::std::os::raw::c_uchar);
 }
 extern "C" {
+    pub fn rocks_flushoptions_create() -> *mut rocks_flushoptions_t;
+}
+extern "C" {
+    pub fn rocks_flushoptions_destroy(options: *mut rocks_flushoptions_t);
+}
+extern "C" {
+    pub fn rocks_flushoptions_set_wait(options: *mut rocks_flushoptions_t,
+                                       v: ::std::os::raw::c_uchar);
+}
+extern "C" {
     pub fn rocks_create_logger_from_options(path:
                                                 *const ::std::os::raw::c_char,
                                             opts: *mut rocks_options_t,
@@ -1533,6 +1543,24 @@ extern "C" {
 extern "C" {
     pub fn rocks_db_get_name(db: *mut rocks_db_t, len: *mut usize)
      -> *const ::std::os::raw::c_char;
+}
+extern "C" {
+    pub fn rocks_db_flush(db: *mut rocks_db_t,
+                          options: *mut rocks_flushoptions_t,
+                          status: *mut rocks_status_t);
+}
+extern "C" {
+    pub fn rocks_db_flush_cf(db: *mut rocks_db_t,
+                             options: *mut rocks_flushoptions_t,
+                             column_family: *mut rocks_column_family_handle_t,
+                             status: *mut rocks_status_t);
+}
+extern "C" {
+    pub fn rocks_db_sync_wal(db: *mut rocks_db_t,
+                             status: *mut rocks_status_t);
+}
+extern "C" {
+    pub fn rocks_db_get_latest_sequence_number(db: *mut rocks_db_t) -> u64;
 }
 extern "C" {
     pub fn rocks_db_ingest_external_file(db: *mut rocks_db_t,

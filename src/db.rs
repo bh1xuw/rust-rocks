@@ -1194,7 +1194,15 @@ impl<'a> DB<'a> {
 
     /// Flush all mem-table data.
     pub fn flush(&self, options: &FlushOptions) -> Result<(), Status> {
-        unimplemented!()
+        unsafe {
+            let mut status = mem::zeroed();
+            ll::rocks_db_flush(self.raw(), options.raw(), &mut status);
+            if status.code == 0 {
+                Ok(())
+            } else {
+                Err(Status::from_ll(&status))
+            }
+        }
     }
 
     /// Sync the wal. Note that Write() followed by SyncWAL() is not exactly the
@@ -1202,14 +1210,44 @@ impl<'a> DB<'a> {
     /// visible until the sync is done.
     /// Currently only works if allow_mmap_writes = false in Options.
     pub fn sync_wal(&self) -> Result<(), Status> {
-        unimplemented!()
+        unsafe {
+            let mut status = mem::zeroed();
+            ll::rocks_db_sync_wal(self.raw(), &mut status);
+            if status.code == 0 {
+                Ok(())
+            } else {
+                Err(Status::from_ll(&status))
+            }
+        }
     }
 
     /// The sequence number of the most recent transaction.
     pub fn get_latest_sequence_number(&self) -> SequenceNumber {
+        unsafe {
+            ll::rocks_db_get_latest_sequence_number(self.raw())
+        }
+    }
+
+    /// Prevent file deletions. Compactions will continue to occur,
+    /// but no obsolete files will be deleted. Calling this multiple
+    /// times have the same effect as calling it once.
+    pub fn disable_file_deletions(&self) -> Result<(), Status> {
         unimplemented!()
     }
 
+    // Allow compactions to delete obsolete files.
+    // If force == true, the call to EnableFileDeletions() will guarantee that
+    // file deletions are enabled after the call, even if DisableFileDeletions()
+    // was called multiple times before.
+    // If force == false, EnableFileDeletions will only enable file deletion
+    // after it's been called at least as many times as DisableFileDeletions(),
+    // enabling the two methods to be called by two threads concurrently without
+    // synchronization -- i.e., file deletions will be enabled only after both
+    // threads call EnableFileDeletions()
+    pub fn enable_file_deletions(&self, force: bool) -> Result<(), Status> {
+        unimplemented!()
+    }
+    
     // disable file deletions
 
     // enable file deletions
@@ -2036,5 +2074,29 @@ mod tests {
         assert_eq!(db.number_levels(), 7); // default
         assert_eq!(db.max_mem_compaction_level(), 0); // TODO: wtf
         assert_eq!(db.level0_stop_write_trigger(), 36); // default
+    }
+
+    #[test]
+    fn flush() {
+        let tmp_dir = ::tempdir::TempDir::new_in(".", "rocks").unwrap();
+        let db = DB::open(Options::default()
+                          .map_db_options(|db| db.create_if_missing(true))
+                          .map_cf_options(|cf| cf.disable_auto_compactions(true)),
+                          &tmp_dir)
+            .unwrap();
+
+        assert_eq!(db.get_latest_sequence_number(), 0);
+
+        assert!(db.put(&Default::default(), b"long-key", vec![b'A'; 1024 * 1024].as_ref())
+                .is_ok());
+        assert!(db.put(&Default::default(), b"a", b"1").is_ok());
+        assert!(db.put(&Default::default(), b"b", b"2").is_ok());
+        assert!(db.put(&Default::default(), b"c", b"3").is_ok());
+
+        assert!(db.flush(&FlushOptions::default().wait(true)).is_ok());
+        assert!(db.sync_wal().is_ok());
+
+        // 5th transaction
+        assert_eq!(db.get_latest_sequence_number(), 4);
     }
 }

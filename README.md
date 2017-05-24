@@ -37,7 +37,7 @@ working in progress.
     - [ ] get map properties
   - [x] misc function related to config
   - [x] compact range
-  - [ ] flush
+  - [x] flush
   - [x] ingest sst file
 - [ ] ``rocksdb/db_bench_tool.h``
 - [ ] ``rocksdb/db_dump_tool.h``

@@ -501,6 +501,12 @@ extern "C" {
   void rocks_ingestexternalfile_options_set_allow_global_seqno(rocks_ingestexternalfile_options_t* opt, unsigned char v);
   void rocks_ingestexternalfile_options_set_allow_blocking_flush(rocks_ingestexternalfile_options_t* opt, unsigned char v);
 
+  /* > flushoptions */
+  rocks_flushoptions_t* rocks_flushoptions_create();
+  void rocks_flushoptions_destroy(rocks_flushoptions_t* options);
+
+  void rocks_flushoptions_set_wait(rocks_flushoptions_t* options, unsigned char v);
+
   /* > misc */
   rocks_logger_t *rocks_create_logger_from_options(const char *path,
                                                    rocks_options_t *opts,
@@ -763,6 +769,16 @@ extern "C" {
 
   const char* rocks_db_get_name(rocks_db_t* db, size_t* len);
 
+  void rocks_db_flush(rocks_db_t* db, rocks_flushoptions_t* options, rocks_status_t* status);
+  void rocks_db_flush_cf(rocks_db_t* db,
+                         rocks_flushoptions_t* options,
+                         rocks_column_family_handle_t* column_family,
+                         rocks_status_t* status);
+
+  void rocks_db_sync_wal(rocks_db_t* db, rocks_status_t* status);
+
+  uint64_t rocks_db_get_latest_sequence_number(rocks_db_t* db);
+  
   void rocks_db_ingest_external_file(rocks_db_t* db,
                                      const char* const* file_list,
                                      const size_t* file_list_sizes,
