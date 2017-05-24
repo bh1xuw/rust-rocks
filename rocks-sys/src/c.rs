@@ -1486,6 +1486,51 @@ extern "C" {
                                          limit_key_len: usize);
 }
 extern "C" {
+    pub fn rocks_db_pause_background_work(db: *mut rocks_db_t,
+                                          status: *mut rocks_status_t);
+}
+extern "C" {
+    pub fn rocks_db_continue_background_work(db: *mut rocks_db_t,
+                                             status: *mut rocks_status_t);
+}
+extern "C" {
+    pub fn rocks_db_enable_auto_compaction(db: *mut rocks_db_t,
+                                           column_families:
+                                               *const *const rocks_column_family_handle_t,
+                                           cf_len: usize,
+                                           status: *mut rocks_status_t);
+}
+extern "C" {
+    pub fn rocks_db_number_levels_cf(db: *mut rocks_db_t,
+                                     column_family:
+                                         *mut rocks_column_family_handle_t)
+     -> ::std::os::raw::c_int;
+}
+extern "C" {
+    pub fn rocks_db_number_levels(db: *mut rocks_db_t)
+     -> ::std::os::raw::c_int;
+}
+extern "C" {
+    pub fn rocks_db_max_mem_compaction_level_cf(db: *mut rocks_db_t,
+                                                column_family:
+                                                    *mut rocks_column_family_handle_t)
+     -> ::std::os::raw::c_int;
+}
+extern "C" {
+    pub fn rocks_db_max_mem_compaction_level(db: *mut rocks_db_t)
+     -> ::std::os::raw::c_int;
+}
+extern "C" {
+    pub fn rocks_db_level0_stop_write_trigger_cf(db: *mut rocks_db_t,
+                                                 column_family:
+                                                     *mut rocks_column_family_handle_t)
+     -> ::std::os::raw::c_int;
+}
+extern "C" {
+    pub fn rocks_db_level0_stop_write_trigger(db: *mut rocks_db_t)
+     -> ::std::os::raw::c_int;
+}
+extern "C" {
     pub fn rocks_db_get_name(db: *mut rocks_db_t, len: *mut usize)
      -> *const ::std::os::raw::c_char;
 }

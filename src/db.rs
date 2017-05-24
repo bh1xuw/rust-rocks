@@ -17,7 +17,7 @@ use rocks_sys as ll;
 use status::Status;
 use comparator::Comparator;
 use options::{Options, DBOptions, ColumnFamilyOptions, ReadOptions, WriteOptions,
-              CompactRangeOptions, IngestExternalFileOptions};
+              CompactRangeOptions, IngestExternalFileOptions, FlushOptions};
 use table_properties::TableProperties;
 use snapshot::Snapshot;
 use write_batch::WriteBatch;
@@ -1036,6 +1036,27 @@ impl<'a> DB<'a> {
         }
     }
 
+    /// For each i in [0,n-1], store in "sizes[i]", the approximate
+    /// file system space used by keys in "[range[i].start .. range[i].limit)".
+    ///
+    /// Note that the returned sizes measure file system space usage, so
+    /// if the user data compresses by a factor of ten, the returned
+    /// sizes will be one-tenth the size of the corresponding user data size.
+    ///
+    /// If include_flags defines whether the returned size should include
+    /// the recently written data in the mem-tables (if
+    /// the mem-table type supports it), data serialized to disk, or both.
+    /// include_flags should be of type DB::SizeApproximationFlags
+    pub fn get_approximate_sizes(&self, range: &[ops::Range<&[u8]>], include_flags: u8) -> u64 {
+        unimplemented!()
+    }
+
+    /// The method is similar to GetApproximateSizes, except it
+    /// returns approximate number of records in memtables.
+    pub fn get_approximate_memtable_stats(&self, range: &[ops::Range<&[u8]>], include_flags: u8) -> u64 {
+        unimplemented!()
+    }
+
 
     /// Compact the underlying storage for the key range [*begin,*end].
     /// The actual compaction interval might be superset of [*begin, *end].
@@ -1075,8 +1096,8 @@ impl<'a> DB<'a> {
         }
     }
 
+    // set options
     // set dboptions via Map<K,V>
-
     // compact files
 
 
@@ -1084,36 +1105,78 @@ impl<'a> DB<'a> {
     /// finish. After it returns, no background process will be run until
     /// UnblockBackgroundWork is called
     pub fn pause_background_work(&self) -> Result<(), Status> {
-        unimplemented!()
+        unsafe {
+            let mut status = mem::zeroed();
+            ll::rocks_db_pause_background_work(self.raw(), &mut status);
+            if status.code == 0 {
+                Ok(())
+            } else {
+                Err(Status::from_ll(&status))
+            }
+        }
     }
 
     pub fn continue_background_work(&self) -> Result<(), Status> {
-        unimplemented!()
+        unsafe {
+            let mut status = mem::zeroed();
+            ll::rocks_db_continue_background_work(self.raw(), &mut status);
+            if status.code == 0 {
+                Ok(())
+            } else {
+                Err(Status::from_ll(&status))
+            }
+        }
     }
 
-    // This function will enable automatic compactions for the given column
-    // families if they were previously disabled. The function will first set the
-    // disable_auto_compactions option for each column family to 'false', after
-    // which it will schedule a flush/compaction.
-    //
-    // NOTE: Setting disable_auto_compactions to 'false' through SetOptions() API
-    // does NOT schedule a flush/compaction afterwards, and only changes the
-    // parameter itself within the column family option.
-    //
+    /// This function will enable automatic compactions for the given column
+    /// families if they were previously disabled. The function will first set the
+    /// disable_auto_compactions option for each column family to 'false', after
+    /// which it will schedule a flush/compaction.
+    ///
+    /// NOTE: Setting disable_auto_compactions to 'false' through SetOptions() API
+    /// does NOT schedule a flush/compaction afterwards, and only changes the
+    /// parameter itself within the column family option.
+    ///
     pub fn enable_auto_compaction(&self,
-                                  column_family_handles: &[ColumnFamilyHandle])
+                                  column_family_handles: &[&ColumnFamilyHandle])
                                   -> Result<(), Status> {
-        unimplemented!()
+        unsafe {
+            let c_cfs = column_family_handles.iter().map(|cf| cf.as_ref().raw() as *const _).collect::<Vec<*const _>>();
+            let cfs_len = column_family_handles.len();
+            let mut status = mem::zeroed();
+            ll::rocks_db_enable_auto_compaction(self.raw(),
+                                                c_cfs.as_ptr(),
+                                                cfs_len,
+                                                &mut status);
+            if status.code == 0 {
+                Ok(())
+            } else {
+                Err(Status::from_ll(&status))
+            }
+        }
     }
 
-    // Number of levels used for this DB.
-    pub fn number_levels(&self) -> usize {
-        unimplemented!()
+    /// Number of levels used for this DB.
+    pub fn number_levels(&self) -> u32 {
+        unsafe {
+            ll::rocks_db_number_levels(self.raw()) as u32
+        }
     }
 
-    // max mem compaction level
+    /// Maximum level to which a new compacted memtable is pushed if it
+    /// does not create overlap.
+    pub fn max_mem_compaction_level(&self) -> u32 {
+        unsafe {
+            ll::rocks_db_max_mem_compaction_level(self.raw()) as u32
+        }
+    }
 
-    // level0 stop write trigger
+    /// Number of files in level-0 that would stop writes.
+    pub fn level0_stop_write_trigger(&self) -> u32 {
+        unsafe {
+            ll::rocks_db_level0_stop_write_trigger(self.raw()) as u32
+        }
+    }
 
     /// Get DB name -- the exact same name that was provided as an argument to
     /// DB::Open()
@@ -1127,10 +1190,12 @@ impl<'a> DB<'a> {
 
     // get options
 
-
     // get db options
 
-    // flush
+    /// Flush all mem-table data.
+    pub fn flush(&self, options: &FlushOptions) -> Result<(), Status> {
+        unimplemented!()
+    }
 
     /// Sync the wal. Note that Write() followed by SyncWAL() is not exactly the
     /// same as Write() with sync=true: in the latter case the changes won't be
@@ -1944,5 +2009,32 @@ mod tests {
         assert!(db.get_int_property("rocksdb.size-all-mem-tables").unwrap() < 2 * 1024 * 1024);
 
         assert!(db.get_aggregated_int_property("rocksdb.size-all-mem-tables").unwrap() > 2 * 1024 * 1024);
+    }
+
+    #[test]
+    fn misc_functions() {
+        let tmp_dir = ::tempdir::TempDir::new_in(".", "rocks").unwrap();
+        let db = DB::open(Options::default()
+                          .map_db_options(|db| db.create_if_missing(true))
+                          .map_cf_options(|cf| cf.disable_auto_compactions(true)),
+                          &tmp_dir)
+            .unwrap();
+
+        assert!(db.put(&Default::default(), b"long-key", vec![b'A'; 1024 * 1024].as_ref())
+                .is_ok());
+        assert!(db.put(&Default::default(), b"a", b"1").is_ok());
+        assert!(db.put(&Default::default(), b"b", b"2").is_ok());
+        assert!(db.put(&Default::default(), b"c", b"3").is_ok());
+
+        assert!(db.compact_range(&Default::default(), ..).is_ok());
+
+        assert!(db.pause_background_work().is_ok());
+        assert!(db.continue_background_work().is_ok());
+
+        assert!(db.enable_auto_compaction(&[&db.default_column_family()]).is_ok());
+
+        assert_eq!(db.number_levels(), 7); // default
+        assert_eq!(db.max_mem_compaction_level(), 0); // TODO: wtf
+        assert_eq!(db.level0_stop_write_trigger(), 36); // default
     }
 }

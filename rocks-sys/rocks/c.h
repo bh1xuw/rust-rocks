@@ -722,6 +722,7 @@ extern "C" {
 
   unsigned char rocks_db_get_aggregated_int_property(rocks_db_t* db, const char* prop, const size_t prop_len, uint64_t* value);
 
+
   void rocks_db_compact_range(
                               rocks_db_t* db,
                               const char* start_key, size_t start_key_len,
@@ -743,6 +744,22 @@ extern "C" {
                                      rocks_compactrange_options_t* opt,
                                      const char* start_key, size_t start_key_len,
                                      const char* limit_key, size_t limit_key_len);
+
+  void rocks_db_pause_background_work(rocks_db_t* db, rocks_status_t *status);
+  void rocks_db_continue_background_work(rocks_db_t* db, rocks_status_t *status);
+
+  void rocks_db_enable_auto_compaction(rocks_db_t* db, const rocks_column_family_handle_t* const* column_families, size_t cf_len,
+                                       rocks_status_t* status);
+
+  int rocks_db_number_levels_cf(rocks_db_t* db, rocks_column_family_handle_t* column_family);
+  int rocks_db_number_levels(rocks_db_t* db);
+
+  int rocks_db_max_mem_compaction_level_cf(rocks_db_t* db, rocks_column_family_handle_t* column_family);
+  int rocks_db_max_mem_compaction_level(rocks_db_t* db);
+
+  int rocks_db_level0_stop_write_trigger_cf(rocks_db_t* db, rocks_column_family_handle_t* column_family);
+  int rocks_db_level0_stop_write_trigger(rocks_db_t* db);
+
 
   const char* rocks_db_get_name(rocks_db_t* db, size_t* len);
 

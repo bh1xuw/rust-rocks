@@ -518,7 +518,7 @@ extern "C" {
                           (start_key ? (a = Slice(start_key, start_key_len), &a) : nullptr),
                           (limit_key ? (b = Slice(limit_key, limit_key_len), &b) : nullptr));
   }
-  
+
   void rocks_db_compact_range_cf(
                                 rocks_db_t* db,
                                 rocks_column_family_handle_t* column_family,
@@ -543,6 +543,47 @@ extern "C" {
                                     (start_key ? (a = Slice(start_key, start_key_len), &a) : nullptr),
                                     (limit_key ? (b = Slice(limit_key, limit_key_len), &b) : nullptr));
     SaveError(status, st);
+  }
+
+  void rocks_db_pause_background_work(rocks_db_t* db, rocks_status_t *status) {
+    SaveError(status, db->rep->PauseBackgroundWork());
+  }
+
+  void rocks_db_continue_background_work(rocks_db_t* db, rocks_status_t *status) {
+    SaveError(status, db->rep->ContinueBackgroundWork());
+  }
+
+  void rocks_db_enable_auto_compaction(rocks_db_t* db, const rocks_column_family_handle_t* const* column_families, size_t cf_len,
+                                       rocks_status_t* status) {
+    std::vector<ColumnFamilyHandle*> cfs;
+    for (auto i = 0; i < cf_len; i++) {
+      cfs.push_back(column_families[i]->rep);
+    }
+    SaveError(status, db->rep->EnableAutoCompaction(cfs));
+  }
+
+  int rocks_db_number_levels_cf(rocks_db_t* db, rocks_column_family_handle_t* column_family) {
+    return db->rep->NumberLevels(column_family->rep);
+  }
+
+  int rocks_db_number_levels(rocks_db_t* db) {
+    return db->rep->NumberLevels();
+  }
+
+  int rocks_db_max_mem_compaction_level_cf(rocks_db_t* db, rocks_column_family_handle_t* column_family) {
+    return db->rep->MaxMemCompactionLevel(column_family->rep);
+  }
+
+  int rocks_db_max_mem_compaction_level(rocks_db_t* db) {
+    return db->rep->MaxMemCompactionLevel();
+  }
+
+  int rocks_db_level0_stop_write_trigger_cf(rocks_db_t* db, rocks_column_family_handle_t* column_family) {
+    return db->rep->Level0StopWriteTrigger(column_family->rep);
+  }
+
+  int rocks_db_level0_stop_write_trigger(rocks_db_t* db) {
+    return db->rep->Level0StopWriteTrigger();
   }
 
   void rocks_db_compact_range_cf_opt(rocks_db_t* db,

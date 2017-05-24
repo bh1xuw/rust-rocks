@@ -893,7 +893,6 @@ extern "C" {
   }
 }
 
-
 extern "C" {
   rocks_logger_t *rocks_create_logger_from_options(const char *path,
                                                    rocks_options_t *opts,

@@ -50,4 +50,12 @@ pub mod c {
         ptr::copy(p, (*s).as_mut_vec().as_mut_ptr(), len);
         (*s).as_mut_vec().set_len(len);
     }
+
+
+    #[no_mangle]
+    pub unsafe extern "C" fn rust_vec_u8_assign(v: *mut Vec<u8>, p: *const u8, len: usize) {
+        (*v).reserve(len);
+        ptr::copy(p, (*v).as_mut_ptr(), len);
+        (*v).set_len(len);
+    }
 }

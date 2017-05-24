@@ -21,8 +21,8 @@ working in progress.
   - [x] bitwise as new options
   - [x] customized comparator via rust trait
 - [ ] ``rocksdb/convenience.h``
-- [ ] ``rocksdb/db.h``
-  - [ ] column family
+- [x] ``rocksdb/db.h``
+  - [ ] column family support
   - [x] open / close
   - [x] iterator
   - [x] get
@@ -35,7 +35,9 @@ working in progress.
   - [x] KeyMayExist - get return
   - [x] properties
     - [ ] get map properties
+  - [x] misc function related to config
   - [x] compact range
+  - [ ] flush
   - [x] ingest sst file
 - [ ] ``rocksdb/db_bench_tool.h``
 - [ ] ``rocksdb/db_dump_tool.h``
