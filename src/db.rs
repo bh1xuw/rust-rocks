@@ -712,11 +712,42 @@ impl<'a> DB<'a> {
     /// Similarly, the number of returned statuses will be the number of keys.
     /// Note: keys will not be "de-duplicated". Duplicate keys will return
     /// duplicate values in order.
-    pub fn multi_get<R: AsRef<ReadOptions>>(&self,
-                                            options: R,
-                                            keys: &[&[u8]])
-                                            -> Vec<Result<CVec<u8>, Status>> {
-        unimplemented!()
+    pub fn multi_get(&self,
+                     options: &ReadOptions,
+                     keys: &[&[u8]])
+                     -> Vec<Result<CVec<u8>, Status>> {
+        unsafe {
+            let num_keys = keys.len();
+            let mut c_keys: Vec<*const c_char> = Vec::with_capacity(num_keys);
+            let mut c_keys_lens = Vec::with_capacity(num_keys);
+
+            let mut vals = vec![ptr::null_mut(); num_keys];
+            let mut vals_lens = vec![0_usize; num_keys];
+
+            for i in 0 .. num_keys {
+                c_keys.push(keys[i].as_ptr() as *const c_char);
+                c_keys_lens.push(keys[i].len());
+            }
+
+            let mut status: Vec<ll::rocks_status_t> = vec![mem::zeroed(); num_keys];
+            let mut ret = Vec::with_capacity(num_keys);
+
+            ll::rocks_db_multi_get(self.raw(),
+                                   options.raw(),
+                                   num_keys,
+                                   c_keys.as_ptr(), c_keys_lens.as_ptr(),
+                                   vals.as_mut_ptr(), vals_lens.as_mut_ptr(),
+                                   &mut status[0] as *mut _);
+
+            for i in 0 .. num_keys {
+                if status[i].code == 0 {
+                    ret.push(Ok(CVec::from_raw_parts(vals[i] as *mut u8, vals_lens[i])));
+                } else {
+                    ret.push(Err(Status::from_ll(&status[i])))
+                }
+            }
+            ret
+        }
     }
 
     pub fn multi_get_cf<R: AsRef<ReadOptions>>(&self,
@@ -1116,6 +1147,12 @@ impl<T> Drop for CVec<T> {
 }
 
 impl<'a, T: PartialEq> PartialEq<&'a [T]> for CVec<T> {
+    fn eq(&self, rhs: &&[T]) -> bool {
+        &self.as_ref() == rhs
+    }
+}
+
+impl<'a, 'b, T: PartialEq> PartialEq<&'b [T]> for &'a CVec<T> {
     fn eq(&self, rhs: &&[T]) -> bool {
         &self.as_ref() == rhs
     }
@@ -1624,4 +1661,38 @@ fn test_ingest_sst_file() {
 
     drop(sst_dir);
     drop(tmp_db_dir);
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use super::super::rocksdb::*;
+
+    #[test]
+    fn multi_get() {
+        let tmp_dir = ::tempdir::TempDir::new_in(".", "rocks").unwrap();
+        let db = DB::open(Options::default()
+                          .map_db_options(|db| db.create_if_missing(true)),
+                          &tmp_dir)
+            .unwrap();
+
+        assert!(db.put(&Default::default(), b"a", b"1").is_ok());
+        assert!(db.put(&Default::default(), b"b", b"2").is_ok());
+        assert!(db.put(&Default::default(), b"c", b"3").is_ok());
+        assert!(db.put(&Default::default(), b"long-key", b"long-value").is_ok());
+        assert!(db.put(&Default::default(), b"e", b"5").is_ok());
+        assert!(db.put(&Default::default(), b"f", b"6").is_ok());
+
+        assert!(db.compact_range(&Default::default(), ..).is_ok());
+
+        let ret = db.multi_get(&ReadOptions::default(),
+                               &[b"a", b"b", b"c", b"f", b"long-key", b"non-exist"]);
+
+        assert_eq!(ret[0].as_ref().unwrap(), b"1".as_ref());
+        assert_eq!(ret[1].as_ref().unwrap(), b"2".as_ref());
+        assert_eq!(ret[2].as_ref().unwrap(), b"3".as_ref());
+        assert_eq!(ret[3].as_ref().unwrap(), b"6".as_ref());
+        assert_eq!(ret[4].as_ref().unwrap(), b"long-value".as_ref());
+        assert!(ret[5].as_ref().unwrap_err().is_not_found());
+    }
 }

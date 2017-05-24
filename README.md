@@ -30,9 +30,9 @@ working in progress.
   - [x] write
   - [x] delete
   - [x] merge
-  - [ ] MultiGet
+  - [x] MultiGet
   - [x] KeyMayExist - bool return 
-  - [ ] KeyMayExist - get return 
+  - [ ] KeyMayExist - get return
   - [ ] properties
   - [x] compact range
   - [x] ingest sst file
