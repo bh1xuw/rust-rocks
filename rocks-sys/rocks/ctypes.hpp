@@ -233,7 +233,7 @@ extern "C" {
     }
 
     Slice Transform(const Slice& key) const override {
-      char* const ret = nullptr;
+      char* ret = nullptr;
       size_t ret_len = 0;
       rust_slice_transform_call(this->obj, &key, &ret, &ret_len);
       return Slice(ret, ret_len);
