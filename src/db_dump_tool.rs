@@ -8,6 +8,13 @@ pub struct DbDumpTool {
     raw: *mut ll::rocks_dump_options_t,
 }
 
+impl Drop for DbDumpTool {
+    fn drop(&mut self) {
+        unsafe {
+            ll::rocks_dump_options_destroy(self.raw)
+        }
+    }
+}
 
 impl DbDumpTool {
     pub fn new(db_path: &str, dump_location: &str) -> DbDumpTool {
@@ -48,6 +55,13 @@ pub struct DbUndumpTool {
     raw: *mut ll::rocks_undump_options_t,
 }
 
+impl Drop for DbUndumpTool {
+    fn drop(&mut self) {
+        unsafe {
+            ll::rocks_undump_options_destroy(self.raw)
+        }
+    }
+}
 
 impl DbUndumpTool {
     pub fn new(db_path: &str, dump_location: &str) -> DbUndumpTool {
