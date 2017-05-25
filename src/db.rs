@@ -181,6 +181,23 @@ impl<'a> Drop for DBContext<'a> {
 ///
 /// A `DB` is safe for concurrent access from multiple threads without
 /// any external synchronization.
+///
+/// # Examples
+///
+/// ```
+/// use rocks::rocksdb::*;
+///
+/// let db = DB::open(Options::default().map_db_options(|db| db.create_if_missing(true)),
+///                   "./data").unwrap();
+/// // insert kv
+/// let _ = db.put(&WriteOptions::default(), b"my-key", b"my-value").unwrap();
+///
+/// // get kv
+/// let val = db.get(&ReadOptions::default(), b"my-key").unwrap();
+/// println!("got value {}", String::from_utf8_lossy(&val));
+///
+/// assert_eq!(val, b"my-value");
+/// ```
 pub struct DB<'a> {
     context: Rc<DBContext<'a>>,
 }
@@ -1704,62 +1721,6 @@ fn test_write_batch() {
                b"BH1XUW");
     assert_eq!(db.get(ReadOptions::default(), b"site").unwrap().as_ref(),
                b"github");
-}
-
-
-#[test]
-fn test_iterator() {
-    use tempdir::TempDir;
-    let tmp_dir = TempDir::new_in(".", "rocks").unwrap();
-    let opt = Options::default().map_db_options(|db| db.create_if_missing(true));
-    let db = DB::open(opt, tmp_dir.path()).unwrap();
-    let batch = WriteBatch::new()
-        .put(b"key1", b"BYasdf1CQ")
-        .put(b"key2", b"BYasdf1CQ")
-        .put(b"key3", b"BYasdf1CQ")
-        .put(b"key4", b"BY1dfsgCQ")
-        .put(b"key5", b"BY1ghCQ")
-        .put(b"key0", b"BYwertw1CQ")
-        .put(b"key_", b"BY1C234Q")
-        .put(b"key4", b"BY1xcvbCQ")
-        .put(b"key5", b"BY1gjhkjCQ")
-        .put(b"key1", b"BY1CyuitQ")
-        .put(b"key8", b"BY1CvbncvQ")
-        .put(b"key4", b"BY1CsafQ")
-        .put(b"name", b"BH1XUwqrW")
-        .put(b"site", b"githuzxcvb");
-
-    let ret = db.write(WriteOptions::default(), batch);
-    assert!(ret.is_ok());
-    {
-        for (k, v) in db.new_iterator(&ReadOptions::default()).iter() {
-            println!("> {:?} => {:?}",
-                     String::from_utf8_lossy(k),
-                     String::from_utf8_lossy(v));
-        }
-    }
-
-    assert!(ret.is_ok());
-    {
-        // must pin_data
-        let kvs = db.new_iterator(&ReadOptions::default().pin_data(true))
-            .iter()
-            .collect::<Vec<_>>();
-        println!("got kv => {:?}", kvs);
-    }
-
-    let mut it = db.new_iterator(&ReadOptions::default());
-    assert_eq!(it.is_valid(), false);
-    println!("it => {:?}", it);
-    it.seek_to_first();
-    assert_eq!(it.is_valid(), true);
-    println!("it => {:?}", it);
-    it.next();
-    println!("it => {:?}", it);
-    it.seek_to_last();
-    println!("it => {:?}", it);
-    it.next();
-    println!("it => {:?}", it);
 }
 
 

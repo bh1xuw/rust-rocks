@@ -7,6 +7,14 @@ working in progress.
 
 ## status
 
+big picture(TODOs):
+
+- [ ] information hiding (DO NOT EXPORT raw pointers)
+- [ ] Proof of usablility
+- [ ] bench across C++/Java/other-rust binding
+- [ ] Zero-Copy
+- [ ] Full documentation with code examples
+
 > checkbox means DONE, or NEEDLESS TO BE DONE.
 
 - [x] ~~``rocksdb/c.h``~~
@@ -49,7 +57,7 @@ working in progress.
 - [ ] ``rocksdb/iostats_context.h``
 - [x] ``rocksdb/iterator.h``
   - [x] adapter for Rust Iterator
-  - [ ] reverse iterator, any pos iterator
+  - [ ] reverse iterator
   - [ ] pinned slice, wait rocksdb 5.4
 - [ ] ``rocksdb/ldb_tool.h``
 - [ ] ``rocksdb/listener.h``

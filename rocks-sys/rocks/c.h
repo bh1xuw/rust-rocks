@@ -797,7 +797,7 @@ extern "C" {
   void rocks_db_get_db_identity(rocks_db_t* db,
                                 void* identity, // *mut String
                                 rocks_status_t* status);
-  
+
   /*    pub fn */
   void rocks_destroy_db(
                         const rocks_options_t* options,
@@ -1013,6 +1013,12 @@ extern "C" {
   const char* rocks_iter_value(const rocks_iterator_t* iter, size_t* vlen);
 
   void rocks_iter_get_status(const rocks_iterator_t* iter, rocks_status_t* status);
+
+  void rocks_iter_get_property(const rocks_iterator_t* iter,
+                               const char* prop,
+                               size_t prop_len,
+                               void* value,
+                               rocks_status_t* status);
 
   /* cache */
   rocks_cache_t* rocks_cache_create_lru(size_t capacity,

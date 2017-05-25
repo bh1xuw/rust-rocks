@@ -1,6 +1,7 @@
 #include "rocksdb/env.h"
 
 #include "rocks/ctypes.hpp"
+#include "rocks/rust_export.h"
 
 
 using namespace rocksdb;
@@ -58,7 +59,16 @@ extern "C" {
     SaveError(status, iter->rep->status());
   }
 
-  /*  const char* rocks_iter_get_property(const rocks_iterator_t* iter, const char* prop_name, size_t len) {
-    SaveError(status, iter->rep->status());
-    }*/
+  void rocks_iter_get_property(const rocks_iterator_t* iter,
+                               const char* prop,
+                               size_t prop_len,
+                               void* value,
+                               rocks_status_t* status) {
+    std::string cval;
+    auto st = iter->rep->GetProperty(std::string(prop, prop_len), &cval);
+    if (st.ok()) {
+      rust_string_assign(value, cval.data(), cval.size());
+    }
+    SaveError(status, st);
+  }
 }

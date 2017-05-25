@@ -2102,6 +2102,14 @@ impl DBOptions {
 }
 
 /// Options to control the behavior of a database (passed to DB::Open)
+///
+/// ```
+/// use rocks::options::Options;
+///
+/// let opt = Options::default()
+///           .map_db_options(|db| db.create_if_missing(true))
+///           .map_cf_options(|cf| cf.disable_auto_compactions(true));
+/// ```
 pub struct Options {
     raw: *mut ll::rocks_options_t,
 }
@@ -2177,7 +2185,6 @@ impl Options {
         }
     }
 
-
     /// Set appropriate parameters for bulk loading.
     /// The reason that this is a function that returns "this" instead of a
     /// constructor is to enable chaining of multiple similar calls in the future.
@@ -2199,13 +2206,6 @@ impl Options {
     }
 }
 
-#[test]
-fn test_options_deref_as_dboptions() {
-    let opt = Options::default();
-    // can be used as dboptions
-    // assert_eq!(opt.use_direct_reads, false);
-}
-
 /// An application can issue a read request (via Get/Iterators) and specify
 /// if that read should process data that ALREADY resides on a specified cache
 /// level. For example, if an application specifies kBlockCacheTier then the
@@ -2225,7 +2225,16 @@ pub enum ReadTier {
     PersistedTier = 0x2,
 }
 
-/// Options that control read operations
+/// Options that control read operations.
+///
+/// ```
+/// use rocks::options::{ReadOptions, ReadTier};
+///
+/// let ropt = ReadOptions::default()
+///     .fill_cache(true)
+///     .managed(true)
+///     .read_tier(ReadTier::PersistedTier);
+/// ```
 pub struct ReadOptions {
     raw: *mut ll::rocks_readoptions_t,
 }
@@ -2435,17 +2444,6 @@ impl Default for ReadOptions {
         ReadOptions { raw: unsafe { ll::rocks_readoptions_create() } }
     }
 }
-
-
-#[test]
-fn test_read_options() {
-    let _ = ReadOptions::default()
-        .fill_cache(true)
-        .managed(true)
-        .read_tier(ReadTier::PersistedTier);
-}
-
-
 
 /// Options that control write operations
 pub struct WriteOptions {

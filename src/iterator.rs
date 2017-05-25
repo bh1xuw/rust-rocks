@@ -10,6 +10,8 @@ use std::fmt;
 use std::iter;
 use std::marker::PhantomData;
 
+use std::os::raw::c_void;
+
 use rocks_sys as ll;
 
 use status::Status;
@@ -94,7 +96,7 @@ impl Iterator {
 
     /// Moves to the next entry in the source.  After this call, Valid() is
     /// true iff the iterator was not positioned at the last entry in the source.
-    /// 
+    ///
     /// REQUIRES: `Valid()`
     pub fn next(&mut self) {
         unsafe {
@@ -104,7 +106,7 @@ impl Iterator {
 
     /// Moves to the previous entry in the source.  After this call, Valid() is
     /// true iff the iterator was not positioned at the first entry in source.
-    /// 
+    ///
     /// REQUIRES: `Valid()`
     pub fn prev(&mut self) {
         unsafe {
@@ -115,7 +117,7 @@ impl Iterator {
     /// Return the key for the current entry.  The underlying storage for
     /// the returned slice is valid only until the next modification of
     /// the iterator.
-    /// 
+    ///
     /// REQUIRES: `Valid()`
     pub fn key(&self) -> &[u8] {
         unsafe {
@@ -128,7 +130,7 @@ impl Iterator {
     /// Return the value for the current entry.  The underlying storage for
     /// the returned slice is valid only until the next modification of
     /// the iterator.
-    /// 
+    ///
     /// REQUIRES: `!AtEnd() && !AtStart()`
     pub fn value(&self) -> &[u8] {
         unsafe {
@@ -150,7 +152,7 @@ impl Iterator {
     }
 
     /// Property `"rocksdb.iterator.is-key-pinned"`:
-    /// 
+    ///
     /// - If returning "1", this means that the Slice returned by key() is valid
     ///   as long as the iterator is not deleted.
     /// - It is guaranteed to always return "1" if
@@ -158,12 +160,25 @@ impl Iterator {
     ///   - DB tables were created with
     ///     `BlockBasedTableOptions::use_delta_encoding = false`.
     ///
-    /// Property "rocksdb.iterator.super-version-number":
-    /// 
+    /// Property `"rocksdb.iterator.super-version-number"`:
+    ///
     /// - LSM version used by the iterator. The same format as DB Property
     /// - `kCurrentSuperVersionNumber`. See its comment for more information.
-    pub fn get_property(&self, prop_name: &str) -> String {
-        unimplemented!()
+    pub fn get_property(&self, property: &str) -> Result<String, Status> {
+        unsafe {
+            let mut ret = String::new();
+            let mut status = mem::zeroed();
+            ll::rocks_iter_get_property(self.raw,
+                                        property.as_bytes().as_ptr() as *const _,
+                                        property.len(),
+                                        &mut ret as *mut String as *mut c_void,
+                                        &mut status);
+            if status.code == 0 {
+                Ok(ret)
+            } else {
+                Err(Status::from_ll(&status))
+            }
+        }
     }
 
     // FIXME: leaks?
@@ -213,5 +228,71 @@ impl<'a> iter::Iterator for Iter<'a> {
         } else {
             None
         }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use super::super::rocksdb::*;
+
+    #[test]
+    fn iterator() {
+        use tempdir::TempDir;
+        let tmp_dir = TempDir::new_in(".", "rocks").unwrap();
+        let opt = Options::default().map_db_options(|db| db.create_if_missing(true));
+        let db = DB::open(opt, tmp_dir.path()).unwrap();
+        let batch = WriteBatch::new()
+            .put(b"key1", b"BYasdf1CQ")
+            .put(b"key2", b"BYasdf1CQ")
+            .put(b"key3", b"BYasdf1CQ")
+            .put(b"key4", b"BY1dfsgCQ")
+            .put(b"key5", b"BY1ghCQ")
+            .put(b"key0", b"BYwertw1CQ")
+            .put(b"key_", b"BY1C234Q")
+            .put(b"key4", b"BY1xcvbCQ")
+            .put(b"key5", b"BY1gjhkjCQ")
+            .put(b"key1", b"BY1CyuitQ")
+            .put(b"key8", b"BY1CvbncvQ")
+            .put(b"key4", b"BY1CsafQ")
+            .put(b"name", b"BH1XUwqrW")
+            .put(b"site", b"githuzxcvb");
+
+        let ret = db.write(WriteOptions::default(), batch);
+        assert!(ret.is_ok());
+        {
+            for (k, v) in db.new_iterator(&ReadOptions::default()).iter() {
+                println!("> {:?} => {:?}",
+                         String::from_utf8_lossy(k),
+                         String::from_utf8_lossy(v));
+            }
+        }
+
+        assert!(ret.is_ok());
+        {
+            // must pin_data
+            let kvs = db.new_iterator(&ReadOptions::default().pin_data(true))
+                .iter()
+                .collect::<Vec<_>>();
+            println!("got kv => {:?}", kvs);
+        }
+
+        let mut it = db.new_iterator(&ReadOptions::default());
+
+        assert_eq!(it.is_valid(), false);
+        println!("it => {:?}", it);
+        it.seek_to_first();
+
+        assert_eq!(it.get_property("rocksdb.iterator.is-key-pinned"), Ok("0".to_string()));
+
+        assert_eq!(it.is_valid(), true);
+        println!("it => {:?}", it);
+        it.next();
+        println!("it => {:?}", it);
+        it.seek_to_last();
+        println!("it => {:?}", it);
+        it.next();
+        println!("it => {:?}", it);
+
     }
 }

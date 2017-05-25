@@ -1960,6 +1960,13 @@ extern "C" {
                                  status: *mut rocks_status_t);
 }
 extern "C" {
+    pub fn rocks_iter_get_property(iter: *const rocks_iterator_t,
+                                   prop_name: *const ::std::os::raw::c_char,
+                                   prop_len: usize,
+                                   value: *mut ::std::os::raw::c_void,
+                                   status: *mut rocks_status_t);
+}
+extern "C" {
     pub fn rocks_cache_create_lru(capacity: usize,
                                   num_shard_bits: ::std::os::raw::c_int,
                                   strict_capacity_limit:
