@@ -54,7 +54,7 @@ big picture(TODOs):
 - [ ] ~~``rocksdb/experimental.h``~~
 - [ ] ``rocksdb/filter_policy.h``
 - [ ] ``rocksdb/flush_block_policy.h``
-- [ ] ``rocksdb/iostats_context.h``
+- [x] ``rocksdb/iostats_context.h``
 - [x] ``rocksdb/iterator.h``
   - [x] adapter for Rust Iterator
   - [ ] reverse iterator

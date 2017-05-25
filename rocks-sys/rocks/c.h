@@ -74,6 +74,9 @@ extern "C" {
   typedef struct rocks_dump_options_t   rocks_dump_options_t;
   typedef struct rocks_undump_options_t rocks_undump_options_t;
 
+  /* iostats_context */
+  typedef struct rocks_iostats_context_t rocks_iostats_context_t;
+
   /* ****************************** functions ****************************** */
   /* options.h */
   /*    start */
@@ -1137,6 +1140,13 @@ extern "C" {
   /* perf_level */
   void rocks_set_perf_level(unsigned char level);
   unsigned char rocks_get_perf_level();
+
+  /* iostats_context */
+  rocks_iostats_context_t* rocks_get_iostats_context();
+  void rocks_iostats_context_reset(rocks_iostats_context_t* ctx);
+  void rocks_iostats_context_to_string(const rocks_iostats_context_t* ctx,
+                                       unsigned char exclude_zero_counters,
+                                       void* s);
 
   /* aux */
   void free(void *p);

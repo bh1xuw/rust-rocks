@@ -29,7 +29,7 @@ pub fn set_perf_level(level: PerfLevel) {
 }
 
 
-// get current perf stats level for current thread
+/// get current perf stats level for current thread
 pub fn get_perf_level() -> PerfLevel {
     unsafe {
         mem::transmute(ll::rocks_get_perf_level())

@@ -34,6 +34,7 @@ fn main() {
         .file("rocks/comparator.cc")
         .file("rocks/db_dump_tool.cc")
         .file("rocks/perf_level.cc")
+        .file("rocks/iostats_context.cc")
         .file("rocks/aux.cc")
         .flag("-fPIC")
         .flag("-O2")

@@ -336,6 +336,9 @@ pub struct rocks_dump_options_t([u8; 0]);
 #[repr(C)]
 #[derive(Debug, Copy, Clone)]
 pub struct rocks_undump_options_t([u8; 0]);
+#[repr(C)]
+#[derive(Debug, Copy, Clone)]
+pub struct rocks_iostats_context_t([u8; 0]);
 extern "C" {
     pub fn rocks_options_create() -> *mut rocks_options_t;
 }
@@ -2187,6 +2190,19 @@ extern "C" {
 }
 extern "C" {
     pub fn rocks_get_perf_level() -> ::std::os::raw::c_uchar;
+}
+extern "C" {
+    pub fn rocks_get_iostats_context() -> *mut rocks_iostats_context_t;
+}
+extern "C" {
+    pub fn rocks_iostats_context_reset(ctx: *mut rocks_iostats_context_t);
+}
+extern "C" {
+    pub fn rocks_iostats_context_to_string(ctx:
+                                               *const rocks_iostats_context_t,
+                                           exclude_zero_counters:
+                                               ::std::os::raw::c_uchar,
+                                           s: *mut ::std::os::raw::c_void);
 }
 extern "C" {
     pub fn free(p: *mut ::std::os::raw::c_void);

@@ -254,6 +254,9 @@ extern "C" {
   struct rocks_dump_options_t                { DumpOptions  rep; };
   struct rocks_undump_options_t              { UndumpOptions  rep; };
 
+  /* iostats_context */
+  typedef struct rocks_iostats_context_t rocks_iostats_context_t;
+
   /* aux */
   static bool SaveError(rocks_status_t* status, const Status& s) {
     assert(status != nullptr);

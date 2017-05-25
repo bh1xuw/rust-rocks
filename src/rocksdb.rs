@@ -8,6 +8,7 @@ pub use status::Status;
 pub use db::*;
 pub use options::*;
 pub use write_batch::WriteBatch;
+pub use perf_level::*;
 
 #[test]
 fn test_version() {
