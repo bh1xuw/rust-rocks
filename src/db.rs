@@ -703,7 +703,7 @@ impl<'a> DB<'a> {
     /// a status for which Status::IsNotFound() returns true.
     ///
     /// May return some other Status on an error.
-    pub fn get<R: AsRef<ReadOptions>>(&self, options: R, key: &[u8]) -> Result<CVec<u8>, Status> {
+    pub fn get(&self, options: &ReadOptions, key: &[u8]) -> Result<CVec<u8>, Status> {
         unsafe {
             let mut status = mem::zeroed::<ll::rocks_status_t>();
             let mut vallen = 0_usize;
@@ -1717,9 +1717,9 @@ fn test_write_batch() {
     let ret = db.write(WriteOptions::default(), batch);
     assert!(ret.is_ok());
 
-    assert_eq!(db.get(ReadOptions::default(), b"name").unwrap().as_ref(),
+    assert_eq!(db.get(&ReadOptions::default(), b"name").unwrap().as_ref(),
                b"BH1XUW");
-    assert_eq!(db.get(ReadOptions::default(), b"site").unwrap().as_ref(),
+    assert_eq!(db.get(&ReadOptions::default(), b"site").unwrap().as_ref(),
                b"github");
 }
 

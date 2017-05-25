@@ -77,6 +77,9 @@ extern "C" {
   /* iostats_context */
   typedef struct rocks_iostats_context_t rocks_iostats_context_t;
 
+  /* perf_context */
+  typedef struct rocks_perf_context_t rocks_perf_context_t;
+
   /* ****************************** functions ****************************** */
   /* options.h */
   /*    start */
@@ -1147,6 +1150,13 @@ extern "C" {
   void rocks_iostats_context_to_string(const rocks_iostats_context_t* ctx,
                                        unsigned char exclude_zero_counters,
                                        void* s);
+
+  /* perf_context */
+  rocks_perf_context_t* rocks_get_perf_context();
+  void rocks_perf_context_reset(rocks_perf_context_t* ctx);
+  void rocks_perf_context_to_string(const rocks_perf_context_t* ctx,
+                                    unsigned char exclude_zero_counters,
+                                    void* s);
 
   /* aux */
   void free(void *p);

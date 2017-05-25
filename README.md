@@ -70,7 +70,7 @@ big picture(TODOs):
 - [ ] ``rocksdb/metadata.h``
 - [x] ``rocksdb/options.h``
   - [x] builder style
-- [ ] ``rocksdb/perf_context.h``
+- [x] ``rocksdb/perf_context.h``
 - [x] ``rocksdb/perf_level.h``
 - [ ] ``rocksdb/persistent_cache.h``
 - [x] ``rocksdb/rate_limiter.h``

@@ -2,7 +2,6 @@
 //!
 //! Use `SetPerfLevel(PerfLevel::kEnableTime)` to enable time stats.
 
-
 use std::fmt;
 
 use rocks_sys as ll;

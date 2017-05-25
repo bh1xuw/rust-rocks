@@ -257,6 +257,9 @@ extern "C" {
   /* iostats_context */
   typedef struct rocks_iostats_context_t rocks_iostats_context_t;
 
+  /* perf_context */
+  typedef struct rocks_perf_context_t rocks_perf_context_t;
+
   /* aux */
   static bool SaveError(rocks_status_t* status, const Status& s) {
     assert(status != nullptr);

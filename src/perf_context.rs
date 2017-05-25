@@ -1,8 +1,9 @@
 //! A thread local context for gathering performance counter efficiently
 //! and transparently.
 
-use rocks_sys as ll;
+use std::fmt;
 
+use rocks_sys as ll;
 
 /// A thread local context for gathering performance counter efficiently
 /// and transparently.
@@ -26,27 +27,29 @@ pub struct PerfContext {
     /// total nanos spent on block decompression
     pub block_decompress_time: u64,
     /// total number of internal keys skipped over during iteration.
+    ///
     /// There are several reasons for it:
-    /// 1. when calling Next(), the iterator is in the position of the previous
+    /// 1. when calling `Next()`, the iterator is in the position of the previous
     ///    key, so that we'll need to skip it. It means this counter will always
-    ///    be incremented in Next().
-    /// 2. when calling Next(), we need to skip internal entries for the previous
+    ///    be incremented in `Next()`.
+    /// 2. when calling `Next()`, we need to skip internal entries for the previous
     ///    keys that are overwritten.
-    /// 3. when calling Next(), Seek() or SeekToFirst(), after previous key
-    ///    before calling Next(), the seek key in Seek() or the beginning for
-    ///    SeekToFirst(), there may be one or more deleted keys before the next
+    /// 3. when calling `Next()`, `Seek()` or `SeekToFirst()`, after previous key
+    ///    before calling `Next()`, the seek key in `Seek()` or the beginning for
+    ///    `SeekToFirst()`, there may be one or more deleted keys before the next
     ///    valid key that the operation should place the iterator to. We need
     ///    to skip both of the tombstone and updates hidden by the tombstones. The
     ///    tombstones are not included in this counter, while previous updates
     ///    hidden by the tombstones will be included here.
-    /// 4. symmetric cases for Prev() and SeekToLast()
+    /// 4. symmetric cases for `Prev()` and `SeekToLast()`
     ///
-    /// internal_recent_skipped_count is not included in this counter.
+    /// `internal_recent_skipped_count` is not included in this counter.
     pub internal_key_skipped_count: u64,
     /// Total number of deletes and single deletes skipped over during iteration
-    /// When calling Next(), Seek() or SeekToFirst(), after previous position
-    /// before calling Next(), the seek key in Seek() or the beginning for
-    /// SeekToFirst(), there may be one or more deleted keys before the next valid
+    ///
+    /// When calling `Next()`, `Seek()` or `SeekToFirst()`, after previous position
+    /// before calling `Next()`, the seek key in `Seek()` or the beginning for
+    /// `SeekToFirst()`, there may be one or more deleted keys before the next valid
     /// key. Every deleted key is counted once. We don't recount here if there are
     /// still older updates invalidated by the tombstones.
     pub internal_delete_skipped_count: u64,
@@ -62,18 +65,18 @@ pub struct PerfContext {
     pub get_from_memtable_time: u64,
     /// number of mem tables queried
     pub get_from_memtable_count: u64,
-    /// total nanos spent after Get() finds a key
+    /// total nanos spent after `Get()` finds a key
     pub get_post_process_time: u64,
     /// total nanos reading from output files
     pub get_from_output_files_time: u64,
     /// total nanos spent on seeking memtable
     pub seek_on_memtable_time: u64,
     /// number of seeks issued on memtable
-    /// (including SeekForPrev but not SeekToFirst and SeekToLast)
+    /// (including `SeekForPrev` but not `SeekToFirst` and `SeekToLast`)
     pub seek_on_memtable_count: u64,
-    /// number of Next()s issued on memtable
+    /// number of `Next()`s issued on memtable
     pub next_on_memtable_count: u64,
-    /// number of Prev()s issued on memtable
+    /// number of `Prev()`s issued on memtable
     pub prev_on_memtable_count: u64,
     /// total nanos spent on seeking child iters
     pub seek_child_seek_time: u64,
@@ -124,4 +127,76 @@ pub struct PerfContext {
     pub bloom_sst_hit_count: u64,
     /// total number of SST table bloom misses
     pub bloom_sst_miss_count: u64,
+}
+
+impl PerfContext {
+    /// PerfContext for current thread
+    pub fn current() -> &'static mut PerfContext {
+        unsafe {
+            let ptr = ll::rocks_get_perf_context() as *mut PerfContext;
+            ptr.as_mut().unwrap()
+        }
+    }
+
+    /// reset all performance counters to zero
+    pub fn reset(&mut self) {
+        unsafe {
+            let ptr = self as *mut PerfContext as *mut ll::rocks_perf_context_t;
+            ll::rocks_perf_context_reset(ptr);
+        }
+    }
+}
+
+impl fmt::Display for PerfContext {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        let mut s = String::new();
+        let ptr = self as *const PerfContext as *const ll::rocks_perf_context_t;
+        let exclude_zero_counters = false;
+        unsafe {
+            ll::rocks_perf_context_to_string(ptr,
+                                             exclude_zero_counters as u8,
+                                             &mut s as *mut String as *mut _);
+        }
+        write!(f, "{}", s)
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use super::super::rocksdb::*;
+
+    #[test]
+    fn perf_context() {
+        set_perf_level(PerfLevel::EnableTime);
+
+        let tmp_dir = ::tempdir::TempDir::new_in(".", "rocks").unwrap();
+        let db = DB::open(Options::default()
+                          .map_db_options(|db| db.create_if_missing(true)),
+                          &tmp_dir)
+            .unwrap();
+
+        assert!(db.put(&Default::default(), b"long-key", vec![b'A'; 1024 * 1024].as_ref())
+                .is_ok());
+        assert!(db.put(&Default::default(), b"a", b"1").is_ok());
+        assert!(db.put(&Default::default(), b"b", b"2").is_ok());
+        assert!(db.put(&Default::default(), b"c", b"3").is_ok());
+
+        assert!(db.compact_range(&Default::default(), ..).is_ok());
+
+        assert!(db.get(&Default::default(), b"long-key").is_ok());
+
+        let stat = PerfContext::current();
+
+        assert!(stat.block_read_count > 0);
+        assert!(stat.user_key_comparison_count > 0);
+
+        assert!(stat.to_string().len() > 200);
+
+        println!("dbg => {:?}", stat);
+        println!("show => {}", stat);
+
+        stat.reset();
+        assert_eq!(stat.user_key_comparison_count, 0);
+    }
 }
