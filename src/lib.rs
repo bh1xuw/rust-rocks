@@ -36,6 +36,7 @@ pub mod write_batch;
 pub mod write_buffer_manager;
 pub mod metadata;
 pub mod db_dump_tool;
+pub mod perf_level;
 
 pub mod rocksdb;
 

@@ -2183,6 +2183,12 @@ extern "C" {
      -> ::std::os::raw::c_uchar;
 }
 extern "C" {
+    pub fn rocks_set_perf_level(level: ::std::os::raw::c_uchar);
+}
+extern "C" {
+    pub fn rocks_get_perf_level() -> ::std::os::raw::c_uchar;
+}
+extern "C" {
     pub fn free(p: *mut ::std::os::raw::c_void);
 }
 extern "C" {

@@ -33,6 +33,7 @@ fn main() {
         .file("rocks/sst_file_writer.cc")
         .file("rocks/comparator.cc")
         .file("rocks/db_dump_tool.cc")
+        .file("rocks/perf_level.cc")
         .file("rocks/aux.cc")
         .flag("-fPIC")
         .flag("-O2")

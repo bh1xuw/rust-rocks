@@ -47,11 +47,11 @@ big picture(TODOs):
   - [x] compact range
   - [x] flush
   - [x] ingest sst file
-- [ ] ``rocksdb/db_bench_tool.h``
+- [ ] ~~``rocksdb/db_bench_tool.h``~~
 - [x] ``rocksdb/db_dump_tool.h``
 - [ ] ``rocksdb/env.h``
   - [ ] logger
-- [ ] ``rocksdb/experimental.h``
+- [ ] ~~``rocksdb/experimental.h``~~
 - [ ] ``rocksdb/filter_policy.h``
 - [ ] ``rocksdb/flush_block_policy.h``
 - [ ] ``rocksdb/iostats_context.h``
@@ -71,7 +71,7 @@ big picture(TODOs):
 - [x] ``rocksdb/options.h``
   - [x] builder style
 - [ ] ``rocksdb/perf_context.h``
-- [ ] ``rocksdb/perf_level.h``
+- [x] ``rocksdb/perf_level.h``
 - [ ] ``rocksdb/persistent_cache.h``
 - [x] ``rocksdb/rate_limiter.h``
 - [x] ~~``rocksdb/slice.h``~~

@@ -1134,6 +1134,9 @@ extern "C" {
   unsigned char rocks_db_undump_tool_run(rocks_undump_options_t* undump_options,
                                          rocks_options_t* options);
 
+  /* perf_level */
+  void rocks_set_perf_level(unsigned char level);
+  unsigned char rocks_get_perf_level();
 
   /* aux */
   void free(void *p);
