@@ -38,6 +38,7 @@ pub mod metadata;
 pub mod db_dump_tool;
 pub mod perf_level;
 pub mod iostats_context;
+pub mod perf_context;
 
 pub mod rocksdb;
 

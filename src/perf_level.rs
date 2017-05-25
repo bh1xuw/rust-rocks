@@ -1,8 +1,13 @@
+//! Config about how much perf stats to collect
+
 use std::mem;
 
 use rocks_sys as ll;
 
-/// How much perf stats to collect. Affects perf_context and iostats_context.
+/// How much perf stats to collect. Affects [`perf_context`] and [`iostats_context`].
+///
+/// [`perf_context`]: ../../rocks/perf_context/index.html
+/// [`iostats_context`]: ../../rocks/iostats_context/index.html
 #[repr(u8)]
 #[derive(Debug, Copy, Clone, PartialEq, Eq, Hash)]
 pub enum PerfLevel {

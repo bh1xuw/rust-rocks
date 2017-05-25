@@ -1,9 +1,10 @@
+//! Dump and un-dump tools for rocksdb
 
 use rocks_sys as ll;
 
 use options::Options;
 
-
+/// Dumps db to a ROCKDUMP file
 pub struct DbDumpTool {
     raw: *mut ll::rocks_dump_options_t,
 }
@@ -49,8 +50,7 @@ impl DbDumpTool {
     }
 }
 
-
-
+/// Undumps(load) db from a ROCKDUMP file
 pub struct DbUndumpTool {
     raw: *mut ll::rocks_undump_options_t,
 }

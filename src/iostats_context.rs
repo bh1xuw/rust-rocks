@@ -1,5 +1,5 @@
 //! A thread local context for gathering io-stats efficiently and transparently.
-//! 
+//!
 //! Use `SetPerfLevel(PerfLevel::kEnableTime)` to enable time stats.
 
 
@@ -7,7 +7,7 @@ use std::fmt;
 
 use rocks_sys as ll;
 
-
+/// A thread local context for gathering io-stats efficiently and transparently.
 #[derive(Debug)]
 #[repr(C)]
 pub struct IOStatsContext {
