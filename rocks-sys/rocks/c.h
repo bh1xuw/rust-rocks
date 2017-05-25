@@ -70,6 +70,10 @@ extern "C" {
   typedef struct rocks_sst_file_writer_t rocks_sst_file_writer_t;
   typedef struct rocks_external_sst_file_info_t rocks_external_sst_file_info_t;
 
+  /* db_dump_tool */
+  typedef struct rocks_dump_options_t   rocks_dump_options_t;
+  typedef struct rocks_undump_options_t rocks_undump_options_t;
+
   /* ****************************** functions ****************************** */
   /* options.h */
   /*    start */
@@ -1084,7 +1088,7 @@ extern "C" {
 
   uint64_t rocks_sst_file_writer_file_size(rocks_sst_file_writer_t* writer);
 
-/* comparator */
+  /* comparator */
   /* avoid export rocksdb::Comparator type */
   const rocks_c_comparator_t* rocks_comparator_bytewise();
   const rocks_c_comparator_t* rocks_comparator_bytewise_reversed();
@@ -1094,6 +1098,42 @@ extern "C" {
   int rocks_version_major();
   int rocks_version_minor();
   int rocks_version_patch();
+
+  /* db_dump_tool */
+  rocks_dump_options_t* rocks_dump_options_create();
+
+  void rocks_dump_options_destroy(rocks_dump_options_t* options);
+
+  void rocks_dump_options_set_db_path(rocks_dump_options_t* opt,
+                                      const char* path,
+                                      const size_t path_len);
+
+  void rocks_dump_options_set_dump_location(rocks_dump_options_t* opt,
+                                            const char* path,
+                                            const size_t path_len);
+
+  void rocks_dump_options_set_anonymous(rocks_dump_options_t* opt, unsigned char v);
+
+  unsigned char rocks_db_dump_tool_run(rocks_dump_options_t* dump_options,
+                                       rocks_options_t* options);
+
+  rocks_undump_options_t* rocks_undump_options_create();
+
+  void rocks_undump_options_destroy(rocks_undump_options_t* options);
+
+  void rocks_undump_options_set_db_path(rocks_undump_options_t* opt,
+                                        const char* path,
+                                        const size_t path_len);
+
+  void rocks_undump_options_set_dump_location(rocks_undump_options_t* opt,
+                                              const char* path,
+                                              const size_t path_len);
+
+  void rocks_undump_options_set_compact_db(rocks_undump_options_t* opt, unsigned char v);
+
+  unsigned char rocks_db_undump_tool_run(rocks_undump_options_t* undump_options,
+                                         rocks_options_t* options);
+
 
   /* aux */
   void free(void *p);

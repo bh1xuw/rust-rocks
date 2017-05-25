@@ -16,6 +16,7 @@
 #include "rocksdb/sst_file_writer.h"
 #include "rocksdb/compaction_filter.h"
 #include "rocksdb/slice_transform.h"
+#include "rocksdb/db_dump_tool.h"
 
 #include "rust_export.h"
 
@@ -248,6 +249,10 @@ extern "C" {
       return false;
     }
   };
+
+  /* db_dump_tool */
+  struct rocks_dump_options_t                { DumpOptions  rep; };
+  struct rocks_undump_options_t              { UndumpOptions  rep; };
 
   /* aux */
   static bool SaveError(rocks_status_t* status, const Status& s) {

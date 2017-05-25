@@ -48,7 +48,7 @@ big picture(TODOs):
   - [x] flush
   - [x] ingest sst file
 - [ ] ``rocksdb/db_bench_tool.h``
-- [ ] ``rocksdb/db_dump_tool.h``
+- [x] ``rocksdb/db_dump_tool.h``
 - [ ] ``rocksdb/env.h``
   - [ ] logger
 - [ ] ``rocksdb/experimental.h``
@@ -113,10 +113,10 @@ big picture(TODOs):
 - [ ] ``rocksdb/utilities/json_document.h``
 - [ ] ``rocksdb/utilities/ldb_cmd.h``
 - [ ] ``rocksdb/utilities/ldb_cmd_execute_result.h``
-- [ ] ``rocksdb/utilities/leveldb_options.h``
-- [ ] ``rocksdb/utilities/lua/rocks_lua_compaction_filter.h``
-- [ ] ``rocksdb/utilities/lua/rocks_lua_custom_library.h``
-- [ ] ``rocksdb/utilities/lua/rocks_lua_util.h``
+- [ ] ~~``rocksdb/utilities/leveldb_options.h``~~
+- [ ] ~~``rocksdb/utilities/lua/rocks_lua_compaction_filter.h``~~
+- [ ] ~~``rocksdb/utilities/lua/rocks_lua_custom_library.h``~~
+- [ ] ~~``rocksdb/utilities/lua/rocks_lua_util.h``~~
 - [ ] ``rocksdb/utilities/memory_util.h``
 - [ ] ``rocksdb/utilities/object_registry.h``
 - [ ] ``rocksdb/utilities/optimistic_transaction_db.h``
@@ -129,5 +129,5 @@ big picture(TODOs):
 - [ ] ``rocksdb/utilities/transaction.h``
 - [ ] ``rocksdb/utilities/transaction_db.h``
 - [ ] ``rocksdb/utilities/transaction_db_mutex.h``
-- [ ] ``rocksdb/utilities/utility_db.h``
+- [ ] ~~``rocksdb/utilities/utility_db.h``~~
 - [ ] ``rocksdb/utilities/write_batch_with_index.h``

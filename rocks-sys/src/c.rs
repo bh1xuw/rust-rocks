@@ -330,6 +330,12 @@ pub struct rocks_sst_file_writer_t([u8; 0]);
 #[repr(C)]
 #[derive(Debug, Copy, Clone)]
 pub struct rocks_external_sst_file_info_t([u8; 0]);
+#[repr(C)]
+#[derive(Debug, Copy, Clone)]
+pub struct rocks_dump_options_t([u8; 0]);
+#[repr(C)]
+#[derive(Debug, Copy, Clone)]
+pub struct rocks_undump_options_t([u8; 0]);
 extern "C" {
     pub fn rocks_options_create() -> *mut rocks_options_t;
 }
@@ -1961,7 +1967,7 @@ extern "C" {
 }
 extern "C" {
     pub fn rocks_iter_get_property(iter: *const rocks_iterator_t,
-                                   prop_name: *const ::std::os::raw::c_char,
+                                   prop: *const ::std::os::raw::c_char,
                                    prop_len: usize,
                                    value: *mut ::std::os::raw::c_void,
                                    status: *mut rocks_status_t);
@@ -2118,6 +2124,63 @@ extern "C" {
 }
 extern "C" {
     pub fn rocks_version_patch() -> ::std::os::raw::c_int;
+}
+extern "C" {
+    pub fn rocks_dump_options_create() -> *mut rocks_dump_options_t;
+}
+extern "C" {
+    pub fn rocks_dump_options_destroy(options: *mut rocks_dump_options_t);
+}
+extern "C" {
+    pub fn rocks_dump_options_set_db_path(opt: *mut rocks_dump_options_t,
+                                          path: *const ::std::os::raw::c_char,
+                                          path_len: usize);
+}
+extern "C" {
+    pub fn rocks_dump_options_set_dump_location(opt:
+                                                    *mut rocks_dump_options_t,
+                                                path:
+                                                    *const ::std::os::raw::c_char,
+                                                path_len: usize);
+}
+extern "C" {
+    pub fn rocks_dump_options_set_anonymous(opt: *mut rocks_dump_options_t,
+                                            v: ::std::os::raw::c_uchar);
+}
+extern "C" {
+    pub fn rocks_db_dump_tool_run(dump_options: *mut rocks_dump_options_t,
+                                  options: *mut rocks_options_t)
+     -> ::std::os::raw::c_uchar;
+}
+extern "C" {
+    pub fn rocks_undump_options_create() -> *mut rocks_undump_options_t;
+}
+extern "C" {
+    pub fn rocks_undump_options_destroy(options: *mut rocks_undump_options_t);
+}
+extern "C" {
+    pub fn rocks_undump_options_set_db_path(opt: *mut rocks_undump_options_t,
+                                            path:
+                                                *const ::std::os::raw::c_char,
+                                            path_len: usize);
+}
+extern "C" {
+    pub fn rocks_undump_options_set_dump_location(opt:
+                                                      *mut rocks_undump_options_t,
+                                                  path:
+                                                      *const ::std::os::raw::c_char,
+                                                  path_len: usize);
+}
+extern "C" {
+    pub fn rocks_undump_options_set_compact_db(opt:
+                                                   *mut rocks_undump_options_t,
+                                               v: ::std::os::raw::c_uchar);
+}
+extern "C" {
+    pub fn rocks_db_undump_tool_run(undump_options:
+                                        *mut rocks_undump_options_t,
+                                    options: *mut rocks_options_t)
+     -> ::std::os::raw::c_uchar;
 }
 extern "C" {
     pub fn free(p: *mut ::std::os::raw::c_void);
