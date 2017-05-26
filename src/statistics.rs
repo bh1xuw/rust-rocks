@@ -8,7 +8,7 @@ use rocks_sys as ll;
 
 use to_raw::ToRaw;
 
-
+/// Ticker statistics
 #[repr(u32)]
 #[derive(Debug, Copy, Clone, PartialEq, Eq, Hash)]
 pub enum Tickers {
@@ -28,66 +28,66 @@ pub enum Tickers {
     ///                              BLOCK_CACHE_DATA_HIT;
     /// ```
     BlockCacheHit,
-    /// # of blocks added to block cache.
+    /// \# of blocks added to block cache.
     BlockCacheAdd,
-    /// # of failures when adding blocks to block cache.
+    /// \# of failures when adding blocks to block cache.
     BlockCacheAddFailures,
-    /// # of times cache miss when accessing index block from block cache.
+    /// \# of times cache miss when accessing index block from block cache.
     BlockCacheIndexMiss,
-    /// # of times cache hit when accessing index block from block cache.
+    /// \# of times cache hit when accessing index block from block cache.
     BlockCacheIndexHit,
-    /// # of index blocks added to block cache.
+    /// \# of index blocks added to block cache.
     BlockCacheIndexAdd,
-    /// # of bytes of index blocks inserted into cache
+    /// \# of bytes of index blocks inserted into cache
     BlockCacheIndexBytesInsert,
-    /// # of bytes of index block erased from cache
+    /// \# of bytes of index block erased from cache
     BlockCacheIndexBytesEvict,
-    /// # of times cache miss when accessing filter block from block cache.
+    /// \# of times cache miss when accessing filter block from block cache.
     BlockCacheFilterMiss,
-    /// # of times cache hit when accessing filter block from block cache.
+    /// \# of times cache hit when accessing filter block from block cache.
     BlockCacheFilterHit,
-    /// # of filter blocks added to block cache.
+    /// \# of filter blocks added to block cache.
     BlockCacheFilterAdd,
-    /// # of bytes of bloom filter blocks inserted into cache
+    /// \# of bytes of bloom filter blocks inserted into cache
     BlockCacheFilterBytesInsert,
-    /// # of bytes of bloom filter block erased from cache
+    /// \# of bytes of bloom filter block erased from cache
     BlockCacheFilterBytesEvict,
-    /// # of times cache miss when accessing data block from block cache.
+    /// \# of times cache miss when accessing data block from block cache.
     BlockCacheDataMiss,
-    /// # of times cache hit when accessing data block from block cache.
+    /// \# of times cache hit when accessing data block from block cache.
     BlockCacheDataHit,
-    /// # of data blocks added to block cache.
+    /// \# of data blocks added to block cache.
     BlockCacheDataAdd,
-    /// # of bytes of data blocks inserted into cache
+    /// \# of bytes of data blocks inserted into cache
     BlockCacheDataBytesInsert,
-    /// # of bytes read from cache.
+    /// \# of bytes read from cache.
     BlockCacheBytesRead,
-    /// # of bytes written into cache.
+    /// \# of bytes written into cache.
     BlockCacheBytesWrite,
 
-    /// # of times bloom filter has avoided file reads.
+    /// \# of times bloom filter has avoided file reads.
     BloomFilterUseful,
 
-    /// # persistent cache hit
+    /// \# persistent cache hit
     PersistentCacheHit,
-    /// # persistent cache miss
+    /// \# persistent cache miss
     PersistentCacheMiss,
 
-    /// # total simulation block cache hits
+    /// \# total simulation block cache hits
     SimBlockCacheHit,
-    /// # total simulation block cache misses
+    /// \# total simulation block cache misses
     SimBlockCacheMiss,
 
-    /// # of memtable hits.
+    /// \# of memtable hits.
     MemtableHit,
-    /// # of memtable misses.
+    /// \# of memtable misses.
     MemtableMiss,
 
-    /// # of Get() queries served by L0
+    /// \# of Get() queries served by L0
     GetHitL0,
-    /// # of Get() queries served by L1
+    /// \# of Get() queries served by L1
     GetHitL1,
-    /// # of Get() queries served by L2 and up
+    /// \# of Get() queries served by L2 and up
     GetHitL2AndUp,
 
     /// COMPACTION_KEY_DROP_* count the reasons for key drop during compaction
@@ -209,7 +209,7 @@ pub enum Tickers {
     NumberSuperversionReleases,
     NumberSuperversionCleanups,
 
-    /// # of compressions/decompressions executed
+    /// \# of compressions/decompressions executed
     NumberBlockCompressed,
     NumberBlockDecompressed,
 
@@ -340,8 +340,7 @@ impl fmt::Display for Tickers {
     }
 }
 
-
-
+/// Histogram statistics
 #[repr(u32)]
 #[derive(Debug, Copy, Clone, PartialEq, Eq, Hash)]
 pub enum Histograms {
@@ -424,8 +423,9 @@ impl fmt::Display for Histograms {
     }
 }
 
-
+/// Repr single histogram data item
 #[repr(C)]
+#[derive(Debug, Clone)]
 pub struct HistogramData {
     pub median: f64,
     pub percentile95: f64,
