@@ -1,6 +1,6 @@
 [package]
 name = "rocks"
-version = "0.0.1"
+version = "0.0.2"
 authors = ["BH1XUW <bh1xuw@gmail.com>"]
 description = "RocksDB bindings for Rust."
 repository = "https://github.com/bh1xuw/rust-rocks"
@@ -18,7 +18,7 @@ include = [
 ]
 
 [dependencies]
-rocks-sys = { path = "rocks-sys", version = "0.0.1" }
+rocks-sys = { path = "rocks-sys", version = "0.0.2" }
 
 [dev-dependencies]
 tempdir = "0.3"

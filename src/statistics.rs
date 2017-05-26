@@ -12,183 +12,204 @@ use to_raw::ToRaw;
 #[repr(u32)]
 #[derive(Debug, Copy, Clone, PartialEq, Eq, Hash)]
 pub enum Tickers {
-    // total block cache misses
-    // REQUIRES: BLOCK_CACHE_MISS == BLOCK_CACHE_INDEX_MISS +
-    //                               BLOCK_CACHE_FILTER_MISS +
-    //                               BLOCK_CACHE_DATA_MISS;
+    /// total block cache misses
+    ///
+    /// ```text
+    /// REQUIRES: BLOCK_CACHE_MISS == BLOCK_CACHE_INDEX_MISS +
+    ///                               BLOCK_CACHE_FILTER_MISS +
+    ///                               BLOCK_CACHE_DATA_MISS;
+    /// ```
     BlockCacheMiss = 0,
-    // total block cache hit
-    // REQUIRES: BLOCK_CACHE_HIT == BLOCK_CACHE_INDEX_HIT +
-    //                              BLOCK_CACHE_FILTER_HIT +
-    //                              BLOCK_CACHE_DATA_HIT;
+    /// total block cache hit
+    ///
+    /// ```text
+    /// REQUIRES: BLOCK_CACHE_HIT == BLOCK_CACHE_INDEX_HIT +
+    ///                              BLOCK_CACHE_FILTER_HIT +
+    ///                              BLOCK_CACHE_DATA_HIT;
+    /// ```
     BlockCacheHit,
-    // # of blocks added to block cache.
+    /// # of blocks added to block cache.
     BlockCacheAdd,
-    // # of failures when adding blocks to block cache.
+    /// # of failures when adding blocks to block cache.
     BlockCacheAddFailures,
-    // # of times cache miss when accessing index block from block cache.
+    /// # of times cache miss when accessing index block from block cache.
     BlockCacheIndexMiss,
-    // # of times cache hit when accessing index block from block cache.
+    /// # of times cache hit when accessing index block from block cache.
     BlockCacheIndexHit,
-    // # of index blocks added to block cache.
+    /// # of index blocks added to block cache.
     BlockCacheIndexAdd,
-    // # of bytes of index blocks inserted into cache
+    /// # of bytes of index blocks inserted into cache
     BlockCacheIndexBytesInsert,
-    // # of bytes of index block erased from cache
+    /// # of bytes of index block erased from cache
     BlockCacheIndexBytesEvict,
-    // # of times cache miss when accessing filter block from block cache.
+    /// # of times cache miss when accessing filter block from block cache.
     BlockCacheFilterMiss,
-    // # of times cache hit when accessing filter block from block cache.
+    /// # of times cache hit when accessing filter block from block cache.
     BlockCacheFilterHit,
-    // # of filter blocks added to block cache.
+    /// # of filter blocks added to block cache.
     BlockCacheFilterAdd,
-    // # of bytes of bloom filter blocks inserted into cache
+    /// # of bytes of bloom filter blocks inserted into cache
     BlockCacheFilterBytesInsert,
-    // # of bytes of bloom filter block erased from cache
+    /// # of bytes of bloom filter block erased from cache
     BlockCacheFilterBytesEvict,
-    // # of times cache miss when accessing data block from block cache.
+    /// # of times cache miss when accessing data block from block cache.
     BlockCacheDataMiss,
-    // # of times cache hit when accessing data block from block cache.
+    /// # of times cache hit when accessing data block from block cache.
     BlockCacheDataHit,
-    // # of data blocks added to block cache.
+    /// # of data blocks added to block cache.
     BlockCacheDataAdd,
-    // # of bytes of data blocks inserted into cache
+    /// # of bytes of data blocks inserted into cache
     BlockCacheDataBytesInsert,
-    // # of bytes read from cache.
+    /// # of bytes read from cache.
     BlockCacheBytesRead,
-    // # of bytes written into cache.
+    /// # of bytes written into cache.
     BlockCacheBytesWrite,
 
-    // # of times bloom filter has avoided file reads.
+    /// # of times bloom filter has avoided file reads.
     BloomFilterUseful,
 
-    // # persistent cache hit
+    /// # persistent cache hit
     PersistentCacheHit,
-    // # persistent cache miss
+    /// # persistent cache miss
     PersistentCacheMiss,
 
-    // # total simulation block cache hits
+    /// # total simulation block cache hits
     SimBlockCacheHit,
-    // # total simulation block cache misses
+    /// # total simulation block cache misses
     SimBlockCacheMiss,
 
-    // # of memtable hits.
+    /// # of memtable hits.
     MemtableHit,
-    // # of memtable misses.
+    /// # of memtable misses.
     MemtableMiss,
 
-    // # of Get() queries served by L0
+    /// # of Get() queries served by L0
     GetHitL0,
-    // # of Get() queries served by L1
+    /// # of Get() queries served by L1
     GetHitL1,
-    // # of Get() queries served by L2 and up
+    /// # of Get() queries served by L2 and up
     GetHitL2AndUp,
 
-    /**
-     * COMPACTION_KEY_DROP_* count the reasons for key drop during compaction
-     * There are 4 reasons currently.
-     */
+    /// COMPACTION_KEY_DROP_* count the reasons for key drop during compaction
+    ///
+    /// There are 4 reasons currently.
+    ///
+    /// key was written with a newer value.
+    /// Also includes keys dropped for range del.
+    CompactionKeyDropNewerEntry,
+    /// The key is obsolete.
+    CompactionKeyDropObsolete,
+    /// key was covered by a range tombstone.
+    CompactionKeyDropRangeDel,
+    /// user compaction function has dropped the key.
+    CompactionKeyDropUser,
+    /// all keys in range were deleted.
+    CompactionRangeDelDropObsolete,
 
-    CompactionKeyDropNewerEntry,  // key was written with a newer value.
-    // Also includes keys dropped for range del.
-    CompactionKeyDropObsolete,     // The key is obsolete.
-    CompactionKeyDropRangeDel,    // key was covered by a range tombstone.
-    CompactionKeyDropUser,  // user compaction function has dropped the key.
-
-    CompactionRangeDelDropObsolete,  // all keys in range were deleted.
-
-    // Number of keys written to the database via the Put and Write call's
+    /// Number of keys written to the database via the Put and Write call's
     NumberKeysWritten,
-    // Number of Keys read,
+    /// Number of Keys read,
     NumberKeysRead,
-    // Number keys updated, if inplace update is enabled
+    /// Number keys updated, if inplace update is enabled
     NumberKeysUpdated,
-    // the number of uncompressed bytes issued by DB::Put(), DB::Delete(),
-    // DB::Merge(), and DB::Write().
+    /// the number of uncompressed bytes issued by `DB::Put()`, `DB::Delete()`,
+    /// `DB::Merge()`, and `DB::Write()`.
     BytesWritten,
-    // The number of uncompressed bytes read from DB::Get().  It could be
-    // either from memtables, cache, or table files.
-    // For the number of logical bytes read from DB::MultiGet(),
-    // please use NUMBER_MULTIGET_BYTES_READ.
+    /// The number of uncompressed bytes read from `DB::Get()`.  It could be
+    /// either from memtables, cache, or table files.
+    /// 
+    /// For the number of logical bytes read from `DB::MultiGet()`,
+    /// please use `NUMBER_MULTIGET_BYTES_READ`.
     BytesRead,
-    // The number of calls to seek/next/prev
+    /// The number of calls to seek/next/prev
     NumberDbSeek,
     NumberDbNext,
     NumberDbPrev,
-    // The number of calls to seek/next/prev that returned data
+    /// The number of calls to seek/next/prev that returned data
     NumberDbSeekFound,
     NumberDbNextFound,
     NumberDbPrevFound,
-    // The number of uncompressed bytes read from an iterator.
-    // Includes size of key and value.
+    /// The number of uncompressed bytes read from an iterator.
+    /// Includes size of key and value.
     IterBytesRead,
     NoFileCloses,
     NoFileOpens,
     NoFileErrors,
-    // DEPRECATED Time system had to wait to do LO-L1 compactions
+    /// DEPRECATED Time system had to wait to do LO-L1 compactions
     StallL0SlowdownMicros,
-    // DEPRECATED Time system had to wait to move memtable to L1.
+    /// DEPRECATED Time system had to wait to move memtable to L1.
     StallMemtableCompactionMicros,
-    // DEPRECATED write throttle because of too many files in L0
+    /// DEPRECATED write throttle because of too many files in L0
     StallL0NumFilesMicros,
-    // Writer has to wait for compaction or flush to finish.
+    /// Writer has to wait for compaction or flush to finish.
     StallMicros,
-    // The wait time for db mutex.
-    // Disabled by default. To enable it set stats level to kAll
+    /// The wait time for db mutex.
+    /// Disabled by default. To enable it set stats level to kAll
     DbMutexWaitMicros,
     RateLimitDelayMillis,
-    NoIterators,  // number of iterators currently open
+    /// number of iterators currently open
+    NoIterators,
 
-    // Number of MultiGet calls, keys read, and bytes read
+    /// Number of MultiGet calls, keys read, and bytes read
     NumberMultigetCalls,
     NumberMultigetKeysRead,
     NumberMultigetBytesRead,
 
-    // Number of deletes records that were not required to be
-    // written to storage because key does not exist
+    /// Number of deletes records that were not required to be
+    /// written to storage because key does not exist
     NumberFilteredDeletes,
     NumberMergeFailures,
 
-    // number of times bloom was checked before creating iterator on a
-    // file, and the number of times the check was useful in avoiding
-    // iterator creation (and thus likely IOPs).
+    /// number of times bloom was checked before creating iterator on a
+    /// file, and the number of times the check was useful in avoiding
+    /// iterator creation (and thus likely IOPs).
     BloomFilterPrefixChecked,
     BloomFilterPrefixUseful,
 
-    // Number of times we had to reseek inside an iteration to skip
-    // over large number of keys with same userkey.
+    /// Number of times we had to reseek inside an iteration to skip
+    /// over large number of keys with same userkey.
     NumberOfReseeksInIteration,
 
-    // Record the number of calls to GetUpadtesSince. Useful to keep track of
-    // transaction log iterator refreshes
+    /// Record the number of calls to GetUpadtesSince. Useful to keep track of
+    /// transaction log iterator refreshes
     GetUpdatesSinceCalls,
-    BlockCacheCompressedMiss,  // miss in the compressed block cache
-    BlockCacheCompressedHit,   // hit in the compressed block cache
-    // Number of blocks added to comopressed block cache
+    /// miss in the compressed block cache
+    BlockCacheCompressedMiss,
+    /// hit in the compressed block cache
+    BlockCacheCompressedHit,
+    /// Number of blocks added to comopressed block cache
     BlockCacheCompressedAdd,
-    // Number of failures when adding blocks to compressed block cache
+    /// Number of failures when adding blocks to compressed block cache
     BlockCacheCompressedAddFailures,
-    WalFileSynced,  // Number of times WAL sync is done
-    WalFileBytes,   // Number of bytes written to WAL
+    /// Number of times WAL sync is done
+    WalFileSynced,
+    /// Number of bytes written to WAL
+    WalFileBytes,
 
-    // Writes can be processed by requesting thread or by the thread at the
-    // head of the writers queue.
+    /// Writes can be processed by requesting thread or by the thread at the
+    /// head of the writers queue.
     WriteDoneBySelf,
-    WriteDoneByOther,  // Equivalent to writes done for others
-    WriteTimedout,       // Number of writes ending up with timed-out.
-    WriteWithWal,       // Number of Write calls that request WAL
-    CompactReadBytes,   // Bytes read during compaction
-    CompactWriteBytes,  // Bytes written during compaction
-    FlushWriteBytes,    // Bytes written during flush
+    /// Equivalent to writes done for others
+    WriteDoneByOther,
+    /// Number of writes ending up with timed-out.
+    WriteTimedout,
+    /// Number of Write calls that request WAL
+    WriteWithWal,
+    /// Bytes read during compaction
+    CompactReadBytes,
+    /// Bytes written during compaction
+    CompactWriteBytes,
+    /// Bytes written during flush
+    FlushWriteBytes,
 
-    // Number of table's properties loaded directly from file, without creating
-    // table reader object.
+    /// Number of table's properties loaded directly from file, without creating
+    /// table reader object.
     NumberDirectLoadTableProperties,
     NumberSuperversionAcquires,
     NumberSuperversionReleases,
     NumberSuperversionCleanups,
 
-    // # of compressions/decompressions executed
+    /// # of compressions/decompressions executed
     NumberBlockCompressed,
     NumberBlockDecompressed,
 
@@ -196,19 +217,23 @@ pub enum Tickers {
     MergeOperationTotalTime,
     FilterOperationTotalTime,
 
-    // Row cache.
+    /// Row cache.
     RowCacheHit,
     RowCacheMiss,
 
-    // Read amplification statistics.
-    // Read amplification can be calculated using this formula
-    // (READ_AMP_TOTAL_READ_BYTES / READ_AMP_ESTIMATE_USEFUL_BYTES)
-    //
-    // REQUIRES: ReadOptions::read_amp_bytes_per_bit to be enabled
-    ReadAmpEstimateUsefulBytes,  // Estimate of total bytes actually used.
-    ReadAmpTotalReadBytes,       // Total size of loaded data blocks.
+    /// Read amplification statistics.
+    ///
+    /// Read amplification can be calculated using this formula
+    /// `(READ_AMP_TOTAL_READ_BYTES / READ_AMP_ESTIMATE_USEFUL_BYTES)`
+    ///
+    /// REQUIRES: `ReadOptions::read_amp_bytes_per_bit` to be enabled
+    ///
+    /// Estimate of total bytes actually used.
+    ReadAmpEstimateUsefulBytes,
+    /// Total size of loaded data blocks.
+    ReadAmpTotalReadBytes,
 
-    // Number of refill intervals where rate limiter's bytes are fully consumed.
+    /// Number of refill intervals where rate limiter's bytes are fully consumed.
     NumberRateLimiterDrains,
 }
 
@@ -328,7 +353,7 @@ pub enum Histograms {
     CompactionOutfileSyncMicros,
     WalFileSyncMicros,
     ManifestFileSyncMicros,
-    // TIME SPENT IN IO DURING TABLE OPEN
+    /// TIME SPENT IN IO DURING TABLE OPEN
     TableOpenIoMicros,
     DbMultiget,
     ReadBlockCompactionMicros,
@@ -343,15 +368,15 @@ pub enum Histograms {
     DbSeek,
     WriteStall,
     SstReadMicros,
-    // The number of subcompactions actually scheduled during a compaction
+    /// The number of subcompactions actually scheduled during a compaction
     NumSubcompactionsScheduled,
-    // Value size distribution in each operation
+    /// Value size distribution in each operation
     BytesPerRead,
     BytesPerWrite,
     BytesPerMultiget,
 
-    // number of bytes compressed/decompressed
-    // number of bytes is when uncompressed; i.e. before/after respectively
+    /// number of bytes compressed/decompressed
+    /// number of bytes is when uncompressed; i.e. before/after respectively
     BytesCompressed,
     BytesDecompressed,
     CompressionTimesNanos,
@@ -535,6 +560,7 @@ impl fmt::Display for Statistics {
 mod tests {
     use super::*;
     use super::super::rocksdb::*;
+    use super::super::rate_limiter::RateLimiter;
 
     #[test]
     fn statistics() {
@@ -546,6 +572,9 @@ mod tests {
                           .map_db_options(|db| {
                               db.create_if_missing(true)
                                   .statistics(Some(stat.clone())) // FIXME: is this the best way?
+                                  .rate_limiter(Some(RateLimiter::new(1024, // 1 KiB/s
+                                                                      10_000, // 10 ms
+                                                                      10)))
                           }),
                           &tmp_dir)
             .unwrap();
@@ -561,6 +590,11 @@ mod tests {
         assert!(db.get(&Default::default(), b"long-key").is_ok());
 
         println!("st => {}", stat);
-        assert!(stat.get_ticker_count(Tickers::BlockCacheBytesWrite) > 0)
+        assert!(stat.get_ticker_count(Tickers::BlockCacheBytesWrite) > 0);
+        // this is the last ticker, since we set up rate limiter to a low value, this must be true
+        assert!(stat.get_ticker_count(Tickers::NumberRateLimiterDrains) > 0);
+
+        // a multiline string
+        assert!(stat.get_histogram_string(Histograms::BytesPerRead).len() > 100);
     }
 }

@@ -82,7 +82,7 @@ big picture(TODOs):
 - [ ] ``rocksdb/sst_dump_tool.h``
 - [ ] ``rocksdb/sst_file_manager.h``
 - [x] ``rocksdb/sst_file_writer.h``
-- [ ] ``rocksdb/statistics.h``
+- [x] ``rocksdb/statistics.h``
   - [ ] customized statistics class via rust trait?
 - [x] ``rocksdb/status.h``
   - [ ] Rust style Error? (i.e. remove Status::OK)
