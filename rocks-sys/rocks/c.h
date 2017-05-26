@@ -1004,6 +1004,8 @@ extern "C" {
   void rocks_writebatch_rollback_to_save_point(rocks_writebatch_t* b,
                                                rocks_status_t* status);
 
+  rocks_writebatch_t* rocks_writebatch_copy(rocks_writebatch_t* b);
+
   /* iterator */
   void rocks_iter_destroy(rocks_iterator_t* iter);
 

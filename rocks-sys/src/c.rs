@@ -1939,6 +1939,10 @@ extern "C" {
                                                        *mut rocks_status_t);
 }
 extern "C" {
+    pub fn rocks_writebatch_copy(b: *mut rocks_writebatch_t)
+     -> *mut rocks_writebatch_t;
+}
+extern "C" {
     pub fn rocks_iter_destroy(iter: *mut rocks_iterator_t);
 }
 extern "C" {

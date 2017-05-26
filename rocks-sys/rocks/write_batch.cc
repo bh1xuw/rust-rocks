@@ -280,4 +280,8 @@ extern "C" {
                                                rocks_status_t* status) {
     SaveError(status, b->rep.RollbackToSavePoint());
   }
+
+  rocks_writebatch_t* rocks_writebatch_copy(rocks_writebatch_t* b) {
+    return new rocks_writebatch_t { WriteBatch(b->rep) };
+  }
 }

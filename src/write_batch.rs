@@ -15,6 +15,8 @@
 //! external synchronization.
 
 use std::mem;
+use std::fmt;
+use std::slice;
 
 use rocks_sys as ll;
 
@@ -30,6 +32,21 @@ impl Drop for WriteBatch {
         unsafe { ll::rocks_writebatch_destroy(self.raw) }
     }
 }
+
+impl Clone for WriteBatch {
+    fn clone(&self) -> Self {
+        WriteBatch {
+            raw: unsafe { ll::rocks_writebatch_copy(self.raw) },
+        }
+    }
+}
+
+impl fmt::Debug for WriteBatch {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        write!(f, "WriteBatch {{{:?}}}", String::from_utf8_lossy(self.get_data()))
+    }
+}
+
 
 impl WriteBatch {
     pub fn new() -> WriteBatch {
@@ -263,7 +280,11 @@ impl WriteBatch {
     // Retrieve the serialized version of this batch.
     // Data()
     pub fn get_data(&self) -> &[u8] {
-        unimplemented!()
+        unsafe {
+            let mut size = 0;
+            let ptr = ll::rocks_writebatch_data(self.raw, &mut size);
+            slice::from_raw_parts(ptr as *const _, size)
+        }
     }
 
     // Retrieve data size of the batch.
@@ -334,4 +355,5 @@ fn test_write_batch_create() {
     assert!(batch.count() == 1);
     let batch = batch.delete(b"name");
     assert_eq!(batch.count(), 2);
+    println!("str => {:?}", batch);
 }

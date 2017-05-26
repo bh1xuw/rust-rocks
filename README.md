@@ -59,7 +59,7 @@ big picture(TODOs):
   - [x] adapter for Rust Iterator
   - [ ] reverse iterator
   - [ ] pinned slice, wait rocksdb 5.4
-- [ ] ``rocksdb/ldb_tool.h``
+- [ ] ~~``rocksdb/ldb_tool.h``~~
 - [ ] ``rocksdb/listener.h``
 - [ ] ``rocksdb/memtablerep.h``
 - [x] ``rocksdb/merge_operator.h``
@@ -99,6 +99,7 @@ big picture(TODOs):
   - [x] basic functions
   - [x] builder style
   - [ ] batch cf ops
+  - [ ] inspect functions
 - [ ] ~~``rocksdb/write_batch_base.h``~~
 - [ ] ``rocksdb/write_buffer_manager.h``
 - [ ] ``rocksdb/universal_compaction.h``
