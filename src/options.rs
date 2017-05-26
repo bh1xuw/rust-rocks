@@ -129,18 +129,21 @@ pub struct ColumnFamilyOptions {
     raw: *mut ll::rocks_cfoptions_t,
 }
 
+impl ToRaw<ll::rocks_cfoptions_t> for ColumnFamilyOptions {
+    fn raw(&self) -> *mut ll::rocks_cfoptions_t {
+        self.raw
+    }
+
+}
+
 impl ColumnFamilyOptions {
     /// Create ColumnFamilyOptions with default values for all fields
     pub fn new() -> ColumnFamilyOptions {
         ColumnFamilyOptions { raw: unsafe { ll::rocks_cfoptions_create() } }
     }
 
-    pub unsafe fn from_ll(raw: *mut ll::rocks_cfoptions_t) -> ColumnFamilyOptions {
+    unsafe fn from_ll(raw: *mut ll::rocks_cfoptions_t) -> ColumnFamilyOptions {
         ColumnFamilyOptions { raw: raw }
-    }
-
-    pub fn raw(&self) -> *mut ll::rocks_cfoptions_t {
-        self.raw
     }
 
     pub fn from_options(opt: &Options) -> ColumnFamilyOptions {
@@ -1185,12 +1188,14 @@ impl Drop for DBOptions {
     }
 }
 
-impl DBOptions {
-    pub fn raw(&self) -> *mut ll::rocks_dboptions_t {
+impl ToRaw<ll::rocks_dboptions_t> for DBOptions {
+    fn raw(&self) -> *mut ll::rocks_dboptions_t {
         self.raw
     }
+}
 
-    pub unsafe fn from_ll(raw: *mut ll::rocks_dboptions_t) -> DBOptions {
+impl DBOptions {
+    unsafe fn from_ll(raw: *mut ll::rocks_dboptions_t) -> DBOptions {
         DBOptions { raw: raw }
     }
 
@@ -2140,14 +2145,14 @@ impl Drop for Options {
     }
 }
 
-impl Options {
-    // Some functions that make it easier to optimize RocksDB
-
-    pub fn raw(&self) -> *mut ll::rocks_options_t {
+impl ToRaw<ll::rocks_options_t> for Options {
+    fn raw(&self) -> *mut ll::rocks_options_t {
         self.raw
     }
+}
 
-    pub unsafe fn from_ll(raw: *mut ll::rocks_options_t) -> Options {
+impl Options {
+    unsafe fn from_ll(raw: *mut ll::rocks_options_t) -> Options {
         Options { raw: raw }
     }
 
@@ -2158,6 +2163,8 @@ impl Options {
             raw: unsafe { ll::rocks_options_create_from_db_cf_options(dbopt.raw(), cfopt.raw()) },
         }
     }
+
+    // Some functions that make it easier to optimize RocksDB
 
     /// Configure DBOptions using builder style.
     pub fn map_db_options<F: FnOnce(DBOptions) -> DBOptions>(self, f: F) -> Self {
@@ -2259,11 +2266,13 @@ impl Drop for ReadOptions {
     }
 }
 
-impl ReadOptions {
-    pub fn raw(&self) -> *mut ll::rocks_readoptions_t {
+impl ToRaw<ll::rocks_readoptions_t> for ReadOptions {
+    fn raw(&self) -> *mut ll::rocks_readoptions_t {
         self.raw
     }
+}
 
+impl ReadOptions {
     /// If true, all data read from underlying storage will be
     /// verified against corresponding checksums.
     ///
@@ -2476,11 +2485,13 @@ impl Drop for WriteOptions {
     }
 }
 
-impl WriteOptions {
-    pub fn raw(&self) -> *mut ll::rocks_writeoptions_t {
+impl ToRaw<ll::rocks_writeoptions_t> for WriteOptions {
+    fn raw(&self) -> *mut ll::rocks_writeoptions_t {
         self.raw
     }
+}
 
+impl WriteOptions {
     /// If true, the write will be flushed from the operating system
     /// buffer cache (by calling WritableFile::Sync()) before the write
     /// is considered complete.  If this flag is true, writes will be
@@ -2557,12 +2568,13 @@ impl Drop for FlushOptions {
     }
 }
 
-
-impl FlushOptions {
-    pub fn raw(&self) -> *mut ll::rocks_flushoptions_t {
+impl ToRaw<ll::rocks_flushoptions_t> for FlushOptions {
+    fn raw(&self) -> *mut ll::rocks_flushoptions_t {
         self.raw
     }
+}
 
+impl FlushOptions {
     /// If true, the flush will wait until the flush is done.
     /// Default: true
     pub fn wait(self, val: bool) -> Self {
@@ -2572,7 +2584,6 @@ impl FlushOptions {
         self
     }
 }
-
 
 
 /// CompactionOptions are used in CompactFiles() call.
@@ -2632,10 +2643,13 @@ impl Drop for CompactRangeOptions {
     }
 }
 
-impl CompactRangeOptions {
-    pub fn raw(&self) -> *mut ll::rocks_compactrange_options_t {
+impl ToRaw<ll::rocks_compactrange_options_t> for CompactRangeOptions {
+    fn raw(&self) -> *mut ll::rocks_compactrange_options_t {
         self.raw
     }
+}
+
+impl CompactRangeOptions {
     /// If true, no other compaction will run at the same time as this
     /// manual compaction
     pub fn exclusive_manual_compaction(self, val: bool) -> Self {
@@ -2689,11 +2703,13 @@ impl Drop for IngestExternalFileOptions {
     }
 }
 
-impl IngestExternalFileOptions {
-    pub fn raw(&self) -> *mut ll::rocks_ingestexternalfile_options_t {
+impl ToRaw<ll::rocks_ingestexternalfile_options_t> for IngestExternalFileOptions {
+    fn raw(&self) -> *mut ll::rocks_ingestexternalfile_options_t {
         self.raw
     }
+}
 
+impl IngestExternalFileOptions {
     /// Can be set to true to move the files instead of copying them.
     pub fn move_files(self, val: bool) -> Self {
         unsafe {

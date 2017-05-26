@@ -23,6 +23,8 @@ use rocks_sys as ll;
 use status::Status;
 use db::ColumnFamilyHandle;
 
+use to_raw::ToRaw;
+
 pub struct WriteBatch {
     raw: *mut ll::rocks_writebatch_t,
 }
@@ -47,6 +49,12 @@ impl fmt::Debug for WriteBatch {
     }
 }
 
+impl ToRaw<ll::rocks_writebatch_t> for WriteBatch {
+    fn raw(&self) -> *mut ll::rocks_writebatch_t {
+        self.raw
+    }
+}
+
 
 impl WriteBatch {
     pub fn new() -> WriteBatch {
@@ -57,10 +65,6 @@ impl WriteBatch {
         WriteBatch {
             raw: unsafe { ll::rocks_writebatch_create_with_reserved_bytes(reserved_bytes) },
         }
-    }
-
-    pub fn raw(&self) -> *mut ll::rocks_writebatch_t {
-        self.raw
     }
 
     /// Clear all updates buffered in this batch.
@@ -355,5 +359,5 @@ fn test_write_batch_create() {
     assert!(batch.count() == 1);
     let batch = batch.delete(b"name");
     assert_eq!(batch.count(), 2);
-    println!("str => {:?}", batch);
+    assert!(format!("{:?}", batch).len() > 20);
 }

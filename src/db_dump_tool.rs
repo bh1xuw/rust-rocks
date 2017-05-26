@@ -4,6 +4,8 @@ use rocks_sys as ll;
 
 use options::Options;
 
+use to_raw::ToRaw;
+
 /// Dumps db to a ROCKDUMP file
 pub struct DbDumpTool {
     raw: *mut ll::rocks_dump_options_t,

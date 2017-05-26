@@ -6,5 +6,5 @@ pub trait ToRaw<T> {
 }
 
 pub trait FromRaw<T> {
-    fn from_ll(*mut T) -> Self;
+    unsafe fn from_ll(*mut T) -> Self;
 }

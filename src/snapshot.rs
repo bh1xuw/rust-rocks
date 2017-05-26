@@ -7,6 +7,8 @@ use rocks_sys as ll;
 
 use types::SequenceNumber;
 
+use to_raw::{ToRaw, FromRaw};
+
 /// Abstract handle to particular state of a DB.
 /// A Snapshot is an immutable object and can therefore be safely
 /// accessed from multiple threads without any external synchronization.
@@ -25,18 +27,22 @@ impl<'a> fmt::Debug for Snapshot<'a> {
     }
 }
 
-
-impl<'a> Snapshot<'a> {
-    pub fn raw(&self) -> *mut ll::rocks_snapshot_t {
+impl<'a> ToRaw<ll::rocks_snapshot_t> for Snapshot<'a> {
+    fn raw(&self) -> *mut ll::rocks_snapshot_t {
         self.raw
     }
+}
 
-    pub unsafe fn from_ll<'b>(raw: *mut ll::rocks_snapshot_t) -> Snapshot<'a> {
+impl<'a> FromRaw<ll::rocks_snapshot_t> for Snapshot<'a> {
+    unsafe fn from_ll<'b>(raw: *mut ll::rocks_snapshot_t) -> Snapshot<'a> {
         Snapshot {
             raw: raw,
             _marker: PhantomData,
         }
     }
+}
+
+impl<'a> Snapshot<'a> {
     pub fn get_sequence_number(&self) -> SequenceNumber {
         unimplemented!()
     }

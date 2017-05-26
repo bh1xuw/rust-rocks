@@ -9,12 +9,13 @@ use std::slice;
 use std::fmt;
 use std::iter;
 use std::marker::PhantomData;
-
 use std::os::raw::c_void;
 
 use rocks_sys as ll;
 
 use status::Status;
+
+use to_raw::FromRaw;
 
 /// An iterator yields a sequence of key/value pairs from a source.
 ///
@@ -49,11 +50,13 @@ impl Drop for Iterator {
     }
 }
 
-impl Iterator {
-    pub unsafe fn from_ll(raw: *mut ll::rocks_iterator_t) -> Self {
+impl FromRaw<ll::rocks_iterator_t> for Iterator {
+    unsafe fn from_ll(raw: *mut ll::rocks_iterator_t) -> Self {
         Iterator { raw: raw }
     }
+}
 
+impl Iterator {
     /// An iterator is either positioned at a key/value pair, or
     /// not valid.  This method returns true iff the iterator is valid.
     pub fn is_valid(&self) -> bool {

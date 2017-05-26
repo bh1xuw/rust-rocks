@@ -15,6 +15,8 @@ use options::Options;
 use db::ColumnFamilyHandle;
 use types::SequenceNumber;
 
+use to_raw::ToRaw;
+
 /// ExternalSstFileInfo include information about sst files created
 /// using SstFileWriter
 pub struct ExternalSstFileInfo {
@@ -47,7 +49,7 @@ impl ExternalSstFileInfo {
         ExternalSstFileInfo { raw: unsafe { ll::rocks_external_sst_file_info_create() } }
     }
 
-    pub unsafe fn from_ll(raw: *mut ll::rocks_external_sst_file_info_t) -> ExternalSstFileInfo {
+    unsafe fn from_ll(raw: *mut ll::rocks_external_sst_file_info_t) -> ExternalSstFileInfo {
         ExternalSstFileInfo { raw: raw }
     }
 

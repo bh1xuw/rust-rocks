@@ -12,6 +12,8 @@ use rocks_sys as ll;
 
 use rate_limiter::RateLimiter;
 
+use to_raw::ToRaw;
+
 
 pub const DEFAULT_PAGE_SIZE: usize = 4 * 1024;
 
@@ -26,11 +28,13 @@ impl Drop for EnvOptions {
     }
 }
 
-impl EnvOptions {
-    pub fn raw(&self) -> *mut ll::rocks_envoptions_t {
+impl ToRaw<ll::rocks_envoptions_t> for EnvOptions {
+    fn raw(&self) -> *mut ll::rocks_envoptions_t {
         self.raw
     }
+}
 
+impl EnvOptions {
     /// If true, then use mmap to read data
     pub fn use_mmap_reads(self, val: bool) -> Self {
         unsafe {
@@ -161,13 +165,15 @@ pub struct Logger {
     raw: *mut ll::rocks_logger_t,
 }
 
-impl Logger {
-    pub unsafe fn from_ll(raw: *mut ll::rocks_logger_t) -> Logger {
-        Logger { raw: raw }
-    }
-
-    pub fn raw(&self) -> *mut ll::rocks_logger_t {
+impl ToRaw<ll::rocks_logger_t> for Logger {
+    fn raw(&self) -> *mut ll::rocks_logger_t {
         self.raw
+    }
+}
+
+impl Logger {
+    unsafe fn from_ll(raw: *mut ll::rocks_logger_t) -> Logger {
+        Logger { raw: raw }
     }
 }
 

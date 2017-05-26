@@ -12,6 +12,8 @@ use std::ffi::CStr;
 
 use rocks_sys as ll;
 
+use to_raw::ToRaw;
+
 #[derive(Copy, Clone, Eq, PartialEq, Hash, Debug)]
 pub enum Priority {
     High,
@@ -27,11 +29,13 @@ pub struct Cache {
     raw: *mut ll::rocks_cache_t,
 }
 
-impl Cache {
-    pub unsafe fn raw(&self) -> *mut ll::rocks_cache_t {
+impl ToRaw<ll::rocks_cache_t> for Cache {
+    fn raw(&self) -> *mut ll::rocks_cache_t {
         return self.raw;
     }
+}
 
+impl Cache {
     /// The type of the Cache
     pub fn name(&self) -> &'static str {
         unsafe {

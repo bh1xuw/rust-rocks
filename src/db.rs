@@ -14,6 +14,8 @@ use std::iter::IntoIterator;
 use std::marker::PhantomData;
 use std::path::Path;
 
+use to_raw::{ToRaw, FromRaw};
+
 use rocks_sys as ll;
 
 use status::Status;
@@ -81,6 +83,9 @@ impl<'a> From<(&'a str, ColumnFamilyOptions)> for ColumnFamilyDescriptor {
     }
 }
 
+
+
+/// Handle for a opened column family
 pub struct ColumnFamilyHandle<'a, 'b: 'a> {
     raw: *mut ll::rocks_column_family_handle_t,
     db: Rc<DBContext<'b>>, // 'b out lives 'a
@@ -114,11 +119,13 @@ impl<'a, 'b> fmt::Debug for ColumnFamilyHandle<'a, 'b> {
     }
 }
 
-impl<'a, 'b: 'a> ColumnFamilyHandle<'a, 'b> {
-    pub fn raw(&self) -> *mut ll::rocks_column_family_handle_t {
+impl<'a, 'b> ToRaw<ll::rocks_column_family_handle_t> for ColumnFamilyHandle<'a, 'b> {
+    fn raw(&self) -> *mut ll::rocks_column_family_handle_t {
         self.raw
     }
+}
 
+impl<'a, 'b: 'a> ColumnFamilyHandle<'a, 'b> {
     // FIXME: should be unsafe
     // fn from_ll(raw: *mut ll::rocks_column_family_handle_t, _: *mut ll::rocks_db_t) -> ColumnFamilyHandle<'a> {
     //      ColumnFamilyHandle {
@@ -211,7 +218,7 @@ impl<'a> fmt::Debug for DB<'a> {
 unsafe impl<'a> Sync for DB<'a> {}
 
 impl<'a> DB<'a> {
-    pub unsafe fn from_ll<'b>(raw: *mut ll::rocks_db_t) -> DB<'b> {
+    unsafe fn from_ll<'b>(raw: *mut ll::rocks_db_t) -> DB<'b> {
         let context = DBContext {
             raw: raw,
             _marker: PhantomData,
@@ -219,7 +226,7 @@ impl<'a> DB<'a> {
         DB { context: Rc::new(context) }
     }
 
-    pub fn raw(&self) -> *mut ll::rocks_db_t {
+    fn raw(&self) -> *mut ll::rocks_db_t {
         self.context.raw
     }
 
