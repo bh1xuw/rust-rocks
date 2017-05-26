@@ -260,6 +260,10 @@ extern "C" {
   /* perf_context */
   typedef struct rocks_perf_context_t rocks_perf_context_t;
 
+  /* statistics */
+  struct rocks_statistics_t { shared_ptr<Statistics> rep; };
+  typedef struct rocks_histogram_data_t rocks_histogram_data_t;
+
   /* aux */
   static bool SaveError(rocks_status_t* status, const Status& s) {
     assert(status != nullptr);

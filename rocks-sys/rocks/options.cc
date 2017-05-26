@@ -436,8 +436,12 @@ extern "C" {
     opt->rep.max_total_wal_size = n;
   }
 
-  void rocks_dboptions_enable_statistics(rocks_dboptions_t* opt) {
-    opt->rep.statistics = rocksdb::CreateDBStatistics();
+  void rocks_dboptions_set_statistics(rocks_dboptions_t* opt, rocks_statistics_t* stat) {
+    if (stat != nullptr) {
+      opt->rep.statistics = stat->rep;
+    } else {
+      opt->rep.statistics = nullptr;
+    }
   }
 
   void rocks_dboptions_set_use_fsync(

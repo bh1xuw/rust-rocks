@@ -29,6 +29,8 @@ use comparator::Comparator;
 use slice_transform::SliceTransform;
 use snapshot::Snapshot;
 
+use to_raw::ToRaw;
+
 /// DB contents are stored in a set of blocks, each of which holds a
 /// sequence of key,value pairs.  Each block may be compressed before
 /// being stored in a file.  The following enum describes which
@@ -1354,11 +1356,15 @@ impl DBOptions {
 
     /// If non-null, then we should collect metrics about database operations
     pub fn statistics(self, val: Option<Statistics>) -> Self {
-        // unsafe {
-        //     ll::rocks_dboptions_set_statistics(self.raw, val);
-        // }
-        // self
-        unimplemented!()
+        match val {
+            Some(stat) => unsafe {
+                ll::rocks_dboptions_set_statistics(self.raw, stat.raw())
+            },
+            None => unsafe {
+                ll::rocks_dboptions_set_statistics(self.raw, ptr::null_mut())
+            },
+        }
+        self
     }
 
     /// If true, then every store to stable storage will issue a fsync.

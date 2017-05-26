@@ -78,10 +78,12 @@ big picture(TODOs):
   - [x] use ``&[u8]`` to replace
 - [x] ``rocksdb/slice_transform.h``
 - [x] ``rocksdb/snapshot.h``
+  - [ ] ManagedSnapshot
 - [ ] ``rocksdb/sst_dump_tool.h``
 - [ ] ``rocksdb/sst_file_manager.h``
 - [x] ``rocksdb/sst_file_writer.h``
 - [ ] ``rocksdb/statistics.h``
+  - [ ] customized statistics class via rust trait?
 - [x] ``rocksdb/status.h``
   - [ ] Rust style Error? (i.e. remove Status::OK)
 - [ ] ``rocksdb/table.h``

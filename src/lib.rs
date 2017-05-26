@@ -42,6 +42,7 @@ pub mod perf_context;
 
 pub mod rocksdb;
 
+mod to_raw;
 
 #[doc(hidden)]
 pub mod c {
