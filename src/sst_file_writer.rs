@@ -132,10 +132,7 @@ impl SstFileWriter {
         unsafe {
             let mut status = mem::zeroed();
             let path = file_path.as_ref().to_str().expect("file path");
-            ll::rocks_sst_file_writer_open(self.raw,
-                                           path.as_ptr() as *const _,
-                                           path.len(),
-                                           &mut status);
+            ll::rocks_sst_file_writer_open(self.raw, path.as_ptr() as *const _, path.len(), &mut status);
             if status.code == 0 {
                 Ok(())
             } else {
@@ -205,11 +202,9 @@ impl SstFileWriterBuilder {
             unsafe {
                 ll::rocks_sst_file_writer_create_from_rust_comparator(env_options.raw(),
                                                                       options.raw(),
-                                                                      self.rust_comparator as
-                                                                      *const _,
+                                                                      self.rust_comparator as *const _,
                                                                       self.column_family,
-                                                                      self.invalidate_page_cache as
-                                                                      u8)
+                                                                      self.invalidate_page_cache as u8)
             }
         } else {
             unsafe {

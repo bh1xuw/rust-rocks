@@ -1,6 +1,6 @@
 //! A Status encapsulates the result of an operation.
 //!
-//! It may indicate success, 
+//! It may indicate success,
 //! or it may indicate an error with an associated error message.
 //!
 //! Multiple threads can invoke const methods on a Status without
@@ -112,10 +112,6 @@ impl Status {
 
 impl fmt::Display for Status {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        write!(f,
-               "Status({:?}, {:?}, {})",
-               self.code,
-               self.subcode,
-               self.status)
+        write!(f, "Status({:?}, {:?}, {})", self.code, self.subcode, self.status)
     }
 }

@@ -107,12 +107,9 @@ pub mod c {
             let start_len = ll::cxx_string_size(start as *const _);
 
             let ret = (*comparator)
-                .find_shortest_separator(slice::from_raw_parts(start_ptr as *const _, start_len),
-                                         *limit);
+                .find_shortest_separator(slice::from_raw_parts(start_ptr as *const _, start_len), *limit);
             if let Some(new_start) = ret {
-                ll::cxx_string_assign(start as *mut _,
-                                      new_start.as_ptr() as *const _,
-                                      new_start.len())
+                ll::cxx_string_assign(start as *mut _, new_start.as_ptr() as *const _, new_start.len())
             }
         }
     }
@@ -128,8 +125,7 @@ pub mod c {
             let key_ptr = ll::cxx_string_data(key as *const _);
             let key_len = ll::cxx_string_size(key as *const _);
 
-            let ret = (*comparator)
-                .find_short_successor(slice::from_raw_parts(key_ptr as *const _, key_len));
+            let ret = (*comparator).find_short_successor(slice::from_raw_parts(key_ptr as *const _, key_len));
             if let Some(new_key) = ret {
                 ll::cxx_string_assign(key as *mut _, new_key.as_ptr() as *const _, new_key.len());
             }

@@ -710,7 +710,7 @@ extern "C" {
 
   unsigned char rocks_db_key_may_exist_cf(rocks_db_t* db, const rocks_readoptions_t* options,
                                           const rocks_column_family_handle_t* column_family,
-                                          const char* key, size_t key_len, char* value,
+                                          const char* key, size_t key_len, char** value,
                                           size_t* value_len, unsigned char* value_found);
 
   rocks_iterator_t* rocks_db_create_iterator(rocks_db_t* db,
@@ -738,7 +738,19 @@ extern "C" {
                                       const char* prop, const size_t prop_len,
                                       void* value); /* *mut String */
 
+  unsigned char rocks_db_get_property_cf(rocks_db_t* db,
+                                         rocks_column_family_handle_t* cf,
+                                         const char* prop,
+                                         const size_t prop_len,
+                                         void* value);
+
   unsigned char rocks_db_get_int_property(rocks_db_t* db, const char* prop, const size_t prop_len, uint64_t* value);
+
+  unsigned char rocks_db_get_int_property_cf(rocks_db_t* db,
+                                             rocks_column_family_handle_t* cf,
+                                             const char* prop,
+                                             const size_t prop_len,
+                                             uint64_t* value);
 
   unsigned char rocks_db_get_aggregated_int_property(rocks_db_t* db, const char* prop, const size_t prop_len, uint64_t* value);
 
@@ -759,11 +771,12 @@ extern "C" {
                                   const char* limit_key, size_t limit_key_len,
                                   rocks_status_t *status);
 
-  void rocks_db_compact_range_cf_opt(rocks_db_t* db,
-                                     rocks_column_family_handle_t* column_family,
+  void rocks_db_compact_range_opt_cf(rocks_db_t* db,
                                      rocks_compactrange_options_t* opt,
+                                     rocks_column_family_handle_t* column_family,
                                      const char* start_key, size_t start_key_len,
-                                     const char* limit_key, size_t limit_key_len);
+                                     const char* limit_key, size_t limit_key_len,
+                                     rocks_status_t *status);
 
   void rocks_db_pause_background_work(rocks_db_t* db, rocks_status_t *status);
   void rocks_db_continue_background_work(rocks_db_t* db, rocks_status_t *status);

@@ -37,9 +37,7 @@ impl Drop for WriteBatch {
 
 impl Clone for WriteBatch {
     fn clone(&self) -> Self {
-        WriteBatch {
-            raw: unsafe { ll::rocks_writebatch_copy(self.raw) },
-        }
+        WriteBatch { raw: unsafe { ll::rocks_writebatch_copy(self.raw) } }
     }
 }
 
@@ -62,9 +60,7 @@ impl WriteBatch {
     }
 
     pub fn with_reserved_bytes(reserved_bytes: usize) -> WriteBatch {
-        WriteBatch {
-            raw: unsafe { ll::rocks_writebatch_create_with_reserved_bytes(reserved_bytes) },
-        }
+        WriteBatch { raw: unsafe { ll::rocks_writebatch_create_with_reserved_bytes(reserved_bytes) } }
     }
 
     /// Clear all updates buffered in this batch.
@@ -77,11 +73,7 @@ impl WriteBatch {
     /// Store the mapping "key->value" in the database.
     pub fn put(self, key: &[u8], value: &[u8]) -> Self {
         unsafe {
-            ll::rocks_writebatch_put(self.raw,
-                                     key.as_ptr() as _,
-                                     key.len(),
-                                     value.as_ptr() as _,
-                                     value.len());
+            ll::rocks_writebatch_put(self.raw, key.as_ptr() as _, key.len(), value.as_ptr() as _, value.len());
         }
         self
     }
@@ -119,10 +111,7 @@ impl WriteBatch {
 
     pub fn delete_cf(self, column_family: &ColumnFamilyHandle, key: &[u8]) -> Self {
         unsafe {
-            ll::rocks_writebatch_delete_cf(self.raw,
-                                           column_family.raw(),
-                                           key.as_ptr() as _,
-                                           key.len());
+            ll::rocks_writebatch_delete_cf(self.raw, column_family.raw(), key.as_ptr() as _, key.len());
         }
         self
     }
@@ -146,10 +135,7 @@ impl WriteBatch {
 
     pub fn single_delete_cf(self, column_family: &ColumnFamilyHandle, key: &[u8]) -> Self {
         unsafe {
-            ll::rocks_writebatch_single_delete_cf(self.raw,
-                                                  column_family.raw(),
-                                                  key.as_ptr() as _,
-                                                  key.len());
+            ll::rocks_writebatch_single_delete_cf(self.raw, column_family.raw(), key.as_ptr() as _, key.len());
         }
         self
     }
@@ -175,11 +161,7 @@ impl WriteBatch {
         self
     }
 
-    pub fn delete_range_cf(self,
-                           column_family: &ColumnFamilyHandle,
-                           begin_key: &[u8],
-                           end_key: &[u8])
-                           -> Self {
+    pub fn delete_range_cf(self, column_family: &ColumnFamilyHandle, begin_key: &[u8], end_key: &[u8]) -> Self {
         unsafe {
             ll::rocks_writebatch_delete_range_cf(self.raw,
                                                  column_family.raw(),
@@ -196,10 +178,7 @@ impl WriteBatch {
         unimplemented!()
     }
 
-    pub fn deletev_range_cf(&mut self,
-                            column_family: &ColumnFamilyHandle,
-                            begin_key: &[&[u8]],
-                            end_key: &[&[u8]]) {
+    pub fn deletev_range_cf(&mut self, column_family: &ColumnFamilyHandle, begin_key: &[&[u8]], end_key: &[&[u8]]) {
         unimplemented!()
     }
 
@@ -208,11 +187,7 @@ impl WriteBatch {
     /// "key->merge(existing, value)"
     pub fn merge(self, key: &[u8], value: &[u8]) -> Self {
         unsafe {
-            ll::rocks_writebatch_merge(self.raw,
-                                       key.as_ptr() as _,
-                                       key.len(),
-                                       value.as_ptr() as _,
-                                       value.len());
+            ll::rocks_writebatch_merge(self.raw, key.as_ptr() as _, key.len(), value.as_ptr() as _, value.len());
         }
         self
     }
@@ -234,10 +209,7 @@ impl WriteBatch {
         unimplemented!()
     }
 
-    pub fn mergev_cf(&mut self,
-                     column_family: &ColumnFamilyHandle,
-                     key: &[&[u8]],
-                     value: &[&[u8]]) {
+    pub fn mergev_cf(&mut self, column_family: &ColumnFamilyHandle, key: &[&[u8]], value: &[&[u8]]) {
         unimplemented!()
     }
 
@@ -353,11 +325,37 @@ impl WriteBatch {
 }
 
 
-#[test]
-fn test_write_batch_create() {
-    let batch = WriteBatch::new().put(b"name", b"rocksdb");
-    assert!(batch.count() == 1);
-    let batch = batch.delete(b"name");
-    assert_eq!(batch.count(), 2);
-    assert!(format!("{:?}", batch).len() > 20);
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use super::super::rocksdb::*;
+
+    #[test]
+    fn write_batch_create() {
+        let batch = WriteBatch::new().put(b"name", b"rocksdb");
+        assert!(batch.count() == 1);
+        let batch = batch.delete(b"name");
+        assert_eq!(batch.count(), 2);
+        assert!(format!("{:?}", batch).len() > 20);
+    }
+
+    #[test]
+    fn write_batch() {
+        let tmp_dir = ::tempdir::TempDir::new_in(".", "rocks").unwrap();
+
+        let opt = Options::default().map_db_options(|db| db.create_if_missing(true));
+
+        let db = DB::open(opt, &tmp_dir).unwrap();
+
+        let batch = WriteBatch::new()
+            .put(b"name", b"BY1CQ")
+            .delete(b"name")
+            .put(b"name", b"BH1XUW")
+            .put(b"site", b"github");
+
+        assert!(db.write(WriteOptions::default(), batch).is_ok());
+
+        assert_eq!(db.get(&ReadOptions::default(), b"name").unwrap().as_ref(), b"BH1XUW");
+        assert_eq!(db.get(&ReadOptions::default(), b"site").unwrap().as_ref(), b"github");
+    }
 }

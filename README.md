@@ -9,6 +9,7 @@ working in progress.
 
 big picture(TODOs):
 
+- [ ] git submodule, static-link, compression as feature gate
 - [ ] information hiding (DO NOT EXPORT raw pointers)
 - [ ] Proof of usablility
 - [ ] bench across C++/Java/other-rust binding
@@ -30,7 +31,7 @@ big picture(TODOs):
   - [x] customized comparator via rust trait
 - [ ] ``rocksdb/convenience.h``
 - [x] ``rocksdb/db.h``
-  - [ ] column family support
+  - [x] column family support, both in CF/DB
   - [x] open / close
   - [x] iterator
   - [x] get

@@ -131,9 +131,7 @@ impl CacheBuilder {
                                            self.high_pri_pool_ratio)
             },
             CacheType::Clock => unsafe {
-                ll::rocks_cache_create_clock(self.capacity,
-                                             self.num_shard_bits,
-                                             self.strict_capacity_limit as c_char)
+                ll::rocks_cache_create_clock(self.capacity, self.num_shard_bits, self.strict_capacity_limit as c_char)
             },
         };
         if !ptr.is_null() {

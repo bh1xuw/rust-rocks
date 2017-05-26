@@ -76,11 +76,7 @@ pub struct CompressionOptions {
 }
 
 impl CompressionOptions {
-    pub fn new(wbits: c_int,
-               lev: c_int,
-               strategy: c_int,
-               max_dict_bytes: u32)
-               -> CompressionOptions {
+    pub fn new(wbits: c_int, lev: c_int, strategy: c_int, max_dict_bytes: u32) -> CompressionOptions {
         CompressionOptions {
             window_bits: wbits,
             level: lev,

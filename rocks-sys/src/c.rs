@@ -1418,7 +1418,7 @@ extern "C" {
                                          *const rocks_column_family_handle_t,
                                      key: *const ::std::os::raw::c_char,
                                      key_len: usize,
-                                     value: *mut ::std::os::raw::c_char,
+                                     value: *mut *mut ::std::os::raw::c_char,
                                      value_len: *mut usize,
                                      value_found:
                                          *mut ::std::os::raw::c_uchar)
@@ -1461,9 +1461,24 @@ extern "C" {
      -> ::std::os::raw::c_uchar;
 }
 extern "C" {
+    pub fn rocks_db_get_property_cf(db: *mut rocks_db_t,
+                                    cf: *mut rocks_column_family_handle_t,
+                                    prop: *const ::std::os::raw::c_char,
+                                    prop_len: usize,
+                                    value: *mut ::std::os::raw::c_void)
+     -> ::std::os::raw::c_uchar;
+}
+extern "C" {
     pub fn rocks_db_get_int_property(db: *mut rocks_db_t,
                                      prop: *const ::std::os::raw::c_char,
                                      prop_len: usize, value: *mut u64)
+     -> ::std::os::raw::c_uchar;
+}
+extern "C" {
+    pub fn rocks_db_get_int_property_cf(db: *mut rocks_db_t,
+                                        cf: *mut rocks_column_family_handle_t,
+                                        prop: *const ::std::os::raw::c_char,
+                                        prop_len: usize, value: *mut u64)
      -> ::std::os::raw::c_uchar;
 }
 extern "C" {
@@ -1502,17 +1517,18 @@ extern "C" {
                                       status: *mut rocks_status_t);
 }
 extern "C" {
-    pub fn rocks_db_compact_range_cf_opt(db: *mut rocks_db_t,
-                                         column_family:
-                                             *mut rocks_column_family_handle_t,
+    pub fn rocks_db_compact_range_opt_cf(db: *mut rocks_db_t,
                                          opt:
                                              *mut rocks_compactrange_options_t,
+                                         column_family:
+                                             *mut rocks_column_family_handle_t,
                                          start_key:
                                              *const ::std::os::raw::c_char,
                                          start_key_len: usize,
                                          limit_key:
                                              *const ::std::os::raw::c_char,
-                                         limit_key_len: usize);
+                                         limit_key_len: usize,
+                                         status: *mut rocks_status_t);
 }
 extern "C" {
     pub fn rocks_db_pause_background_work(db: *mut rocks_db_t,

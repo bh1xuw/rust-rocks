@@ -13,9 +13,7 @@ pub struct DbDumpTool {
 
 impl Drop for DbDumpTool {
     fn drop(&mut self) {
-        unsafe {
-            ll::rocks_dump_options_destroy(self.raw)
-        }
+        unsafe { ll::rocks_dump_options_destroy(self.raw) }
     }
 }
 
@@ -23,15 +21,11 @@ impl DbDumpTool {
     pub fn new(db_path: &str, dump_location: &str) -> DbDumpTool {
         unsafe {
             let raw = ll::rocks_dump_options_create();
-            ll::rocks_dump_options_set_db_path(raw,
-                                               db_path.as_bytes().as_ptr() as *const _,
-                                               db_path.as_bytes().len());
+            ll::rocks_dump_options_set_db_path(raw, db_path.as_bytes().as_ptr() as *const _, db_path.as_bytes().len());
             ll::rocks_dump_options_set_dump_location(raw,
                                                      dump_location.as_bytes().as_ptr() as *const _,
                                                      dump_location.as_bytes().len());
-            DbDumpTool {
-                raw: raw
-            }
+            DbDumpTool { raw: raw }
         }
     }
 
@@ -46,9 +40,7 @@ impl DbDumpTool {
     }
 
     pub fn run(self, options: &Options) -> bool {
-        unsafe {
-            ll::rocks_db_dump_tool_run(self.raw, options.raw()) != 0
-        }
+        unsafe { ll::rocks_db_dump_tool_run(self.raw, options.raw()) != 0 }
     }
 }
 
@@ -59,9 +51,7 @@ pub struct DbUndumpTool {
 
 impl Drop for DbUndumpTool {
     fn drop(&mut self) {
-        unsafe {
-            ll::rocks_undump_options_destroy(self.raw)
-        }
+        unsafe { ll::rocks_undump_options_destroy(self.raw) }
     }
 }
 
@@ -70,14 +60,12 @@ impl DbUndumpTool {
         unsafe {
             let raw = ll::rocks_undump_options_create();
             ll::rocks_undump_options_set_db_path(raw,
-                                               db_path.as_bytes().as_ptr() as *const _,
-                                               db_path.as_bytes().len());
+                                                 db_path.as_bytes().as_ptr() as *const _,
+                                                 db_path.as_bytes().len());
             ll::rocks_undump_options_set_dump_location(raw,
                                                        dump_location.as_bytes().as_ptr() as *const _,
                                                        dump_location.as_bytes().len());
-            DbUndumpTool {
-                raw: raw
-            }
+            DbUndumpTool { raw: raw }
         }
     }
 
@@ -92,9 +80,7 @@ impl DbUndumpTool {
     }
 
     pub fn run(self, options: &Options) -> bool {
-        unsafe {
-            ll::rocks_db_undump_tool_run(self.raw, options.raw()) != 0
-        }
+        unsafe { ll::rocks_db_undump_tool_run(self.raw, options.raw()) != 0 }
     }
 }
 
@@ -107,14 +93,10 @@ mod tests {
     // TODO: create a test db
     #[test]
     fn db_dump_and_undump() {
-        let dump_ok = DbDumpTool::new("./data", "./output.dump")
-            .run(&Options::default());
-
+        let dump_ok = DbDumpTool::new("./data", "./output.dump").run(&Options::default());
         assert!(dump_ok);
 
-        let undump_ok = DbUndumpTool::new("./data2", "./output.dump")
-            .run(&Options::default());
-
+        let undump_ok = DbUndumpTool::new("./data2", "./output.dump").run(&Options::default());
         assert!(undump_ok);
     }
 }

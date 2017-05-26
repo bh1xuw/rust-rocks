@@ -26,10 +26,11 @@ impl WalProcessingOption {
         use self::WalProcessingOption::*;
 
         match *self {
-            ContinueProcessing | ContinueAndChangeBatch(_) => 0,
+            ContinueProcessing |
+            ContinueAndChangeBatch(_) => 0,
             IgnoreCurrentRecord => 1,
             StopReplay => 2,
-            CorruptedRecord => 3
+            CorruptedRecord => 3,
         }
     }
 }
@@ -91,9 +92,7 @@ pub trait WalFilter {
     ///
     /// Please see `WalProcessingOption` enum above for
     /// details.
-    fn log_record_found(&self, log_number: u64,
-                        log_file_name: &str,
-                        batch: &WriteBatch) -> WalProcessingOption {
+    fn log_record_found(&self, log_number: u64, log_file_name: &str, batch: &WriteBatch) -> WalProcessingOption {
         WalProcessingOption::ContinueProcessing
     }
 

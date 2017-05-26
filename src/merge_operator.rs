@@ -9,7 +9,7 @@
 //! To use merge, the client needs to provide an object implementing one of
 //! the following interfaces:
 //!
-//! + [`AssociativeMergeOperator`] - for most simple semantics (always take
+//! * [`AssociativeMergeOperator`] - for most simple semantics (always take
 //!   two values, and merge them into one value, which is then put back
 //!   into rocksdb); numeric addition and string concatenation are examples;
 //!
@@ -56,8 +56,7 @@ impl<'a> MergeOperationInput<'a> {
     /// A list of operands to apply.
     pub fn operands(&self) -> &[&[u8]] {
         unsafe {
-            slice::from_raw_parts(ll::cxx_vector_slice_nth(self.operand_list as *const _, 0) as
-                                  *const _,
+            slice::from_raw_parts(ll::cxx_vector_slice_nth(self.operand_list as *const _, 0) as *const _,
                                   ll::cxx_vector_slice_size(self.operand_list as *const _))
         }
     }
@@ -85,9 +84,7 @@ impl<'a> MergeOperationOutput<'a> {
     /// Client is responsible for filling the merge result here.
     pub fn assign(&mut self, new_value: &[u8]) {
         unsafe {
-            ll::cxx_string_assign(self.new_value as *mut _,
-                                  new_value.as_ptr() as *const _,
-                                  new_value.len());
+            ll::cxx_string_assign(self.new_value as *mut _, new_value.as_ptr() as *const _, new_value.len());
         }
     }
 
@@ -114,7 +111,7 @@ pub trait MergeOperator {
     /// Gives the client a way to express the read -> modify -> write semantics
     ///
     /// # Arguments
-    /// 
+    ///
     /// * `key` - (IN) The key that's associated with this merge operation.
     ///   Client could multiplex the merge operator based on it
     ///   if the key space is partitioned and different subspaces
@@ -135,10 +132,7 @@ pub trait MergeOperator {
     /// Also make use of the *logger for error messages.
     // use FullMergeV2
     // https://www.facebook.com/groups/rocksdb.dev/permalink/1023193664445814/
-    fn full_merge(&self,
-                  merge_in: &MergeOperationInput,
-                  merge_out: &mut MergeOperationOutput)
-                  -> bool {
+    fn full_merge(&self, merge_in: &MergeOperationInput, merge_out: &mut MergeOperationOutput) -> bool {
         false
     }
 
@@ -178,12 +172,7 @@ pub trait AssociativeMergeOperator {
     /// returns false, it is because client specified bad data or there was
     /// internal corruption. The client should assume that this will be treated
     /// as an error by the library.
-    fn merge(&self,
-             key: &[u8],
-             existing_value: Option<&[u8]>,
-             value: &[u8],
-             logger: &Logger)
-             -> Option<Vec<u8>>;
+    fn merge(&self, key: &[u8], existing_value: Option<&[u8]>, value: &[u8], logger: &Logger) -> Option<Vec<u8>>;
 
 
     /// The name of the MergeOperator. Used to check for MergeOperator
@@ -297,16 +286,12 @@ pub mod c {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use super::super::rocksdb::*;
 
     pub struct MyAssocMergeOp;
 
     impl AssociativeMergeOperator for MyAssocMergeOp {
-        fn merge(&self,
-                 key: &[u8],
-                 existing_value: Option<&[u8]>,
-                 value: &[u8],
-                 logger: &Logger)
-                 -> Option<Vec<u8>> {
+        fn merge(&self, key: &[u8], existing_value: Option<&[u8]>, value: &[u8], logger: &Logger) -> Option<Vec<u8>> {
             Some(b"welcome to china".to_vec())
         }
     }
@@ -314,5 +299,141 @@ mod tests {
     #[test]
     fn it_works() {
         let op: Box<AssociativeMergeOperator> = Box::new(MyAssocMergeOp);
+    }
+
+    #[test]
+    fn assoc_merge() {
+        use tempdir::TempDir;
+        let tmp_dir = TempDir::new_in(".", "rocks").unwrap();
+
+        pub struct MyAssocMergeOp;
+
+        impl AssociativeMergeOperator for MyAssocMergeOp {
+            fn merge(&self,
+                     key: &[u8],
+                     existing_value: Option<&[u8]>,
+                     value: &[u8],
+                     logger: &Logger)
+                     -> Option<Vec<u8>> {
+
+                let mut ret: Vec<u8> = existing_value.map(|s| s.into()).unwrap_or(b"HEAD".to_vec());
+                ret.push(b'|');
+                ret.extend_from_slice(value);
+                Some(ret)
+            }
+        }
+
+        let db = DB::open(Options::default()
+                          .map_db_options(|db| db.create_if_missing(true))
+                          .map_cf_options(|cf| cf.associative_merge_operator(Box::new(MyAssocMergeOp))),
+                          tmp_dir)
+            .unwrap();
+
+        let ret = db.merge(&WriteOptions::default(), b"name", b"value");
+        let ret = db.merge(&WriteOptions::default(), b"name", b"value2");
+        let ret = db.merge(&WriteOptions::default(), b"name", b"value3");
+        let ret = db.merge(&WriteOptions::default(), b"gender", b"male");
+        let ret = db.merge(&WriteOptions::default(), b"name", b"value4");
+        let ret = db.merge(&WriteOptions::default(), b"name", b"value");
+
+        let ret = db.get(&ReadOptions::default(), b"name");
+        assert_eq!(String::from_utf8_lossy(ret.unwrap().as_ref()), "HEAD|value|value2|value3|value4|value");
+    }
+
+    #[test]
+    fn merge_assign_concat_operands() {
+        use tempdir::TempDir;
+        use merge_operator::{MergeOperationInput, MergeOperationOutput};
+
+        let tmp_dir = TempDir::new_in(".", "rocks").unwrap();
+
+        pub struct MyMergeOp;
+
+        impl MergeOperator for MyMergeOp {
+            fn full_merge(&self, merge_in: &MergeOperationInput, merge_out: &mut MergeOperationOutput) -> bool {
+                assert_eq!(merge_in.key, b"name");
+                let mut ret = b"KEY:".to_vec();
+                ret.extend_from_slice(merge_in.key);
+                ret.push(b'|');
+                assert_eq!(merge_in.operands().len(), 3);
+                for op in merge_in.operands() {
+                    ret.extend_from_slice(op);
+                    ret.push(b'+');
+                }
+                ret.push(b'|');
+                merge_out.assign(&ret);
+                true
+            }
+        }
+
+        let db = DB::open(Options::default()
+                          .map_db_options(|db| db.create_if_missing(true))
+                          .map_cf_options(|cf| cf.merge_operator(Box::new(MyMergeOp))),
+                          tmp_dir)
+            .unwrap();
+
+        let ret = db.merge(&WriteOptions::default(), b"name", b"value");
+        assert!(ret.is_ok());
+
+        let ret = db.merge(&WriteOptions::default(), b"name", b"new");
+        assert!(ret.is_ok());
+
+        let ret = db.merge(&WriteOptions::default(), b"name", b"last");
+        assert!(ret.is_ok());
+
+        let ret = db.get(&ReadOptions::default(), b"name");
+        assert_eq!(ret.unwrap().as_ref(), b"KEY:name|value+new+last+|");
+    }
+
+
+
+    #[test]
+    fn merge_assign_existing_operand() {
+        use merge_operator::{MergeOperationInput, MergeOperationOutput};
+
+        let tmp_dir = ::tempdir::TempDir::new_in(".", "rocks").unwrap();
+
+        pub struct MyMergeOp;
+
+        impl MergeOperator for MyMergeOp {
+            fn full_merge(&self, merge_in: &MergeOperationInput, merge_out: &mut MergeOperationOutput) -> bool {
+                assert_eq!(merge_in.key, b"name");
+                assert_eq!(merge_in.operands().len(), 6);
+                let mut set = false;
+                for op in merge_in.operands() {
+                    if op.starts_with(b"I-am-the-test") {
+                        // FIXME: following not works
+                        // merge_out.assign_existing_operand(op);
+                        merge_out.assign(op);
+                        set = true;
+                        break;
+                    }
+                }
+                assert!(set);
+                true
+            }
+        }
+
+        let db = DB::open(Options::default()
+                          .map_db_options(|db| db.create_if_missing(true))
+                          .map_cf_options(|cf| cf.merge_operator(Box::new(MyMergeOp))),
+                          &tmp_dir)
+            .unwrap();
+
+        let ret = db.merge(&WriteOptions::default(), b"name", b"randome-key");
+        assert!(ret.is_ok());
+        let ret = db.merge(&WriteOptions::default(), b"name", b"asdfkjasdkf");
+        assert!(ret.is_ok());
+        let ret = db.merge(&WriteOptions::default(), b"name", b"sadfjalskdfjlast");
+        assert!(ret.is_ok());
+        let ret = db.merge(&WriteOptions::default(), b"name", b"sadfjalskdfjlast");
+        assert!(ret.is_ok());
+        let ret = db.merge(&WriteOptions::default(), b"name", b"I-am-the-test-233");
+        assert!(ret.is_ok());
+        let ret = db.merge(&WriteOptions::default(), b"name", b"I-am-not-the-test");
+        assert!(ret.is_ok());
+        let ret = db.get(&ReadOptions::default(), b"name");
+        // println!("ret => {:?}", ret.as_ref().map(|s| String::from_utf8_lossy(s)));
+        assert_eq!(ret.unwrap().as_ref(), b"I-am-the-test-233");
     }
 }

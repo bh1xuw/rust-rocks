@@ -95,8 +95,8 @@ pub trait CompactionFilter {
     ///   from the output of the compaction.
     /// - Some(Some(vec![])): modify the existing_value and pass it back through new_value.
     fn filter(&self, level: u32, key: &[u8], existing_value: &[u8]) -> Option<Option<Vec<u8>>> {
-        None
-    }
+    None
+}
 
     /// The compaction process invokes this method on every merge operand. If this
     /// method returns true, the merge operand will be ignored and not written out
@@ -108,8 +108,8 @@ pub trait CompactionFilter {
     /// Commit that should have failed.  Instead, it is better to implement any
     /// Merge filtering inside the MergeOperator.
     fn filter_merge_operand(&self, level: u32, key: &[u8], operand: &[u8]) -> bool {
-        false
-    }
+    false
+}
      */
     /// An extended API. Called for both values and merge operands.
     /// Allows changing value and skipping ranges of keys.
@@ -153,12 +153,7 @@ pub trait CompactionFilter {
     ///
     /// Rust:
     ///   Decision for detailed return type.
-    fn filter(&self,
-              level: u32,
-              key: &[u8],
-              value_type: ValueType,
-              existing_value: &[u8])
-              -> Decision {
+    fn filter(&self, level: u32, key: &[u8], value_type: ValueType, existing_value: &[u8]) -> Decision {
         Decision::Keep
     }
 
@@ -261,12 +256,7 @@ mod tests {
     pub struct MyCompactionFilter;
 
     impl CompactionFilter for MyCompactionFilter {
-        fn filter(&self,
-                  level: u32,
-                  key: &[u8],
-                  value_type: ValueType,
-                  existing_value: &[u8])
-                  -> Decision {
+        fn filter(&self, level: u32, key: &[u8], value_type: ValueType, existing_value: &[u8]) -> Decision {
             assert_eq!(value_type, ValueType::Value); // haven't set up merge test
 
             if existing_value == b"TO-BE-DELETED" {
@@ -285,12 +275,10 @@ mod tests {
     fn compaction_filter() {
         let tmp_dir = ::tempdir::TempDir::new_in(".", "rocks").unwrap();
         let db = DB::open(Options::default()
-                              .map_db_options(|db| db.create_if_missing(true))
-                              .map_cf_options(|cf| {
-                                                  cf.compaction_filter(Box::new(MyCompactionFilter))
-                                              }),
+                          .map_db_options(|db| db.create_if_missing(true))
+                          .map_cf_options(|cf| cf.compaction_filter(Box::new(MyCompactionFilter))),
                           &tmp_dir)
-                .unwrap();
+            .unwrap();
 
         println!("compact and try remove range");
         assert!(db.put(&WriteOptions::default(), b"key-0", b"23333").is_ok());
@@ -305,16 +293,12 @@ mod tests {
         assert!(db.put(&WriteOptions::default(), b"key-8", b"23333").is_ok());
 
         println!("compact and delete");
-        assert!(db.put(&WriteOptions::default(),
-                       b"will-delete-me",
-                       b"TO-BE-DELETED")
-                    .is_ok());
+        assert!(db.put(&WriteOptions::default(), b"will-delete-me", b"TO-BE-DELETED")
+                .is_ok());
 
         println!("compact and change value");
-        assert!(db.put(&WriteOptions::default(),
-                       b"will-fix-me",
-                       b"an-typo-in-value")
-                    .is_ok());
+        assert!(db.put(&WriteOptions::default(), b"will-fix-me", b"an-typo-in-value")
+                .is_ok());
 
         // now compact full range
         let ret = db.compact_range(&Default::default(), ..);
@@ -322,23 +306,22 @@ mod tests {
 
         assert!(db.get(&ReadOptions::default(), b"will-delete-me").is_err());
         assert!(db.get(&ReadOptions::default(), b"will-delete-me")
-                    .unwrap_err()
-                    .is_not_found());
+                .unwrap_err()
+                .is_not_found());
 
         assert!(db.get(&ReadOptions::default(), b"key-0").is_err());
         assert!(db.get(&ReadOptions::default(), b"key-0")
-                    .unwrap_err()
-                    .is_not_found());
+                .unwrap_err()
+                .is_not_found());
 
         assert!(db.get(&ReadOptions::default(), b"key-4").is_err());
         assert!(db.get(&ReadOptions::default(), b"key-4")
-                    .unwrap_err()
-                    .is_not_found());
+                .unwrap_err()
+                .is_not_found());
 
         assert_eq!(db.get(&ReadOptions::default(), b"key-5").unwrap(), b"23333");
 
-        assert_eq!(db.get(&ReadOptions::default(), b"will-fix-me").unwrap(),
-                   b"a-typo-not-in-value");
+        assert_eq!(db.get(&ReadOptions::default(), b"will-fix-me").unwrap(), b"a-typo-not-in-value");
 
 
         drop(db);

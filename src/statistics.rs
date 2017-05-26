@@ -117,7 +117,7 @@ pub enum Tickers {
     BytesWritten,
     /// The number of uncompressed bytes read from `DB::Get()`.  It could be
     /// either from memtables, cache, or table files.
-    /// 
+    ///
     /// For the number of logical bytes read from `DB::MultiGet()`,
     /// please use `NUMBER_MULTIGET_BYTES_READ`.
     BytesRead,
@@ -242,99 +242,99 @@ impl fmt::Display for Tickers {
         use self::Tickers::*;
 
         let val = match *self {
-            BlockCacheMiss                  => "rocksdb.block.cache.miss",
-            BlockCacheHit                   => "rocksdb.block.cache.hit",
-            BlockCacheAdd                   => "rocksdb.block.cache.add",
-            BlockCacheAddFailures           => "rocksdb.block.cache.add.failures",
-            BlockCacheIndexMiss             => "rocksdb.block.cache.index.miss",
-            BlockCacheIndexHit              => "rocksdb.block.cache.index.hit",
-            BlockCacheIndexAdd              => "rocksdb.block.cache.index.add",
-            BlockCacheIndexBytesInsert      => "rocksdb.block.cache.index.bytes.insert",
-            BlockCacheIndexBytesEvict       => "rocksdb.block.cache.index.bytes.evict",
-            BlockCacheFilterMiss            => "rocksdb.block.cache.filter.miss",
-            BlockCacheFilterHit             => "rocksdb.block.cache.filter.hit",
-            BlockCacheFilterAdd             => "rocksdb.block.cache.filter.add",
-            BlockCacheFilterBytesInsert     => "rocksdb.block.cache.filter.bytes.insert",
-            BlockCacheFilterBytesEvict      => "rocksdb.block.cache.filter.bytes.evict",
-            BlockCacheDataMiss              => "rocksdb.block.cache.data.miss",
-            BlockCacheDataHit               => "rocksdb.block.cache.data.hit",
-            BlockCacheDataAdd               => "rocksdb.block.cache.data.add",
-            BlockCacheDataBytesInsert       => "rocksdb.block.cache.data.bytes.insert",
-            BlockCacheBytesRead             => "rocksdb.block.cache.bytes.read",
-            BlockCacheBytesWrite            => "rocksdb.block.cache.bytes.write",
-            BloomFilterUseful               => "rocksdb.bloom.filter.useful",
-            PersistentCacheHit              => "rocksdb.persistent.cache.hit",
-            PersistentCacheMiss             => "rocksdb.persistent.cache.miss",
-            SimBlockCacheHit                => "rocksdb.sim.block.cache.hit",
-            SimBlockCacheMiss               => "rocksdb.sim.block.cache.miss",
-            MemtableHit                     => "rocksdb.memtable.hit",
-            MemtableMiss                    => "rocksdb.memtable.miss",
-            GetHitL0                        => "rocksdb.l0.hit",
-            GetHitL1                        => "rocksdb.l1.hit",
-            GetHitL2AndUp                   => "rocksdb.l2andup.hit",
-            CompactionKeyDropNewerEntry     => "rocksdb.compaction.key.drop.new",
-            CompactionKeyDropObsolete       => "rocksdb.compaction.key.drop.obsolete",
-            CompactionKeyDropRangeDel       => "rocksdb.compaction.key.drop.range_del",
-            CompactionKeyDropUser           => "rocksdb.compaction.key.drop.user",
-            CompactionRangeDelDropObsolete  => "rocksdb.compaction.range_del.drop.obsolete",
-            NumberKeysWritten               => "rocksdb.number.keys.written",
-            NumberKeysRead                  => "rocksdb.number.keys.read",
-            NumberKeysUpdated               => "rocksdb.number.keys.updated",
-            BytesWritten                    => "rocksdb.bytes.written",
-            BytesRead                       => "rocksdb.bytes.read",
-            NumberDbSeek                    => "rocksdb.number.db.seek",
-            NumberDbNext                    => "rocksdb.number.db.next",
-            NumberDbPrev                    => "rocksdb.number.db.prev",
-            NumberDbSeekFound               => "rocksdb.number.db.seek.found",
-            NumberDbNextFound               => "rocksdb.number.db.next.found",
-            NumberDbPrevFound               => "rocksdb.number.db.prev.found",
-            IterBytesRead                   => "rocksdb.db.iter.bytes.read",
-            NoFileCloses                    => "rocksdb.no.file.closes",
-            NoFileOpens                     => "rocksdb.no.file.opens",
-            NoFileErrors                    => "rocksdb.no.file.errors",
-            StallL0SlowdownMicros           => "rocksdb.l0.slowdown.micros",
-            StallMemtableCompactionMicros   => "rocksdb.memtable.compaction.micros",
-            StallL0NumFilesMicros           => "rocksdb.l0.num.files.stall.micros",
-            StallMicros                     => "rocksdb.stall.micros",
-            DbMutexWaitMicros               => "rocksdb.db.mutex.wait.micros",
-            RateLimitDelayMillis            => "rocksdb.rate.limit.delay.millis",
-            NoIterators                     => "rocksdb.num.iterators",
-            NumberMultigetCalls             => "rocksdb.number.multiget.get",
-            NumberMultigetKeysRead          => "rocksdb.number.multiget.keys.read",
-            NumberMultigetBytesRead         => "rocksdb.number.multiget.bytes.read",
-            NumberFilteredDeletes           => "rocksdb.number.deletes.filtered",
-            NumberMergeFailures             => "rocksdb.number.merge.failures",
-            BloomFilterPrefixChecked        => "rocksdb.bloom.filter.prefix.checked",
-            BloomFilterPrefixUseful         => "rocksdb.bloom.filter.prefix.useful",
-            NumberOfReseeksInIteration      => "rocksdb.number.reseeks.iteration",
-            GetUpdatesSinceCalls            => "rocksdb.getupdatessince.calls",
-            BlockCacheCompressedMiss        => "rocksdb.block.cachecompressed.miss",
-            BlockCacheCompressedHit         => "rocksdb.block.cachecompressed.hit",
-            BlockCacheCompressedAdd         => "rocksdb.block.cachecompressed.add",
+            BlockCacheMiss => "rocksdb.block.cache.miss",
+            BlockCacheHit => "rocksdb.block.cache.hit",
+            BlockCacheAdd => "rocksdb.block.cache.add",
+            BlockCacheAddFailures => "rocksdb.block.cache.add.failures",
+            BlockCacheIndexMiss => "rocksdb.block.cache.index.miss",
+            BlockCacheIndexHit => "rocksdb.block.cache.index.hit",
+            BlockCacheIndexAdd => "rocksdb.block.cache.index.add",
+            BlockCacheIndexBytesInsert => "rocksdb.block.cache.index.bytes.insert",
+            BlockCacheIndexBytesEvict => "rocksdb.block.cache.index.bytes.evict",
+            BlockCacheFilterMiss => "rocksdb.block.cache.filter.miss",
+            BlockCacheFilterHit => "rocksdb.block.cache.filter.hit",
+            BlockCacheFilterAdd => "rocksdb.block.cache.filter.add",
+            BlockCacheFilterBytesInsert => "rocksdb.block.cache.filter.bytes.insert",
+            BlockCacheFilterBytesEvict => "rocksdb.block.cache.filter.bytes.evict",
+            BlockCacheDataMiss => "rocksdb.block.cache.data.miss",
+            BlockCacheDataHit => "rocksdb.block.cache.data.hit",
+            BlockCacheDataAdd => "rocksdb.block.cache.data.add",
+            BlockCacheDataBytesInsert => "rocksdb.block.cache.data.bytes.insert",
+            BlockCacheBytesRead => "rocksdb.block.cache.bytes.read",
+            BlockCacheBytesWrite => "rocksdb.block.cache.bytes.write",
+            BloomFilterUseful => "rocksdb.bloom.filter.useful",
+            PersistentCacheHit => "rocksdb.persistent.cache.hit",
+            PersistentCacheMiss => "rocksdb.persistent.cache.miss",
+            SimBlockCacheHit => "rocksdb.sim.block.cache.hit",
+            SimBlockCacheMiss => "rocksdb.sim.block.cache.miss",
+            MemtableHit => "rocksdb.memtable.hit",
+            MemtableMiss => "rocksdb.memtable.miss",
+            GetHitL0 => "rocksdb.l0.hit",
+            GetHitL1 => "rocksdb.l1.hit",
+            GetHitL2AndUp => "rocksdb.l2andup.hit",
+            CompactionKeyDropNewerEntry => "rocksdb.compaction.key.drop.new",
+            CompactionKeyDropObsolete => "rocksdb.compaction.key.drop.obsolete",
+            CompactionKeyDropRangeDel => "rocksdb.compaction.key.drop.range_del",
+            CompactionKeyDropUser => "rocksdb.compaction.key.drop.user",
+            CompactionRangeDelDropObsolete => "rocksdb.compaction.range_del.drop.obsolete",
+            NumberKeysWritten => "rocksdb.number.keys.written",
+            NumberKeysRead => "rocksdb.number.keys.read",
+            NumberKeysUpdated => "rocksdb.number.keys.updated",
+            BytesWritten => "rocksdb.bytes.written",
+            BytesRead => "rocksdb.bytes.read",
+            NumberDbSeek => "rocksdb.number.db.seek",
+            NumberDbNext => "rocksdb.number.db.next",
+            NumberDbPrev => "rocksdb.number.db.prev",
+            NumberDbSeekFound => "rocksdb.number.db.seek.found",
+            NumberDbNextFound => "rocksdb.number.db.next.found",
+            NumberDbPrevFound => "rocksdb.number.db.prev.found",
+            IterBytesRead => "rocksdb.db.iter.bytes.read",
+            NoFileCloses => "rocksdb.no.file.closes",
+            NoFileOpens => "rocksdb.no.file.opens",
+            NoFileErrors => "rocksdb.no.file.errors",
+            StallL0SlowdownMicros => "rocksdb.l0.slowdown.micros",
+            StallMemtableCompactionMicros => "rocksdb.memtable.compaction.micros",
+            StallL0NumFilesMicros => "rocksdb.l0.num.files.stall.micros",
+            StallMicros => "rocksdb.stall.micros",
+            DbMutexWaitMicros => "rocksdb.db.mutex.wait.micros",
+            RateLimitDelayMillis => "rocksdb.rate.limit.delay.millis",
+            NoIterators => "rocksdb.num.iterators",
+            NumberMultigetCalls => "rocksdb.number.multiget.get",
+            NumberMultigetKeysRead => "rocksdb.number.multiget.keys.read",
+            NumberMultigetBytesRead => "rocksdb.number.multiget.bytes.read",
+            NumberFilteredDeletes => "rocksdb.number.deletes.filtered",
+            NumberMergeFailures => "rocksdb.number.merge.failures",
+            BloomFilterPrefixChecked => "rocksdb.bloom.filter.prefix.checked",
+            BloomFilterPrefixUseful => "rocksdb.bloom.filter.prefix.useful",
+            NumberOfReseeksInIteration => "rocksdb.number.reseeks.iteration",
+            GetUpdatesSinceCalls => "rocksdb.getupdatessince.calls",
+            BlockCacheCompressedMiss => "rocksdb.block.cachecompressed.miss",
+            BlockCacheCompressedHit => "rocksdb.block.cachecompressed.hit",
+            BlockCacheCompressedAdd => "rocksdb.block.cachecompressed.add",
             BlockCacheCompressedAddFailures => "rocksdb.block.cachecompressed.add.failures",
-            WalFileSynced                   => "rocksdb.wal.synced",
-            WalFileBytes                    => "rocksdb.wal.bytes",
-            WriteDoneBySelf                 => "rocksdb.write.self",
-            WriteDoneByOther                => "rocksdb.write.other",
-            WriteTimedout                   => "rocksdb.write.timeout",
-            WriteWithWal                    => "rocksdb.write.wal",
-            CompactReadBytes                => "rocksdb.compact.read.bytes",
-            CompactWriteBytes               => "rocksdb.compact.write.bytes",
-            FlushWriteBytes                 => "rocksdb.flush.write.bytes",
+            WalFileSynced => "rocksdb.wal.synced",
+            WalFileBytes => "rocksdb.wal.bytes",
+            WriteDoneBySelf => "rocksdb.write.self",
+            WriteDoneByOther => "rocksdb.write.other",
+            WriteTimedout => "rocksdb.write.timeout",
+            WriteWithWal => "rocksdb.write.wal",
+            CompactReadBytes => "rocksdb.compact.read.bytes",
+            CompactWriteBytes => "rocksdb.compact.write.bytes",
+            FlushWriteBytes => "rocksdb.flush.write.bytes",
             NumberDirectLoadTableProperties => "rocksdb.number.direct.load.table.properties",
-            NumberSuperversionAcquires      => "rocksdb.number.superversion_acquires",
-            NumberSuperversionReleases      => "rocksdb.number.superversion_releases",
-            NumberSuperversionCleanups      => "rocksdb.number.superversion_cleanups",
-            NumberBlockCompressed           => "rocksdb.number.block.compressed",
-            NumberBlockDecompressed         => "rocksdb.number.block.decompressed",
-            NumberBlockNotCompressed        => "rocksdb.number.block.not_compressed",
-            MergeOperationTotalTime         => "rocksdb.merge.operation.time.nanos",
-            FilterOperationTotalTime        => "rocksdb.filter.operation.time.nanos",
-            RowCacheHit                     => "rocksdb.row.cache.hit",
-            RowCacheMiss                    => "rocksdb.row.cache.miss",
-            ReadAmpEstimateUsefulBytes      => "rocksdb.read.amp.estimate.useful.bytes",
-            ReadAmpTotalReadBytes           => "rocksdb.read.amp.total.read.bytes",
-            NumberRateLimiterDrains         => "rocksdb.number.rate_limiter.drains",
+            NumberSuperversionAcquires => "rocksdb.number.superversion_acquires",
+            NumberSuperversionReleases => "rocksdb.number.superversion_releases",
+            NumberSuperversionCleanups => "rocksdb.number.superversion_cleanups",
+            NumberBlockCompressed => "rocksdb.number.block.compressed",
+            NumberBlockDecompressed => "rocksdb.number.block.decompressed",
+            NumberBlockNotCompressed => "rocksdb.number.block.not_compressed",
+            MergeOperationTotalTime => "rocksdb.merge.operation.time.nanos",
+            FilterOperationTotalTime => "rocksdb.filter.operation.time.nanos",
+            RowCacheHit => "rocksdb.row.cache.hit",
+            RowCacheMiss => "rocksdb.row.cache.miss",
+            ReadAmpEstimateUsefulBytes => "rocksdb.read.amp.estimate.useful.bytes",
+            ReadAmpTotalReadBytes => "rocksdb.read.amp.total.read.bytes",
+            NumberRateLimiterDrains => "rocksdb.number.rate_limiter.drains",
         };
         write!(f, "{}", val)
     }
@@ -388,36 +388,36 @@ impl fmt::Display for Histograms {
         use self::Histograms::*;
 
         let val = match *self {
-            DbGet                        => "rocksdb.db.get.micros",
-            DbWrite                      => "rocksdb.db.write.micros",
-            CompactionTime               => "rocksdb.compaction.times.micros",
-            SubcompactionSetupTime       => "rocksdb.subcompaction.setup.times.micros",
-            TableSyncMicros              => "rocksdb.table.sync.micros",
-            CompactionOutfileSyncMicros  => "rocksdb.compaction.outfile.sync.micros",
-            WalFileSyncMicros            => "rocksdb.wal.file.sync.micros",
-            ManifestFileSyncMicros       => "rocksdb.manifest.file.sync.micros",
-            TableOpenIoMicros            => "rocksdb.table.open.io.micros",
-            DbMultiget                   => "rocksdb.db.multiget.micros",
-            ReadBlockCompactionMicros    => "rocksdb.read.block.compaction.micros",
-            ReadBlockGetMicros           => "rocksdb.read.block.get.micros",
-            WriteRawBlockMicros          => "rocksdb.write.raw.block.micros",
-            StallL0SlowdownCount         => "rocksdb.l0.slowdown.count",
+            DbGet => "rocksdb.db.get.micros",
+            DbWrite => "rocksdb.db.write.micros",
+            CompactionTime => "rocksdb.compaction.times.micros",
+            SubcompactionSetupTime => "rocksdb.subcompaction.setup.times.micros",
+            TableSyncMicros => "rocksdb.table.sync.micros",
+            CompactionOutfileSyncMicros => "rocksdb.compaction.outfile.sync.micros",
+            WalFileSyncMicros => "rocksdb.wal.file.sync.micros",
+            ManifestFileSyncMicros => "rocksdb.manifest.file.sync.micros",
+            TableOpenIoMicros => "rocksdb.table.open.io.micros",
+            DbMultiget => "rocksdb.db.multiget.micros",
+            ReadBlockCompactionMicros => "rocksdb.read.block.compaction.micros",
+            ReadBlockGetMicros => "rocksdb.read.block.get.micros",
+            WriteRawBlockMicros => "rocksdb.write.raw.block.micros",
+            StallL0SlowdownCount => "rocksdb.l0.slowdown.count",
             StallMemtableCompactionCount => "rocksdb.memtable.compaction.count",
-            StallL0NumFilesCount         => "rocksdb.num.files.stall.count",
-            HardRateLimitDelayCount      => "rocksdb.hard.rate.limit.delay.count",
-            SoftRateLimitDelayCount      => "rocksdb.soft.rate.limit.delay.count",
-            NumFilesInSingleCompaction   => "rocksdb.numfiles.in.singlecompaction",
-            DbSeek                       => "rocksdb.db.seek.micros",
-            WriteStall                   => "rocksdb.db.write.stall",
-            SstReadMicros                => "rocksdb.sst.read.micros",
-            NumSubcompactionsScheduled   => "rocksdb.num.subcompactions.scheduled",
-            BytesPerRead                 => "rocksdb.bytes.per.read",
-            BytesPerWrite                => "rocksdb.bytes.per.write",
-            BytesPerMultiget             => "rocksdb.bytes.per.multiget",
-            BytesCompressed              => "rocksdb.bytes.compressed",
-            BytesDecompressed            => "rocksdb.bytes.decompressed",
-            CompressionTimesNanos        => "rocksdb.compression.times.nanos",
-            DecompressionTimesNanos      => "rocksdb.decompression.times.nanos",
+            StallL0NumFilesCount => "rocksdb.num.files.stall.count",
+            HardRateLimitDelayCount => "rocksdb.hard.rate.limit.delay.count",
+            SoftRateLimitDelayCount => "rocksdb.soft.rate.limit.delay.count",
+            NumFilesInSingleCompaction => "rocksdb.numfiles.in.singlecompaction",
+            DbSeek => "rocksdb.db.seek.micros",
+            WriteStall => "rocksdb.db.write.stall",
+            SstReadMicros => "rocksdb.sst.read.micros",
+            NumSubcompactionsScheduled => "rocksdb.num.subcompactions.scheduled",
+            BytesPerRead => "rocksdb.bytes.per.read",
+            BytesPerWrite => "rocksdb.bytes.per.write",
+            BytesPerMultiget => "rocksdb.bytes.per.multiget",
+            BytesCompressed => "rocksdb.bytes.compressed",
+            BytesDecompressed => "rocksdb.bytes.decompressed",
+            CompressionTimesNanos => "rocksdb.compression.times.nanos",
+            DecompressionTimesNanos => "rocksdb.decompression.times.nanos",
         };
         write!(f, "{}", val)
     }
@@ -466,9 +466,7 @@ impl Drop for Statistics {
 // Clone for shared access?
 impl Clone for Statistics {
     fn clone(&self) -> Self {
-        Statistics {
-            raw: unsafe { ll::rocks_statistics_copy(self.raw) },
-        }
+        Statistics { raw: unsafe { ll::rocks_statistics_copy(self.raw) } }
     }
 }
 
@@ -480,15 +478,11 @@ impl ToRaw<ll::rocks_statistics_t> for Statistics {
 
 impl Statistics {
     pub fn new() -> Statistics {
-        Statistics {
-            raw: unsafe { ll::rocks_statistics_create() },
-        }
+        Statistics { raw: unsafe { ll::rocks_statistics_create() } }
     }
 
     pub fn get_ticker_count(&self, ticker_type: Tickers) -> u64 {
-        unsafe {
-            ll::rocks_statistics_get_ticker_count(self.raw, mem::transmute(ticker_type))
-        }
+        unsafe { ll::rocks_statistics_get_ticker_count(self.raw, mem::transmute(ticker_type)) }
     }
 
     fn histogram_data(&self, type_: Histograms) -> HistogramData {
@@ -525,9 +519,7 @@ impl Statistics {
     }
 
     fn get_and_reset_ticker_count(&mut self, ticker_type: Tickers) -> u64 {
-        unsafe {
-            ll::rocks_statistics_get_and_reset_ticker_count(self.raw, mem::transmute(ticker_type))
-        }
+        unsafe { ll::rocks_statistics_get_and_reset_ticker_count(self.raw, mem::transmute(ticker_type)) }
     }
 
     fn measure_time(&mut self, histogram_type: Histograms, time: u64) {
@@ -538,9 +530,7 @@ impl Statistics {
 
     // Override this function to disable particular histogram collection
     fn hist_enabled_for_type(&self, type_: Histograms) -> bool {
-        unsafe {
-            ll::rocks_statistics_hist_enabled_for_type(self.raw, mem::transmute(type_)) != 0
-        }
+        unsafe { ll::rocks_statistics_hist_enabled_for_type(self.raw, mem::transmute(type_)) != 0 }
     }
 }
 
@@ -548,8 +538,7 @@ impl fmt::Display for Statistics {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         let mut s = String::new();
         unsafe {
-            ll::rocks_statistics_to_string(self.raw,
-                                           &mut s as *mut String as *mut c_void);
+            ll::rocks_statistics_to_string(self.raw, &mut s as *mut String as *mut c_void);
         }
         write!(f, "{}", s)
     }
@@ -568,14 +557,13 @@ mod tests {
 
         let stat = Statistics::new();
 
-        let db = DB::open(Options::default()
-                          .map_db_options(|db| {
-                              db.create_if_missing(true)
-                                  .statistics(Some(stat.clone())) // FIXME: is this the best way?
-                                  .rate_limiter(Some(RateLimiter::new(1024, // 1 KiB/s
-                                                                      10_000, // 10 ms
-                                                                      10)))
-                          }),
+        let db = DB::open(Options::default().map_db_options(|db| {
+            db.create_if_missing(true)
+                .statistics(Some(stat.clone())) // FIXME: is this the best way?
+                .rate_limiter(Some(RateLimiter::new(1024, // 1 KiB/s
+                                                    10_000, // 10 ms
+                                                    10)))
+        }),
                           &tmp_dir)
             .unwrap();
 

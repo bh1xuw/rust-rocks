@@ -18,8 +18,6 @@ use rate_limiter::RateLimiter;
 use sst_file_manager::SstFileManager;
 use statistics::Statistics;
 use cache::Cache;
-// unused!
-// use advanced_options::AdvancedColumnFamilyOptions;
 use advanced_options::{CompactionStyle, CompactionPri, CompactionOptionsFIFO, CompressionOptions};
 use universal_compaction::CompactionOptionsUniversal;
 use compaction_filter::{CompactionFilter, CompactionFilterFactory};
@@ -93,11 +91,11 @@ pub struct DbPath {
 
 impl DbPath {
     pub fn new<P: AsRef<Path>>(p: P, t: u64) -> DbPath {
-        DbPath {
-            path: p.as_ref().to_path_buf(),
-            target_size: t,
-        }
+    DbPath {
+        path: p.as_ref().to_path_buf(),
+        target_size: t,
     }
+}
 }
 
 impl Default for DbPath {
@@ -133,7 +131,6 @@ impl ToRaw<ll::rocks_cfoptions_t> for ColumnFamilyOptions {
     fn raw(&self) -> *mut ll::rocks_cfoptions_t {
         self.raw
     }
-
 }
 
 impl ColumnFamilyOptions {
@@ -200,8 +197,7 @@ impl ColumnFamilyOptions {
     pub fn optimize_universal_style_compaction(self, memtable_memory_budget: u64) -> Self {
         // 512 * 1024 * 1024
         unsafe {
-            ll::rocks_cfoptions_optimize_universal_style_compaction(self.raw,
-                                                                    memtable_memory_budget);
+            ll::rocks_cfoptions_optimize_universal_style_compaction(self.raw, memtable_memory_budget);
         }
         self
     }
@@ -675,14 +671,10 @@ impl ColumnFamilyOptions {
     /// the prefix can be the key itself.
     ///
     /// Default: nullptr (disable)
-    pub fn memtable_insert_with_hint_prefix_extractor(self,
-                                                      val: Box<SliceTransform + Sync>)
-                                                      -> Self {
+    pub fn memtable_insert_with_hint_prefix_extractor(self, val: Box<SliceTransform + Sync>) -> Self {
         unsafe {
             let raw_ptr = Box::into_raw(Box::new(val));
-            ll::rocks_cfoptions_set_memtable_insert_with_hint_prefix_extractor_by_trait(self.raw,
-                                                                                        raw_ptr as
-                                                                                        *mut _);
+            ll::rocks_cfoptions_set_memtable_insert_with_hint_prefix_extractor_by_trait(self.raw, raw_ptr as *mut _);
         }
         self
     }
@@ -1362,12 +1354,8 @@ impl DBOptions {
     /// If non-null, then we should collect metrics about database operations
     pub fn statistics(self, val: Option<Statistics>) -> Self {
         match val {
-            Some(stat) => unsafe {
-                ll::rocks_dboptions_set_statistics(self.raw, stat.raw())
-            },
-            None => unsafe {
-                ll::rocks_dboptions_set_statistics(self.raw, ptr::null_mut())
-            },
+            Some(stat) => unsafe { ll::rocks_dboptions_set_statistics(self.raw, stat.raw()) },
+            None => unsafe { ll::rocks_dboptions_set_statistics(self.raw, ptr::null_mut()) },
         }
         self
     }
@@ -2159,43 +2147,25 @@ impl Options {
     pub fn new(dbopt: Option<DBOptions>, cfopt: Option<ColumnFamilyOptions>) -> Options {
         let dbopt = dbopt.unwrap_or_default();
         let cfopt = cfopt.unwrap_or_default();
-        Options {
-            raw: unsafe { ll::rocks_options_create_from_db_cf_options(dbopt.raw(), cfopt.raw()) },
-        }
+        Options { raw: unsafe { ll::rocks_options_create_from_db_cf_options(dbopt.raw(), cfopt.raw()) } }
     }
 
     // Some functions that make it easier to optimize RocksDB
 
     /// Configure DBOptions using builder style.
     pub fn map_db_options<F: FnOnce(DBOptions) -> DBOptions>(self, f: F) -> Self {
-        let dbopt =
-            unsafe { DBOptions::from_ll(ll::rocks_dboptions_create_from_options(self.raw)) };
+        let dbopt = unsafe { DBOptions::from_ll(ll::rocks_dboptions_create_from_options(self.raw)) };
         let new_dbopt = f(dbopt);
-        let old_cfopt =
-            unsafe {
-                ColumnFamilyOptions::from_ll(ll::rocks_cfoptions_create_from_options(self.raw))
-            };
-        unsafe {
-            Options::from_ll(ll::rocks_options_create_from_db_cf_options(new_dbopt.raw(),
-                                                                         old_cfopt.raw()))
-        }
+        let old_cfopt = unsafe { ColumnFamilyOptions::from_ll(ll::rocks_cfoptions_create_from_options(self.raw)) };
+        unsafe { Options::from_ll(ll::rocks_options_create_from_db_cf_options(new_dbopt.raw(), old_cfopt.raw())) }
     }
 
     /// Configure ColumnFamilyOptions using builder style.
-    pub fn map_cf_options<F: FnOnce(ColumnFamilyOptions) -> ColumnFamilyOptions>(self,
-                                                                                 f: F)
-                                                                                 -> Self {
-        let cfopt =
-            unsafe {
-                ColumnFamilyOptions::from_ll(ll::rocks_cfoptions_create_from_options(self.raw))
-            };
+    pub fn map_cf_options<F: FnOnce(ColumnFamilyOptions) -> ColumnFamilyOptions>(self, f: F) -> Self {
+        let cfopt = unsafe { ColumnFamilyOptions::from_ll(ll::rocks_cfoptions_create_from_options(self.raw)) };
         let new_cfopt = f(cfopt);
-        let old_dbopt =
-            unsafe { DBOptions::from_ll(ll::rocks_dboptions_create_from_options(self.raw)) };
-        unsafe {
-            Options::from_ll(ll::rocks_options_create_from_db_cf_options(old_dbopt.raw(),
-                                                                         new_cfopt.raw()))
-        }
+        let old_dbopt = unsafe { DBOptions::from_ll(ll::rocks_dboptions_create_from_options(self.raw)) };
+        unsafe { Options::from_ll(ll::rocks_options_create_from_db_cf_options(old_dbopt.raw(), new_cfopt.raw())) }
     }
 
     /// Set appropriate parameters for bulk loading.
@@ -2306,8 +2276,7 @@ impl ReadOptions {
     // FIXME: lifetime, val should be longer than self
     pub fn snapshot(self, val: Option<&Snapshot>) -> Self {
         unsafe {
-            ll::rocks_readoptions_set_snapshot(self.raw,
-                                               val.map(|v| v.raw()).unwrap_or(ptr::null_mut()));
+            ll::rocks_readoptions_set_snapshot(self.raw, val.map(|v| v.raw()).unwrap_or(ptr::null_mut()));
         }
         self
     }
@@ -2554,9 +2523,7 @@ pub struct FlushOptions {
 
 impl Default for FlushOptions {
     fn default() -> Self {
-        FlushOptions {
-            raw: unsafe { ll::rocks_flushoptions_create() },
-        }
+        FlushOptions { raw: unsafe { ll::rocks_flushoptions_create() } }
     }
 }
 

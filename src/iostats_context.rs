@@ -60,9 +60,7 @@ impl fmt::Display for IOStatsContext {
         let ptr = self as *const IOStatsContext as *const ll::rocks_iostats_context_t;
         let exclude_zero_counters = false;
         unsafe {
-            ll::rocks_iostats_context_to_string(ptr,
-                                                exclude_zero_counters as u8,
-                                                &mut s as *mut String as *mut _);
+            ll::rocks_iostats_context_to_string(ptr, exclude_zero_counters as u8, &mut s as *mut String as *mut _);
         }
         write!(f, "{}", s)
     }
@@ -79,10 +77,7 @@ mod tests {
         set_perf_level(PerfLevel::EnableTime);
 
         let tmp_dir = ::tempdir::TempDir::new_in(".", "rocks").unwrap();
-        let db = DB::open(Options::default()
-                          .map_db_options(|db| db.create_if_missing(true)),
-                          &tmp_dir)
-            .unwrap();
+        let db = DB::open(Options::default().map_db_options(|db| db.create_if_missing(true)), &tmp_dir).unwrap();
 
         assert!(db.put(&Default::default(), b"long-key", vec![b'A'; 1024 * 1024].as_ref())
                 .is_ok());

@@ -266,9 +266,7 @@ mod tests {
         assert!(ret.is_ok());
         {
             for (k, v) in db.new_iterator(&ReadOptions::default()).iter() {
-                println!("> {:?} => {:?}",
-                         String::from_utf8_lossy(k),
-                         String::from_utf8_lossy(v));
+                println!("> {:?} => {:?}", String::from_utf8_lossy(k), String::from_utf8_lossy(v));
             }
         }
 
@@ -277,8 +275,7 @@ mod tests {
             // must pin_data
             let kvs = db.new_iterator(&ReadOptions::default().pin_data(true))
                 .iter()
-                .map(|(k,v)| (String::from_utf8_lossy(k),
-                              String::from_utf8_lossy(v)))
+                .map(|(k, v)| (String::from_utf8_lossy(k), String::from_utf8_lossy(v)))
                 .collect::<Vec<_>>();
             println!("got kv => {:?}", kvs);
         }
@@ -291,7 +288,9 @@ mod tests {
 
         assert_eq!(it.get_property("rocksdb.iterator.is-key-pinned"), Ok("0".to_string()));
 
-        println!("got => {:?}", it.get_property("rocksdb.iterator.super-version-number").unwrap());
+        println!("got => {:?}",
+                 it.get_property("rocksdb.iterator.super-version-number")
+                 .unwrap());
 
         assert_eq!(it.is_valid(), true);
         println!("it => {:?}", it);
