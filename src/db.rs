@@ -578,12 +578,15 @@ impl<'a> DB<'a> {
     ///
     /// Not supported in ROCKSDB_LITE, in which case the function will
     /// return `Status::NotSupported`.
-    pub fn open_for_readonly<'b>(options: &Options,
-                                 name: &str,
-                                 error_if_log_file_exist: bool)
-                                 -> Result<DB<'b>, Status> {
+    pub fn open_for_readonly<'b, P: AsRef<Path>>(options: &Options,
+                                                 name: P,
+                                                 error_if_log_file_exist: bool)
+                                                 -> Result<DB<'b>, Status> {
         unsafe {
-            let dbname = CString::new(name).unwrap();
+            let dbname = name.as_ref()
+                .to_str()
+                .and_then(|s| CString::new(s).ok())
+                .unwrap();
             let mut status = mem::zeroed::<ll::rocks_status_t>();
             let db_ptr = ll::rocks_db_open_for_read_only(options.raw(),
                                                          dbname.as_ptr(),
