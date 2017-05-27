@@ -13,8 +13,12 @@ build = "build.rs"
 include = [
     "**/*.rs",
     "**/*.h",
+    "**/c.cc",
     "**/*.cc",
     "**/*.hpp",
+    "sources.txt",
+    "sources_win32.txt",
+    "sources_posix.txt",
     "Cargo.toml",
 ]
 
@@ -25,7 +29,7 @@ gcc = "0.3"
 cmake = "0.1"
 
 [features]
-default = ["jemalloc", "snappy", "zstd"]
+default = []
 snappy = []
 zlib = []
 bzip2 = []
