@@ -1,20 +1,23 @@
-# rocks
+# RustRocks [![crates.io badge][crates-io-badge]][crates-io-url]
 
 Make RocksDB really rocks!
 
 working in progress.
-
 
 ## status
 
 big picture(TODOs):
 
 - [ ] git submodule, static-link, compression as feature gate
-- [ ] information hiding (DO NOT EXPORT raw pointers)
+- [x] information hiding (DO NOT EXPORT raw pointers)
 - [ ] Proof of usablility
 - [ ] bench across C++/Java/other-rust binding
 - [ ] Zero-Copy
+  - [ ] wraps std::string in Rust
+  - [ ] exports String/Vec<u8> to C++ via `assign`-style API
 - [ ] Full documentation with code examples
+  - [x] good enough by copying C++ comments
+  - [ ] rename C++ function names to rust name
 
 > checkbox means DONE, or NEEDLESS TO BE DONE.
 
@@ -138,3 +141,6 @@ big picture(TODOs):
 - [ ] ``rocksdb/utilities/transaction_db_mutex.h``
 - [ ] ~~``rocksdb/utilities/utility_db.h``~~
 - [ ] ``rocksdb/utilities/write_batch_with_index.h``
+
+[crates-io-badge]: https://img.shields.io/crates/v/rocks.svg
+[crates-io-url]: https://crates.io/crates/rocks
