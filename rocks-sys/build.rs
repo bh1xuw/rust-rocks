@@ -262,7 +262,7 @@ fn main() {
 
     gcc::Config::new()
         .cpp(true)
-        .include("/usr/local/include")
+        .include("rocksdb/include")
         .include(".")
         .file("rocks/db.cc")
         .file("rocks/env.cc")
