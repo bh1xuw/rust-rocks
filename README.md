@@ -96,11 +96,14 @@ big picture(TODOs):
   - [x] a sequence number type, wrapped in Snapshot
 - [x] ``rocksdb/version.h``
 - [ ] ``rocksdb/wal_filter.h``
+  - [x] basic trait
 - [x] ``rocksdb/write_batch.h``
   - [x] basic functions
   - [x] builder style
-  - [ ] batch cf ops
-  - [ ] inspect functions
+  - [x] batch cf ops
+  - [x] inspect functions ``has_*``
+  - [ ] putv/deletev
+  - [ ] handler/iterate
 - [ ] ~~``rocksdb/write_batch_base.h``~~
 - [ ] ``rocksdb/write_buffer_manager.h``
 - [ ] ``rocksdb/universal_compaction.h``

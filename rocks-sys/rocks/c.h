@@ -53,6 +53,7 @@ extern "C" {
 
   /* write_batch */
   typedef struct rocks_writebatch_t rocks_writebatch_t;
+  typedef struct rocks_raw_writebatch_t rocks_raw_writebatch_t;
 
   /* cache */
   typedef struct rocks_cache_t           rocks_cache_t;
@@ -669,7 +670,7 @@ extern "C" {
   void rocks_db_write(
                       rocks_db_t* db,
                       const rocks_writeoptions_t* options,
-                      rocks_writebatch_t* batch,
+                      rocks_raw_writebatch_t* batch,
                       rocks_status_t* status);
 
   char* rocks_db_get(
@@ -1018,6 +1019,17 @@ extern "C" {
                                                rocks_status_t* status);
 
   rocks_writebatch_t* rocks_writebatch_copy(rocks_writebatch_t* b);
+
+  unsigned char rocks_writebatch_has_put(rocks_writebatch_t* b);
+  unsigned char rocks_writebatch_has_delete(rocks_writebatch_t* b);
+  unsigned char rocks_writebatch_has_single_delete(rocks_writebatch_t* b);
+  unsigned char rocks_writebatch_has_delete_range(rocks_writebatch_t* b);
+  unsigned char rocks_writebatch_has_merge(rocks_writebatch_t* b);
+  unsigned char rocks_writebatch_has_begin_prepare(rocks_writebatch_t* b);
+  unsigned char rocks_writebatch_has_end_prepare(rocks_writebatch_t* b);
+  unsigned char rocks_writebatch_has_commit(rocks_writebatch_t* b);
+  unsigned char rocks_writebatch_has_rollback(rocks_writebatch_t* b);
+  rocks_raw_writebatch_t* rocks_writebatch_get_writebatch(rocks_writebatch_t* b);
 
   /* iterator */
   void rocks_iter_destroy(rocks_iterator_t* iter);

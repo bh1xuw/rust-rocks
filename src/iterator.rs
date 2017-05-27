@@ -246,7 +246,9 @@ mod tests {
         let tmp_dir = TempDir::new_in(".", "rocks").unwrap();
         let opt = Options::default().map_db_options(|db| db.create_if_missing(true));
         let db = DB::open(opt, tmp_dir.path()).unwrap();
-        let batch = WriteBatch::new()
+        let mut batch = WriteBatch::new();
+
+        batch
             .put(b"key1", b"BYasdf1CQ")
             .put(b"key2", b"BYasdf1CQ")
             .put(b"key3", b"BYasdf1CQ")

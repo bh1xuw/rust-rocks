@@ -178,7 +178,9 @@ extern "C" {
   struct rocks_iterator_t        { Iterator*         rep; };
 
   /* write_batch */
+  // FIXME: this is a class type, should be wrapped into pointer
   struct rocks_writebatch_t      { WriteBatch        rep; };
+  typedef struct rocks_raw_writebatch_t rocks_raw_writebatch_t;
 
   /* cache */
   struct rocks_cache_t           { shared_ptr<Cache>   rep; };

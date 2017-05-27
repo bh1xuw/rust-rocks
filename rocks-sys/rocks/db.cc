@@ -295,9 +295,9 @@ extern "C" {
   void rocks_db_write(
                       rocks_db_t* db,
                       const rocks_writeoptions_t* options,
-                      rocks_writebatch_t* batch,
+                      rocks_raw_writebatch_t* batch, // raw is pointer, non-raw is a wrapper
                       rocks_status_t* status) {
-    SaveError(status, db->rep->Write(options->rep, &batch->rep));
+    SaveError(status, db->rep->Write(options->rep, reinterpret_cast<WriteBatch*>(batch)));
   }
 
   char* rocks_db_get(

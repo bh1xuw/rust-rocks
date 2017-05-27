@@ -284,4 +284,38 @@ extern "C" {
   rocks_writebatch_t* rocks_writebatch_copy(rocks_writebatch_t* b) {
     return new rocks_writebatch_t { WriteBatch(b->rep) };
   }
+
+  unsigned char rocks_writebatch_has_put(rocks_writebatch_t* b) {
+    return b->rep.HasPut();
+  }
+  unsigned char rocks_writebatch_has_delete(rocks_writebatch_t* b) {
+    return b->rep.HasDelete();
+  }
+  unsigned char rocks_writebatch_has_single_delete(rocks_writebatch_t* b) {
+    return b->rep.HasSingleDelete();
+  }
+  unsigned char rocks_writebatch_has_delete_range(rocks_writebatch_t* b) {
+    return b->rep.HasDeleteRange();
+  }
+  unsigned char rocks_writebatch_has_merge(rocks_writebatch_t* b) {
+    return b->rep.HasMerge();
+  }
+  unsigned char rocks_writebatch_has_begin_prepare(rocks_writebatch_t* b) {
+    return b->rep.HasBeginPrepare();
+  }
+  unsigned char rocks_writebatch_has_end_prepare(rocks_writebatch_t* b) {
+    return b->rep.HasEndPrepare();
+  }
+  unsigned char rocks_writebatch_has_commit(rocks_writebatch_t* b) {
+    return b->rep.HasCommit();
+  }
+  unsigned char rocks_writebatch_has_rollback(rocks_writebatch_t* b) {
+    return b->rep.HasRollback();
+  }
+
+  // this is for wrapped writebatch impl, for e.g. WriteBatchWithIndex
+  rocks_raw_writebatch_t* rocks_writebatch_get_writebatch(rocks_writebatch_t* b) {
+    return reinterpret_cast<rocks_raw_writebatch_t*>(b->rep.GetWriteBatch());
+  }
+
 }
