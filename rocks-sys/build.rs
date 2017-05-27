@@ -1,6 +1,5 @@
 extern crate gcc;
 
-use std::env;
 use std::process::Command;
 use std::io::prelude::*;
 use std::fs::File;
@@ -244,8 +243,6 @@ fn main() {
     println!("cargo:rerun-if-changed=./");
     println!("cargo:rerun-if-changed=./rocks");
 
-    env::set_var("CXXFLAGS", "-std=c++11");
-
     #[cfg(feature = "snappy")]
     snappy();
 
@@ -288,5 +285,6 @@ fn main() {
         .flag("-fPIC")
         .flag("-O2")
         .flag("-g")
+        .flag("-std=c++11")
         .compile("librocksdb_wrap.a");
 }

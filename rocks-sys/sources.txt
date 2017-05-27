@@ -11,7 +11,6 @@ db/convenience.cc
 db/dbformat.cc
 db/db_filesnapshot.cc
 db/db_impl.cc
-db/db_impl_debug.cc
 db/db_impl_experimental.cc
 db/db_impl_readonly.cc
 db/db_info_dumper.cc
@@ -84,7 +83,6 @@ table/persistent_cache_helper.cc
 table/table_properties.cc
 table/two_level_iterator.cc
 tools/sst_dump_tool.cc
-tools/db_bench_tool.cc
 tools/dump/db_dump_tool.cc
 util/arena.cc
 util/bloom.cc
@@ -139,7 +137,6 @@ util/threadpool_imp.cc
 util/thread_status_impl.cc
 util/thread_status_updater.cc
 util/thread_status_util.cc
-util/thread_status_util_debug.cc
 util/transaction_test_util.cc
 util/xxhash.cc
 utilities/backupable/backupable_db.cc
@@ -153,7 +150,6 @@ utilities/document/json_document_builder.cc
 utilities/env_mirror.cc
 utilities/geodb/geodb_impl.cc
 utilities/leveldb_options/leveldb_options.cc
-utilities/lua/rocks_lua_compaction_filter.cc
 utilities/memory/memory_util.cc
 utilities/merge_operators/string_append/stringappend.cc
 utilities/merge_operators/string_append/stringappend2.cc
