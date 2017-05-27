@@ -57,56 +57,6 @@ fn test_db_list_cf_names() {
 }
 
 #[test]
-fn test_create_cf() {
-    unsafe {
-        let opt = c::rocks_options_create();
-        let mut status = mem::uninitialized::<c::rocks_status_t>();
-        let dbname = CString::new("./data.test").unwrap();
-
-        //let db = c::rocks_db_open(opt, dbname.as_ptr(), &mut status);
-        //assert!(status.code == 0, "status => {:?}", CStr::from_ptr(status.state));
-        let cf_names = vec![CString::new("default").unwrap(), CString::new("lock").unwrap()];
-        let mut c_cf_names = cf_names.iter()
-            .map(|s| s.as_ptr())
-            .collect::<Vec<_>>();
-
-        let mut c_cf_opts = vec![c::rocks_options_create() as *const _; 2];
-
-        let mut cf_handles = vec![ptr::null_mut(); 2];
-        let db = c::rocks_db_open_column_families(
-            opt, dbname.as_ptr(), 2,
-            c_cf_names.as_mut_ptr(), c_cf_opts.as_mut_ptr(),
-            cf_handles.as_mut_ptr(),
-            &mut status);
-
-        println!("{:?}", c_cf_names);
-        println!("{:?}", c_cf_opts);
-        println!("status {:?}", status.code);
-        assert!(status.code == 0, "open cf status => {:?}", CStr::from_ptr(status.state));
-
-        println!("got cf_handles {:?}", cf_handles);
-
-        println!("got db_handles {:?}", db);
-
-//        let cfopt = c::rocks_column_family_options_create();
-//        let cfname = CString::new("lock").unwrap();
-
-        // c::rocks_db_create_column_family(db, cfopt as _, cfname.as_ptr(), &mut status);
-//        let hdl = c::rocks_db_create_column_family(db, opt, c_cf_names.as_ptr(), &mut status);
-  //      assert!(status.code == 0);
-
-//        c::rocks_db_drop_column_family(db, hdl, & status);
-  //      assert!(status.code == 0);
-
-//        c:: rocks_column_family_handle_destroy(hdl);
-
-        //c::rocks_column_family_options_destroy(cfopt);
-        c::rocks_options_destroy(opt);
-    }
-}
-
-
-#[test]
 fn test_smoke() {
     unsafe {
         // let opt = c::rocks_options_create();
