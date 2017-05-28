@@ -11,14 +11,11 @@ readme = "README.md"
 
 include = [
     "**/*.rs",
-    "**/*.h",
-    "**/*.cc",
-    "**/*.hpp",
     "Cargo.toml",
 ]
 
 [dependencies]
-rocks-sys = { path = "rocks-sys", version = "0.0.2" }
+rocks-sys = { path = "rocks-sys", version = "0.0.3" }
 
 [dev-dependencies]
 tempdir = "0.3"

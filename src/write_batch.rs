@@ -322,11 +322,6 @@ impl WriteBatch {
     pub fn has_rollback(&self) -> bool {
         unsafe { ll::rocks_writebatch_has_put(self.raw) != 0 }
     }
-
-    // marks this point in the WriteBatch as the last record to
-    // be inserted into the WAL, provided the WAL is enabled
-    // void MarkWalTerminationPoint();
-    // const SavePoint& GetWalTerminationPoint() const { return wal_term_point_; }
 }
 
 /// Support for iterating over the contents of a batch.

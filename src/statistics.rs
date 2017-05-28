@@ -560,7 +560,7 @@ mod tests {
         let db = DB::open(Options::default().map_db_options(|db| {
             db.create_if_missing(true)
                 .statistics(Some(stat.clone())) // FIXME: is this the best way?
-                .rate_limiter(Some(RateLimiter::new(1024, // 1 KiB/s
+                .rate_limiter(Some(RateLimiter::new(4096, // 1 KiB/s
                                                     10_000, // 10 ms
                                                     10)))
         }),

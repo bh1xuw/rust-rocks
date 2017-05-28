@@ -17,7 +17,7 @@ big picture(TODOs):
   - [ ] exports String/Vec<u8> to C++ via `assign`-style API
 - [ ] Full documentation with code examples
   - [x] good enough by copying C++ comments
-  - [ ] rename C++ function names to rust name
+  - [ ] rename C++ function names to rust name in doc comments
 
 > checkbox means DONE, or NEEDLESS TO BE DONE.
 
@@ -37,20 +37,21 @@ big picture(TODOs):
   - [x] column family support, both in CF/DB
   - [x] open / close
   - [x] iterator
-  - [x] get
-  - [x] put
-  - [x] write
-  - [x] delete
-  - [x] merge
+  - [x] get/put/delete
   - [x] MultiGet
+  - [x] write
+  - [x] merge
   - [x] KeyMayExist - bool return 
   - [x] KeyMayExist - get return
   - [x] properties
+    - [x] string/int properties
     - [ ] get map properties
-  - [x] misc function related to config
   - [x] compact range
   - [x] flush
   - [x] ingest sst file
+  - [ ] compact files
+  - [x] misc functions related to config
+  - [ ] misc functions related to size approximate
 - [ ] ~~``rocksdb/db_bench_tool.h``~~
 - [x] ``rocksdb/db_dump_tool.h``
 - [ ] ``rocksdb/env.h``
