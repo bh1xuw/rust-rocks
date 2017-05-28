@@ -485,7 +485,7 @@ impl Statistics {
         unsafe { ll::rocks_statistics_get_ticker_count(self.raw, mem::transmute(ticker_type)) }
     }
 
-    fn histogram_data(&self, type_: Histograms) -> HistogramData {
+    pub fn histogram_data(&self, type_: Histograms) -> HistogramData {
         unsafe {
             let mut data: HistogramData = mem::zeroed();
             ll::rocks_statistics_histogram_data(self.raw,
@@ -495,7 +495,7 @@ impl Statistics {
         }
     }
 
-    fn get_histogram_string(&self, type_: Histograms) -> String {
+    pub fn get_histogram_string(&self, type_: Histograms) -> String {
         let mut ret = String::new();
         unsafe {
             ll::rocks_statistics_get_histogram_string(self.raw,
@@ -506,30 +506,30 @@ impl Statistics {
     }
 
     // add count to ticker
-    fn record_tick(&mut self, ticker_type: Tickers, count: u64) {
+    pub fn record_tick(&mut self, ticker_type: Tickers, count: u64) {
         unsafe {
             ll::rocks_statistics_record_tick(self.raw, mem::transmute(ticker_type), count);
         }
     }
 
-    fn set_ticker_count(&mut self, ticker_type: Tickers, count: u64) {
+    pub fn set_ticker_count(&mut self, ticker_type: Tickers, count: u64) {
         unsafe {
             ll::rocks_statistics_set_ticker_count(self.raw, mem::transmute(ticker_type), count);
         }
     }
 
-    fn get_and_reset_ticker_count(&mut self, ticker_type: Tickers) -> u64 {
+    pub fn get_and_reset_ticker_count(&mut self, ticker_type: Tickers) -> u64 {
         unsafe { ll::rocks_statistics_get_and_reset_ticker_count(self.raw, mem::transmute(ticker_type)) }
     }
 
-    fn measure_time(&mut self, histogram_type: Histograms, time: u64) {
+    pub fn measure_time(&mut self, histogram_type: Histograms, time: u64) {
         unsafe {
             ll::rocks_statistics_measure_time(self.raw, mem::transmute(histogram_type), time);
         }
     }
 
     // Override this function to disable particular histogram collection
-    fn hist_enabled_for_type(&self, type_: Histograms) -> bool {
+    pub fn hist_enabled_for_type(&self, type_: Histograms) -> bool {
         unsafe { ll::rocks_statistics_hist_enabled_for_type(self.raw, mem::transmute(type_)) != 0 }
     }
 }
