@@ -155,8 +155,35 @@ extern "C" {
     opt->rep.disable_auto_compactions = disable;
   }
 
-  // rocks_cfoptions_set_table_factory()
-  // table_factory
+  // table_factory:
+  void rocks_cfoptions_set_block_based_table_factory(
+                                                    rocks_cfoptions_t *opt,
+                                                    rocks_block_based_table_options_t* table_options) {
+    if (table_options) {
+      opt->rep.table_factory.reset(
+                                   rocksdb::NewBlockBasedTableFactory(table_options->rep));
+    }
+  }
+
+  void rocks_cfoptions_set_cuckoo_table_factory(
+                                               rocks_cfoptions_t *opt,
+                                               rocks_cuckoo_table_options_t* table_options) {
+    if (table_options) {
+      opt->rep.table_factory.reset(
+                                   rocksdb::NewCuckooTableFactory(table_options->rep));
+    }
+  }
+
+  void rocks_cfoptions_set_plain_table_factory(
+                                               rocks_cfoptions_t *opt,
+                                               rocks_plain_table_options_t* table_options) {
+    if (table_options) {
+      opt->rep.table_factory.reset(
+                                   rocksdb::NewPlainTableFactory(table_options->rep));
+    }
+  }
+
+  /*
   void rocks_cfoptions_set_plain_table_factory(
                                              rocks_cfoptions_t *opt, uint32_t user_key_len, int bloom_bits_per_key,
                                              double hash_table_ratio, size_t index_sparseness) {
@@ -169,6 +196,7 @@ extern "C" {
     rocksdb::TableFactory* factory = rocksdb::NewPlainTableFactory(options);
     opt->rep.table_factory.reset(factory);
   }
+  */
 
   // via AdvancedColumnFamilyOptions
 

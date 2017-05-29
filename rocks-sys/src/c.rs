@@ -75,6 +75,18 @@ pub struct rocks_writebatch_t([u8; 0]);
 pub struct rocks_raw_writebatch_t([u8; 0]);
 #[repr(C)]
 #[derive(Debug, Copy, Clone)]
+pub struct rocks_block_based_table_options_t([u8; 0]);
+#[repr(C)]
+#[derive(Debug, Copy, Clone)]
+pub struct rocks_cuckoo_table_options_t([u8; 0]);
+#[repr(C)]
+#[derive(Debug, Copy, Clone)]
+pub struct rocks_plain_table_options_t([u8; 0]);
+#[repr(C)]
+#[derive(Debug, Copy, Clone)]
+pub struct rocks_raw_filterpolicy_t([u8; 0]);
+#[repr(C)]
+#[derive(Debug, Copy, Clone)]
 pub struct rocks_cache_t([u8; 0]);
 #[repr(C)]
 #[derive(Debug, Copy, Clone)]
@@ -259,13 +271,22 @@ extern "C" {
                                                             ::std::os::raw::c_uchar);
 }
 extern "C" {
+    pub fn rocks_cfoptions_set_block_based_table_factory(opt:
+                                                             *mut rocks_cfoptions_t,
+                                                         table_options:
+                                                             *mut rocks_block_based_table_options_t);
+}
+extern "C" {
+    pub fn rocks_cfoptions_set_cuckoo_table_factory(opt:
+                                                        *mut rocks_cfoptions_t,
+                                                    table_options:
+                                                        *mut rocks_cuckoo_table_options_t);
+}
+extern "C" {
     pub fn rocks_cfoptions_set_plain_table_factory(opt:
                                                        *mut rocks_cfoptions_t,
-                                                   user_key_len: u32,
-                                                   bloom_bits_per_key:
-                                                       ::std::os::raw::c_int,
-                                                   hash_table_ratio: f64,
-                                                   index_sparseness: usize);
+                                                   table_options:
+                                                       *mut rocks_plain_table_options_t);
 }
 extern "C" {
     pub fn rocks_cfoptions_set_max_write_buffer_number(opt:
@@ -1763,6 +1784,212 @@ extern "C" {
      -> *mut rocks_raw_writebatch_t;
 }
 extern "C" {
+    pub fn rocks_plain_table_options_create()
+     -> *mut rocks_plain_table_options_t;
+}
+extern "C" {
+    pub fn rocks_plain_table_options_destroy(options:
+                                                 *mut rocks_plain_table_options_t);
+}
+extern "C" {
+    pub fn rocks_plain_table_options_set_user_key_len(options:
+                                                          *mut rocks_plain_table_options_t,
+                                                      val: u32);
+}
+extern "C" {
+    pub fn rocks_plain_table_options_set_bloom_bits_per_key(options:
+                                                                *mut rocks_plain_table_options_t,
+                                                            val:
+                                                                ::std::os::raw::c_int);
+}
+extern "C" {
+    pub fn rocks_plain_table_options_set_hash_table_ratio(options:
+                                                              *mut rocks_plain_table_options_t,
+                                                          val: f64);
+}
+extern "C" {
+    pub fn rocks_plain_table_options_set_index_sparseness(options:
+                                                              *mut rocks_plain_table_options_t,
+                                                          val: usize);
+}
+extern "C" {
+    pub fn rocks_plain_table_options_set_huge_page_tlb_size(options:
+                                                                *mut rocks_plain_table_options_t,
+                                                            val: usize);
+}
+extern "C" {
+    pub fn rocks_plain_table_options_set_encoding_type(options:
+                                                           *mut rocks_plain_table_options_t,
+                                                       val:
+                                                           ::std::os::raw::c_char);
+}
+extern "C" {
+    pub fn rocks_plain_table_options_set_full_scan_mode(options:
+                                                            *mut rocks_plain_table_options_t,
+                                                        val:
+                                                            ::std::os::raw::c_uchar);
+}
+extern "C" {
+    pub fn rocks_plain_table_options_set_store_index_in_file(options:
+                                                                 *mut rocks_plain_table_options_t,
+                                                             val:
+                                                                 ::std::os::raw::c_uchar);
+}
+extern "C" {
+    pub fn rocks_block_based_table_options_create()
+     -> *mut rocks_block_based_table_options_t;
+}
+extern "C" {
+    pub fn rocks_block_based_table_options_destroy(options:
+                                                       *mut rocks_block_based_table_options_t);
+}
+extern "C" {
+    pub fn rocks_block_based_table_options_set_cache_index_and_filter_blocks(options:
+                                                                                 *mut rocks_block_based_table_options_t,
+                                                                             val:
+                                                                                 ::std::os::raw::c_uchar);
+}
+extern "C" {
+    pub fn rocks_block_based_table_options_set_cache_index_and_filter_blocks_with_high_priority(options:
+                                                                                                    *mut rocks_block_based_table_options_t,
+                                                                                                val:
+                                                                                                    ::std::os::raw::c_uchar);
+}
+extern "C" {
+    pub fn rocks_block_based_table_options_set_pin_l0_filter_and_index_blocks_in_cache(options:
+                                                                                           *mut rocks_block_based_table_options_t,
+                                                                                       v:
+                                                                                           ::std::os::raw::c_uchar);
+}
+extern "C" {
+    pub fn rocks_block_based_table_options_set_index_type(options:
+                                                              *mut rocks_block_based_table_options_t,
+                                                          v:
+                                                              ::std::os::raw::c_int);
+}
+extern "C" {
+    pub fn rocks_block_based_table_options_set_hash_index_allow_collision(options:
+                                                                              *mut rocks_block_based_table_options_t,
+                                                                          v:
+                                                                              ::std::os::raw::c_uchar);
+}
+extern "C" {
+    pub fn rocks_block_based_table_options_set_no_block_cache(options:
+                                                                  *mut rocks_block_based_table_options_t,
+                                                              no_block_cache:
+                                                                  ::std::os::raw::c_uchar);
+}
+extern "C" {
+    pub fn rocks_block_based_table_options_set_block_cache(options:
+                                                               *mut rocks_block_based_table_options_t,
+                                                           block_cache:
+                                                               *mut rocks_cache_t);
+}
+extern "C" {
+    pub fn rocks_block_based_table_options_set_block_cache_compressed(options:
+                                                                          *mut rocks_block_based_table_options_t,
+                                                                      block_cache_compressed:
+                                                                          *mut rocks_cache_t);
+}
+extern "C" {
+    pub fn rocks_block_based_table_options_set_block_size(options:
+                                                              *mut rocks_block_based_table_options_t,
+                                                          block_size: usize);
+}
+extern "C" {
+    pub fn rocks_block_based_table_options_set_block_size_deviation(options:
+                                                                        *mut rocks_block_based_table_options_t,
+                                                                    block_size_deviation:
+                                                                        ::std::os::raw::c_int);
+}
+extern "C" {
+    pub fn rocks_block_based_table_options_set_block_restart_interval(options:
+                                                                          *mut rocks_block_based_table_options_t,
+                                                                      block_restart_interval:
+                                                                          ::std::os::raw::c_int);
+}
+extern "C" {
+    pub fn rocks_block_based_table_options_set_index_block_restart_interval(options:
+                                                                                *mut rocks_block_based_table_options_t,
+                                                                            val:
+                                                                                ::std::os::raw::c_int);
+}
+extern "C" {
+    pub fn rocks_block_based_table_options_set_partition_filters(options:
+                                                                     *mut rocks_block_based_table_options_t,
+                                                                 val:
+                                                                     ::std::os::raw::c_uchar);
+}
+extern "C" {
+    pub fn rocks_block_based_table_options_set_use_delta_encoding(options:
+                                                                      *mut rocks_block_based_table_options_t,
+                                                                  no_block_cache:
+                                                                      ::std::os::raw::c_uchar);
+}
+extern "C" {
+    pub fn rocks_block_based_table_options_set_filter_policy(options:
+                                                                 *mut rocks_block_based_table_options_t,
+                                                             policy:
+                                                                 *mut rocks_raw_filterpolicy_t);
+}
+extern "C" {
+    pub fn rocks_block_based_table_options_set_whole_key_filtering(options:
+                                                                       *mut rocks_block_based_table_options_t,
+                                                                   v:
+                                                                       ::std::os::raw::c_uchar);
+}
+extern "C" {
+    pub fn rocks_block_based_table_options_set_verify_compression(options:
+                                                                      *mut rocks_block_based_table_options_t,
+                                                                  v:
+                                                                      ::std::os::raw::c_uchar);
+}
+extern "C" {
+    pub fn rocks_block_based_table_options_set_read_amp_bytes_per_bit(options:
+                                                                          *mut rocks_block_based_table_options_t,
+                                                                      v: u32);
+}
+extern "C" {
+    pub fn rocks_block_based_table_options_set_format_version(options:
+                                                                  *mut rocks_block_based_table_options_t,
+                                                              v: u32);
+}
+extern "C" {
+    pub fn rocks_cuckoo_table_options_create()
+     -> *mut rocks_cuckoo_table_options_t;
+}
+extern "C" {
+    pub fn rocks_cuckoo_table_options_destroy(options:
+                                                  *mut rocks_cuckoo_table_options_t);
+}
+extern "C" {
+    pub fn rocks_cuckoo_table_options_set_hash_table_ratio(options:
+                                                               *mut rocks_cuckoo_table_options_t,
+                                                           v: f64);
+}
+extern "C" {
+    pub fn rocks_cuckoo_table_options_set_max_search_depth(options:
+                                                               *mut rocks_cuckoo_table_options_t,
+                                                           v: u32);
+}
+extern "C" {
+    pub fn rocks_cuckoo_table_options_set_cuckoo_block_size(options:
+                                                                *mut rocks_cuckoo_table_options_t,
+                                                            v: u32);
+}
+extern "C" {
+    pub fn rocks_cuckoo_table_options_set_identity_as_first_hash(options:
+                                                                     *mut rocks_cuckoo_table_options_t,
+                                                                 v:
+                                                                     ::std::os::raw::c_uchar);
+}
+extern "C" {
+    pub fn rocks_cuckoo_table_options_set_use_module_hash(options:
+                                                              *mut rocks_cuckoo_table_options_t,
+                                                          v:
+                                                              ::std::os::raw::c_uchar);
+}
+extern "C" {
     pub fn rocks_iter_destroy(iter: *mut rocks_iterator_t);
 }
 extern "C" {
@@ -1808,6 +2035,17 @@ extern "C" {
                                    prop_len: usize,
                                    value: *mut ::std::os::raw::c_void,
                                    status: *mut rocks_status_t);
+}
+extern "C" {
+    pub fn rocks_raw_filterpolicy_new_bloomfilter(bits_per_key:
+                                                      ::std::os::raw::c_int,
+                                                  use_block_based_builder:
+                                                      ::std::os::raw::c_uchar)
+     -> *mut rocks_raw_filterpolicy_t;
+}
+extern "C" {
+    pub fn rocks_raw_filterpolicy_destroy(cache:
+                                              *mut rocks_raw_filterpolicy_t);
 }
 extern "C" {
     pub fn rocks_cache_create_lru(capacity: usize,

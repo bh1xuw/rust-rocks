@@ -244,7 +244,14 @@ mod tests {
     fn iterator() {
         use tempdir::TempDir;
         let tmp_dir = TempDir::new_in(".", "rocks").unwrap();
-        let opt = Options::default().map_db_options(|db| db.create_if_missing(true));
+        let opt = Options::default()
+            .map_db_options(|db| db.create_if_missing(true))
+            .map_cf_options(|cf| {
+                cf.block_based_table_factory(
+                    BlockBasedTableOptions::default()
+                        .use_delta_encoding(false)
+                )
+            });
         let db = DB::open(opt, tmp_dir.path()).unwrap();
         let mut batch = WriteBatch::new();
 
@@ -266,6 +273,9 @@ mod tests {
 
         let ret = db.write(WriteOptions::default(), batch);
         assert!(ret.is_ok());
+
+        assert!(db.compact_range(&Default::default(), ..).is_ok());
+
         {
             for (k, v) in db.new_iterator(&ReadOptions::default()).iter() {
                 println!("> {:?} => {:?}", String::from_utf8_lossy(k), String::from_utf8_lossy(v));
@@ -282,13 +292,13 @@ mod tests {
             println!("got kv => {:?}", kvs);
         }
 
-        let mut it = db.new_iterator(&ReadOptions::default());
+        let mut it = db.new_iterator(&ReadOptions::default().pin_data(true));
 
         assert_eq!(it.is_valid(), false);
         println!("it => {:?}", it);
         it.seek_to_first();
 
-        assert_eq!(it.get_property("rocksdb.iterator.is-key-pinned"), Ok("0".to_string()));
+        assert_eq!(it.get_property("rocksdb.iterator.is-key-pinned"), Ok("1".to_string()));
 
         println!("got => {:?}",
                  it.get_property("rocksdb.iterator.super-version-number")

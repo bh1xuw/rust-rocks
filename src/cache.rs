@@ -20,6 +20,7 @@ pub enum Priority {
     Low,
 }
 
+// TODO: impl Copy for inner shared_ptr
 
 /// A builtin cache implementation with a least-recently-used eviction
 /// policy is provided.  Clients may use their own implementations if

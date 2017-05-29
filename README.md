@@ -57,7 +57,9 @@ big picture(TODOs):
 - [ ] ``rocksdb/env.h``
   - [ ] logger
 - [ ] ~~``rocksdb/experimental.h``~~
-- [ ] ``rocksdb/filter_policy.h``
+- [x] ``rocksdb/filter_policy.h``
+  - [x] basic bloom filter
+  - [ ] customized filter policy
 - [ ] ``rocksdb/flush_block_policy.h``
 - [x] ``rocksdb/iostats_context.h``
 - [x] ``rocksdb/iterator.h``
@@ -91,7 +93,9 @@ big picture(TODOs):
   - [ ] customized statistics class via rust trait?
 - [x] ``rocksdb/status.h``
   - [ ] Rust style Error? (i.e. remove Status::OK)
-- [ ] ``rocksdb/table.h``
+- [x] ``rocksdb/table.h``
+  - [x] plain / block based / cuckoo options
+  - [ ] customized
 - [ ] ``rocksdb/table_properties.h``
 - [ ] ``rocksdb/thread_status.h``
 - [ ] ``rocksdb/threadpool.h``

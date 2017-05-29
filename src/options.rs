@@ -22,7 +22,7 @@ use advanced_options::{CompactionStyle, CompactionPri, CompactionOptionsFIFO, Co
 use universal_compaction::CompactionOptionsUniversal;
 use compaction_filter::{CompactionFilter, CompactionFilterFactory};
 use merge_operator::{MergeOperator, AssociativeMergeOperator};
-use table::TableFactory;
+use table::{PlainTableOptions, BlockBasedTableOptions, CuckooTableOptions};
 use comparator::Comparator;
 use slice_transform::SliceTransform;
 use snapshot::Snapshot;
@@ -459,13 +459,32 @@ impl ColumnFamilyOptions {
     /// Default: a block-based table factory that provides a default
     /// implementation of TableBuilder and TableReader with default
     /// BlockBasedTableOptions.
-    pub fn table_factory(self, val: Option<TableFactory>) -> Self {
-        unimplemented!()
-        // unsafe {
-        //     ll::rocks_cfoptions_set_table_factory(self.raw, val);
-        // }
-        // self
+    pub fn plain_table_factory(self, opt: PlainTableOptions) -> Self {
+        unsafe {
+            ll::rocks_cfoptions_set_plain_table_factory(self.raw, opt.raw());
+        }
+        self
     }
+
+    pub fn block_based_table_factory(self, opt: BlockBasedTableOptions) -> Self {
+        unsafe {
+            ll::rocks_cfoptions_set_block_based_table_factory(self.raw, opt.raw());
+        }
+        self
+    }
+
+    pub fn cuckoo_table_factory(self, opt: CuckooTableOptions) -> Self {
+        unsafe {
+            ll::rocks_cfoptions_set_cuckoo_table_factory(self.raw, opt.raw());
+        }
+        self
+    }
+
+    /*
+    pub fn table_factory(self, val: ()) -> Self {
+        panic!("use any of plain_table_factory, block_based_table_factory and cuckoo_table_factory")
+    }
+    */
 
     // Following: AdvancedColumnFamilyOptions
 

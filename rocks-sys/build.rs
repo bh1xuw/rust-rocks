@@ -37,6 +37,8 @@ fn main() {
         .file("rocks/iostats_context.cc")
         .file("rocks/perf_context.cc")
         .file("rocks/statistics.cc")
+        .file("rocks/table.cc")
+        .file("rocks/filter_policy.cc")
         .file("rocks/aux.cc")
         .flag("-fPIC")
         .flag("-O2")

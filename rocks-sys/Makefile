@@ -4,10 +4,13 @@
 src/%.rs: rocks/%.h
 	bindgen --no-derive-debug \
 		--no-layout-tests \
+		--whitelist-function 'rocks.*?' \
+		--whitelist-function 'cxx_.*?' \
+		--whitelist-function 'free.*?' \
+		--whitelist-type 'rocks.*?' \
 		$^ -o $@
-#		--whitelist-function 'rocks.*?' \
-#		--whitelist-type 'rocks.*?' \
-		$^ -o $@
+
+# $^ -o $@
 
 #all: src/options.rs \
 #	src/rate_limiter.rs \

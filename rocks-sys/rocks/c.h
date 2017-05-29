@@ -55,6 +55,14 @@ extern "C" {
   typedef struct rocks_writebatch_t rocks_writebatch_t;
   typedef struct rocks_raw_writebatch_t rocks_raw_writebatch_t;
 
+  /* table */
+  typedef struct rocks_block_based_table_options_t  rocks_block_based_table_options_t;
+  typedef struct rocks_cuckoo_table_options_t  rocks_cuckoo_table_options_t;
+  typedef struct rocks_plain_table_options_t rocks_plain_table_options_t;
+
+  /* filter_policy */
+  typedef struct rocks_raw_filterpolicy_t rocks_raw_filterpolicy_t;
+
   /* cache */
   typedef struct rocks_cache_t           rocks_cache_t;
 
@@ -64,7 +72,6 @@ extern "C" {
 
   /* comparator.h */
   typedef struct rocks_comparator_t rocks_comparator_t; /* for rust trait object */
-
   typedef struct rocks_c_comparator_t rocks_c_comparator_t; /* for c */
 
   /* sst_file_writer.h */
@@ -155,11 +162,16 @@ extern "C" {
 
   void rocks_cfoptions_set_disable_auto_compactions(rocks_cfoptions_t* opt, unsigned char disable);
 
-  // rocks_cfoptions_set_table_factory()
   // table_factory
+  void rocks_cfoptions_set_block_based_table_factory(
+                                                    rocks_cfoptions_t *opt,
+                                                    rocks_block_based_table_options_t* table_options);
+  void rocks_cfoptions_set_cuckoo_table_factory(
+                                                rocks_cfoptions_t *opt,
+                                                rocks_cuckoo_table_options_t* table_options);
   void rocks_cfoptions_set_plain_table_factory(
-                                             rocks_cfoptions_t *opt, uint32_t user_key_len, int bloom_bits_per_key,
-                                             double hash_table_ratio, size_t index_sparseness);
+                                               rocks_cfoptions_t *opt,
+                                               rocks_plain_table_options_t* table_options);
 
   // via AdvancedColumnFamilyOptions
 
@@ -1031,6 +1043,115 @@ extern "C" {
   unsigned char rocks_writebatch_has_rollback(rocks_writebatch_t* b);
   rocks_raw_writebatch_t* rocks_writebatch_get_writebatch(rocks_writebatch_t* b);
 
+  /* table */
+
+  rocks_plain_table_options_t*
+  rocks_plain_table_options_create();
+
+  void rocks_plain_table_options_destroy(rocks_plain_table_options_t* options);
+
+  void rocks_plain_table_options_set_user_key_len(rocks_plain_table_options_t* options, uint32_t val);
+  void rocks_plain_table_options_set_bloom_bits_per_key(rocks_plain_table_options_t* options, int val);
+  void rocks_plain_table_options_set_hash_table_ratio(rocks_plain_table_options_t* options, double val);
+  void rocks_plain_table_options_set_index_sparseness(rocks_plain_table_options_t* options, size_t val);
+  void rocks_plain_table_options_set_huge_page_tlb_size(rocks_plain_table_options_t* options, size_t val);
+  void rocks_plain_table_options_set_encoding_type(rocks_plain_table_options_t* options, char val);
+  void rocks_plain_table_options_set_full_scan_mode(rocks_plain_table_options_t* options, unsigned char val);
+  void rocks_plain_table_options_set_store_index_in_file(rocks_plain_table_options_t* options, unsigned char val);
+
+  rocks_block_based_table_options_t*
+  rocks_block_based_table_options_create();
+
+  void rocks_block_based_table_options_destroy(
+                                               rocks_block_based_table_options_t* options);
+
+  // flush_block_policy_factory
+
+  void rocks_block_based_table_options_set_cache_index_and_filter_blocks(
+                                                                         rocks_block_based_table_options_t* options,
+                                                                         unsigned char val);
+  void rocks_block_based_table_options_set_cache_index_and_filter_blocks_with_high_priority(
+                                                                         rocks_block_based_table_options_t* options,
+                                                                         unsigned char val);
+  void rocks_block_based_table_options_set_pin_l0_filter_and_index_blocks_in_cache(
+                                                                                   rocks_block_based_table_options_t* options,
+                                                                                   unsigned char v);
+  void rocks_block_based_table_options_set_index_type(
+                                                      rocks_block_based_table_options_t* options, int v);
+  void rocks_block_based_table_options_set_hash_index_allow_collision(
+                                                                      rocks_block_based_table_options_t* options,
+                                                                      unsigned char v);
+  // checksum
+  void rocks_block_based_table_options_set_no_block_cache(
+                                                          rocks_block_based_table_options_t* options,
+                                                          unsigned char no_block_cache);
+  void rocks_block_based_table_options_set_block_cache(
+                                                       rocks_block_based_table_options_t* options,
+                                                       rocks_cache_t* block_cache);
+  // persistent_cache
+  void rocks_block_based_table_options_set_block_cache_compressed(
+                                                                  rocks_block_based_table_options_t* options,
+                                                                  rocks_cache_t* block_cache_compressed);
+  void rocks_block_based_table_options_set_block_size(
+                                                      rocks_block_based_table_options_t* options,
+                                                      size_t block_size);
+  void rocks_block_based_table_options_set_block_size_deviation(
+                                                                rocks_block_based_table_options_t* options,
+                                                                int block_size_deviation);
+  void rocks_block_based_table_options_set_block_restart_interval(
+                                                                  rocks_block_based_table_options_t* options,
+                                                                  int block_restart_interval);
+  void rocks_block_based_table_options_set_index_block_restart_interval(
+                                                                        rocks_block_based_table_options_t* options,
+                                                                        int val);
+  /*
+  void rocks_block_based_table_options_set_metadata_block_size(
+                                                               rocks_block_based_table_options_t* options,
+                                                               uint64_t val);
+  */
+  void rocks_block_based_table_options_set_partition_filters(
+                                                          rocks_block_based_table_options_t* options,
+                                                          unsigned char val);
+  void rocks_block_based_table_options_set_use_delta_encoding(
+                                                             rocks_block_based_table_options_t* options,
+                                                             unsigned char no_block_cache);
+  void rocks_block_based_table_options_set_filter_policy(
+                                                         rocks_block_based_table_options_t* options,
+                                                         rocks_raw_filterpolicy_t* policy);
+  void rocks_block_based_table_options_set_whole_key_filtering(
+                                                               rocks_block_based_table_options_t* options,
+                                                               unsigned char v);
+  void rocks_block_based_table_options_set_verify_compression(
+                                                               rocks_block_based_table_options_t* options,
+                                                               unsigned char v);
+  void rocks_block_based_table_options_set_read_amp_bytes_per_bit(
+                                                                  rocks_block_based_table_options_t* options,
+                                                                  uint32_t v);
+  void rocks_block_based_table_options_set_format_version(
+                                                          rocks_block_based_table_options_t* options,
+                                                          uint32_t v);
+
+  rocks_cuckoo_table_options_t*
+  rocks_cuckoo_table_options_create();
+
+  void rocks_cuckoo_table_options_destroy(
+                                          rocks_cuckoo_table_options_t* options);
+
+  void rocks_cuckoo_table_options_set_hash_table_ratio(
+                                                       rocks_cuckoo_table_options_t* options, double v);
+
+  void rocks_cuckoo_table_options_set_max_search_depth(
+                                                       rocks_cuckoo_table_options_t* options, uint32_t v);
+
+  void rocks_cuckoo_table_options_set_cuckoo_block_size(
+                                                        rocks_cuckoo_table_options_t* options, uint32_t v);
+
+  void rocks_cuckoo_table_options_set_identity_as_first_hash(
+                                                             rocks_cuckoo_table_options_t* options, unsigned char v);
+
+  void rocks_cuckoo_table_options_set_use_module_hash(
+                                                      rocks_cuckoo_table_options_t* options, unsigned char v);
+
   /* iterator */
   void rocks_iter_destroy(rocks_iterator_t* iter);
 
@@ -1060,6 +1181,11 @@ extern "C" {
                                size_t prop_len,
                                void* value,
                                rocks_status_t* status);
+
+  /* filter_policy */
+  rocks_raw_filterpolicy_t* rocks_raw_filterpolicy_new_bloomfilter(int bits_per_key,
+                                              unsigned char use_block_based_builder);
+  void rocks_raw_filterpolicy_destroy(rocks_raw_filterpolicy_t* cache);
 
   /* cache */
   rocks_cache_t* rocks_cache_create_lru(size_t capacity,

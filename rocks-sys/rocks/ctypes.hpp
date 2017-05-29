@@ -4,7 +4,6 @@
 #define __RUST_ROCSK_SYS_H____
 
 
-
 #include "rocksdb/status.h"
 #include "rocksdb/db.h"
 #include "rocksdb/options.h"
@@ -17,6 +16,9 @@
 #include "rocksdb/compaction_filter.h"
 #include "rocksdb/slice_transform.h"
 #include "rocksdb/db_dump_tool.h"
+#include "rocksdb/table.h"
+#include "rocksdb/filter_policy.h"
+
 
 #include "rust_export.h"
 
@@ -181,6 +183,14 @@ extern "C" {
   // FIXME: this is a class type, should be wrapped into pointer
   struct rocks_writebatch_t      { WriteBatch        rep; };
   typedef struct rocks_raw_writebatch_t rocks_raw_writebatch_t;
+
+  /* table */
+  struct rocks_block_based_table_options_t  { BlockBasedTableOptions rep; };
+  struct rocks_cuckoo_table_options_t  { CuckooTableOptions rep; };
+  struct rocks_plain_table_options_t { PlainTableOptions rep; };
+
+  /* filter_policy */
+  struct rocks_raw_filterpolicy_t { shared_ptr<const FilterPolicy> rep; };
 
   /* cache */
   struct rocks_cache_t           { shared_ptr<Cache>   rep; };
