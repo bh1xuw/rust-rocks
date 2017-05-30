@@ -18,6 +18,7 @@
 #include "rocksdb/db_dump_tool.h"
 #include "rocksdb/table.h"
 #include "rocksdb/filter_policy.h"
+#include "rocksdb/metadata.h"
 
 
 #include "rust_export.h"
@@ -275,6 +276,9 @@ extern "C" {
   /* statistics */
   struct rocks_statistics_t { shared_ptr<Statistics> rep; };
   typedef struct rocks_histogram_data_t rocks_histogram_data_t;
+
+  /* metadata */
+  struct rocks_livefiles_t       { std::vector<LiveFileMetaData> rep; };
 
   /* aux */
   static bool SaveError(rocks_status_t* status, const Status& s) {

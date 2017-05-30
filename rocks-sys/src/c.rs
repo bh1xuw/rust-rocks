@@ -124,6 +124,9 @@ pub struct rocks_statistics_t([u8; 0]);
 #[repr(C)]
 #[derive(Debug, Copy, Clone)]
 pub struct rocks_histogram_data_t([u8; 0]);
+#[repr(C)]
+#[derive(Debug, Copy, Clone)]
+pub struct rocks_livefiles_t([u8; 0]);
 extern "C" {
     pub fn rocks_options_create() -> *mut rocks_options_t;
 }
@@ -1383,6 +1386,15 @@ extern "C" {
     pub fn rocks_db_get_latest_sequence_number(db: *mut rocks_db_t) -> u64;
 }
 extern "C" {
+    pub fn rocks_db_delete_file(db: *mut rocks_db_t,
+                                name: *const ::std::os::raw::c_char,
+                                name_len: usize, status: *mut rocks_status_t);
+}
+extern "C" {
+    pub fn rocks_db_get_livefiles_metadata(db: *mut rocks_db_t)
+     -> *const rocks_livefiles_t;
+}
+extern "C" {
     pub fn rocks_db_ingest_external_file(db: *mut rocks_db_t,
                                          file_list:
                                              *const *const ::std::os::raw::c_char,
@@ -2342,6 +2354,63 @@ extern "C" {
                                                       *mut rocks_statistics_t,
                                                   type_: u32)
      -> ::std::os::raw::c_uchar;
+}
+extern "C" {
+    pub fn rocks_livefiles_count(lf: *const rocks_livefiles_t)
+     -> ::std::os::raw::c_int;
+}
+extern "C" {
+    pub fn rocks_livefiles_name(lf: *const rocks_livefiles_t,
+                                index: ::std::os::raw::c_int)
+     -> *const ::std::os::raw::c_char;
+}
+extern "C" {
+    pub fn rocks_livefiles_column_family_name(lf: *const rocks_livefiles_t,
+                                              index: ::std::os::raw::c_int)
+     -> *const ::std::os::raw::c_char;
+}
+extern "C" {
+    pub fn rocks_livefiles_db_path(lf: *const rocks_livefiles_t,
+                                   index: ::std::os::raw::c_int)
+     -> *const ::std::os::raw::c_char;
+}
+extern "C" {
+    pub fn rocks_livefiles_smallest_seqno(lf: *const rocks_livefiles_t,
+                                          index: ::std::os::raw::c_int)
+     -> u64;
+}
+extern "C" {
+    pub fn rocks_livefiles_largest_seqno(lf: *const rocks_livefiles_t,
+                                         index: ::std::os::raw::c_int) -> u64;
+}
+extern "C" {
+    pub fn rocks_livefiles_level(lf: *const rocks_livefiles_t,
+                                 index: ::std::os::raw::c_int)
+     -> ::std::os::raw::c_int;
+}
+extern "C" {
+    pub fn rocks_livefiles_size(lf: *const rocks_livefiles_t,
+                                index: ::std::os::raw::c_int) -> usize;
+}
+extern "C" {
+    pub fn rocks_livefiles_smallestkey(lf: *const rocks_livefiles_t,
+                                       index: ::std::os::raw::c_int,
+                                       size: *mut usize)
+     -> *const ::std::os::raw::c_char;
+}
+extern "C" {
+    pub fn rocks_livefiles_largestkey(lf: *const rocks_livefiles_t,
+                                      index: ::std::os::raw::c_int,
+                                      size: *mut usize)
+     -> *const ::std::os::raw::c_char;
+}
+extern "C" {
+    pub fn rocks_livefiles_being_compacted(lf: *const rocks_livefiles_t,
+                                           index: ::std::os::raw::c_int)
+     -> ::std::os::raw::c_uchar;
+}
+extern "C" {
+    pub fn rocks_livefiles_destroy(lf: *const rocks_livefiles_t);
 }
 extern "C" {
     pub fn free(p: *mut ::std::os::raw::c_void);

@@ -28,6 +28,7 @@ use merge_operator::{MergeOperator, AssociativeMergeOperator};
 use env::Logger;
 use types::SequenceNumber;
 use to_raw::{ToRaw, FromRaw};
+use metadata::{LiveFileMetaData, SstFileMetaData, ColumnFamilyMetaData};
 
 const DEFAULT_COLUMN_FAMILY_NAME: &'static str = "default";
 
@@ -1542,9 +1543,94 @@ impl<'a> DB<'a> {
     // get_live_files
     // get_sorted_wal_files
     // get_updates_since
-    // delete_file
-    // get_live_files_metadata
-    // get_column_family_metadata
+
+    /// Delete the file name from the db directory and update the internal state to
+    /// reflect that. Supports deletion of sst and log files only. 'name' must be
+    /// path relative to the db directory. eg. 000001.sst, /archive/000003.log
+    pub fn delete_file(&self, name: &str) -> Result<(), Status> {
+        unsafe {
+            let mut status = mem::zeroed();
+            ll::rocks_db_delete_file(self.raw(),
+                                     name.as_bytes().as_ptr() as *const _,
+                                     name.len(),
+                                     &mut status);
+            if status.code == 0 {
+                Ok(())
+            } else {
+                Err(Status::from_ll(&status))
+            }
+        }
+    }
+
+    /// Returns a list of all table files with their level, start key
+    /// and end key
+    pub fn get_live_files_metadata(&self) -> Vec<LiveFileMetaData> {
+        unsafe {
+            let livefiles = ll::rocks_db_get_livefiles_metadata(self.raw());
+
+            let cnt = ll::rocks_livefiles_count(livefiles);
+            let mut ret = Vec::with_capacity(cnt as usize);
+            for i in 0 .. cnt {
+                let name = CStr::from_ptr(ll::rocks_livefiles_name(livefiles, i))
+                    .to_string_lossy()
+                    .to_owned()
+                    .to_string();
+                let db_path: String = CStr::from_ptr(ll::rocks_livefiles_db_path(livefiles, i))
+                    .to_string_lossy()
+                    .to_owned()
+                    .to_string();
+                let size = ll::rocks_livefiles_size(livefiles, i);
+
+                let small_seqno = ll::rocks_livefiles_smallest_seqno(livefiles, i);
+                let large_seqno = ll::rocks_livefiles_largest_seqno(livefiles, i);
+
+                let mut key_len = 0;
+                let small_key_ptr = ll::rocks_livefiles_smallestkey(livefiles, i, &mut key_len);
+                let small_key = slice::from_raw_parts(small_key_ptr as *const u8, key_len).to_vec();
+
+                let large_key_ptr = ll::rocks_livefiles_largestkey(livefiles, i, &mut key_len);
+                let large_key = slice::from_raw_parts(large_key_ptr as *const u8, key_len).to_vec();
+
+                let being_compacted = ll::rocks_livefiles_being_compacted(livefiles, i) != 0;
+
+                let cf_name = CStr::from_ptr(ll::rocks_livefiles_column_family_name(livefiles, i))
+                    .to_string_lossy()
+                    .to_owned()
+                    .to_string();
+                let level = ll::rocks_livefiles_level(livefiles, i);
+
+                let meta = LiveFileMetaData {
+                    sst_file: SstFileMetaData {
+                        size: size as u64,
+                        name: name,
+                        db_path: db_path,
+                        smallest_seqno: small_seqno,
+                        largest_seqno: large_seqno,
+                        smallestkey: small_key,
+                        largestkey: large_key,
+                        being_compacted: being_compacted,
+                    },
+                    column_family_name: cf_name,
+                    level: level as u32,
+                };
+
+                ret.push(meta);
+
+            }
+            ll::rocks_livefiles_destroy(livefiles);
+            ret
+        }
+    }
+
+    /// Obtains the meta data of the specified column family of the DB.
+    /// Status::NotFound() will be returned if the current DB does not have
+    /// any column family match the specified name.
+    ///
+    /// If cf_name is not specified, then the metadata of the default
+    /// column family will be returned.
+    pub fn get_column_family_metadata(&self, column_family: &ColumnFamilyHandle) -> ColumnFamilyMetaData {
+        unimplemented!()
+    }
 
     /// `IngestExternalFile()` will load a list of external SST files (1) into the DB
     /// We will try to find the lowest possible level that the file can fit in, and
@@ -2226,4 +2312,41 @@ mod tests {
         // 5th transaction
         assert_eq!(db.get_latest_sequence_number(), 4);
     }
+
+    #[test]
+    fn livemetadata() {
+        let tmp_dir = ::tempdir::TempDir::new_in(".", "rocks").unwrap();
+        let db = DB::open(Options::default()
+                          .map_db_options(|db| db.create_if_missing(true)),
+                          &tmp_dir)
+            .unwrap();
+        let meta = db.get_live_files_metadata();
+        assert_eq!(meta.len(), 0);
+
+        assert!(db.put(&Default::default(), b"long-key", vec![b'A'; 1024 * 1024].as_ref())
+                .is_ok());
+        assert!(db.flush(&FlushOptions::default().wait(true)).is_ok());
+        let meta = db.get_live_files_metadata();
+        assert_eq!(meta.len(), 1);
+        assert_eq!(meta[0].level, 0);
+
+        assert!(db.put(&Default::default(), b"a", b"1").is_ok());
+        assert!(db.flush(&FlushOptions::default().wait(true)).is_ok());
+        assert!(db.put(&Default::default(), b"b", b"2").is_ok());
+        assert!(db.flush(&FlushOptions::default().wait(true)).is_ok());
+        assert!(db.put(&Default::default(), b"c", b"3").is_ok());
+        assert!(db.put(&Default::default(), b"d", b"3").is_ok());
+        assert!(db.put(&Default::default(), b"asdlfkjasl", b"askdfjkl3").is_ok());
+        assert!(db.flush(&FlushOptions::default().wait(true)).is_ok());
+        let meta = db.get_live_files_metadata();
+        assert_eq!(meta.len(), 4);
+        assert!(db.compact_range(&CompactRangeOptions::default(), ..).is_ok());
+
+        let meta = db.get_live_files_metadata();
+        assert!(meta.len() < 4);
+        assert_eq!(meta[0].level, 1);
+
+    }
+
 }
+

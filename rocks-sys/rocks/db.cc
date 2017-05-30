@@ -662,6 +662,22 @@ extern "C" {
     return db->rep->GetLatestSequenceNumber();
   }
 
+
+  void rocks_db_delete_file(
+                           rocks_db_t* db,
+                           const char* name,
+                           size_t name_len,
+                           rocks_status_t* status) {
+    SaveError(status, db->rep->DeleteFile(std::string(name, name_len)));
+  }
+
+  const rocks_livefiles_t* rocks_db_get_livefiles_metadata(
+                                                           rocks_db_t* db) {
+    rocks_livefiles_t* result = new rocks_livefiles_t;
+    db->rep->GetLiveFilesMetaData(&result->rep);
+    return result;
+  }
+
   void rocks_db_ingest_external_file(rocks_db_t* db,
                                      const char* const* file_list,
                                      const size_t* file_list_sizes,

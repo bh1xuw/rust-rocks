@@ -92,6 +92,9 @@ extern "C" {
   typedef struct rocks_statistics_t rocks_statistics_t;
   typedef struct rocks_histogram_data_t rocks_histogram_data_t;
 
+  /* metadata */
+  typedef struct rocks_livefiles_t rocks_livefiles_t;
+
   /* ****************************** functions ****************************** */
   /* options.h */
   /*    start */
@@ -819,12 +822,22 @@ extern "C" {
 
   uint64_t rocks_db_get_latest_sequence_number(rocks_db_t* db);
 
+  void rocks_db_delete_file(
+                            rocks_db_t* db,
+                            const char* name,
+                            size_t name_len,
+                            rocks_status_t* status);
+
+  const rocks_livefiles_t* rocks_db_get_livefiles_metadata(
+                                                           rocks_db_t* db);
+
   void rocks_db_ingest_external_file(rocks_db_t* db,
-                                     const char* const* file_list,
-                                     const size_t* file_list_sizes,
-                                     size_t file_len,
-                                     const rocks_ingestexternalfile_options_t* options,
-                                     rocks_status_t* status);
+                                       const char* const* file_list,
+                                       const size_t* file_list_sizes,
+                                       size_t file_len,
+                                       const rocks_ingestexternalfile_options_t* options,
+                                       rocks_status_t* status);
+
 
   void rocks_db_ingest_external_file_cf(rocks_db_t* db,
                                         rocks_column_family_handle_t* column_family,
@@ -1353,6 +1366,51 @@ extern "C" {
 
   unsigned char rocks_statistics_hist_enabled_for_type(rocks_statistics_t* stat, uint32_t type);
 
+  /* metadata */
+  int rocks_livefiles_count(
+                            const rocks_livefiles_t* lf);
+
+  const char* rocks_livefiles_name(
+                                   const rocks_livefiles_t* lf,
+                                   int index);
+
+  const char* rocks_livefiles_column_family_name(
+                                                 const rocks_livefiles_t* lf,
+                                                 int index);
+  const char* rocks_livefiles_db_path(
+                                      const rocks_livefiles_t* lf,
+                                      int index);
+
+  uint64_t rocks_livefiles_smallest_seqno(
+                                          const rocks_livefiles_t* lf,
+                                          int index);
+
+  uint64_t rocks_livefiles_largest_seqno(
+                                         const rocks_livefiles_t* lf,
+                                         int index);
+
+  int rocks_livefiles_level(
+                            const rocks_livefiles_t* lf,
+                            int index);
+
+  size_t rocks_livefiles_size(
+                              const rocks_livefiles_t* lf,
+                              int index);
+
+  const char* rocks_livefiles_smallestkey(
+                                          const rocks_livefiles_t* lf,
+                                          int index,
+                                          size_t* size);
+
+  const char* rocks_livefiles_largestkey(
+                                           const rocks_livefiles_t* lf,
+                                           int index,
+                                           size_t* size);
+
+  unsigned char rocks_livefiles_being_compacted(const rocks_livefiles_t* lf,
+                                                int index);
+
+  extern void rocks_livefiles_destroy(const rocks_livefiles_t* lf);
 
   /* aux */
   void free(void *p);

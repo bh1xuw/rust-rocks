@@ -39,6 +39,7 @@ fn main() {
         .file("rocks/statistics.cc")
         .file("rocks/table.cc")
         .file("rocks/filter_policy.cc")
+        .file("rocks/metadata.cc")
         .file("rocks/aux.cc")
         .flag("-fPIC")
         .flag("-O2")

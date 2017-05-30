@@ -1,5 +1,6 @@
 //! The metadata that describes a column family, a level, or a SST file,
 
+use std::fmt;
 use std::ops::Deref;
 
 use rocks_sys as ll;
@@ -31,7 +32,12 @@ pub struct LevelMetaData {
     pub files: Vec<SstFileMetaData>,
 }
 
+
+
+
+
 /// The metadata that describes a SST file.
+#[derive(Debug)]
 pub struct SstFileMetaData {
     /// File size in bytes.
     pub size: u64,
@@ -52,9 +58,11 @@ pub struct SstFileMetaData {
     pub being_compacted: bool,
 }
 
+
+
 /// The full set of metadata associated with each SST file.
 pub struct LiveFileMetaData {
-    sst_file: SstFileMetaData,
+    pub sst_file: SstFileMetaData,
     /// Name of the column family
     pub column_family_name: String,
     /// Level at which this file resides.
@@ -66,5 +74,20 @@ impl Deref for LiveFileMetaData {
 
     fn deref(&self) -> &SstFileMetaData {
         &self.sst_file
+    }
+}
+
+impl fmt::Debug for LiveFileMetaData {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        f.debug_struct("LiveFileMetaData")
+            .field("name", &self.name)
+            .field("column_family_name", &self.column_family_name)
+            .field("level", &self.level)
+            .field("db_path", &self.db_path)
+            .field("smallestkey", &String::from_utf8_lossy(&self.smallestkey))
+            .field("largestkey", &String::from_utf8_lossy(&self.largestkey))
+            .field("being_compacted", &self.being_compacted)
+            .field("size", &self.size)
+            .finish()
     }
 }
