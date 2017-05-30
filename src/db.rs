@@ -28,7 +28,7 @@ use merge_operator::{MergeOperator, AssociativeMergeOperator};
 use env::Logger;
 use types::SequenceNumber;
 use to_raw::{ToRaw, FromRaw};
-use metadata::{LiveFileMetaData, SstFileMetaData, ColumnFamilyMetaData};
+use metadata::{LiveFileMetaData, SstFileMetaData, LevelMetaData, ColumnFamilyMetaData};
 
 const DEFAULT_COLUMN_FAMILY_NAME: &'static str = "default";
 
@@ -1520,7 +1520,15 @@ impl<'a> DB<'a> {
     /// but no obsolete files will be deleted. Calling this multiple
     /// times have the same effect as calling it once.
     pub fn disable_file_deletions(&self) -> Result<(), Status> {
-        unimplemented!()
+        unsafe {
+            let mut status = mem::zeroed();
+            ll::rocks_db_disable_file_deletions(self.raw(), &mut status);
+            if status.code == 0 {
+                Ok(())
+            } else {
+                Err(Status::from_ll(&status))
+            }
+        }
     }
 
     /// Allow compactions to delete obsolete files.
@@ -1535,7 +1543,15 @@ impl<'a> DB<'a> {
     /// synchronization -- i.e., file deletions will be enabled only after both
     /// threads call EnableFileDeletions()
     pub fn enable_file_deletions(&self, force: bool) -> Result<(), Status> {
-        unimplemented!()
+        unsafe {
+            let mut status = mem::zeroed();
+            ll::rocks_db_enable_file_deletions(self.raw(), force as u8, &mut status);
+            if status.code == 0 {
+                Ok(())
+            } else {
+                Err(Status::from_ll(&status))
+            }
+        }
     }
 
 
@@ -1626,10 +1642,86 @@ impl<'a> DB<'a> {
     /// Status::NotFound() will be returned if the current DB does not have
     /// any column family match the specified name.
     ///
-    /// If cf_name is not specified, then the metadata of the default
+    /// If cf_name is not pspecified, then the metadata of the default
     /// column family will be returned.
     pub fn get_column_family_metadata(&self, column_family: &ColumnFamilyHandle) -> ColumnFamilyMetaData {
-        unimplemented!()
+        unsafe {
+            let cfmeta = ll::rocks_db_get_column_family_metadata(self.raw(), column_family.raw());
+
+            let total_size = ll::rocks_column_family_metadata_size(cfmeta);
+            let file_count = ll::rocks_column_family_metadata_file_count(cfmeta);
+            let name = CStr::from_ptr(ll::rocks_column_family_metadata_name(cfmeta))
+                .to_string_lossy()
+                .to_owned()
+                .to_string();
+
+            let num_levels = ll::rocks_column_family_metadata_levels_count(cfmeta);
+
+            let mut meta = ColumnFamilyMetaData {
+                size: total_size,
+                file_count: file_count,
+                name: name,
+                levels: Vec::with_capacity(num_levels as usize),
+            };
+
+            for lv in 0 .. num_levels {
+                let level = ll::rocks_column_family_metadata_levels_level(cfmeta, lv);
+                let lv_size = ll::rocks_column_family_metadata_levels_size(cfmeta, lv);
+
+                let num_sstfiles = ll::rocks_column_family_metadata_levels_files_count(cfmeta, lv);
+
+                // return
+                let mut current_level = LevelMetaData {
+                    level: level as u32,
+                    size: lv_size,
+                    files: Vec::with_capacity(num_sstfiles as usize),
+                };
+
+                for i in 0 .. num_sstfiles {
+                    let name = CStr::from_ptr(ll::rocks_column_family_metadata_levels_files_name(cfmeta, lv, i))
+                        .to_string_lossy()
+                        .to_owned()
+                        .to_string();
+                    let db_path: String = CStr::from_ptr(ll::rocks_column_family_metadata_levels_files_db_path(cfmeta, lv, i))
+                        .to_string_lossy()
+                        .to_owned()
+                        .to_string();
+                    let size = ll::rocks_column_family_metadata_levels_files_size(cfmeta, lv, i);
+
+                    let small_seqno = ll::rocks_column_family_metadata_levels_files_smallest_seqno(cfmeta, lv, i);
+                    let large_seqno = ll::rocks_column_family_metadata_levels_files_largest_seqno(cfmeta, lv, i);
+
+                    let mut key_len = 0;
+                    let small_key_ptr = ll::rocks_column_family_metadata_levels_files_smallestkey(cfmeta, lv, i, &mut key_len);
+                    let small_key = slice::from_raw_parts(small_key_ptr as *const u8, key_len).to_vec();
+
+                    let large_key_ptr = ll::rocks_column_family_metadata_levels_files_largestkey(cfmeta, lv, i, &mut key_len);
+                    let large_key = slice::from_raw_parts(large_key_ptr as *const u8, key_len).to_vec();
+
+                    let being_compacted = ll::rocks_column_family_metadata_levels_files_being_compacted(cfmeta, lv, i) != 0;
+
+                    let sst_file = SstFileMetaData {
+                        size: size as u64,
+                        name: name,
+                        db_path: db_path,
+                        smallest_seqno: small_seqno,
+                        largest_seqno: large_seqno,
+                        smallestkey: small_key,
+                        largestkey: large_key,
+                        being_compacted: being_compacted,
+                    };
+
+                    current_level.files.push(sst_file);
+                }
+
+
+                meta.levels.push(current_level);
+            }
+
+            ll::rocks_column_family_metadata_destroy(cfmeta);
+
+            meta
+        }
     }
 
     /// `IngestExternalFile()` will load a list of external SST files (1) into the DB
@@ -2320,6 +2412,8 @@ mod tests {
                           .map_db_options(|db| db.create_if_missing(true)),
                           &tmp_dir)
             .unwrap();
+
+        assert!(db.disable_file_deletions().is_ok());
         let meta = db.get_live_files_metadata();
         assert_eq!(meta.len(), 0);
 
@@ -2348,5 +2442,41 @@ mod tests {
 
     }
 
+    #[test]
+    fn column_family_meta() {
+        let tmp_dir = ::tempdir::TempDir::new_in(".", "rocks").unwrap();
+        let db = DB::open(Options::default()
+                          .map_db_options(|db| db.create_if_missing(true)),
+                          &tmp_dir)
+            .unwrap();
+        assert!(db.put(&Default::default(), b"long-key", vec![b'A'; 1024 * 1024].as_ref())
+                .is_ok());
+        assert!(db.flush(&FlushOptions::default().wait(true)).is_ok());
+        assert!(db.put(&Default::default(), b"long-key-2", vec![b'A'; 2 * 1024].as_ref())
+                .is_ok());
+
+        for i in 0..100 {
+            let key = format!("test2-key-{}", i);
+            let val = format!("rocksdb-value-{}", i * 10);
+            let value: String = iter::repeat(val).take(10).collect::<Vec<_>>().concat();
+
+            db.put(&WriteOptions::default(), key.as_bytes(), value.as_bytes())
+                .unwrap();
+
+            if i % 6 == 0 {
+                assert!(db.flush(&FlushOptions::default().wait(true)).is_ok());
+            }
+
+            if i % 20 == 0 {
+                assert!(db.compact_range(&CompactRangeOptions::default(), ..).is_ok());
+            }
+        }
+
+        let meta = db.get_column_family_metadata(&db.default_column_family());
+        println!("Meta => {:?}", meta);
+        assert_eq!(meta.levels.len(), 7, "default level num");
+        assert!(meta.levels[0].files.len() > 1);
+        assert!(meta.levels[4].files.len() == 0);
+    }
 }
 

@@ -21,7 +21,6 @@ extern "C" {
 
 
 extern "C" {
-
   // DB
   rocks_db_t* rocks_db_open(
                             const rocks_options_t* options,
@@ -662,6 +661,18 @@ extern "C" {
     return db->rep->GetLatestSequenceNumber();
   }
 
+  void rocks_db_disable_file_deletions(
+                                      rocks_db_t* db,
+                                      rocks_status_t* status) {
+    SaveError(status, db->rep->DisableFileDeletions());
+  }
+
+  void rocks_db_enable_file_deletions(
+                                      rocks_db_t* db,
+                                      unsigned char force,
+                                      rocks_status_t* status) {
+    SaveError(status, db->rep->EnableFileDeletions(force));
+  }
 
   void rocks_db_delete_file(
                            rocks_db_t* db,
@@ -675,6 +686,14 @@ extern "C" {
                                                            rocks_db_t* db) {
     rocks_livefiles_t* result = new rocks_livefiles_t;
     db->rep->GetLiveFilesMetaData(&result->rep);
+    return result;
+  }
+
+  const rocks_column_family_metadata_t* rocks_db_get_column_family_metadata(
+                                                                            rocks_db_t* db,
+                                                                            rocks_column_family_handle_t* column_family) {
+    rocks_column_family_metadata_t* result = new rocks_column_family_metadata_t;
+    db->rep->GetColumnFamilyMetaData(column_family->rep, &result->rep);
     return result;
   }
 

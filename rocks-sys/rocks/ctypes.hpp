@@ -279,6 +279,7 @@ extern "C" {
 
   /* metadata */
   struct rocks_livefiles_t       { std::vector<LiveFileMetaData> rep; };
+  struct rocks_column_family_metadata_t { ColumnFamilyMetaData rep; };
 
   /* aux */
   static bool SaveError(rocks_status_t* status, const Status& s) {

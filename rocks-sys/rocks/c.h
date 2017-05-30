@@ -94,6 +94,7 @@ extern "C" {
 
   /* metadata */
   typedef struct rocks_livefiles_t rocks_livefiles_t;
+  typedef struct rocks_column_family_metadata_t rocks_column_family_metadata_t;
 
   /* ****************************** functions ****************************** */
   /* options.h */
@@ -822,6 +823,15 @@ extern "C" {
 
   uint64_t rocks_db_get_latest_sequence_number(rocks_db_t* db);
 
+  void rocks_db_disable_file_deletions(
+                                       rocks_db_t* db,
+                                       rocks_status_t* status);
+
+  void rocks_db_enable_file_deletions(
+                                      rocks_db_t* db,
+                                      unsigned char force,
+                                      rocks_status_t* status);
+
   void rocks_db_delete_file(
                             rocks_db_t* db,
                             const char* name,
@@ -830,6 +840,10 @@ extern "C" {
 
   const rocks_livefiles_t* rocks_db_get_livefiles_metadata(
                                                            rocks_db_t* db);
+
+  const rocks_column_family_metadata_t* rocks_db_get_column_family_metadata(
+                                                                            rocks_db_t* db,
+                                                                            rocks_column_family_handle_t* column_family);
 
   void rocks_db_ingest_external_file(rocks_db_t* db,
                                        const char* const* file_list,
@@ -1411,6 +1425,46 @@ extern "C" {
                                                 int index);
 
   extern void rocks_livefiles_destroy(const rocks_livefiles_t* lf);
+
+  uint64_t rocks_column_family_metadata_size(const rocks_column_family_metadata_t* meta);
+  size_t rocks_column_family_metadata_file_count(const rocks_column_family_metadata_t* meta);
+  const char* rocks_column_family_metadata_name(const rocks_column_family_metadata_t* meta);
+  int rocks_column_family_metadata_levels_count(const rocks_column_family_metadata_t* meta);
+  int rocks_column_family_metadata_levels_level(const rocks_column_family_metadata_t* meta, int level);
+  uint64_t rocks_column_family_metadata_levels_size(const rocks_column_family_metadata_t* meta, int level);
+  int rocks_column_family_metadata_levels_files_count(const rocks_column_family_metadata_t* meta, int level);
+
+  size_t rocks_column_family_metadata_levels_files_size(
+                                                        const rocks_column_family_metadata_t* meta,
+                                                        int level,
+                                                        int file_index);
+  const char* rocks_column_family_metadata_levels_files_name(
+                                                             const rocks_column_family_metadata_t* meta,
+                                                             int level, int file_index);
+  const char* rocks_column_family_metadata_levels_files_db_path(
+                                                                const rocks_column_family_metadata_t* meta,
+                                                                int level, int file_index);
+  uint64_t rocks_column_family_metadata_levels_files_smallest_seqno(
+                                                                    const rocks_column_family_metadata_t* meta,
+                                                                    int level, int file_index);
+  uint64_t rocks_column_family_metadata_levels_files_largest_seqno(
+                                                                   const rocks_column_family_metadata_t* meta,
+                                                                   int level, int file_index);
+  const char* rocks_column_family_metadata_levels_files_smallestkey(
+                                                                    const rocks_column_family_metadata_t* meta,
+                                                                    int level, int file_index,
+                                                                    size_t* size);
+  const char* rocks_column_family_metadata_levels_files_largestkey(
+                                                                   const rocks_column_family_metadata_t* meta,
+                                                                   int level, int file_index,
+                                                                   size_t* size);
+  unsigned char rocks_column_family_metadata_levels_files_being_compacted(
+                                                                          const rocks_column_family_metadata_t* meta,
+                                                                          int level, int file_index);
+
+    extern void rocks_column_family_metadata_destroy(
+                                                   const rocks_column_family_metadata_t* meta);
+
 
   /* aux */
   void free(void *p);

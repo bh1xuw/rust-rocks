@@ -51,7 +51,7 @@ big picture(TODOs):
   - [x] ingest sst file
   - [ ] compact files
   - [x] misc functions related to config
-  - [x] get_live_files_metadata
+  - [x] get live files metadata
   - [ ] misc functions related to size approximate
 - [ ] ~~``rocksdb/db_bench_tool.h``~~
 - [x] ``rocksdb/db_dump_tool.h``
@@ -77,6 +77,7 @@ big picture(TODOs):
   - [ ] merge operator - partial merge
 - [x] ``rocksdb/metadata.h``
   - [x] LiveFilesMetaData
+  - [x] ColumnFamilyMetaData
 - [x] ``rocksdb/options.h``
   - [x] builder style
 - [x] ``rocksdb/perf_context.h``

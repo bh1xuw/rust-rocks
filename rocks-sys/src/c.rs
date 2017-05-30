@@ -127,6 +127,9 @@ pub struct rocks_histogram_data_t([u8; 0]);
 #[repr(C)]
 #[derive(Debug, Copy, Clone)]
 pub struct rocks_livefiles_t([u8; 0]);
+#[repr(C)]
+#[derive(Debug, Copy, Clone)]
+pub struct rocks_column_family_metadata_t([u8; 0]);
 extern "C" {
     pub fn rocks_options_create() -> *mut rocks_options_t;
 }
@@ -1386,6 +1389,15 @@ extern "C" {
     pub fn rocks_db_get_latest_sequence_number(db: *mut rocks_db_t) -> u64;
 }
 extern "C" {
+    pub fn rocks_db_disable_file_deletions(db: *mut rocks_db_t,
+                                           status: *mut rocks_status_t);
+}
+extern "C" {
+    pub fn rocks_db_enable_file_deletions(db: *mut rocks_db_t,
+                                          force: ::std::os::raw::c_uchar,
+                                          status: *mut rocks_status_t);
+}
+extern "C" {
     pub fn rocks_db_delete_file(db: *mut rocks_db_t,
                                 name: *const ::std::os::raw::c_char,
                                 name_len: usize, status: *mut rocks_status_t);
@@ -1393,6 +1405,12 @@ extern "C" {
 extern "C" {
     pub fn rocks_db_get_livefiles_metadata(db: *mut rocks_db_t)
      -> *const rocks_livefiles_t;
+}
+extern "C" {
+    pub fn rocks_db_get_column_family_metadata(db: *mut rocks_db_t,
+                                               column_family:
+                                                   *mut rocks_column_family_handle_t)
+     -> *const rocks_column_family_metadata_t;
 }
 extern "C" {
     pub fn rocks_db_ingest_external_file(db: *mut rocks_db_t,
@@ -2411,6 +2429,127 @@ extern "C" {
 }
 extern "C" {
     pub fn rocks_livefiles_destroy(lf: *const rocks_livefiles_t);
+}
+extern "C" {
+    pub fn rocks_column_family_metadata_size(meta:
+                                                 *const rocks_column_family_metadata_t)
+     -> u64;
+}
+extern "C" {
+    pub fn rocks_column_family_metadata_file_count(meta:
+                                                       *const rocks_column_family_metadata_t)
+     -> usize;
+}
+extern "C" {
+    pub fn rocks_column_family_metadata_name(meta:
+                                                 *const rocks_column_family_metadata_t)
+     -> *const ::std::os::raw::c_char;
+}
+extern "C" {
+    pub fn rocks_column_family_metadata_levels_count(meta:
+                                                         *const rocks_column_family_metadata_t)
+     -> ::std::os::raw::c_int;
+}
+extern "C" {
+    pub fn rocks_column_family_metadata_levels_level(meta:
+                                                         *const rocks_column_family_metadata_t,
+                                                     level:
+                                                         ::std::os::raw::c_int)
+     -> ::std::os::raw::c_int;
+}
+extern "C" {
+    pub fn rocks_column_family_metadata_levels_size(meta:
+                                                        *const rocks_column_family_metadata_t,
+                                                    level:
+                                                        ::std::os::raw::c_int)
+     -> u64;
+}
+extern "C" {
+    pub fn rocks_column_family_metadata_levels_files_count(meta:
+                                                               *const rocks_column_family_metadata_t,
+                                                           level:
+                                                               ::std::os::raw::c_int)
+     -> ::std::os::raw::c_int;
+}
+extern "C" {
+    pub fn rocks_column_family_metadata_levels_files_size(meta:
+                                                              *const rocks_column_family_metadata_t,
+                                                          level:
+                                                              ::std::os::raw::c_int,
+                                                          file_index:
+                                                              ::std::os::raw::c_int)
+     -> usize;
+}
+extern "C" {
+    pub fn rocks_column_family_metadata_levels_files_name(meta:
+                                                              *const rocks_column_family_metadata_t,
+                                                          level:
+                                                              ::std::os::raw::c_int,
+                                                          file_index:
+                                                              ::std::os::raw::c_int)
+     -> *const ::std::os::raw::c_char;
+}
+extern "C" {
+    pub fn rocks_column_family_metadata_levels_files_db_path(meta:
+                                                                 *const rocks_column_family_metadata_t,
+                                                             level:
+                                                                 ::std::os::raw::c_int,
+                                                             file_index:
+                                                                 ::std::os::raw::c_int)
+     -> *const ::std::os::raw::c_char;
+}
+extern "C" {
+    pub fn rocks_column_family_metadata_levels_files_smallest_seqno(meta:
+                                                                        *const rocks_column_family_metadata_t,
+                                                                    level:
+                                                                        ::std::os::raw::c_int,
+                                                                    file_index:
+                                                                        ::std::os::raw::c_int)
+     -> u64;
+}
+extern "C" {
+    pub fn rocks_column_family_metadata_levels_files_largest_seqno(meta:
+                                                                       *const rocks_column_family_metadata_t,
+                                                                   level:
+                                                                       ::std::os::raw::c_int,
+                                                                   file_index:
+                                                                       ::std::os::raw::c_int)
+     -> u64;
+}
+extern "C" {
+    pub fn rocks_column_family_metadata_levels_files_smallestkey(meta:
+                                                                     *const rocks_column_family_metadata_t,
+                                                                 level:
+                                                                     ::std::os::raw::c_int,
+                                                                 file_index:
+                                                                     ::std::os::raw::c_int,
+                                                                 size:
+                                                                     *mut usize)
+     -> *const ::std::os::raw::c_char;
+}
+extern "C" {
+    pub fn rocks_column_family_metadata_levels_files_largestkey(meta:
+                                                                    *const rocks_column_family_metadata_t,
+                                                                level:
+                                                                    ::std::os::raw::c_int,
+                                                                file_index:
+                                                                    ::std::os::raw::c_int,
+                                                                size:
+                                                                    *mut usize)
+     -> *const ::std::os::raw::c_char;
+}
+extern "C" {
+    pub fn rocks_column_family_metadata_levels_files_being_compacted(meta:
+                                                                         *const rocks_column_family_metadata_t,
+                                                                     level:
+                                                                         ::std::os::raw::c_int,
+                                                                     file_index:
+                                                                         ::std::os::raw::c_int)
+     -> ::std::os::raw::c_uchar;
+}
+extern "C" {
+    pub fn rocks_column_family_metadata_destroy(meta:
+                                                    *const rocks_column_family_metadata_t);
 }
 extern "C" {
     pub fn free(p: *mut ::std::os::raw::c_void);

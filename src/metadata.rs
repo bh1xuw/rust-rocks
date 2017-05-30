@@ -21,6 +21,22 @@ pub struct ColumnFamilyMetaData {
     pub levels: Vec<LevelMetaData>,
 }
 
+impl fmt::Debug for ColumnFamilyMetaData {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        try!(f.debug_struct("ColumnFamily")
+            .field("name", &self.name)
+            .field("file_count", &self.file_count)
+            .field("size", &self.size)
+             .finish());
+        try!(write!(f, "\n"));
+        for level in &self.levels {
+            try!(write!(f, "  > {:?}\n", level));
+        }
+        Ok(())
+    }
+}
+
+
 /// The metadata that describes a level.
 pub struct LevelMetaData {
     /// The level which this meta data describes.
@@ -32,12 +48,17 @@ pub struct LevelMetaData {
     pub files: Vec<SstFileMetaData>,
 }
 
-
-
+impl fmt::Debug for LevelMetaData {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        f.debug_struct("Level")
+            .field("level", &self.level)
+            .field("files", &self.files)
+            .finish()
+    }
+}
 
 
 /// The metadata that describes a SST file.
-#[derive(Debug)]
 pub struct SstFileMetaData {
     /// File size in bytes.
     pub size: u64,
@@ -58,6 +79,13 @@ pub struct SstFileMetaData {
     pub being_compacted: bool,
 }
 
+impl fmt::Debug for SstFileMetaData {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        f.debug_struct("SstFile")
+            .field("name", &self.name)
+            .finish()
+    }
+}
 
 
 /// The full set of metadata associated with each SST file.
@@ -79,7 +107,7 @@ impl Deref for LiveFileMetaData {
 
 impl fmt::Debug for LiveFileMetaData {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        f.debug_struct("LiveFileMetaData")
+        f.debug_struct("LiveFile")
             .field("name", &self.name)
             .field("column_family_name", &self.column_family_name)
             .field("level", &self.level)
