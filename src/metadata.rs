@@ -24,9 +24,9 @@ pub struct ColumnFamilyMetaData {
 impl fmt::Debug for ColumnFamilyMetaData {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         try!(f.debug_struct("ColumnFamily")
-            .field("name", &self.name)
-            .field("file_count", &self.file_count)
-            .field("size", &self.size)
+             .field("name", &self.name)
+             .field("file_count", &self.file_count)
+             .field("size", &self.size)
              .finish());
         try!(write!(f, "\n"));
         for level in &self.levels {
@@ -119,3 +119,4 @@ impl fmt::Debug for LiveFileMetaData {
             .finish()
     }
 }
+

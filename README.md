@@ -10,7 +10,7 @@ link against: RocksDB 5.4.6.
 
 for macOS(with rocksdb installed by brew):
 
-    LIBRARY_PATH=/usr/local/lib cargo test
+    LIBRARY_PATH=/usr/local/lib CXXFLAGS=-I/usr/local/include cargo test -- --nocapture
 
 ## status
 

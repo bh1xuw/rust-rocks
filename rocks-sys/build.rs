@@ -339,7 +339,6 @@ fn main() {
 
     gcc::Config::new()
         .cpp(true)
-        .include("rocksdb/include")
         .include(".")
         .file("rocks/db.cc")
         .file("rocks/env.cc")

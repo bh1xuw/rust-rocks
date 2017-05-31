@@ -2639,32 +2639,46 @@ impl CompactRangeOptions {
     /// If true, no other compaction will run at the same time as this
     /// manual compaction
     pub fn exclusive_manual_compaction(self, val: bool) -> Self {
-        unimplemented!()
+        unsafe {
+            ll::rocks_compactrange_options_set_exclusive_manual_compaction(self.raw, val as u8);
+        }
+        self
     }
 
     /// If true, compacted files will be moved to the minimum level capable
     /// of holding the data or given level (specified non-negative target_level).
     pub fn change_level(self, val: bool) -> Self {
-        unimplemented!()
+        unsafe {
+            ll::rocks_compactrange_options_set_change_level(self.raw, val as u8);
+        }
+        self
     }
 
     /// If change_level is true and target_level have non-negative value, compacted
     /// files will be moved to target_level.
     pub fn target_level(self, val: i32) -> Self {
-        unimplemented!()
+        unsafe {
+            ll::rocks_compactrange_options_set_target_level(self.raw, val);
+        }
+        self
     }
 
     /// Compaction outputs will be placed in options.db_paths[target_path_id].
     /// Behavior is undefined if target_path_id is out of range.
-
     pub fn target_path_id(self, val: u32) -> Self {
-        unimplemented!()
+        unsafe {
+            ll::rocks_compactrange_options_set_target_path_id(self.raw, val);
+        }
+        self
     }
 
     /// By default level based compaction will only compact the bottommost level
     /// if there is a compaction filter
     pub fn bottommost_level_compaction(self, val: BottommostLevelCompaction) -> Self {
-        unimplemented!()
+        unsafe {
+            ll::rocks_compactrange_options_set_bottommost_level_compaction(self.raw, mem::transmute(val));
+        }
+        self
     }
 }
 
@@ -2728,5 +2742,59 @@ impl IngestExternalFileOptions {
             ll::rocks_ingestexternalfile_options_set_allow_blocking_flush(self.raw, val as u8);
         }
         self
+    }
+}
+
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use super::super::rocksdb::*;
+
+    #[test]
+    fn readoptions() {
+        let tmp_dir = ::tempdir::TempDir::new_in(".", "rocks").unwrap();
+        let db = DB::open(Options::default()
+                          .map_db_options(|db| db.create_if_missing(true)),
+                          &tmp_dir)
+            .unwrap();
+        assert!(db.put(&Default::default(), b"long-key", vec![b'A'; 1024].as_ref())
+                .is_ok());
+        let val = db.get(&ReadOptions::default().read_tier(ReadTier::PersistedTier),
+                         b"long-key");
+
+        assert!(db.compact_range(&Default::default(), ..).is_ok());
+
+        assert!(val.is_ok());
+
+
+    }
+
+    #[test]
+    fn compact_range_options() {
+        let tmp_dir = ::tempdir::TempDir::new_in(".", "rocks").unwrap();
+        let db = DB::open(Options::default()
+                          .map_db_options(|db| db.create_if_missing(true)),
+                          &tmp_dir)
+            .unwrap();
+        assert!(db.put(&Default::default(), b"long-key", vec![b'A'; 1024 * 1024].as_ref())
+                .is_ok());
+        assert!(db.flush(&FlushOptions::default().wait(true)).is_ok());
+        assert!(db.put(&Default::default(), b"long-key-2", vec![b'A'; 2 * 1024].as_ref())
+                .is_ok());
+
+        assert!(db.compact_range(&CompactRangeOptions::default()
+                                         .change_level(true)
+                                         .target_level(4), // TO level 4
+                                         ..).is_ok());
+
+        let meta = db.get_column_family_metadata(&db.default_column_family());
+        println!("Meta => {:?}", meta);
+        assert_eq!(meta.levels.len(), 7, "default level num");
+        assert_eq!(meta.levels[0].files.len(), 0);
+        assert_eq!(meta.levels[1].files.len(), 0);
+        assert_eq!(meta.levels[2].files.len(), 0);
+        assert_eq!(meta.levels[3].files.len(), 0);
+        assert!(meta.levels[4].files.len() > 0);
     }
 }
