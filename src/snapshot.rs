@@ -34,7 +34,7 @@ impl<'a> ToRaw<ll::rocks_snapshot_t> for Snapshot<'a> {
 }
 
 impl<'a> FromRaw<ll::rocks_snapshot_t> for Snapshot<'a> {
-    unsafe fn from_ll<'b>(raw: *mut ll::rocks_snapshot_t) -> Snapshot<'a> {
+    unsafe fn from_ll(raw: *mut ll::rocks_snapshot_t) -> Snapshot<'a> {
         Snapshot {
             raw: raw,
             _marker: PhantomData,

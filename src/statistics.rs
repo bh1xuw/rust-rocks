@@ -476,6 +476,12 @@ impl ToRaw<ll::rocks_statistics_t> for Statistics {
     }
 }
 
+impl Default for Statistics {
+    fn default() -> Self {
+        Statistics::new()
+    }
+}
+
 impl Statistics {
     pub fn new() -> Statistics {
         Statistics { raw: unsafe { ll::rocks_statistics_create() } }

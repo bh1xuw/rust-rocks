@@ -61,15 +61,6 @@ impl fmt::Debug for Status {
 }
 
 impl Status {
-    /// Create a success status.
-    pub fn new() -> Status {
-        Status {
-            code: Code::Ok,
-            subcode: SubCode::None,
-            status: String::new(),
-        }
-    }
-
     pub fn is_not_found(&self) -> bool {
         self.code == Code::NotFound
     }

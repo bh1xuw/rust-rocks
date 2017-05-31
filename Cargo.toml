@@ -16,6 +16,11 @@ include = [
 
 [dependencies]
 rocks-sys = { path = "rocks-sys", version = "0.0.3" }
+clippy = {version = "*", optional = true}
 
 [dev-dependencies]
 tempdir = "0.3"
+
+[features]
+default = []
+dev = ["clippy"]

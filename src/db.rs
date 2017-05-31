@@ -99,7 +99,7 @@ impl<'a, 'b> Drop for ColumnFamilyHandle<'a, 'b> {
             if self.owned {
                 let mut status = mem::zeroed();
                 ll::rocks_db_destroy_column_family_handle(self.db.raw, self.raw(), &mut status);
-                assert!(status.code == 0);
+                assert_eq!(status.code, 0);
             }
         }
     }
@@ -284,9 +284,9 @@ impl<'a, 'b: 'a> ColumnFamilyHandle<'a, 'b> {
             let mut vals = vec![ptr::null_mut(); num_keys];
             let mut vals_lens = vec![0_usize; num_keys];
 
-            for i in 0..num_keys {
-                c_keys.push(keys[i].as_ptr() as *const c_char);
-                c_keys_lens.push(keys[i].len());
+            for key in keys {
+                c_keys.push(key.as_ptr() as *const c_char);
+                c_keys_lens.push(key.len());
             }
 
             let mut status: Vec<ll::rocks_status_t> = vec![mem::zeroed(); num_keys];
@@ -991,9 +991,9 @@ impl<'a> DB<'a> {
             let mut vals = vec![ptr::null_mut(); num_keys];
             let mut vals_lens = vec![0_usize; num_keys];
 
-            for i in 0..num_keys {
-                c_keys.push(keys[i].as_ptr() as *const c_char);
-                c_keys_lens.push(keys[i].len());
+            for key in keys {
+                c_keys.push(key.as_ptr() as *const c_char);
+                c_keys_lens.push(key.len());
             }
 
             let mut status: Vec<ll::rocks_status_t> = vec![mem::zeroed(); num_keys];
@@ -1556,7 +1556,26 @@ impl<'a> DB<'a> {
 
 
     // TODO:
-    // get_live_files
+    /// GetLiveFiles followed by GetSortedWalFiles can generate a lossless backup
+
+    /// Retrieve the list of all files in the database. The files are
+    /// relative to the dbname and are not absolute paths. The valid size of the
+    /// manifest file is returned in manifest_file_size. The manifest file is an
+    /// ever growing file, but only the portion specified by manifest_file_size is
+    /// valid for this snapshot.
+    /// Setting flush_memtable to true does Flush before recording the live files.
+    /// Setting flush_memtable to false is useful when we don't want to wait for
+    /// flush which may have to wait for compaction to complete taking an
+    /// indeterminate time.
+    ///
+    /// In case you have multiple column families, even if flush_memtable is true,
+    /// you still need to call GetSortedWalFiles after GetLiveFiles to compensate
+    /// for new data that arrived to already-flushed column families while other
+    /// column families were flushing
+    pub fn get_live_files(&self) -> () {
+        unimplemented!()
+    }
+
     // get_sorted_wal_files
     // get_updates_since
 

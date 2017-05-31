@@ -1,4 +1,4 @@
-//! A database can be configured with a custom FilterPolicy object.
+//! A database can be configured with a custom `FilterPolicy` object.
 //! This object is responsible for creating a small filter from a set
 //! of keys.  These filters are stored in rocksdb and are consulted
 //! automatically by rocksdb to decide whether or not to read some

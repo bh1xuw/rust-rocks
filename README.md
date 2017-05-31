@@ -78,6 +78,7 @@ big picture(TODOs):
 - [x] ``rocksdb/metadata.h``
   - [x] LiveFilesMetaData
   - [x] ColumnFamilyMetaData
+  - [ ] TODO: do not copy and create may new owned vars
 - [x] ``rocksdb/options.h``
   - [x] builder style
 - [x] ``rocksdb/perf_context.h``

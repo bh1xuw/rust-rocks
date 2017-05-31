@@ -54,7 +54,7 @@ impl CompactionOptionsFIFO {
 
 impl Default for CompactionOptionsFIFO {
     fn default() -> Self {
-        CompactionOptionsFIFO::new(1 * 1024 * 1024 * 1024)
+        CompactionOptionsFIFO::new(1024 * 1024 * 1024)
     }
 }
 

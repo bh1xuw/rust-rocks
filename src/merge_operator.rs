@@ -94,9 +94,7 @@ impl<'a> MergeOperationOutput<'a> {
     // FIXME: not works
     pub fn assign_existing_operand(&mut self, old_value: &&[u8]) {
         // :( transmute for disable lifetime checker
-        unsafe {
-            self.existing_operand = mem::transmute::<&&[u8], *mut &[u8]>(old_value);
-        }
+        self.existing_operand = old_value as *const &[u8] as *mut &'a [u8];
     }
 }
 
@@ -202,8 +200,8 @@ pub mod c {
         assert!(!op.is_null());
         unsafe {
             let operator = op as *mut Box<MergeOperator>;
-            let m_in: &MergeOperationInput = mem::transmute(merge_in);
-            let m_out: &mut MergeOperationOutput = mem::transmute(merge_out);
+            let m_in: &MergeOperationInput = &*(merge_in as *const MergeOperationInput);
+            let m_out: &mut MergeOperationOutput = &mut *(merge_out as *mut MergeOperationOutput);
             let ret = (*operator).full_merge(m_in, m_out);
             ret as i32
         }

@@ -57,6 +57,12 @@ impl ToRaw<ll::rocks_raw_writebatch_t> for WriteBatch {
     }
 }
 
+impl Default for WriteBatch {
+    fn default() -> Self {
+        WriteBatch::new()
+    }
+}
+
 impl WriteBatch {
     pub fn new() -> WriteBatch {
         WriteBatch { raw: unsafe { ll::rocks_writebatch_create() } }
@@ -254,7 +260,7 @@ impl WriteBatch {
             if status.code == 0 {
                 Ok(())
             } else {
-                Err(Status::from_ll(&mut status))
+                Err(Status::from_ll(&status))
             }
         }
     }

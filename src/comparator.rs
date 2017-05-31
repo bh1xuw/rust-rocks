@@ -29,7 +29,7 @@ pub trait Comparator {
     /// Overwrite only if equality comparisons can be done more efficiently than
     /// three-way comparisons.
     fn equal(&self, a: &[u8], b: &[u8]) -> bool {
-        return self.compare(a, b) == Ordering::Equal;
+        self.compare(a, b) == Ordering::Equal
     }
     /// The name of the comparator.  Used to check for comparator
     /// mismatches (i.e., a DB created with one comparator is

@@ -32,7 +32,7 @@ pub struct Cache {
 
 impl ToRaw<ll::rocks_cache_t> for Cache {
     fn raw(&self) -> *mut ll::rocks_cache_t {
-        return self.raw;
+        self.raw
     }
 }
 
