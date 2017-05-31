@@ -1,6 +1,6 @@
 [package]
 name = "rocks"
-version = "0.0.2"
+version = "0.0.4"
 authors = ["BH1XUW <bh1xuw@gmail.com>"]
 description = "RocksDB bindings for Rust."
 repository = "https://github.com/bh1xuw/rust-rocks"
@@ -15,7 +15,7 @@ include = [
 ]
 
 [dependencies]
-rocks-sys = { path = "rocks-sys", version = "0.0.3" }
+rocks-sys = { path = "rocks-sys", version = "0.0.4" }
 clippy = {version = "*", optional = true}
 
 [dev-dependencies]

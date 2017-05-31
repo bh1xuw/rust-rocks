@@ -570,9 +570,9 @@ extern "C" {
     opt->rep.use_direct_reads = v;
   }
 
-  void rocks_dboptions_set_use_direct_writes(rocks_dboptions_t* opt,
-                                             unsigned char v) {
-    opt->rep.use_direct_writes = v;
+  void rocks_dboptions_set_use_direct_io_for_flush_and_compaction(rocks_dboptions_t* opt,
+                                                                  unsigned char v) {
+    opt->rep.use_direct_io_for_flush_and_compaction = v;
   }
 
   void rocks_dboptions_set_allow_fallocate(rocks_dboptions_t* opt,

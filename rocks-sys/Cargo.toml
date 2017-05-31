@@ -1,6 +1,6 @@
 [package]
 name = "rocks-sys"
-version = "0.0.3"
+version = "0.0.4"
 authors = ["BH1XUW <bh1xuw@gmail.com>"]
 description = "Raw RocksDB bindings for Rust, used internally in rust-rocks"
 repository = "https://github.com/bh1xuw/rust-rocks"

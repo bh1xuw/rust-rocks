@@ -4,6 +4,14 @@ Make RocksDB really rocks!
 
 working in progress.
 
+## compile
+
+link against: RocksDB 5.4.6.
+
+for macOS(with rocksdb installed by brew):
+
+    LIBRARY_PATH=/usr/local/lib cargo test
+
 ## status
 
 big picture(TODOs):

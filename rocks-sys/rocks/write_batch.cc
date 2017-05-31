@@ -1,4 +1,4 @@
-#include "rocksdb/env.h"
+#include "rocksdb/write_batch.h"
 
 #include "rocks/ctypes.hpp"
 
