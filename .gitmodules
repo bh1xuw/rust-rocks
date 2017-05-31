@@ -1,0 +1,18 @@
+[submodule "rocks-sys/rocksdb"]
+	path = rocks-sys/rocksdb
+	url = https://github.com/facebook/rocksdb.git
+[submodule "rocks-sys/zlib"]
+	path = rocks-sys/zlib
+	url = https://github.com/madler/zlib.git
+[submodule "rocks-sys/snappy"]
+	path = rocks-sys/snappy
+	url = https://github.com/google/snappy.git
+[submodule "rocks-sys/bzip2"]
+	path = rocks-sys/bzip2
+	url = https://github.com/bh1xuw/bzip2.git
+[submodule "rocks-sys/lz4"]
+	path = rocks-sys/lz4
+	url = https://github.com/lz4/lz4.git
+[submodule "rocks-sys/zstd"]
+	path = rocks-sys/zstd
+	url = https://github.com/facebook/zstd.git
