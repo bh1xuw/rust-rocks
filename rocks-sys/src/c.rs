@@ -651,8 +651,10 @@ extern "C" {
                                                 v: ::std::os::raw::c_uchar);
 }
 extern "C" {
-    pub fn rocks_dboptions_set_use_direct_writes(opt: *mut rocks_dboptions_t,
-                                                 v: ::std::os::raw::c_uchar);
+    pub fn rocks_dboptions_set_use_direct_io_for_flush_and_compaction(opt:
+                                                                          *mut rocks_dboptions_t,
+                                                                      v:
+                                                                          ::std::os::raw::c_uchar);
 }
 extern "C" {
     pub fn rocks_dboptions_set_allow_fallocate(opt: *mut rocks_dboptions_t,
