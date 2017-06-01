@@ -16,13 +16,14 @@ for macOS(with rocksdb installed by brew):
 
 big picture(TODOs):
 
-- [ ] git submodule, static-link, compression as feature gate
+- [x] git submodule, static-link, compression as feature gate
 - [x] information hiding (DO NOT EXPORT raw pointers)
 - [ ] Proof of usablility
 - [ ] bench across C++/Java/other-rust binding
 - [ ] Zero-Copy
   - [ ] wraps std::string in Rust
-  - [ ] exports String/Vec<u8> to C++ via `assign`-style API
+  - [ ] pinnable slice support
+  - [x] exports String/Vec<u8> to C++ via `assign`-style API
 - [ ] Full documentation with code examples
   - [x] good enough by copying C++ comments
   - [ ] rename C++ function names to rust name in doc comments
@@ -86,15 +87,16 @@ big picture(TODOs):
 - [x] ``rocksdb/metadata.h``
   - [x] LiveFilesMetaData
   - [x] ColumnFamilyMetaData
-  - [ ] TODO: do not copy and create may new owned vars
+  - [ ] TODO: do not copy and create new owned vars
 - [x] ``rocksdb/options.h``
   - [x] builder style
 - [x] ``rocksdb/perf_context.h``
 - [x] ``rocksdb/perf_level.h``
 - [ ] ``rocksdb/persistent_cache.h``
 - [x] ``rocksdb/rate_limiter.h``
-- [x] ~~``rocksdb/slice.h``~~
+- [x] ``rocksdb/slice.h``
   - [x] use ``&[u8]`` to replace
+  - [ ] pinnable slice
 - [x] ``rocksdb/slice_transform.h``
 - [x] ``rocksdb/snapshot.h``
   - [ ] ManagedSnapshot

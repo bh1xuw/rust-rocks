@@ -247,7 +247,7 @@ mod tests {
         let opt = Options::default()
             .map_db_options(|db| db.create_if_missing(true))
             .map_cf_options(|cf| {
-                cf.block_based_table_factory(
+                cf.table_factory_block_based(
                     BlockBasedTableOptions::default()
                         .use_delta_encoding(false)
                 )

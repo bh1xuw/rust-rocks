@@ -339,6 +339,7 @@ fn main() {
 
     gcc::Config::new()
         .cpp(true)
+        .include("rocksdb/include")
         .include(".")
         .file("rocks/db.cc")
         .file("rocks/env.cc")
@@ -360,6 +361,8 @@ fn main() {
         .file("rocks/table.cc")
         .file("rocks/filter_policy.cc")
         .file("rocks/metadata.cc")
+        .file("rocks/universal_compaction.cc")
+        .file("rocks/slice.cc")
         .file("rocks/aux.cc")
         .flag("-fPIC")
         .flag("-O2")

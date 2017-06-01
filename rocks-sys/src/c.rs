@@ -2,6 +2,9 @@
 
 #[repr(C)]
 #[derive(Debug, Copy, Clone)]
+pub struct rocks_pinnable_slice_t([u8; 0]);
+#[repr(C)]
+#[derive(Debug, Copy, Clone)]
 pub struct rocks_column_family_descriptor_t([u8; 0]);
 #[repr(C)]
 #[derive(Debug, Copy, Clone)]
@@ -130,6 +133,9 @@ pub struct rocks_livefiles_t([u8; 0]);
 #[repr(C)]
 #[derive(Debug, Copy, Clone)]
 pub struct rocks_column_family_metadata_t([u8; 0]);
+#[repr(C)]
+#[derive(Debug, Copy, Clone)]
+pub struct rocks_universal_compaction_options_t([u8; 0]);
 extern "C" {
     pub fn rocks_options_create() -> *mut rocks_options_t;
 }
@@ -412,7 +418,7 @@ extern "C" {
     pub fn rocks_cfoptions_set_max_bytes_for_level_multiplier_additional(opt:
                                                                              *mut rocks_cfoptions_t,
                                                                          level_values:
-                                                                             *mut ::std::os::raw::c_int,
+                                                                             *const ::std::os::raw::c_int,
                                                                          num_levels:
                                                                              usize);
 }
@@ -2552,6 +2558,50 @@ extern "C" {
 extern "C" {
     pub fn rocks_column_family_metadata_destroy(meta:
                                                     *const rocks_column_family_metadata_t);
+}
+extern "C" {
+    pub fn rocks_universal_compaction_options_create()
+     -> *mut rocks_universal_compaction_options_t;
+}
+extern "C" {
+    pub fn rocks_universal_compaction_options_set_size_ratio(uco:
+                                                                 *mut rocks_universal_compaction_options_t,
+                                                             ratio:
+                                                                 ::std::os::raw::c_int);
+}
+extern "C" {
+    pub fn rocks_universal_compaction_options_set_min_merge_width(uco:
+                                                                      *mut rocks_universal_compaction_options_t,
+                                                                  w:
+                                                                      ::std::os::raw::c_int);
+}
+extern "C" {
+    pub fn rocks_universal_compaction_options_set_max_merge_width(uco:
+                                                                      *mut rocks_universal_compaction_options_t,
+                                                                  w:
+                                                                      ::std::os::raw::c_int);
+}
+extern "C" {
+    pub fn rocks_universal_compaction_options_set_max_size_amplification_percent(uco:
+                                                                                     *mut rocks_universal_compaction_options_t,
+                                                                                 p:
+                                                                                     ::std::os::raw::c_int);
+}
+extern "C" {
+    pub fn rocks_universal_compaction_options_set_compression_size_percent(uco:
+                                                                               *mut rocks_universal_compaction_options_t,
+                                                                           p:
+                                                                               ::std::os::raw::c_int);
+}
+extern "C" {
+    pub fn rocks_universal_compaction_options_set_stop_style(uco:
+                                                                 *mut rocks_universal_compaction_options_t,
+                                                             style:
+                                                                 ::std::os::raw::c_int);
+}
+extern "C" {
+    pub fn rocks_universal_compaction_options_destroy(uco:
+                                                          *mut rocks_universal_compaction_options_t);
 }
 extern "C" {
     pub fn free(p: *mut ::std::os::raw::c_void);

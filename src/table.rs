@@ -142,7 +142,7 @@ impl BlockBasedTableOptions {
     }
 
     /// If non-NULL use the specified cache for blocks.
-    /// 
+    ///
     /// If NULL, rocksdb will automatically create and use an 8MB internal cache.
     pub fn block_cache(self, val: Option<Cache>) -> Self {
         unsafe {

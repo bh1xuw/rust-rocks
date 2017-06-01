@@ -314,7 +314,7 @@ impl ColumnFamilyOptions {
     ///
     /// Default: 64MB
     ///
-    /// Dynamically changeable through SetOptions() API
+    /// Dynamically changeable through `SetOptions()` API
     pub fn write_buffer_size(self, val: usize) -> Self {
         unsafe {
             ll::rocks_cfoptions_set_write_buffer_size(self.raw, val);
@@ -375,7 +375,7 @@ impl ColumnFamilyOptions {
     ///
     /// Default: 4
     ///
-    /// Dynamically changeable through SetOptions() API
+    /// Dynamically changeable through `SetOptions()` API
     pub fn level0_file_num_compaction_trigger(self, val: i32) -> Self {
         unsafe {
             ll::rocks_cfoptions_set_level0_file_num_compaction_trigger(self.raw, val);
@@ -436,7 +436,7 @@ impl ColumnFamilyOptions {
     ///
     /// Default: 256MB.
     ///
-    /// Dynamically changeable through SetOptions() API
+    /// Dynamically changeable through `SetOptions()` API
     pub fn max_bytes_for_level_base(self, val: u64) -> Self {
         unsafe {
             ll::rocks_cfoptions_set_max_bytes_for_level_base(self.raw, val);
@@ -447,7 +447,7 @@ impl ColumnFamilyOptions {
     /// Disable automatic compactions. Manual compactions can still
     /// be issued on this column family
     ///
-    /// Dynamically changeable through SetOptions() API
+    /// Dynamically changeable through `SetOptions()` API
     pub fn disable_auto_compactions(self, val: bool) -> Self {
         unsafe {
             ll::rocks_cfoptions_set_disable_auto_compactions(self.raw, val as u8);
@@ -456,24 +456,27 @@ impl ColumnFamilyOptions {
     }
 
     /// This is a factory that provides TableFactory objects.
+    /// 
     /// Default: a block-based table factory that provides a default
     /// implementation of TableBuilder and TableReader with default
     /// BlockBasedTableOptions.
-    pub fn plain_table_factory(self, opt: PlainTableOptions) -> Self {
+    ///
+    /// For Rust: use 3 different function
+    pub fn table_factory_plain(self, opt: PlainTableOptions) -> Self {
         unsafe {
             ll::rocks_cfoptions_set_plain_table_factory(self.raw, opt.raw());
         }
         self
     }
 
-    pub fn block_based_table_factory(self, opt: BlockBasedTableOptions) -> Self {
+    pub fn table_factory_block_based(self, opt: BlockBasedTableOptions) -> Self {
         unsafe {
             ll::rocks_cfoptions_set_block_based_table_factory(self.raw, opt.raw());
         }
         self
     }
 
-    pub fn cuckoo_table_factory(self, opt: CuckooTableOptions) -> Self {
+    pub fn table_factory_cuckoo(self, opt: CuckooTableOptions) -> Self {
         unsafe {
             ll::rocks_cfoptions_set_cuckoo_table_factory(self.raw, opt.raw());
         }
@@ -488,7 +491,6 @@ impl ColumnFamilyOptions {
 
     // Following: AdvancedColumnFamilyOptions
 
-
     /// The maximum number of write buffers that are built up in memory.
     /// The default and the minimum number is 2, so that when 1 write buffer
     /// is being flushed to storage, new writes can continue to the other
@@ -499,7 +501,7 @@ impl ColumnFamilyOptions {
     ///
     /// Default: 2
     ///
-    /// Dynamically changeable through SetOptions() API
+    /// Dynamically changeable through `SetOptions()` API
     pub fn max_write_buffer_number(self, val: i32) -> Self {
         unsafe {
             ll::rocks_cfoptions_set_max_write_buffer_number(self.raw, val);
@@ -579,7 +581,7 @@ impl ColumnFamilyOptions {
     /// Number of locks used for inplace update
     /// Default: 10000, if inplace_update_support = true, else 0.
     ///
-    /// Dynamically changeable through SetOptions() API
+    /// Dynamically changeable through `SetOptions()` API
     pub fn inplace_update_num_locks(self, val: usize) -> Self {
         unsafe {
             ll::rocks_cfoptions_set_inplace_update_num_locks(self.raw, val);
@@ -587,37 +589,37 @@ impl ColumnFamilyOptions {
         self
     }
 
-    /// existing_value - pointer to previous value (from both memtable and sst).
+    /// * existing_value - pointer to previous value (from both memtable and sst).
     ///                  pub nullptr if key doesn't exist
-    /// existing_value_size - pointer to size of existing_value).
+    /// * existing_value_size - pointer to size of existing_value).
     ///                       pub nullptr if key doesn't exist
-    /// delta_value - Delta value to be merged with the existing_value.
+    /// * delta_value - Delta value to be merged with the existing_value.
     ///               pub Stored in transaction logs.
-    /// merged_value - Set when delta is applied on the previous value.
-
+    /// * merged_value - Set when delta is applied on the previous value.
+    ///
     /// Applicable only when inplace_update_support is true,
     /// this callback function is called at the time of updating the memtable
     /// as part of a Put operation, lets say Put(key, delta_value). It allows the
     /// 'delta_value' specified as part of the Put operation to be merged with
     /// an 'existing_value' of the key in the database.
-
+    ///
     /// If the merged value is smaller in size that the 'existing_value',
     /// then this function can update the 'existing_value' buffer inplace and
     /// the corresponding 'existing_value'_size pointer, if it wishes to.
     /// The callback should return UpdateStatus::UPDATED_INPLACE.
     /// In this case. (In this case, the snapshot-semantics of the rocksdb
     /// Iterator is not atomic anymore).
-
+    ///
     /// If the merged value is larger in size than the 'existing_value' or the
     /// application does not wish to modify the 'existing_value' buffer inplace,
     /// then the merged value should be returned via *merge_value. It is set by
     /// merging the 'existing_value' and the Put 'delta_value'. The callback should
     /// return UpdateStatus::UPDATED in this case. This merged value will be added
     /// to the memtable.
-
+    ///
     /// If merging fails or the application does not wish to take any action,
-    /// then the callback should return UpdateStatus::UPDATE_FAILED.
-
+    /// then the callback should return `UpdateStatus::UPDATE_FAILED`.
+    ///
     /// Please remember that the original call from the application is Put(key,
     /// delta_value). So the transaction log (if enabled) will still contain (key,
     /// delta_value). The 'merged_value' is not stored in the transaction log.
@@ -644,7 +646,7 @@ impl ColumnFamilyOptions {
     ///
     /// Default: 0 (disable)
     ///
-    /// Dynamically changeable through SetOptions() API
+    /// Dynamically changeable through `SetOptions()` API
     pub fn memtable_prefix_bloom_size_ratio(self, val: f64) -> Self {
         unsafe {
             ll::rocks_cfoptions_set_memtable_prefix_bloom_size_ratio(self.raw, val);
@@ -660,10 +662,11 @@ impl ColumnFamilyOptions {
     /// > `pub sysctl -w vm.nr_hugepages=20`
     ///
     /// See linux doc Documentation/vm/hugetlbpage.txt
+    ///
     /// If there isn't enough free huge page available, it will fall back to
     /// malloc.
     ///
-    /// Dynamically changeable through SetOptions() API
+    /// Dynamically changeable through `SetOptions()` API
     pub fn memtable_huge_page_size(self, val: usize) -> Self {
         unsafe {
             ll::rocks_cfoptions_set_memtable_huge_page_size(self.raw, val);
@@ -745,7 +748,7 @@ impl ColumnFamilyOptions {
     ///
     /// Default: 0
     ///
-    /// Dynamically changeable through SetOptions() API
+    /// Dynamically changeable through `SetOptions()` API
     pub fn arena_block_size(self, val: usize) -> Self {
         unsafe {
             ll::rocks_cfoptions_set_arena_block_size(self.raw, val);
@@ -800,7 +803,7 @@ impl ColumnFamilyOptions {
     ///
     /// Default: 20
     ///
-    /// Dynamically changeable through SetOptions() API
+    /// Dynamically changeable through `SetOptions()` API
     pub fn level0_slowdown_writes_trigger(self, val: i32) -> Self {
         unsafe {
             ll::rocks_cfoptions_set_level0_slowdown_writes_trigger(self.raw, val);
@@ -812,7 +815,7 @@ impl ColumnFamilyOptions {
     ///
     /// Default: 36
     ///
-    /// Dynamically changeable through SetOptions() API
+    /// Dynamically changeable through `SetOptions()` API
     pub fn level0_stop_writes_trigger(self, val: i32) -> Self {
         unsafe {
             ll::rocks_cfoptions_set_level0_stop_writes_trigger(self.raw, val);
@@ -832,7 +835,7 @@ impl ColumnFamilyOptions {
     ///
     /// Default: 64MB.
     ///
-    /// Dynamically changeable through SetOptions() API
+    /// Dynamically changeable through `SetOptions()` API
     pub fn target_file_size_base(self, val: u64) -> Self {
         unsafe {
             ll::rocks_cfoptions_set_target_file_size_base(self.raw, val);
@@ -843,7 +846,7 @@ impl ColumnFamilyOptions {
     /// By default target_file_size_multiplier is 1, which means
     /// by default files in different levels will have similar size.
     ///
-    /// Dynamically changeable through SetOptions() API
+    /// Dynamically changeable through `SetOptions()` API
     pub fn target_file_size_multiplier(self, val: i32) -> Self {
         unsafe {
             ll::rocks_cfoptions_set_target_file_size_multiplier(self.raw, val);
@@ -934,7 +937,7 @@ impl ColumnFamilyOptions {
 
     /// Default: 10.
     ///
-    /// Dynamically changeable through SetOptions() API
+    /// Dynamically changeable through `SetOptions()` API
     pub fn max_bytes_for_level_multiplier(self, val: f64) -> Self {
         unsafe {
             ll::rocks_cfoptions_set_max_bytes_for_level_multiplier(self.raw, val);
@@ -948,13 +951,15 @@ impl ColumnFamilyOptions {
     ///
     /// Default: 1
     ///
-    /// Dynamically changeable through SetOptions() API
-    pub fn max_bytes_for_level_multiplier_additional(self, val: Vec<i32>) -> Self {
-        unimplemented!()
-        // unsafe {
-        //     ll::rocks_cfoptions_set_max_bytes_for_level_multiplier_additional(self.raw, val);
-        // }
-        // self
+    /// Dynamically changeable through `SetOptions()` API
+    pub fn max_bytes_for_level_multiplier_additional(self, val: &[i32]) -> Self {
+        let cval = val.iter().map(|&v| v as c_int).collect::<Vec<_>>();
+        let num_levels = val.len();
+        unsafe {
+
+            ll::rocks_cfoptions_set_max_bytes_for_level_multiplier_additional(self.raw, cval.as_ptr(), num_levels);
+        }
+        self
     }
 
     /// We try to limit number of bytes in one compaction to be lower than this
@@ -1035,7 +1040,7 @@ impl ColumnFamilyOptions {
     ///
     /// Default: 8
     ///
-    /// Dynamically changeable through SetOptions() API
+    /// Dynamically changeable through `SetOptions()` API
     pub fn max_sequential_skip_in_iterations(self, val: u64) -> Self {
         unsafe {
             ll::rocks_cfoptions_set_max_sequential_skip_in_iterations(self.raw, val);
@@ -1064,7 +1069,7 @@ impl ColumnFamilyOptions {
     ///
     /// If you'd like to customize some of these options, you will need to
     /// use NewBlockBasedTableFactory() to construct a new table factory.
-
+    ///
     /// This option allows user to collect their own interested statistics of
     /// the tables.
     ///
@@ -1088,7 +1093,7 @@ impl ColumnFamilyOptions {
     ///
     /// Default: 0 (disabled)
     ///
-    /// Dynamically changeable through SetOptions() API
+    /// Dynamically changeable through `SetOptions()` API
     pub fn max_successive_merges(self, val: usize) -> Self {
         unsafe {
             ll::rocks_cfoptions_set_max_successive_merges(self.raw, val);
@@ -2753,21 +2758,25 @@ mod tests {
 
     #[test]
     fn readoptions() {
+        // FIXME: is disable nlock cache works?
         let tmp_dir = ::tempdir::TempDir::new_in(".", "rocks").unwrap();
         let db = DB::open(Options::default()
-                          .map_db_options(|db| db.create_if_missing(true)),
+                          .map_db_options(|db| db.create_if_missing(true))
+                          .map_cf_options(|cf| {
+                              cf.table_factory_block_based(
+                                  BlockBasedTableOptions::default()
+                                      .no_block_cache(true)
+                                      .block_cache(None)
+                              )
+                          }),
                           &tmp_dir)
             .unwrap();
         assert!(db.put(&Default::default(), b"long-key", vec![b'A'; 1024].as_ref())
                 .is_ok());
-        let val = db.get(&ReadOptions::default().read_tier(ReadTier::PersistedTier),
-                         b"long-key");
-
         assert!(db.compact_range(&Default::default(), ..).is_ok());
-
+        let val = db.get(&ReadOptions::default().read_tier(ReadTier::BlockCacheTier),
+                         b"long-key");
         assert!(val.is_ok());
-
-
     }
 
     #[test]
