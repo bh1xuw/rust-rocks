@@ -456,7 +456,7 @@ impl ColumnFamilyOptions {
     }
 
     /// This is a factory that provides TableFactory objects.
-    /// 
+    ///
     /// Default: a block-based table factory that provides a default
     /// implementation of TableBuilder and TableReader with default
     /// BlockBasedTableOptions.
@@ -1016,21 +1016,19 @@ impl ColumnFamilyOptions {
     }
 
     /// The options needed to support Universal Style compactions
-    pub fn compaction_options_universal(self, val: CompactionOptionsUniversal) -> Self {
-        unimplemented!()
-        // unsafe {
-        //     ll::rocks_cfoptions_set_compaction_options_universal(self.raw, val);
-        // }
-        // self
+    pub fn compaction_options_universal(self, opt: CompactionOptionsUniversal) -> Self {
+        unsafe {
+            ll::rocks_cfoptions_set_universal_compaction_options(self.raw, opt.raw());
+        }
+        self
     }
 
     /// The options for FIFO compaction style
     pub fn compaction_options_fifo(self, val: CompactionOptionsFIFO) -> Self {
-        unimplemented!()
-        //     unsafe {
-        //         ll::rocks_cfoptions_set_compaction_options_fifo(self.raw, val);
-        //     }
-        //     self
+        unsafe {
+            ll::rocks_cfoptions_set_fifo_compaction_options(self.raw, val.raw());
+        }
+        self
     }
 
     /// An iteration->Next() sequentially skips over keys with the same
@@ -1049,10 +1047,142 @@ impl ColumnFamilyOptions {
     }
 
     /// This is a factory that provides MemTableRep objects.
+    /// 
     /// Default: a factory that provides a skip-list-based implementation of
     /// MemTableRep.
     pub fn memtable_factory(self, val: ()) -> Self {
         unimplemented!()
+    }
+
+    /// This creates MemTableReps that are backed by an std::vector. On iteration,
+    /// the vector is sorted. This is useful for workloads where iteration is very
+    /// rare and writes are generally not issued after reads begin.
+    ///
+    /// # Arguments
+    ///
+    /// - count: Passed to the constructor of the underlying std::vector of each
+    ///   VectorRep. On initialization, the underlying array will be at least count
+    ///   bytes reserved for usage.
+    ///
+    ///   Default: 0
+    pub fn memtable_factory_vector_rep(self, count: usize) -> Self {
+        unsafe {
+            ll::rocks_cfoptions_set_memtable_vector_rep(self.raw, count);
+        }
+        self
+    }
+
+    /// This class contains a fixed array of buckets, each
+    /// pointing to a skiplist (null if the bucket is empty).
+    ///
+    /// # Arguments
+    ///
+    /// - bucket_count: number of fixed array buckets
+    ///
+    ///   Default: 1000000
+    /// - skiplist_height: the max height of the skiplist
+    ///
+    ///   Default: 4
+    /// - skiplist_branching_factor: probabilistic size ratio between adjacent
+    ///   link lists in the skiplist
+    ///
+    ///   Default: 4
+    pub fn memtable_factory_hash_skip_list_rep(self,
+                                               bucket_count: usize,
+                                               skiplist_height: i32,
+                                               skiplist_branching_factor: i32) -> Self {
+        unsafe {
+            ll::rocks_cfoptions_set_hash_skip_list_rep(self.raw,
+                                                       bucket_count,
+                                                       skiplist_height,
+                                                       skiplist_branching_factor);
+        }
+        self
+    }
+
+    /// The factory is to create memtables based on a hash table:
+    /// it contains a fixed array of buckets, each pointing to either a linked list
+    /// or a skip list if number of entries inside the bucket exceeds
+    /// threshold_use_skiplist.
+    ///
+    /// # Arguments
+    ///
+    /// - bucket_count: number of fixed array buckets
+    ///
+    ///   Default: 50000
+    /// - huge_page_tlb_size: if <=0, allocate the hash table bytes from malloc.
+    ///   Otherwise from huge page TLB. The user needs to reserve
+    ///   huge pages for it to be allocated, like:
+    ///
+    ///   > sysctl -w vm.nr_hugepages=20
+    ///
+    ///   See linux doc Documentation/vm/hugetlbpage.txt
+    ///
+    ///   Default: 0
+    /// - bucket_entries_logging_threshold: if number of entries in one bucket
+    ///   exceeds this number, log about it.
+    ///
+    ///   Default: 4096
+    /// - if_log_bucket_dist_when_flash: if true, log distribution of number of
+    ///   entries when flushing.
+    ///
+    ///   Default: true
+    /// - threshold_use_skiplist: a bucket switches to skip list if number of
+    ///   entries exceed this parameter.
+    ///
+    ///   Default: 256
+    pub fn memtable_factory_hash_link_list_rep(self, bucket_count: usize) -> Self {
+        unsafe {
+            ll::rocks_cfoptions_set_hash_link_list_rep(self.raw,
+                                                       bucket_count);
+        }
+        self
+    }
+
+    /// This factory creates a cuckoo-hashing based mem-table representation.
+    /// Cuckoo-hash is a closed-hash strategy, in which all key/value pairs
+    /// are stored in the bucket array itself intead of in some data structures
+    /// external to the bucket array.  In addition, each key in cuckoo hash
+    /// has a constant number of possible buckets in the bucket array.  These
+    /// two properties together makes cuckoo hash more memory efficient and
+    /// a constant worst-case read time.  Cuckoo hash is best suitable for
+    /// point-lookup workload.
+    ///
+    /// When inserting a key / value, it first checks whether one of its possible
+    /// buckets is empty.  If so, the key / value will be inserted to that vacant
+    /// bucket.  Otherwise, one of the keys originally stored in one of these
+    /// possible buckets will be "kicked out" and move to one of its possible
+    /// buckets (and possibly kicks out another victim.)  In the current
+    /// implementation, such "kick-out" path is bounded.  If it cannot find a
+    /// "kick-out" path for a specific key, this key will be stored in a backup
+    /// structure, and the current memtable to be forced to immutable.
+    ///
+    /// Note that currently this mem-table representation does not support
+    /// snapshot (i.e., it only queries latest state) and iterators.  In addition,
+    /// MultiGet operation might also lose its atomicity due to the lack of
+    /// snapshot support.
+    ///
+    /// # Arguments
+    ///
+    /// - write_buffer_size: the write buffer size in bytes.
+    /// - average_data_size: the average size of key + value in bytes.  This value
+    ///   together with write_buffer_size will be used to compute the number
+    ///   of buckets.
+    ///
+    ///   Default: 64
+    /// - hash_function_count: the number of hash functions that will be used by
+    ///   the cuckoo-hash.  The number also equals to the number of possible
+    ///   buckets each key will have.
+    ///
+    ///   Default: 4
+    pub fn memtable_factory_hash_cuckoo_rep(self,
+                                            write_buffer_size: usize,
+                                            average_data_size: usize,
+                                            hash_function_count: u32) -> Self {
+        unsafe {
+            ll::rocks_cfoptions_set_hash_cuckoo_rep(self.raw, write_buffer_size, average_data_size, hash_function_count);
+        }
+        self
     }
 
     /// Block-based table related options are moved to BlockBasedTableOptions.

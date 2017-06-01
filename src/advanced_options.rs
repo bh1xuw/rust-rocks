@@ -2,6 +2,10 @@
 
 use std::os::raw::{c_char, c_int};
 
+use rocks_sys as ll;
+
+use to_raw::ToRaw;
+
 #[repr(C)]
 pub enum CompactionStyle {
     /// level based compaction style
@@ -40,21 +44,39 @@ pub enum CompactionPri {
 
 #[repr(C)]
 pub struct CompactionOptionsFIFO {
-    /// once the total sum of table files reaches this, we will delete the oldest
-    /// table file
-    /// Default: 1GB
-    max_table_files_size: u64,
+    raw: *mut ll::rocks_fifo_compaction_options_t,
 }
 
-impl CompactionOptionsFIFO {
-    pub fn new(max_table_files_size: u64) -> CompactionOptionsFIFO {
-        CompactionOptionsFIFO { max_table_files_size: max_table_files_size }
+impl ToRaw<ll::rocks_fifo_compaction_options_t> for CompactionOptionsFIFO {
+    fn raw(&self) -> *mut ll::rocks_fifo_compaction_options_t {
+        self.raw
     }
 }
 
 impl Default for CompactionOptionsFIFO {
     fn default() -> Self {
-        CompactionOptionsFIFO::new(1024 * 1024 * 1024)
+        CompactionOptionsFIFO {
+            raw: unsafe { ll::rocks_fifo_compaction_options_create() },
+        }
+    }
+}
+
+impl Drop for CompactionOptionsFIFO {
+    fn drop(&mut self) {
+        unsafe { ll::rocks_fifo_compaction_options_destroy(self.raw) }
+    }
+}
+
+impl CompactionOptionsFIFO {
+    /// once the total sum of table files reaches this, we will delete the oldest
+    /// table file
+    ///
+    /// Default: 1GB
+    pub fn max_table_files_size(self, val: u64) -> Self {
+        unsafe {
+            ll::rocks_fifo_compaction_options_set_max_table_files_size(self.raw, val);
+        }
+        self
     }
 }
 

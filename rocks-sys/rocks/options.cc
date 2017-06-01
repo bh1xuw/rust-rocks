@@ -339,20 +339,15 @@ void rocks_cfoptions_set_compaction_pri(rocks_cfoptions_t* opt, int pri) {
   opt->rep.compaction_pri = static_cast<rocksdb::CompactionPri>(pri);
 }
 
-/*
-  void rocks_cfoptions_set_universal_compaction_options(rocks_cfoptions_t *opt,
-rocks_universal_compaction_options_t *uco) {
-  opt->rep.compaction_options_universal = *(uco->rep);
+void rocks_cfoptions_set_universal_compaction_options(
+    rocks_cfoptions_t* opt, rocks_universal_compaction_options_t* uco) {
+  opt->rep.compaction_options_universal = uco->rep;
 }
-*/
 
-/*
 void rocks_cfoptions_set_fifo_compaction_options(
-                                               rocks_cfoptions_t* opt,
-                                               rocks_fifo_compaction_options_t*
-fifo) { opt->rep.compaction_options_fifo = fifo->rep;
+    rocks_cfoptions_t* opt, rocks_fifo_compaction_options_t* fifo) {
+  opt->rep.compaction_options_fifo = fifo->rep;
 }
-*/
 
 void rocks_cfoptions_set_max_sequential_skip_in_iterations(
     rocks_cfoptions_t* opt, uint64_t v) {
@@ -360,8 +355,9 @@ void rocks_cfoptions_set_max_sequential_skip_in_iterations(
 }
 
 // memtable_factory
-void rocks_cfoptions_set_memtable_vector_rep(rocks_cfoptions_t* opt) {
-  opt->rep.memtable_factory.reset(new rocksdb::VectorRepFactory);
+void rocks_cfoptions_set_memtable_vector_rep(rocks_cfoptions_t* opt,
+                                             size_t count) {
+  opt->rep.memtable_factory.reset(new rocksdb::VectorRepFactory(count));
 }
 
 void rocks_cfoptions_set_hash_skip_list_rep(rocks_cfoptions_t* opt,
@@ -377,6 +373,14 @@ void rocks_cfoptions_set_hash_link_list_rep(rocks_cfoptions_t* opt,
                                             size_t bucket_count) {
   opt->rep.memtable_factory.reset(
       rocksdb::NewHashLinkListRepFactory(bucket_count));
+}
+
+void rocks_cfoptions_set_hash_cuckoo_rep(rocks_cfoptions_t* opt,
+                                         size_t write_buffer_size,
+                                         size_t average_data_size,
+                                         unsigned int hash_function_count) {
+  opt->rep.memtable_factory.reset(NewHashCuckooRepFactory(
+      write_buffer_size, average_data_size, hash_function_count));
 }
 
 /*
@@ -987,5 +991,23 @@ rocks_logger_t* rocks_create_logger_from_options(const char* path,
     return nullptr;
   }
   return logger;
+}
+}
+
+extern "C" {
+rocks_fifo_compaction_options_t* rocks_fifo_compaction_options_create() {
+  rocks_fifo_compaction_options_t* result = new rocks_fifo_compaction_options_t;
+  result->rep = CompactionOptionsFIFO();
+  return result;
+}
+
+void rocks_fifo_compaction_options_set_max_table_files_size(
+    rocks_fifo_compaction_options_t* fifo_opts, uint64_t size) {
+  fifo_opts->rep.max_table_files_size = size;
+}
+
+void rocks_fifo_compaction_options_destroy(
+    rocks_fifo_compaction_options_t* fifo_opts) {
+  delete fifo_opts;
 }
 }

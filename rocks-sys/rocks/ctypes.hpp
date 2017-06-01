@@ -80,6 +80,10 @@ struct rocks_writeoptions_t {
 struct rocks_flushoptions_t {
   FlushOptions rep;
 };
+struct rocks_fifo_compaction_options_t {
+  CompactionOptionsFIFO rep;
+};
+
 struct rocks_compaction_options_t {
   CompactionOptions rep;
 };

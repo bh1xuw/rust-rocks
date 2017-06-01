@@ -35,6 +35,9 @@ pub struct rocks_writeoptions_t([u8; 0]);
 pub struct rocks_flushoptions_t([u8; 0]);
 #[repr(C)]
 #[derive(Debug, Copy, Clone)]
+pub struct rocks_fifo_compaction_options_t([u8; 0]);
+#[repr(C)]
+#[derive(Debug, Copy, Clone)]
 pub struct rocks_compaction_options_t([u8; 0]);
 #[repr(C)]
 #[derive(Debug, Copy, Clone)]
@@ -446,13 +449,26 @@ extern "C" {
                                               pri: ::std::os::raw::c_int);
 }
 extern "C" {
+    pub fn rocks_cfoptions_set_universal_compaction_options(opt:
+                                                                *mut rocks_cfoptions_t,
+                                                            uco:
+                                                                *mut rocks_universal_compaction_options_t);
+}
+extern "C" {
+    pub fn rocks_cfoptions_set_fifo_compaction_options(opt:
+                                                           *mut rocks_cfoptions_t,
+                                                       fifo:
+                                                           *mut rocks_fifo_compaction_options_t);
+}
+extern "C" {
     pub fn rocks_cfoptions_set_max_sequential_skip_in_iterations(opt:
                                                                      *mut rocks_cfoptions_t,
                                                                  v: u64);
 }
 extern "C" {
     pub fn rocks_cfoptions_set_memtable_vector_rep(opt:
-                                                       *mut rocks_cfoptions_t);
+                                                       *mut rocks_cfoptions_t,
+                                                   count: usize);
 }
 extern "C" {
     pub fn rocks_cfoptions_set_hash_skip_list_rep(opt: *mut rocks_cfoptions_t,
@@ -464,6 +480,13 @@ extern "C" {
 extern "C" {
     pub fn rocks_cfoptions_set_hash_link_list_rep(opt: *mut rocks_cfoptions_t,
                                                   bucket_count: usize);
+}
+extern "C" {
+    pub fn rocks_cfoptions_set_hash_cuckoo_rep(opt: *mut rocks_cfoptions_t,
+                                               write_buffer_size: usize,
+                                               average_data_size: usize,
+                                               hash_function_count:
+                                                   ::std::os::raw::c_uint);
 }
 extern "C" {
     pub fn rocks_cfoptions_set_max_successive_merges(opt:
@@ -983,6 +1006,19 @@ extern "C" {
                                             opts: *mut rocks_options_t,
                                             status: *mut rocks_status_t)
      -> *mut rocks_logger_t;
+}
+extern "C" {
+    pub fn rocks_fifo_compaction_options_create()
+     -> *mut rocks_fifo_compaction_options_t;
+}
+extern "C" {
+    pub fn rocks_fifo_compaction_options_set_max_table_files_size(fifo_opts:
+                                                                      *mut rocks_fifo_compaction_options_t,
+                                                                  size: u64);
+}
+extern "C" {
+    pub fn rocks_fifo_compaction_options_destroy(fifo_opts:
+                                                     *mut rocks_fifo_compaction_options_t);
 }
 extern "C" {
     pub fn rocks_column_family_handle_get_name(handle:
@@ -2567,25 +2603,25 @@ extern "C" {
     pub fn rocks_universal_compaction_options_set_size_ratio(uco:
                                                                  *mut rocks_universal_compaction_options_t,
                                                              ratio:
-                                                                 ::std::os::raw::c_int);
+                                                                 ::std::os::raw::c_uint);
 }
 extern "C" {
     pub fn rocks_universal_compaction_options_set_min_merge_width(uco:
                                                                       *mut rocks_universal_compaction_options_t,
                                                                   w:
-                                                                      ::std::os::raw::c_int);
+                                                                      ::std::os::raw::c_uint);
 }
 extern "C" {
     pub fn rocks_universal_compaction_options_set_max_merge_width(uco:
                                                                       *mut rocks_universal_compaction_options_t,
                                                                   w:
-                                                                      ::std::os::raw::c_int);
+                                                                      ::std::os::raw::c_uint);
 }
 extern "C" {
     pub fn rocks_universal_compaction_options_set_max_size_amplification_percent(uco:
                                                                                      *mut rocks_universal_compaction_options_t,
                                                                                  p:
-                                                                                     ::std::os::raw::c_int);
+                                                                                     ::std::os::raw::c_uint);
 }
 extern "C" {
     pub fn rocks_universal_compaction_options_set_compression_size_percent(uco:
@@ -2602,6 +2638,12 @@ extern "C" {
 extern "C" {
     pub fn rocks_universal_compaction_options_destroy(uco:
                                                           *mut rocks_universal_compaction_options_t);
+}
+extern "C" {
+    pub fn rocks_universal_compaction_options_set_allow_trivial_move(uco:
+                                                                         *mut rocks_universal_compaction_options_t,
+                                                                     val:
+                                                                         ::std::os::raw::c_uchar);
 }
 extern "C" {
     pub fn free(p: *mut ::std::os::raw::c_void);

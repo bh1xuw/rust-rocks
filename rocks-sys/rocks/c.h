@@ -28,6 +28,7 @@ typedef struct rocks_options_t rocks_options_t;
 typedef struct rocks_readoptions_t rocks_readoptions_t;
 typedef struct rocks_writeoptions_t rocks_writeoptions_t;
 typedef struct rocks_flushoptions_t rocks_flushoptions_t;
+typedef struct rocks_fifo_compaction_options_t rocks_fifo_compaction_options_t;
 typedef struct rocks_compaction_options_t rocks_compaction_options_t;
 typedef struct rocks_compactrange_options_t rocks_compactrange_options_t;
 typedef struct rocks_ingestexternalfile_options_t
@@ -279,24 +280,18 @@ void rocks_cfoptions_set_compaction_style(rocks_cfoptions_t* opt, int style);
 
 void rocks_cfoptions_set_compaction_pri(rocks_cfoptions_t* opt, int pri);
 
-/*
-  void rocks_cfoptions_set_universal_compaction_options(rocks_cfoptions_t *opt,
-                                                        rocks_universal_compaction_options_t
-  *uco);
-*/
+void rocks_cfoptions_set_universal_compaction_options(
+    rocks_cfoptions_t* opt, rocks_universal_compaction_options_t* uco);
 
-/*
 void rocks_cfoptions_set_fifo_compaction_options(
-                                               rocks_cfoptions_t* opt,
-                                               rocks_fifo_compaction_options_t*
-fifo);  }
-*/
+    rocks_cfoptions_t* opt, rocks_fifo_compaction_options_t* fifo);
 
 void rocks_cfoptions_set_max_sequential_skip_in_iterations(
     rocks_cfoptions_t* opt, uint64_t v);
 
 // memtable_factory
-void rocks_cfoptions_set_memtable_vector_rep(rocks_cfoptions_t* opt);
+void rocks_cfoptions_set_memtable_vector_rep(rocks_cfoptions_t* opt,
+                                             size_t count);
 
 void rocks_cfoptions_set_hash_skip_list_rep(rocks_cfoptions_t* opt,
                                             size_t bucket_count,
@@ -305,6 +300,11 @@ void rocks_cfoptions_set_hash_skip_list_rep(rocks_cfoptions_t* opt,
 
 void rocks_cfoptions_set_hash_link_list_rep(rocks_cfoptions_t* opt,
                                             size_t bucket_count);
+
+void rocks_cfoptions_set_hash_cuckoo_rep(rocks_cfoptions_t* opt,
+                                         size_t write_buffer_size,
+                                         size_t average_data_size,
+                                         unsigned int hash_function_count);
 
 /*
 void rocks_cfoptions_set_table_properties_collector_factories(rocks_cfoptions_t
@@ -633,6 +633,15 @@ void rocks_flushoptions_set_wait(rocks_flushoptions_t* options,
 rocks_logger_t* rocks_create_logger_from_options(const char* path,
                                                  rocks_options_t* opts,
                                                  rocks_status_t* status);
+
+/* > fifo_compaction_options */
+rocks_fifo_compaction_options_t* rocks_fifo_compaction_options_create();
+
+void rocks_fifo_compaction_options_set_max_table_files_size(
+    rocks_fifo_compaction_options_t* fifo_opts, uint64_t size);
+
+void rocks_fifo_compaction_options_destroy(
+    rocks_fifo_compaction_options_t* fifo_opts);
 
 /* db.h */
 
@@ -1450,16 +1459,16 @@ rocks_universal_compaction_options_t*
 rocks_universal_compaction_options_create();
 
 void rocks_universal_compaction_options_set_size_ratio(
-    rocks_universal_compaction_options_t* uco, int ratio);
+    rocks_universal_compaction_options_t* uco, unsigned int ratio);
 
 void rocks_universal_compaction_options_set_min_merge_width(
-    rocks_universal_compaction_options_t* uco, int w);
+    rocks_universal_compaction_options_t* uco, unsigned int w);
 
 void rocks_universal_compaction_options_set_max_merge_width(
-    rocks_universal_compaction_options_t* uco, int w);
+    rocks_universal_compaction_options_t* uco, unsigned int w);
 
 void rocks_universal_compaction_options_set_max_size_amplification_percent(
-    rocks_universal_compaction_options_t* uco, int p);
+    rocks_universal_compaction_options_t* uco, unsigned int p);
 
 void rocks_universal_compaction_options_set_compression_size_percent(
     rocks_universal_compaction_options_t* uco, int p);
@@ -1469,6 +1478,9 @@ void rocks_universal_compaction_options_set_stop_style(
 
 void rocks_universal_compaction_options_destroy(
     rocks_universal_compaction_options_t* uco);
+
+void rocks_universal_compaction_options_set_allow_trivial_move(
+    rocks_universal_compaction_options_t* uco, unsigned char val);
 
 /* aux */
 void free(void* p);

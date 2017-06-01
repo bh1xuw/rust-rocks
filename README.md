@@ -20,6 +20,7 @@ big picture(TODOs):
 - [x] information hiding (DO NOT EXPORT raw pointers)
 - [ ] Proof of usablility
 - [ ] bench across C++/Java/other-rust binding
+- [ ] travis-ci integration
 - [ ] Zero-Copy
   - [ ] wraps std::string in Rust
   - [ ] pinnable slice support
@@ -75,7 +76,6 @@ big picture(TODOs):
 - [x] ``rocksdb/iterator.h``
   - [x] adapter for Rust Iterator
   - [ ] reverse iterator
-  - [ ] pinned slice, wait rocksdb 5.4
 - [ ] ~~``rocksdb/ldb_tool.h``~~
 - [ ] ``rocksdb/listener.h``
 - [ ] ``rocksdb/memtablerep.h``
@@ -128,7 +128,7 @@ big picture(TODOs):
   - [ ] handler/iterate
 - [ ] ~~``rocksdb/write_batch_base.h``~~
 - [ ] ``rocksdb/write_buffer_manager.h``
-- [ ] ``rocksdb/universal_compaction.h``
+- [x] ``rocksdb/universal_compaction.h``
 - [ ] ``rocksdb/utilities/backupable_db.h``
 - [ ] ``rocksdb/utilities/checkpoint.h``
 - [ ] ``rocksdb/utilities/convenience.h``
