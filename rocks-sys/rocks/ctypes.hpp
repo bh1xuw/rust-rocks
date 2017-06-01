@@ -324,6 +324,10 @@ struct rocks_universal_compaction_options_t {
 };
 
 /* aux */
+struct cxx_string_vector_t {
+  std::vector<std::string> rep;
+};
+
 static bool SaveError(rocks_status_t* status, const Status& s) {
   assert(status != nullptr);
   rocks_status_convert(&s, status);

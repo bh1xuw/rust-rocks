@@ -4,6 +4,8 @@
 #include "rocksdb/slice.h"
 #include "rocksdb/version.h"
 
+#include "rocks/ctypes.hpp"
+
 using namespace rocksdb;
 
 extern "C" {
@@ -35,5 +37,21 @@ const char* cxx_string_data(const void* s) {
 size_t cxx_string_size(const void* s) {
   auto str = reinterpret_cast<const std::string*>(s);
   return str->size();
+}
+
+cxx_string_vector_t* cxx_string_vector_create() {
+  return new cxx_string_vector_t;
+}
+
+void cxx_string_vector_destory(cxx_string_vector_t* v) { delete v; }
+
+size_t cxx_string_vector_size(cxx_string_vector_t* v) { return v->rep.size(); }
+
+const char* cxx_string_vector_nth(cxx_string_vector_t* v, size_t index) {
+  return v->rep[index].data();
+}
+
+size_t cxx_string_vector_nth_size(cxx_string_vector_t* v, size_t index) {
+  return v->rep[index].size();
 }
 }

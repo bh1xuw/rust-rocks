@@ -107,6 +107,9 @@ typedef struct rocks_column_family_metadata_t rocks_column_family_metadata_t;
 typedef struct rocks_universal_compaction_options_t
     rocks_universal_compaction_options_t;
 
+/* aux */
+typedef struct cxx_string_vector_t cxx_string_vector_t;
+
 /* ****************************** functions ****************************** */
 /* options.h */
 /*    start */
@@ -881,6 +884,11 @@ void rocks_db_disable_file_deletions(rocks_db_t* db, rocks_status_t* status);
 void rocks_db_enable_file_deletions(rocks_db_t* db, unsigned char force,
                                     rocks_status_t* status);
 
+cxx_string_vector_t* rocks_db_get_live_files(rocks_db_t* db,
+                                             unsigned char flush_memtable,
+                                             uint64_t* manifest_file_size,
+                                             rocks_status_t* status);
+
 void rocks_db_delete_file(rocks_db_t* db, const char* name, size_t name_len,
                           rocks_status_t* status);
 
@@ -1491,6 +1499,12 @@ const void* cxx_vector_slice_nth(const void* list, size_t n);
 void cxx_string_assign(void* s, const char* p, size_t len);
 const char* cxx_string_data(const void* s);
 size_t cxx_string_size(const void* s);
+
+cxx_string_vector_t* cxx_string_vector_create();
+void cxx_string_vector_destory(cxx_string_vector_t* v);
+size_t cxx_string_vector_size(cxx_string_vector_t* v);
+const char* cxx_string_vector_nth(cxx_string_vector_t* v, size_t index);
+size_t cxx_string_vector_nth_size(cxx_string_vector_t* v, size_t index);
 
 #ifdef __cplusplus
 }

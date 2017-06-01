@@ -1555,9 +1555,8 @@ impl<'a> DB<'a> {
     }
 
 
-    // TODO:
     /// GetLiveFiles followed by GetSortedWalFiles can generate a lossless backup
-
+    ///
     /// Retrieve the list of all files in the database. The files are
     /// relative to the dbname and are not absolute paths. The valid size of the
     /// manifest file is returned in manifest_file_size. The manifest file is an
@@ -1572,10 +1571,32 @@ impl<'a> DB<'a> {
     /// you still need to call GetSortedWalFiles after GetLiveFiles to compensate
     /// for new data that arrived to already-flushed column families while other
     /// column families were flushing
-    pub fn get_live_files(&self) -> () {
-        unimplemented!()
+    pub fn get_live_files(&self, flush_memtable: bool) -> Result<(u64, Vec<String>), Status> {
+        unsafe {
+            let mut file_size = 0;
+            let mut status = mem::zeroed();
+            let files = ll::rocks_db_get_live_files(self.raw(),
+                                                    flush_memtable as u8,
+                                                    &mut file_size,
+                                                    &mut status);
+            if status.code == 0 {
+                let n = ll::cxx_string_vector_size(files) as usize;
+                let mut ret = Vec::with_capacity(n);
+                for i in 0 .. n {
+                    let f = slice::from_raw_parts(ll::cxx_string_vector_nth(files, i) as *const u8,
+                                                  ll::cxx_string_vector_nth_size(files, i));
+
+                    ret.push(String::from_utf8_lossy(f).to_owned().to_string());
+                }
+                ll::cxx_string_vector_destory(files);
+                Ok((file_size, ret))
+            } else {
+                Err(Status::from_ll(&status))
+            }
+        }
     }
 
+    // TODO:
     // get_sorted_wal_files
     // get_updates_since
 
@@ -2497,5 +2518,28 @@ mod tests {
         assert!(meta.levels[0].files.len() > 1);
         assert!(meta.levels[4].files.len() == 0);
     }
+
+
+    #[test]
+    fn list_live_files() {
+        let tmp_dir = ::tempdir::TempDir::new_in(".", "rocks").unwrap();
+        let db = DB::open(Options::default()
+                          .map_db_options(|db| db.create_if_missing(true)),
+                          &tmp_dir)
+            .unwrap();
+        assert!(db.put(&Default::default(), b"long-key", vec![b'A'; 1024 * 1024].as_ref())
+                .is_ok());
+        assert!(db.flush(&FlushOptions::default().wait(true)).is_ok());
+        assert!(db.put(&Default::default(), b"long-key-2", vec![b'A'; 2 * 1024].as_ref())
+                .is_ok());
+        assert!(db.flush(&FlushOptions::default().wait(true)).is_ok());
+
+        if let Ok((size, files)) = db.get_live_files(false) {
+            assert!(files.contains(&"/CURRENT".to_string()));
+        } else {
+            assert!(false, "get_live_files fails");
+        }
+    }
+
 }
 

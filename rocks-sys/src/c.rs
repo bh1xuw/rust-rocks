@@ -139,6 +139,9 @@ pub struct rocks_column_family_metadata_t([u8; 0]);
 #[repr(C)]
 #[derive(Debug, Copy, Clone)]
 pub struct rocks_universal_compaction_options_t([u8; 0]);
+#[repr(C)]
+#[derive(Debug, Copy, Clone)]
+pub struct cxx_string_vector_t([u8; 0]);
 extern "C" {
     pub fn rocks_options_create() -> *mut rocks_options_t;
 }
@@ -1442,6 +1445,13 @@ extern "C" {
                                           status: *mut rocks_status_t);
 }
 extern "C" {
+    pub fn rocks_db_get_live_files(db: *mut rocks_db_t,
+                                   flush_memtable: ::std::os::raw::c_uchar,
+                                   manifest_file_size: *mut u64,
+                                   status: *mut rocks_status_t)
+     -> *mut cxx_string_vector_t;
+}
+extern "C" {
     pub fn rocks_db_delete_file(db: *mut rocks_db_t,
                                 name: *const ::std::os::raw::c_char,
                                 name_len: usize, status: *mut rocks_status_t);
@@ -2666,4 +2676,21 @@ extern "C" {
 }
 extern "C" {
     pub fn cxx_string_size(s: *const ::std::os::raw::c_void) -> usize;
+}
+extern "C" {
+    pub fn cxx_string_vector_create() -> *mut cxx_string_vector_t;
+}
+extern "C" {
+    pub fn cxx_string_vector_destory(v: *mut cxx_string_vector_t);
+}
+extern "C" {
+    pub fn cxx_string_vector_size(v: *mut cxx_string_vector_t) -> usize;
+}
+extern "C" {
+    pub fn cxx_string_vector_nth(v: *mut cxx_string_vector_t, index: usize)
+     -> *const ::std::os::raw::c_char;
+}
+extern "C" {
+    pub fn cxx_string_vector_nth_size(v: *mut cxx_string_vector_t,
+                                      index: usize) -> usize;
 }

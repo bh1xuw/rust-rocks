@@ -635,6 +635,18 @@ void rocks_db_enable_file_deletions(rocks_db_t* db, unsigned char force,
   SaveError(status, db->rep->EnableFileDeletions(force));
 }
 
+cxx_string_vector_t* rocks_db_get_live_files(rocks_db_t* db,
+                                             unsigned char flush_memtable,
+                                             uint64_t* manifest_file_size,
+                                             rocks_status_t* status) {
+  cxx_string_vector_t* files = new cxx_string_vector_t;
+
+  auto st =
+      db->rep->GetLiveFiles(files->rep, manifest_file_size, flush_memtable);
+  SaveError(status, st);
+  return files;
+}
+
 void rocks_db_delete_file(rocks_db_t* db, const char* name, size_t name_len,
                           rocks_status_t* status) {
   SaveError(status, db->rep->DeleteFile(std::string(name, name_len)));
