@@ -18,3 +18,8 @@ src/%.rs: rocks/%.h
 #	src/status.rs
 
 all: src/c.rs
+
+
+format:
+	find rocks/ -iname '*.h' -o -iname '*.cc' -o -iname '*.hpp' | xargs clang-format -style=Google -i
+
