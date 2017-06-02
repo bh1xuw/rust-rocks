@@ -4,10 +4,10 @@
 //! automatically by rocksdb to decide whether or not to read some
 //! information from disk. In many cases, a filter can cut down the
 //! number of disk seeks form a handful to a single disk seek per
-//! DB::Get() call.
+//! `DB::Get()` call.
 //!
 //! Most people will want to use the builtin bloom filter support (see
-//! NewBloomFilterPolicy() below).
+//! `NewBloomFilterPolicy()` below).
 
 
 use std::os::raw::c_void;

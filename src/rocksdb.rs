@@ -12,6 +12,8 @@ pub use perf_level::*;
 pub use table::*;
 pub use slice::PinnableSlice;
 
+pub use super::Result;
+
 #[test]
 fn test_version() {
     let v = version();

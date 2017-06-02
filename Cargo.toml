@@ -16,6 +16,7 @@ include = [
 
 [dependencies]
 rocks-sys = { path = "rocks-sys", version = "0.0.5" }
+# clippy = "*"
 
 [dev-dependencies]
 tempdir = "0.3"

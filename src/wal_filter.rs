@@ -1,4 +1,4 @@
-//! WALFilter allows an application to inspect write-ahead-log (WAL)
+//! `WALFilter` allows an application to inspect write-ahead-log (WAL)
 //! records or modify their processing on recovery.
 
 use std::collections::BTreeMap;
@@ -35,7 +35,7 @@ impl WalProcessingOption {
     }
 }
 
-/// WALFilter allows an application to inspect write-ahead-log (WAL)
+/// `WALFilter` allows an application to inspect write-ahead-log (WAL)
 /// records or modify their processing on recovery.
 pub trait WalFilter {
     /// Provide `ColumnFamily->LogNumber` map to filter

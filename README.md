@@ -18,6 +18,7 @@ big picture(TODOs):
 
 - [x] git submodule, static-link, compression as feature gate
 - [x] information hiding (DO NOT EXPORT raw pointers)
+- [x] wraps Status into a Rust style ``Result<T>``
 - [ ] Proof of usablility
 - [ ] bench across C++/Java/other-rust binding
 - [ ] travis-ci integration
@@ -107,7 +108,7 @@ big picture(TODOs):
 - [x] ``rocksdb/statistics.h``
   - [ ] customized statistics class via rust trait?
 - [x] ``rocksdb/status.h``
-  - [ ] Rust style Error? (i.e. remove Status::OK)
+  - [x] Rust style Error? (i.e. remove Status::OK)
 - [x] ``rocksdb/table.h``
   - [x] plain / block based / cuckoo options
   - [ ] customized

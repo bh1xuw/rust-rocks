@@ -2,11 +2,72 @@
 use std::fmt;
 use std::slice;
 use std::ops;
+use std::str;
 use std::os::raw::c_char;
 
 use rocks_sys as ll;
 
 use to_raw::ToRaw;
+
+pub struct CVec<T> {
+    data: *mut T,
+    len: usize,
+}
+
+impl<T> CVec<T> {
+    pub unsafe fn from_raw_parts(p: *mut T, len: usize) -> CVec<T> {
+        CVec {
+            data: p,
+            len: len,
+        }
+    }
+}
+
+impl CVec<u8> {
+    pub fn to_str(&self) -> Result<&str, str::Utf8Error> {
+        str::from_utf8(self)
+    }
+}
+
+impl<T: fmt::Debug> fmt::Debug for CVec<T> {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        unsafe { slice::from_raw_parts(self.data, self.len).fmt(f) }
+    }
+}
+
+impl<T> ops::Deref for CVec<T> {
+    type Target = [T];
+    fn deref(&self) -> &[T] {
+        unsafe { slice::from_raw_parts(self.data, self.len) }
+    }
+}
+
+impl<T> AsRef<[T]> for CVec<T> {
+    fn as_ref(&self) -> &[T] {
+        unsafe { slice::from_raw_parts(self.data, self.len) }
+    }
+}
+
+impl<T> Drop for CVec<T> {
+    fn drop(&mut self) {
+        unsafe {
+            ll::free(self.data as _);
+        }
+    }
+}
+
+impl<'a, T: PartialEq> PartialEq<&'a [T]> for CVec<T> {
+    fn eq(&self, rhs: &&[T]) -> bool {
+        &self.as_ref() == rhs
+    }
+}
+
+impl<'a, 'b, T: PartialEq> PartialEq<&'b [T]> for &'a CVec<T> {
+    fn eq(&self, rhs: &&[T]) -> bool {
+        &self.as_ref() == rhs
+    }
+}
+
 
 /// A Slice that can be pinned with some cleanup tasks, which will be run upon
 /// `::Reset()` or object destruction, whichever is invoked first. This can be used

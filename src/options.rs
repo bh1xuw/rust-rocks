@@ -2707,7 +2707,7 @@ impl FlushOptions {
 }
 
 
-/// CompactionOptions are used in CompactFiles() call.
+/// `CompactionOptions` are used in `CompactFiles()` call.
 #[repr(C)]
 pub struct CompactionOptions {
     /// Compaction output compression type

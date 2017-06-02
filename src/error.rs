@@ -20,7 +20,7 @@ use to_raw::{ToRaw, FromRaw};
 #[repr(C)]
 #[derive(Debug, Copy, Clone, PartialEq, Eq, Hash)]
 pub enum Code {
-    Ok = 0,
+    _Ok = 0,                    // will never be available
     NotFound = 1,
     Corruption = 2,
     NotSupported = 3,
@@ -113,39 +113,6 @@ impl Status {
             })
         }
     }
-
-/*
-    pub fn from_ll(raw: &ll::rocks_status_t) -> Status {
-        unsafe {
-            Status {
-                code: mem::transmute(raw.code),
-                subcode: mem::transmute(raw.sub_code),
-                status: {
-                    raw.state
-                        .as_ref()
-                        .and_then(|p| CStr::from_ptr(p).to_str().ok())
-                        .map(|s| s.to_owned())
-                        .unwrap_or_default()
-                },
-            }
-        }
-    }
-    */
-
-    // Return a success status.
-    // pub fn Ok() -> Status {
-    // Status::new()
-    // }
-    //
-    // Return error status of an appropriate type.
-    // pub fn NotFound(msg: SubCode) -> Status {
-    // Status {
-    // code: Code::NotFound,
-    // subcode: msg,
-    // status: String::new(),
-    // }
-    // }
-    //
 }
 
 impl fmt::Display for Status {

@@ -29,7 +29,9 @@ use env::Logger;
 use types::SequenceNumber;
 use to_raw::{ToRaw, FromRaw};
 use metadata::{LiveFileMetaData, SstFileMetaData, LevelMetaData, ColumnFamilyMetaData};
-use super::slice::PinnableSlice;
+
+use super::Result;
+use super::slice::{CVec, PinnableSlice};
 
 const DEFAULT_COLUMN_FAMILY_NAME: &'static str = "default";
 
@@ -147,7 +149,7 @@ impl<'a, 'b: 'a> ColumnFamilyHandle<'a, 'b> {
     /// options cannot be referenced any longer than the original options exist.
     ///
     /// Note that this function is not supported in RocksDBLite.
-    pub fn descriptor(&self) -> Result<ColumnFamilyDescriptor, Status> {
+    pub fn descriptor(&self) -> Result<ColumnFamilyDescriptor> {
     
 }
      */
@@ -162,7 +164,7 @@ impl<'a, 'b: 'a> ColumnFamilyHandle<'a, 'b> {
 
     // Rust: migrate API from DB
 
-    pub fn put(&self, options: &WriteOptions, key: &[u8], value: &[u8]) -> Result<(), Status> {
+    pub fn put(&self, options: &WriteOptions, key: &[u8], value: &[u8]) -> Result<()> {
         unsafe {
             let mut status = ptr::null_mut::<ll::rocks_status_t>();
             // since rocksdb::DB::put without cf is for compatibility
@@ -178,7 +180,7 @@ impl<'a, 'b: 'a> ColumnFamilyHandle<'a, 'b> {
         }
     }
 
-    pub fn delete(&self, options: &WriteOptions, key: &[u8]) -> Result<(), Status> {
+    pub fn delete(&self, options: &WriteOptions, key: &[u8]) -> Result<()> {
         unsafe {
             let mut status = mem::zeroed();
             ll::rocks_db_delete_cf(self.db.raw,
@@ -191,7 +193,7 @@ impl<'a, 'b: 'a> ColumnFamilyHandle<'a, 'b> {
         }
     }
 
-    pub fn single_delete(&self, options: &WriteOptions, key: &[u8]) -> Result<(), Status> {
+    pub fn single_delete(&self, options: &WriteOptions, key: &[u8]) -> Result<()> {
         unsafe {
             let mut status = mem::zeroed();
             ll::rocks_db_single_delete_cf(self.db.raw,
@@ -204,7 +206,7 @@ impl<'a, 'b: 'a> ColumnFamilyHandle<'a, 'b> {
         }
     }
 
-    pub fn delete_range(&self, options: &WriteOptions, begin_key: &[u8], end_key: &[u8]) -> Result<(), Status> {
+    pub fn delete_range(&self, options: &WriteOptions, begin_key: &[u8], end_key: &[u8]) -> Result<()> {
         unsafe {
             let mut status = mem::zeroed();
             ll::rocks_db_delete_range_cf(self.db.raw,
@@ -219,7 +221,7 @@ impl<'a, 'b: 'a> ColumnFamilyHandle<'a, 'b> {
         }
     }
 
-    pub fn merge(&self, options: &WriteOptions, key: &[u8], val: &[u8]) -> Result<(), Status> {
+    pub fn merge(&self, options: &WriteOptions, key: &[u8], val: &[u8]) -> Result<()> {
         unsafe {
             let mut status = mem::zeroed();
             ll::rocks_db_merge_cf(self.db.raw,
@@ -234,7 +236,7 @@ impl<'a, 'b: 'a> ColumnFamilyHandle<'a, 'b> {
         }
     }
 
-    pub fn get(&self, options: &ReadOptions, key: &[u8]) -> Result<PinnableSlice, Status> {
+    pub fn get(&self, options: &ReadOptions, key: &[u8]) -> Result<PinnableSlice> {
         unsafe {
             let mut status = ptr::null_mut::<ll::rocks_status_t>();
             let pinnable_val = PinnableSlice::new();
@@ -249,7 +251,7 @@ impl<'a, 'b: 'a> ColumnFamilyHandle<'a, 'b> {
         }
     }
 
-    pub fn multi_get(&self, options: &ReadOptions, keys: &[&[u8]]) -> Vec<Result<CVec<u8>, Status>> {
+    pub fn multi_get(&self, options: &ReadOptions, keys: &[&[u8]]) -> Vec<Result<CVec<u8>>> {
         unsafe {
             let num_keys = keys.len();
             let mut c_keys: Vec<*const c_char> = Vec::with_capacity(num_keys);
@@ -361,7 +363,7 @@ impl<'a, 'b: 'a> ColumnFamilyHandle<'a, 'b> {
         }
     }
 
-    pub fn compact_range<R: ToCompactRange>(&self, options: &CompactRangeOptions, range: R) -> Result<(), Status> {
+    pub fn compact_range<R: ToCompactRange>(&self, options: &CompactRangeOptions, range: R) -> Result<()> {
         unsafe {
             let mut status = mem::zeroed();
             ll::rocks_db_compact_range_opt_cf(self.db.raw,
@@ -447,7 +449,7 @@ impl<'a> DB<'a> {
     ///
     /// Stores nullptr in *dbptr and returns a non-OK status on error.
     /// Caller should delete *dbptr when it is no longer needed.
-    pub fn open<'b, T: AsRef<Options>, P: AsRef<Path>>(options: T, name: P) -> Result<DB<'b>, Status> {
+    pub fn open<'b, T: AsRef<Options>, P: AsRef<Path>>(options: T, name: P) -> Result<DB<'b>> {
         unsafe {
             let opt = options.as_ref().raw();
             let dbname = name.as_ref()
@@ -483,7 +485,7 @@ impl<'a> DB<'a> {
         (options: &Options, // FIXME: this should be DBOptions
          name: &str,
          column_families: Vec<CF>)
-         -> Result<(DB<'b>, Vec<ColumnFamilyHandle<'c, 'b>>), Status> {
+         -> Result<(DB<'b>, Vec<ColumnFamilyHandle<'c, 'b>>)> {
             unsafe {
                 let opt = options.raw();
                 let mut status = ptr::null_mut::<ll::rocks_status_t>();
@@ -545,7 +547,7 @@ impl<'a> DB<'a> {
     pub fn open_for_readonly<'b, P: AsRef<Path>>(options: &Options,
                                                  name: P,
                                                  error_if_log_file_exist: bool)
-                                                 -> Result<DB<'b>, Status> {
+                                                 -> Result<DB<'b>> {
         unsafe {
             let dbname = name.as_ref()
                 .to_str()
@@ -565,7 +567,7 @@ impl<'a> DB<'a> {
     /// and return the list of all column nfamilies in that DB
     /// through `column_families` argument. The ordering of
     /// column families in column_families is unspecified.
-    pub fn list_column_families(options: &Options, name: &str) -> Result<Vec<String>, Status> {
+    pub fn list_column_families(options: &Options, name: &str) -> Result<Vec<String>> {
         unsafe {
             let dbname = CString::new(name).unwrap();
             let mut status = ptr::null_mut::<ll::rocks_status_t>();
@@ -594,7 +596,7 @@ impl<'a> DB<'a> {
     pub fn create_column_family(&self,
                                 cfopts: &ColumnFamilyOptions,
                                 column_family_name: &str)
-                                -> Result<ColumnFamilyHandle, Status> {
+                                -> Result<ColumnFamilyHandle> {
         unsafe {
             let dbname = CString::new(column_family_name).unwrap();
             let mut status = ptr::null_mut::<ll::rocks_status_t>();
@@ -616,7 +618,7 @@ impl<'a> DB<'a> {
     /// Returns OK on success, and a non-OK status on error.
     ///
     /// Note: consider setting `options.sync = true`.
-    pub fn put(&self, options: &WriteOptions, key: &[u8], value: &[u8]) -> Result<(), Status> {
+    pub fn put(&self, options: &WriteOptions, key: &[u8], value: &[u8]) -> Result<()> {
         unsafe {
             let mut status = ptr::null_mut::<ll::rocks_status_t>();
             ll::rocks_db_put(self.raw(),
@@ -635,7 +637,7 @@ impl<'a> DB<'a> {
                   column_family: &ColumnFamilyHandle,
                   key: &[u8],
                   value: &[u8])
-                  -> Result<(), Status> {
+                  -> Result<()> {
         unsafe {
             let mut status = ptr::null_mut::<ll::rocks_status_t>();
             // since rocksdb::DB::put without cf is for compatibility
@@ -652,7 +654,7 @@ impl<'a> DB<'a> {
     }
 
     // pub fn put_slice(&self, options: &WriteOptions,
-    // key: &[u8], value: &[u8]) -> Result<(), Status> {
+    // key: &[u8], value: &[u8]) -> Result<()> {
     // unsafe {
     // let mut status = mem::uninitialized::<ll::rocks_status_t>();
     // ll::rocks_db_put_slice(
@@ -675,7 +677,7 @@ impl<'a> DB<'a> {
     /// did not exist in the database.
     ///
     /// Note: consider setting `options.sync = true`.
-    pub fn delete<W: AsRef<WriteOptions>>(&self, options: W, key: &[u8]) -> Result<(), Status> {
+    pub fn delete<W: AsRef<WriteOptions>>(&self, options: W, key: &[u8]) -> Result<()> {
         unsafe {
             let mut status = mem::zeroed();
             ll::rocks_db_delete(self.raw(), options.as_ref().raw(), key.as_ptr() as *const _, key.len(), &mut status);
@@ -687,7 +689,7 @@ impl<'a> DB<'a> {
                                              options: W,
                                              column_family: &ColumnFamilyHandle,
                                              key: &[u8])
-                                             -> Result<(), Status> {
+                                             -> Result<()> {
         unsafe {
             let mut status = mem::zeroed();
             ll::rocks_db_delete_cf(self.raw(),
@@ -716,7 +718,7 @@ impl<'a> DB<'a> {
     /// Merges can result in undefined behavior.
     ///
     /// Note: consider setting `options.sync = true`.
-    pub fn single_delete<W: AsRef<WriteOptions>>(&self, options: W, key: &[u8]) -> Result<(), Status> {
+    pub fn single_delete<W: AsRef<WriteOptions>>(&self, options: W, key: &[u8]) -> Result<()> {
         unsafe {
             let mut status = mem::zeroed();
             ll::rocks_db_single_delete(self.raw(),
@@ -732,7 +734,7 @@ impl<'a> DB<'a> {
                             options: &WriteOptions,
                             column_family: &ColumnFamilyHandle,
                             key: &[u8])
-                            -> Result<(), Status> {
+                            -> Result<()> {
         unsafe {
             let mut status = mem::zeroed();
             ll::rocks_db_single_delete_cf(self.raw(),
@@ -765,7 +767,7 @@ impl<'a> DB<'a> {
                                                    column_family: &ColumnFamilyHandle,
                                                    begin_key: &[u8],
                                                    end_key: &[u8])
-                                                   -> Result<(), Status> {
+                                                   -> Result<()> {
         unsafe {
             let mut status = mem::zeroed();
             ll::rocks_db_delete_range_cf(self.raw(),
@@ -785,7 +787,7 @@ impl<'a> DB<'a> {
     /// determined by the user provided merge_operator when opening DB.
     ///
     /// Note: consider setting `options.sync = true`.
-    pub fn merge<W: AsRef<WriteOptions>>(&self, options: W, key: &[u8], val: &[u8]) -> Result<(), Status> {
+    pub fn merge<W: AsRef<WriteOptions>>(&self, options: W, key: &[u8], val: &[u8]) -> Result<()> {
         unsafe {
             let mut status = mem::zeroed();
             ll::rocks_db_merge(self.raw(),
@@ -804,7 +806,7 @@ impl<'a> DB<'a> {
                                             column_family: &ColumnFamilyHandle,
                                             key: &[u8],
                                             val: &[u8])
-                                            -> Result<(), Status> {
+                                            -> Result<()> {
         unsafe {
             let mut status = mem::zeroed();
             ll::rocks_db_merge_cf(self.raw(),
@@ -827,7 +829,7 @@ impl<'a> DB<'a> {
     /// Returns OK on success, non-OK on failure.
     ///
     /// Note: consider setting `options.sync = true`.
-    pub fn write<W: AsRef<WriteOptions>>(&self, options: W, updates: WriteBatch) -> Result<(), Status> {
+    pub fn write<W: AsRef<WriteOptions>>(&self, options: W, updates: WriteBatch) -> Result<()> {
         unsafe {
             let mut status = mem::zeroed();
             ll::rocks_db_write(self.raw(), options.as_ref().raw(), updates.raw(), &mut status);
@@ -842,7 +844,7 @@ impl<'a> DB<'a> {
     /// a status for which Status::IsNotFound() returns true.
     ///
     /// May return some other Status on an error.
-    pub fn get(&self, options: &ReadOptions, key: &[u8]) -> Result<PinnableSlice, Status> {
+    pub fn get(&self, options: &ReadOptions, key: &[u8]) -> Result<PinnableSlice> {
         unsafe {
             let mut status = ptr::null_mut::<ll::rocks_status_t>();
             let def_cf = ll::rocks_db_default_column_family(self.raw());
@@ -862,7 +864,7 @@ impl<'a> DB<'a> {
                   options: &ReadOptions,
                   column_family: &ColumnFamilyHandle,
                   key: &[u8])
-                  -> Result<PinnableSlice, Status> {
+                  -> Result<PinnableSlice> {
         unsafe {
             let mut status = ptr::null_mut::<ll::rocks_status_t>();
             let pinnable_val = PinnableSlice::new();
@@ -888,7 +890,7 @@ impl<'a> DB<'a> {
     ///
     /// Note: keys will not be "de-duplicated". Duplicate keys will return
     /// duplicate values in order.
-    pub fn multi_get(&self, options: &ReadOptions, keys: &[&[u8]]) -> Vec<Result<CVec<u8>, Status>> {
+    pub fn multi_get(&self, options: &ReadOptions, keys: &[&[u8]]) -> Vec<Result<CVec<u8>>> {
         unsafe {
             let num_keys = keys.len();
             let mut c_keys: Vec<*const c_char> = Vec::with_capacity(num_keys);
@@ -928,7 +930,7 @@ impl<'a> DB<'a> {
                         options: &ReadOptions,
                         column_families: &[&ColumnFamilyHandle],
                         keys: &[&[u8]])
-                        -> Vec<Result<CVec<u8>, Status>> {
+                        -> Vec<Result<CVec<u8>>> {
         unsafe {
             let num_keys = keys.len();
             let mut c_keys: Vec<*const c_char> = Vec::with_capacity(num_keys);
@@ -1074,7 +1076,7 @@ impl<'a> DB<'a> {
     pub fn new_iterators<'c, 'b: 'c, T: AsRef<ColumnFamilyHandle<'c, 'b>>>(&'b self,
                                                                            options: &ReadOptions,
                                                                            cfs: &[T])
-                                                                           -> Result<Vec<Iterator>, Status> {
+                                                                           -> Result<Vec<Iterator>> {
         unsafe {
             let c_cfs = cfs.iter().map(|cf| cf.as_ref().raw()).collect::<Vec<_>>();
             let cfs_len = cfs.len();
@@ -1278,7 +1280,7 @@ impl<'a> DB<'a> {
     /// the files. In this case, client could set options.change_level to true, to
     /// move the files back to the minimum level capable of holding the data set
     /// or a given level (specified by non-negative options.target_level).
-    pub fn compact_range<R: ToCompactRange>(&self, options: &CompactRangeOptions, range: R) -> Result<(), Status> {
+    pub fn compact_range<R: ToCompactRange>(&self, options: &CompactRangeOptions, range: R) -> Result<()> {
         unsafe {
             let mut status = mem::zeroed();
             ll::rocks_db_compact_range_opt(self.raw(),
@@ -1300,7 +1302,7 @@ impl<'a> DB<'a> {
     /// This function will wait until all currently running background processes
     /// finish. After it returns, no background process will be run until
     /// UnblockBackgroundWork is called
-    pub fn pause_background_work(&self) -> Result<(), Status> {
+    pub fn pause_background_work(&self) -> Result<()> {
         unsafe {
             let mut status = mem::zeroed();
             ll::rocks_db_pause_background_work(self.raw(), &mut status);
@@ -1308,7 +1310,7 @@ impl<'a> DB<'a> {
         }
     }
 
-    pub fn continue_background_work(&self) -> Result<(), Status> {
+    pub fn continue_background_work(&self) -> Result<()> {
         unsafe {
             let mut status = mem::zeroed();
             ll::rocks_db_continue_background_work(self.raw(), &mut status);
@@ -1324,7 +1326,7 @@ impl<'a> DB<'a> {
     /// NOTE: Setting disable_auto_compactions to 'false' through SetOptions() API
     /// does NOT schedule a flush/compaction afterwards, and only changes the
     /// parameter itself within the column family option.
-    pub fn enable_auto_compaction(&self, column_family_handles: &[&ColumnFamilyHandle]) -> Result<(), Status> {
+    pub fn enable_auto_compaction(&self, column_family_handles: &[&ColumnFamilyHandle]) -> Result<()> {
         unsafe {
             let c_cfs = column_family_handles
                 .iter()
@@ -1368,7 +1370,7 @@ impl<'a> DB<'a> {
     // get db options
 
     /// Flush all mem-table data.
-    pub fn flush(&self, options: &FlushOptions) -> Result<(), Status> {
+    pub fn flush(&self, options: &FlushOptions) -> Result<()> {
         unsafe {
             let mut status = mem::zeroed();
             ll::rocks_db_flush(self.raw(), options.raw(), &mut status);
@@ -1381,7 +1383,7 @@ impl<'a> DB<'a> {
     /// visible until the sync is done.
     ///
     /// Currently only works if allow_mmap_writes = false in Options.
-    pub fn sync_wal(&self) -> Result<(), Status> {
+    pub fn sync_wal(&self) -> Result<()> {
         unsafe {
             let mut status = mem::zeroed();
             ll::rocks_db_sync_wal(self.raw(), &mut status);
@@ -1397,7 +1399,7 @@ impl<'a> DB<'a> {
     /// Prevent file deletions. Compactions will continue to occur,
     /// but no obsolete files will be deleted. Calling this multiple
     /// times have the same effect as calling it once.
-    pub fn disable_file_deletions(&self) -> Result<(), Status> {
+    pub fn disable_file_deletions(&self) -> Result<()> {
         unsafe {
             let mut status = mem::zeroed();
             ll::rocks_db_disable_file_deletions(self.raw(), &mut status);
@@ -1416,7 +1418,7 @@ impl<'a> DB<'a> {
     /// enabling the two methods to be called by two threads concurrently without
     /// synchronization -- i.e., file deletions will be enabled only after both
     /// threads call EnableFileDeletions()
-    pub fn enable_file_deletions(&self, force: bool) -> Result<(), Status> {
+    pub fn enable_file_deletions(&self, force: bool) -> Result<()> {
         unsafe {
             let mut status = mem::zeroed();
             ll::rocks_db_enable_file_deletions(self.raw(), force as u8, &mut status);
@@ -1441,7 +1443,7 @@ impl<'a> DB<'a> {
     /// you still need to call GetSortedWalFiles after GetLiveFiles to compensate
     /// for new data that arrived to already-flushed column families while other
     /// column families were flushing
-    pub fn get_live_files(&self, flush_memtable: bool) -> Result<(u64, Vec<String>), Status> {
+    pub fn get_live_files(&self, flush_memtable: bool) -> Result<(u64, Vec<String>)> {
         unsafe {
             let mut file_size = 0;
             let mut status = mem::zeroed();
@@ -1470,7 +1472,7 @@ impl<'a> DB<'a> {
     /// Delete the file name from the db directory and update the internal state to
     /// reflect that. Supports deletion of sst and log files only. 'name' must be
     /// path relative to the db directory. eg. 000001.sst, /archive/000003.log
-    pub fn delete_file(&self, name: &str) -> Result<(), Status> {
+    pub fn delete_file(&self, name: &str) -> Result<()> {
         unsafe {
             let mut status = mem::zeroed();
             ll::rocks_db_delete_file(self.raw(),
@@ -1639,7 +1641,7 @@ impl<'a> DB<'a> {
     pub fn ingest_external_file(&self,
                                 external_files: &[String],
                                 options: &IngestExternalFileOptions)
-                                -> Result<(), Status> {
+                                -> Result<()> {
         unsafe {
             let mut status = mem::zeroed();
             let num_files = external_files.len();
@@ -1662,7 +1664,7 @@ impl<'a> DB<'a> {
     /// Sets the globally unique ID created at database creation time by invoking
     /// `Env::GenerateUniqueId()`, in identity. Returns Status::OK if identity could
     /// be set properly
-    pub fn get_db_identity(&self) -> Result<String, Status> {
+    pub fn get_db_identity(&self) -> Result<String> {
         unsafe {
             let mut identity = String::new();
             let mut status = mem::zeroed();
@@ -1692,7 +1694,7 @@ impl<'a> DB<'a> {
 /// Destroy the contents of the specified database.
 ///
 /// Be very careful using this method.
-pub fn destroy_db(name: &str, options: &Options) -> Result<(), Status> {
+pub fn destroy_db(name: &str, options: &Options) -> Result<()> {
     unimplemented!()
 }
 
@@ -1709,7 +1711,7 @@ pub fn destroy_db(name: &str, options: &Options) -> Result<(), Status> {
 pub fn repair_db(dbname: &str,
                  db_options: &DBOptions,
                  column_families: &[&ColumnFamilyDescriptor])
-                 -> Result<(), Status> {
+                 -> Result<()> {
     unimplemented!()
 }
 
@@ -1719,13 +1721,13 @@ pub fn repair_db_with_unknown_cf_opts(dbname: &str,
                                       db_options: &DBOptions,
                                       column_families: &[&ColumnFamilyDescriptor],
                                       unknown_cf_opts: &ColumnFamilyOptions)
-                                      -> Result<(), Status> {
+                                      -> Result<()> {
     unimplemented!()
 }
 
 /// `options` These options will be used for the database and for ALL column
 /// families encountered during the repair.
-pub fn repair_db_all_cfs(dbname: &str, options: &Options) -> Result<(), Status> {
+pub fn repair_db_all_cfs(dbname: &str, options: &Options) -> Result<()> {
     unimplemented!()
 }
 
@@ -1788,65 +1790,6 @@ impl<'a> ToCompactRange for ops::RangeFrom<&'a [u8]> {
 }
 
 impl ToCompactRange for ops::RangeFull {}
-
-pub struct CVec<T> {
-    data: *mut T,
-    len: usize,
-}
-
-impl<T> CVec<T> {
-    pub unsafe fn from_raw_parts(p: *mut T, len: usize) -> CVec<T> {
-        CVec {
-            data: p,
-            len: len,
-        }
-    }
-}
-
-impl CVec<u8> {
-    pub fn to_str(&self) -> Result<&str, str::Utf8Error> {
-        str::from_utf8(self)
-    }
-}
-
-impl<T: fmt::Debug> fmt::Debug for CVec<T> {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        unsafe { slice::from_raw_parts(self.data, self.len).fmt(f) }
-    }
-}
-
-impl<T> ops::Deref for CVec<T> {
-    type Target = [T];
-    fn deref(&self) -> &[T] {
-        unsafe { slice::from_raw_parts(self.data, self.len) }
-    }
-}
-
-impl<T> AsRef<[T]> for CVec<T> {
-    fn as_ref(&self) -> &[T] {
-        unsafe { slice::from_raw_parts(self.data, self.len) }
-    }
-}
-
-impl<T> Drop for CVec<T> {
-    fn drop(&mut self) {
-        unsafe {
-            ll::free(self.data as _);
-        }
-    }
-}
-
-impl<'a, T: PartialEq> PartialEq<&'a [T]> for CVec<T> {
-    fn eq(&self, rhs: &&[T]) -> bool {
-        &self.as_ref() == rhs
-    }
-}
-
-impl<'a, 'b, T: PartialEq> PartialEq<&'b [T]> for &'a CVec<T> {
-    fn eq(&self, rhs: &&[T]) -> bool {
-        &self.as_ref() == rhs
-    }
-}
 
 #[test]
 fn it_works() {

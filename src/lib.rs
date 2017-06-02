@@ -3,7 +3,7 @@
 //! The RocksDB API in Rustic Style.
 
 /*
-n#![cfg_attr(feature = "dev", feature(plugin))]
+#![cfg_attr(feature = "dev", feature(plugin))]
 #![cfg_attr(feature = "dev", plugin(clippy))]
 #![cfg_attr(not(feature = "dev"), allow(unknown_lints))]
 #![allow(not_unsafe_ptr_arg_deref,
@@ -18,7 +18,12 @@ extern crate rocks_sys;
 #[cfg(test)]
 extern crate tempdir;
 
+use std::result;
+
 pub use error::Status;
+
+/// The type returned by RocksDB
+pub type Result<T> = result::Result<T, Status>;
 
 pub mod advanced_options;
 pub mod cache;
@@ -54,7 +59,9 @@ pub mod filter_policy;
 
 pub mod rocksdb;
 
+// for raw pointer infomation hiding
 mod to_raw;
+
 
 #[doc(hidden)]
 pub mod c {

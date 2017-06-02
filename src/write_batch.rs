@@ -1,4 +1,4 @@
-//! WriteBatch holds a collection of updates to apply atomically to a DB.
+//! `WriteBatch` holds a collection of updates to apply atomically to a DB.
 //!
 //! The updates are applied in the order in which they are added
 //! to the WriteBatch.  For example, the value of "key" will be "v3"
@@ -23,9 +23,11 @@ use rocks_sys as ll;
 
 use error::Status;
 use db::ColumnFamilyHandle;
-
 use to_raw::{ToRaw, FromRaw};
 
+use super::Result;
+
+/// `WriteBatch` holds a collection of updates to apply atomically to a DB.
 pub struct WriteBatch {
     raw: *mut ll::rocks_writebatch_t,
 }
@@ -254,7 +256,7 @@ impl WriteBatch {
     /// If there is no previous call to SetSavePoint(), Status::NotFound()
     /// will be returned.
     /// Otherwise returns Status::OK().
-    pub fn rollback_to_save_point(&mut self) -> Result<(), Status> {
+    pub fn rollback_to_save_point(&mut self) -> Result<()> {
         unsafe {
             let mut status = ptr::null_mut();
             ll::rocks_writebatch_rollback_to_save_point(self.raw, &mut status);
@@ -263,7 +265,7 @@ impl WriteBatch {
     }
 
     /// Support for iterating over the contents of a batch.
-    pub fn iterate<I: Handler>(&self, handler: I) -> Result<(), Status> {
+    pub fn iterate<I: Handler>(&self, handler: I) -> Result<()> {
         unimplemented!()
     }
 

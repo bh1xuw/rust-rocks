@@ -14,8 +14,9 @@ use env::EnvOptions;
 use options::Options;
 use db::ColumnFamilyHandle;
 use types::SequenceNumber;
-
 use to_raw::ToRaw;
+
+use super::Result;
 
 /// ExternalSstFileInfo include information about sst files created
 /// using SstFileWriter
@@ -128,7 +129,7 @@ impl SstFileWriter {
     }
 
     /// Prepare SstFileWriter to write into file located at "file_path".
-    pub fn open<P: AsRef<Path>>(&self, file_path: P) -> Result<(), Status> {
+    pub fn open<P: AsRef<Path>>(&self, file_path: P) -> Result<()> {
         unsafe {
             let mut status = mem::zeroed();
             let path = file_path.as_ref().to_str().expect("file path");
@@ -139,7 +140,7 @@ impl SstFileWriter {
 
     /// Add key, value to currently opened file
     /// REQUIRES: key is after any previously added key according to comparator.
-    pub fn add(&self, key: &[u8], value: &[u8]) -> Result<(), Status> {
+    pub fn add(&self, key: &[u8], value: &[u8]) -> Result<()> {
         unsafe {
             let mut status = mem::zeroed();
             ll::rocks_sst_file_writer_add(self.raw,
@@ -156,7 +157,7 @@ impl SstFileWriter {
     ///
     /// An optional ExternalSstFileInfo pointer can be passed to the function
     /// which will be populated with information about the created sst file
-    pub fn finish(&self) -> Result<ExternalSstFileInfo, Status> {
+    pub fn finish(&self) -> Result<ExternalSstFileInfo> {
         unsafe {
             let mut status = ptr::null_mut();
             let info = ExternalSstFileInfo::new();

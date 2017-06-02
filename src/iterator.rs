@@ -14,8 +14,10 @@ use std::os::raw::c_void;
 use rocks_sys as ll;
 
 use error::Status;
-
 use to_raw::FromRaw;
+
+use super::Result;
+
 
 /// An iterator yields a sequence of key/value pairs from a source.
 ///
@@ -146,7 +148,7 @@ impl Iterator {
     /// If an error has occurred, return it.  Else return an ok status.
     /// If non-blocking IO is requested and this operation cannot be
     /// satisfied without doing some IO, then this returns `Status::Incomplete()`.
-    pub fn get_status(&self) -> Result<(), Status> {
+    pub fn get_status(&self) -> Result<()> {
         unsafe {
             let mut status = mem::zeroed();
             ll::rocks_iter_get_status(self.raw, &mut status);
@@ -167,7 +169,7 @@ impl Iterator {
     ///
     /// - LSM version used by the iterator. The same format as DB Property
     /// - `kCurrentSuperVersionNumber`. See its comment for more information.
-    pub fn get_property(&self, property: &str) -> Result<String, Status> {
+    pub fn get_property(&self, property: &str) -> Result<String> {
         unsafe {
             let mut ret = String::new();
             let mut status = mem::zeroed();
