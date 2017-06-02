@@ -249,8 +249,8 @@ void rocks_writebatch_set_save_point(rocks_writebatch_t* b) {
 }
 
 void rocks_writebatch_rollback_to_save_point(rocks_writebatch_t* b,
-                                             rocks_status_t* status) {
-  SaveError(status, b->rep.RollbackToSavePoint());
+                                             rocks_status_t** status) {
+  SaveError(status, std::move(b->rep.RollbackToSavePoint()));
 }
 
 rocks_writebatch_t* rocks_writebatch_copy(rocks_writebatch_t* b) {

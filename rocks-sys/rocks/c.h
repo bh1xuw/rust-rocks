@@ -35,11 +35,7 @@ typedef struct rocks_ingestexternalfile_options_t
     rocks_ingestexternalfile_options_t;
 
 /* status.h */
-typedef struct rocks_status_t {
-  int code;
-  int sub_code;
-  const char* state;
-} rocks_status_t;
+typedef struct rocks_status_t rocks_status_t;
 
 /* rate_limiter.h */
 typedef struct rocks_ratelimiter_t rocks_ratelimiter_t;
@@ -111,6 +107,15 @@ typedef struct rocks_universal_compaction_options_t
 typedef struct cxx_string_vector_t cxx_string_vector_t;
 
 /* ****************************** functions ****************************** */
+
+/* status */
+rocks_status_t** rocks_status_create();
+void rocks_status_destroy(rocks_status_t* s);
+
+int rocks_status_code(rocks_status_t* s);
+int rocks_status_subcode(rocks_status_t* s);
+const char* rocks_status_get_state(rocks_status_t* s);
+
 /* slice */
 rocks_pinnable_slice_t* rocks_pinnable_slice_create();
 
@@ -644,7 +649,7 @@ void rocks_flushoptions_set_wait(rocks_flushoptions_t* options,
 /* > misc */
 rocks_logger_t* rocks_create_logger_from_options(const char* path,
                                                  rocks_options_t* opts,
-                                                 rocks_status_t* status);
+                                                 rocks_status_t** status);
 
 /* > fifo_compaction_options */
 rocks_fifo_compaction_options_t* rocks_fifo_compaction_options_create();
@@ -666,12 +671,12 @@ uint32_t rocks_column_family_handle_get_id(
 
 /* > rocks_db_t */
 rocks_db_t* rocks_db_open(const rocks_options_t* options, const char* name,
-                          rocks_status_t* status);
+                          rocks_status_t** status);
 
 rocks_db_t* rocks_db_open_for_read_only(const rocks_options_t* options,
                                         const char* name,
                                         unsigned char error_if_log_file_exist,
-                                        rocks_status_t* status);
+                                        rocks_status_t** status);
 
 void rocks_db_close(rocks_db_t* db);
 
@@ -680,116 +685,117 @@ rocks_db_t* rocks_db_open_column_families(
     int num_column_families, const char* const* column_family_names,
     const rocks_cfoptions_t* const* column_family_options,
     rocks_column_family_handle_t** column_family_handles,
-    rocks_status_t* status);
+    rocks_status_t** status);
 
 rocks_db_t* rocks_db_open_for_read_only_column_families(
     const rocks_options_t* db_options, const char* name,
     int num_column_families, const char** column_family_names,
     const rocks_cfoptions_t** column_family_options,
     rocks_column_family_handle_t** column_family_handles,
-    unsigned char error_if_log_file_exist, rocks_status_t* status);
+    unsigned char error_if_log_file_exist, rocks_status_t** status);
 
 char** rocks_db_list_column_families(const rocks_options_t* options,
                                      const char* name, size_t* lencfs,
-                                     rocks_status_t* status);
+                                     rocks_status_t** status);
 
 void rocks_db_list_column_families_destroy(char** list, size_t len);
 
 rocks_column_family_handle_t* rocks_db_create_column_family(
     rocks_db_t* db, const rocks_cfoptions_t* column_family_options,
-    const char* column_family_name, rocks_status_t* status);
+    const char* column_family_name, rocks_status_t** status);
 
 rocks_column_family_handle_t* rocks_db_default_column_family(rocks_db_t* db);
 
 void rocks_db_drop_column_family(rocks_db_t* db,
                                  rocks_column_family_handle_t* handle,
-                                 rocks_status_t* status);
+                                 rocks_status_t** status);
 
 /* FIXME: when to use? */
 void rocks_db_destroy_column_family_handle(rocks_db_t* db,
                                            rocks_column_family_handle_t* handle,
-                                           rocks_status_t* status);
+                                           rocks_status_t** status);
 
 void rocks_column_family_handle_destroy(rocks_column_family_handle_t* handle);
 
 void rocks_db_put(rocks_db_t* db, const rocks_writeoptions_t* options,
                   const char* key, size_t keylen, const char* val,
-                  size_t vallen, rocks_status_t* status);
+                  size_t vallen, rocks_status_t** status);
 
 /*
 void rocks_db_put_slice(
                       rocks_db_t* db,
                       const rocks_writeoptions_t* options,
                       const Slice* key, const Slice* value,
-                      rocks_status_t* status);
+                      rocks_status_t** status);
 */
 void rocks_db_put_cf(rocks_db_t* db, const rocks_writeoptions_t* options,
                      rocks_column_family_handle_t* column_family,
                      const char* key, size_t keylen, const char* val,
-                     size_t vallen, rocks_status_t* status);
+                     size_t vallen, rocks_status_t** status);
 
 void rocks_db_delete(rocks_db_t* db, const rocks_writeoptions_t* options,
-                     const char* key, size_t keylen, rocks_status_t* status);
+                     const char* key, size_t keylen, rocks_status_t** status);
 
 void rocks_db_delete_cf(rocks_db_t* db, const rocks_writeoptions_t* options,
                         rocks_column_family_handle_t* column_family,
-                        const char* key, size_t keylen, rocks_status_t* status);
+                        const char* key, size_t keylen,
+                        rocks_status_t** status);
 
 void rocks_db_single_delete(rocks_db_t* db, const rocks_writeoptions_t* options,
                             const char* key, size_t keylen,
-                            rocks_status_t* status);
+                            rocks_status_t** status);
 
 void rocks_db_single_delete_cf(rocks_db_t* db,
                                const rocks_writeoptions_t* options,
                                rocks_column_family_handle_t* column_family,
                                const char* key, size_t keylen,
-                               rocks_status_t* status);
+                               rocks_status_t** status);
 
 void rocks_db_delete_range_cf(rocks_db_t* db,
                               const rocks_writeoptions_t* options,
                               rocks_column_family_handle_t* column_family,
                               const char* begin_key, size_t begin_keylen,
                               const char* end_key, size_t end_keylen,
-                              rocks_status_t* status);
+                              rocks_status_t** status);
 
 void rocks_db_merge(rocks_db_t* db, const rocks_writeoptions_t* options,
                     const char* key, size_t keylen, const char* val,
-                    size_t vallen, rocks_status_t* status);
+                    size_t vallen, rocks_status_t** status);
 
 void rocks_db_merge_cf(rocks_db_t* db, const rocks_writeoptions_t* options,
                        rocks_column_family_handle_t* column_family,
                        const char* key, size_t keylen, const char* val,
-                       size_t vallen, rocks_status_t* status);
+                       size_t vallen, rocks_status_t** status);
 
 void rocks_db_write(rocks_db_t* db, const rocks_writeoptions_t* options,
-                    rocks_raw_writebatch_t* batch, rocks_status_t* status);
+                    rocks_raw_writebatch_t* batch, rocks_status_t** status);
 
 char* rocks_db_get(rocks_db_t* db, const rocks_readoptions_t* options,
                    const char* key, size_t keylen, size_t* vallen,
-                   rocks_status_t* status);
+                   rocks_status_t** status);
 
 char* rocks_db_get_cf(rocks_db_t* db, const rocks_readoptions_t* options,
                       rocks_column_family_handle_t* column_family,
                       const char* key, size_t keylen, size_t* vallen,
-                      rocks_status_t* status);
+                      rocks_status_t** status);
 
 void rocks_db_get_cf_pinnable(rocks_db_t* db,
                               const rocks_readoptions_t* options,
                               rocks_column_family_handle_t* column_family,
                               const char* key, size_t keylen,
                               rocks_pinnable_slice_t* value,
-                              rocks_status_t* status);
+                              rocks_status_t** status);
 
 void rocks_db_multi_get(rocks_db_t* db, const rocks_readoptions_t* options,
                         size_t num_keys, const char* const* keys_list,
                         const size_t* keys_list_sizes, char** values_list,
-                        size_t* values_list_sizes, rocks_status_t* status);
+                        size_t* values_list_sizes, rocks_status_t** status);
 
 void rocks_db_multi_get_cf(
     rocks_db_t* db, const rocks_readoptions_t* options,
     const rocks_column_family_handle_t* const* column_families, size_t num_keys,
     const char* const* keys_list, const size_t* keys_list_sizes,
-    char** values_list, size_t* values_list_sizes, rocks_status_t* status);
+    char** values_list, size_t* values_list_sizes, rocks_status_t** status);
 
 unsigned char rocks_db_key_may_exist(rocks_db_t* db,
                                      const rocks_readoptions_t* options,
@@ -813,7 +819,7 @@ rocks_iterator_t* rocks_db_create_iterator_cf(
 void rocks_db_create_iterators(rocks_db_t* db, rocks_readoptions_t* opts,
                                rocks_column_family_handle_t** column_families,
                                rocks_iterator_t** iterators, size_t size,
-                               rocks_status_t* status);
+                               rocks_status_t** status);
 
 rocks_snapshot_t* rocks_db_get_snapshot(rocks_db_t* db);
 
@@ -855,21 +861,21 @@ void rocks_db_compact_range_opt(rocks_db_t* db,
                                 rocks_compactrange_options_t* opt,
                                 const char* start_key, size_t start_key_len,
                                 const char* limit_key, size_t limit_key_len,
-                                rocks_status_t* status);
+                                rocks_status_t** status);
 
 void rocks_db_compact_range_opt_cf(rocks_db_t* db,
                                    rocks_compactrange_options_t* opt,
                                    rocks_column_family_handle_t* column_family,
                                    const char* start_key, size_t start_key_len,
                                    const char* limit_key, size_t limit_key_len,
-                                   rocks_status_t* status);
+                                   rocks_status_t** status);
 
-void rocks_db_pause_background_work(rocks_db_t* db, rocks_status_t* status);
-void rocks_db_continue_background_work(rocks_db_t* db, rocks_status_t* status);
+void rocks_db_pause_background_work(rocks_db_t* db, rocks_status_t** status);
+void rocks_db_continue_background_work(rocks_db_t* db, rocks_status_t** status);
 
 void rocks_db_enable_auto_compaction(
     rocks_db_t* db, const rocks_column_family_handle_t* const* column_families,
-    size_t cf_len, rocks_status_t* status);
+    size_t cf_len, rocks_status_t** status);
 
 int rocks_db_number_levels_cf(rocks_db_t* db,
                               rocks_column_family_handle_t* column_family);
@@ -886,27 +892,27 @@ int rocks_db_level0_stop_write_trigger(rocks_db_t* db);
 const char* rocks_db_get_name(rocks_db_t* db, size_t* len);
 
 void rocks_db_flush(rocks_db_t* db, rocks_flushoptions_t* options,
-                    rocks_status_t* status);
+                    rocks_status_t** status);
 void rocks_db_flush_cf(rocks_db_t* db, rocks_flushoptions_t* options,
                        rocks_column_family_handle_t* column_family,
-                       rocks_status_t* status);
+                       rocks_status_t** status);
 
-void rocks_db_sync_wal(rocks_db_t* db, rocks_status_t* status);
+void rocks_db_sync_wal(rocks_db_t* db, rocks_status_t** status);
 
 uint64_t rocks_db_get_latest_sequence_number(rocks_db_t* db);
 
-void rocks_db_disable_file_deletions(rocks_db_t* db, rocks_status_t* status);
+void rocks_db_disable_file_deletions(rocks_db_t* db, rocks_status_t** status);
 
 void rocks_db_enable_file_deletions(rocks_db_t* db, unsigned char force,
-                                    rocks_status_t* status);
+                                    rocks_status_t** status);
 
 cxx_string_vector_t* rocks_db_get_live_files(rocks_db_t* db,
                                              unsigned char flush_memtable,
                                              uint64_t* manifest_file_size,
-                                             rocks_status_t* status);
+                                             rocks_status_t** status);
 
 void rocks_db_delete_file(rocks_db_t* db, const char* name, size_t name_len,
-                          rocks_status_t* status);
+                          rocks_status_t** status);
 
 const rocks_livefiles_t* rocks_db_get_livefiles_metadata(rocks_db_t* db);
 
@@ -916,24 +922,24 @@ const rocks_column_family_metadata_t* rocks_db_get_column_family_metadata(
 void rocks_db_ingest_external_file(
     rocks_db_t* db, const char* const* file_list, const size_t* file_list_sizes,
     size_t file_len, const rocks_ingestexternalfile_options_t* options,
-    rocks_status_t* status);
+    rocks_status_t** status);
 
 void rocks_db_ingest_external_file_cf(
     rocks_db_t* db, rocks_column_family_handle_t* column_family,
     const char* const* file_list, const size_t* file_list_sizes,
     size_t file_len, const rocks_ingestexternalfile_options_t* options,
-    rocks_status_t* status);
+    rocks_status_t** status);
 
 void rocks_db_get_db_identity(rocks_db_t* db,
                               void* identity,  // *mut String
-                              rocks_status_t* status);
+                              rocks_status_t** status);
 
 /*    pub fn */
 void rocks_destroy_db(const rocks_options_t* options, const char* name,
-                      rocks_status_t* status);
+                      rocks_status_t** status);
 
 void rocks_repair_db(const rocks_options_t* options, const char* name,
-                     rocks_status_t* status);
+                     rocks_status_t** status);
 
 /* rate_limiter.h */
 rocks_ratelimiter_t* rocks_ratelimiter_create(int64_t rate_bytes_per_sec,
@@ -1101,7 +1107,7 @@ const char* rocks_writebatch_data(rocks_writebatch_t* b, size_t* size);
 void rocks_writebatch_set_save_point(rocks_writebatch_t* b);
 
 void rocks_writebatch_rollback_to_save_point(rocks_writebatch_t* b,
-                                             rocks_status_t* status);
+                                             rocks_status_t** status);
 
 rocks_writebatch_t* rocks_writebatch_copy(rocks_writebatch_t* b);
 
@@ -1236,11 +1242,11 @@ const char* rocks_iter_key(const rocks_iterator_t* iter, size_t* klen);
 const char* rocks_iter_value(const rocks_iterator_t* iter, size_t* vlen);
 
 void rocks_iter_get_status(const rocks_iterator_t* iter,
-                           rocks_status_t* status);
+                           rocks_status_t** status);
 
 void rocks_iter_get_property(const rocks_iterator_t* iter, const char* prop,
                              size_t prop_len, void* value,
-                             rocks_status_t* status);
+                             rocks_status_t** status);
 
 /* filter_policy */
 rocks_raw_filterpolicy_t* rocks_raw_filterpolicy_new_bloomfilter(
@@ -1303,15 +1309,15 @@ void rocks_sst_file_writer_destroy(rocks_sst_file_writer_t* writer);
 void rocks_sst_file_writer_open(rocks_sst_file_writer_t* writer,
                                 const char* file_path,
                                 const size_t file_path_len,
-                                rocks_status_t* status);
+                                rocks_status_t** status);
 
 void rocks_sst_file_writer_add(rocks_sst_file_writer_t* writer, const char* key,
                                const size_t key_len, const char* value,
-                               const size_t value_len, rocks_status_t* status);
+                               const size_t value_len, rocks_status_t** status);
 
 void rocks_sst_file_writer_finish(rocks_sst_file_writer_t* writer,
                                   rocks_external_sst_file_info_t* info,
-                                  rocks_status_t* status);
+                                  rocks_status_t** status);
 
 uint64_t rocks_sst_file_writer_file_size(rocks_sst_file_writer_t* writer);
 

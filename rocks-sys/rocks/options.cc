@@ -981,12 +981,11 @@ void rocks_flushoptions_set_wait(rocks_flushoptions_t* opt, unsigned char v) {
 extern "C" {
 rocks_logger_t* rocks_create_logger_from_options(const char* path,
                                                  rocks_options_t* opts,
-                                                 rocks_status_t* status) {
+                                                 rocks_status_t** status) {
   rocks_logger_t* logger = new rocks_logger_t;
   Status st =
       CreateLoggerFromOptions(std::string(path), opts->rep, &logger->rep);
-  rocks_status_convert(&st, status);
-  if (!st.ok()) {
+  if (SaveError(status, std::move(st))) {
     delete logger;
     return nullptr;
   }

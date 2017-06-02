@@ -100,7 +100,7 @@ impl<'a, 'b> Drop for ColumnFamilyHandle<'a, 'b> {
             if self.owned {
                 let mut status = mem::zeroed();
                 ll::rocks_db_destroy_column_family_handle(self.db.raw, self.raw(), &mut status);
-                assert_eq!(status.code, 0);
+                assert!(Status::from_ll(status).is_ok())
             }
         }
     }
@@ -164,7 +164,7 @@ impl<'a, 'b: 'a> ColumnFamilyHandle<'a, 'b> {
 
     pub fn put(&self, options: &WriteOptions, key: &[u8], value: &[u8]) -> Result<(), Status> {
         unsafe {
-            let mut status = mem::zeroed::<ll::rocks_status_t>();
+            let mut status = ptr::null_mut::<ll::rocks_status_t>();
             // since rocksdb::DB::put without cf is for compatibility
             ll::rocks_db_put_cf(self.db.raw,
                                 options.raw(),
@@ -174,11 +174,7 @@ impl<'a, 'b: 'a> ColumnFamilyHandle<'a, 'b> {
                                 value.as_ptr() as _,
                                 value.len(),
                                 &mut status);
-            if status.code == 0 {
-                Ok(())
-            } else {
-                Err(Status::from_ll(&status))
-            }
+            Status::from_ll(status)
         }
     }
 
@@ -191,11 +187,7 @@ impl<'a, 'b: 'a> ColumnFamilyHandle<'a, 'b> {
                                    key.as_ptr() as *const _,
                                    key.len(),
                                    &mut status);
-            if status.code == 0 {
-                Ok(())
-            } else {
-                Err(Status::from_ll(&status))
-            }
+            Status::from_ll(status)
         }
     }
 
@@ -208,11 +200,7 @@ impl<'a, 'b: 'a> ColumnFamilyHandle<'a, 'b> {
                                           key.as_ptr() as *const _,
                                           key.len(),
                                           &mut status);
-            if status.code == 0 {
-                Ok(())
-            } else {
-                Err(Status::from_ll(&status))
-            }
+            Status::from_ll(status)
         }
     }
 
@@ -227,11 +215,7 @@ impl<'a, 'b: 'a> ColumnFamilyHandle<'a, 'b> {
                                          begin_key.as_ptr() as *const _,
                                          begin_key.len(),
                                          &mut status);
-            if status.code == 0 {
-                Ok(())
-            } else {
-                Err(Status::from_ll(&status))
-            }
+            Status::from_ll(status)
         }
     }
 
@@ -246,17 +230,13 @@ impl<'a, 'b: 'a> ColumnFamilyHandle<'a, 'b> {
                                   val.as_ptr() as *const _,
                                   val.len(),
                                   &mut status);
-            if status.code == 0 {
-                Ok(())
-            } else {
-                Err(Status::from_ll(&status))
-            }
+            Status::from_ll(status)
         }
     }
 
     pub fn get(&self, options: &ReadOptions, key: &[u8]) -> Result<PinnableSlice, Status> {
         unsafe {
-            let mut status = mem::zeroed::<ll::rocks_status_t>();
+            let mut status = ptr::null_mut::<ll::rocks_status_t>();
             let pinnable_val = PinnableSlice::new();
             ll::rocks_db_get_cf_pinnable(self.db.raw,
                                          options.raw(),
@@ -265,11 +245,7 @@ impl<'a, 'b: 'a> ColumnFamilyHandle<'a, 'b> {
                                          key.len(),
                                          pinnable_val.raw(),
                                          &mut status);
-            if status.code == 0 {
-                Ok(pinnable_val)
-            } else {
-                Err(Status::from_ll(&status))
-            }
+            Status::from_ll(status).map(|_| pinnable_val)
         }
     }
 
@@ -289,7 +265,7 @@ impl<'a, 'b: 'a> ColumnFamilyHandle<'a, 'b> {
                 c_keys_lens.push(key.len());
             }
 
-            let mut status: Vec<ll::rocks_status_t> = vec![mem::zeroed(); num_keys];
+            let mut status: Vec<*mut ll::rocks_status_t> = vec![mem::zeroed(); num_keys];
             let mut ret = Vec::with_capacity(num_keys);
 
             ll::rocks_db_multi_get_cf(self.db.raw,
@@ -300,14 +276,12 @@ impl<'a, 'b: 'a> ColumnFamilyHandle<'a, 'b> {
                                       c_keys_lens.as_ptr(),
                                       vals.as_mut_ptr(),
                                       vals_lens.as_mut_ptr(),
-                                      &mut status[0] as *mut _);
+                                      status.as_mut_ptr());
 
             for i in 0..num_keys {
-                if status[i].code == 0 {
-                    ret.push(Ok(CVec::from_raw_parts(vals[i] as *mut u8, vals_lens[i])));
-                } else {
-                    ret.push(Err(Status::from_ll(&status[i])))
-                }
+                ret.push(Status::from_ll(status[i]).map(|_| {
+                    CVec::from_raw_parts(vals[i] as *mut u8, vals_lens[i])
+                }));
             }
             ret
         }
@@ -398,11 +372,7 @@ impl<'a, 'b: 'a> ColumnFamilyHandle<'a, 'b> {
                                               range.end_key() as *const _,
                                               range.end_key_len(),
                                               &mut status);
-            if status.code == 0 {
-                Ok(())
-            } else {
-                Err(Status::from_ll(&status))
-            }
+            Status::from_ll(status)
         }
     }
 
@@ -484,13 +454,9 @@ impl<'a> DB<'a> {
                 .to_str()
                 .and_then(|s| CString::new(s).ok())
                 .unwrap();
-            let mut status = mem::zeroed::<ll::rocks_status_t>();
+            let mut status = ptr::null_mut::<ll::rocks_status_t>();
             let db_ptr = ll::rocks_db_open(opt, dbname.as_ptr(), &mut status);
-            if status.code == 0 {
-                Ok(DB::from_ll(db_ptr))
-            } else {
-                Err(Status::from_ll(&status))
-            }
+            Status::from_ll(status).map(|_| DB::from_ll(db_ptr))
         }
     }
 
@@ -520,7 +486,7 @@ impl<'a> DB<'a> {
          -> Result<(DB<'b>, Vec<ColumnFamilyHandle<'c, 'b>>), Status> {
             unsafe {
                 let opt = options.raw();
-                let mut status = mem::uninitialized::<ll::rocks_status_t>();
+                let mut status = ptr::null_mut::<ll::rocks_status_t>();
                 let dbname = CString::new(name).unwrap();
 
                 let cfs: Vec<ColumnFamilyDescriptor> = column_families
@@ -550,11 +516,10 @@ impl<'a> DB<'a> {
                                                                cfopts.as_ptr(),
                                                                cfhandles.as_mut_ptr(),
                                                                &mut status);
-
-                if status.code == 0 {
+                Status::from_ll(status).map(|_| {
                     let db = DB::from_ll(db_ptr);
                     let db_ctx = db.context.clone();
-                    Ok((db,
+                    (db,
                         cfhandles
                         .into_iter()
                         .map(move |p| {
@@ -565,10 +530,8 @@ impl<'a> DB<'a> {
                                 _marker: PhantomData,
                             }
                         })
-                        .collect()))
-                } else {
-                    Err(Status::from_ll(&status))
-                }
+                     .collect())
+                })
             }
         }
 
@@ -588,33 +551,29 @@ impl<'a> DB<'a> {
                 .to_str()
                 .and_then(|s| CString::new(s).ok())
                 .unwrap();
-            let mut status = mem::zeroed::<ll::rocks_status_t>();
+            let mut status = ptr::null_mut::<ll::rocks_status_t>();
             let db_ptr = ll::rocks_db_open_for_read_only(options.raw(),
                                                          dbname.as_ptr(),
                                                          error_if_log_file_exist as u8,
                                                          &mut status);
-            if status.code == 0 {
-                Ok(DB::from_ll(db_ptr))
-            } else {
-                Err(Status::from_ll(&status))
-            }
+            Status::from_ll(status).map(|_| DB::from_ll(db_ptr))
         }
     }
 
 
     /// `ListColumnFamilies` will open the DB specified by argument name
-    /// and return the list of all column families in that DB
+    /// and return the list of all column nfamilies in that DB
     /// through `column_families` argument. The ordering of
     /// column families in column_families is unspecified.
     pub fn list_column_families(options: &Options, name: &str) -> Result<Vec<String>, Status> {
         unsafe {
             let dbname = CString::new(name).unwrap();
-            let mut status = mem::zeroed::<ll::rocks_status_t>();
+            let mut status = ptr::null_mut::<ll::rocks_status_t>();
             let mut lencfs = 0;
             let cfs = ll::rocks_db_list_column_families(options.raw(), dbname.as_ptr(), &mut lencfs, &mut status);
-            if status.code == 0 {
+            Status::from_ll(status).map(|_| {
                 if lencfs == 0 {
-                    Ok(vec![])
+                    vec![]
                 } else {
                     let mut ret = Vec::with_capacity(lencfs);
                     for i in 0..lencfs {
@@ -624,11 +583,9 @@ impl<'a> DB<'a> {
                                  .to_string());
                     }
                     ll::rocks_db_list_column_families_destroy(cfs, lencfs);
-                    Ok(ret)
+                    ret
                 }
-            } else {
-                Err(Status::from_ll(&status))
-            }
+            })
         }
     }
 
@@ -640,19 +597,17 @@ impl<'a> DB<'a> {
                                 -> Result<ColumnFamilyHandle, Status> {
         unsafe {
             let dbname = CString::new(column_family_name).unwrap();
-            let mut status = mem::uninitialized::<ll::rocks_status_t>();
+            let mut status = ptr::null_mut::<ll::rocks_status_t>();
 
             let handle = ll::rocks_db_create_column_family(self.raw(), cfopts.raw(), dbname.as_ptr(), &mut status);
-            if status.code == 0 {
-                Ok(ColumnFamilyHandle {
+            Status::from_ll(status).map(|_| {
+                ColumnFamilyHandle {
                     raw: handle,
                     db: self.context.clone(),
                     owned: true,
                     _marker: PhantomData,
-                })
-            } else {
-                Err(Status::from_ll(&status))
-            }
+                }
+            })
         }
     }
 
@@ -663,7 +618,7 @@ impl<'a> DB<'a> {
     /// Note: consider setting `options.sync = true`.
     pub fn put(&self, options: &WriteOptions, key: &[u8], value: &[u8]) -> Result<(), Status> {
         unsafe {
-            let mut status = mem::zeroed::<ll::rocks_status_t>();
+            let mut status = ptr::null_mut::<ll::rocks_status_t>();
             ll::rocks_db_put(self.raw(),
                              options.raw(),
                              key.as_ptr() as _,
@@ -671,11 +626,7 @@ impl<'a> DB<'a> {
                              value.as_ptr() as _,
                              value.len(),
                              &mut status);
-            if status.code == 0 {
-                Ok(())
-            } else {
-                Err(Status::from_ll(&status))
-            }
+            Status::from_ll(status)
         }
     }
 
@@ -686,7 +637,7 @@ impl<'a> DB<'a> {
                   value: &[u8])
                   -> Result<(), Status> {
         unsafe {
-            let mut status = mem::zeroed::<ll::rocks_status_t>();
+            let mut status = ptr::null_mut::<ll::rocks_status_t>();
             // since rocksdb::DB::put without cf is for compatibility
             ll::rocks_db_put_cf(self.raw(),
                                 options.raw(),
@@ -696,11 +647,7 @@ impl<'a> DB<'a> {
                                 value.as_ptr() as _,
                                 value.len(),
                                 &mut status);
-            if status.code == 0 {
-                Ok(())
-            } else {
-                Err(Status::from_ll(&status))
-            }
+            Status::from_ll(status)
         }
     }
 
@@ -732,11 +679,7 @@ impl<'a> DB<'a> {
         unsafe {
             let mut status = mem::zeroed();
             ll::rocks_db_delete(self.raw(), options.as_ref().raw(), key.as_ptr() as *const _, key.len(), &mut status);
-            if status.code == 0 {
-                Ok(())
-            } else {
-                Err(Status::from_ll(&status))
-            }
+            Status::from_ll(status)
         }
     }
 
@@ -753,11 +696,7 @@ impl<'a> DB<'a> {
                                    key.as_ptr() as *const _,
                                    key.len(),
                                    &mut status);
-            if status.code == 0 {
-                Ok(())
-            } else {
-                Err(Status::from_ll(&status))
-            }
+            Status::from_ll(status)
         }
     }
 
@@ -785,11 +724,7 @@ impl<'a> DB<'a> {
                                        key.as_ptr() as *const _,
                                        key.len(),
                                        &mut status);
-            if status.code == 0 {
-                Ok(())
-            } else {
-                Err(Status::from_ll(&status))
-            }
+            Status::from_ll(status)
         }
     }
 
@@ -806,11 +741,7 @@ impl<'a> DB<'a> {
                                           key.as_ptr() as *const _,
                                           key.len(),
                                           &mut status);
-            if status.code == 0 {
-                Ok(())
-            } else {
-                Err(Status::from_ll(&status))
-            }
+            Status::from_ll(status)
         }
     }
 
@@ -845,11 +776,7 @@ impl<'a> DB<'a> {
                                          begin_key.as_ptr() as *const _,
                                          begin_key.len(),
                                          &mut status);
-            if status.code == 0 {
-                Ok(())
-            } else {
-                Err(Status::from_ll(&status))
-            }
+            Status::from_ll(status)
         }
     }
 
@@ -868,11 +795,7 @@ impl<'a> DB<'a> {
                                val.as_ptr() as *const _,
                                val.len(),
                                &mut status);
-            if status.code == 0 {
-                Ok(())
-            } else {
-                Err(Status::from_ll(&status))
-            }
+            Status::from_ll(status)
         }
     }
 
@@ -892,11 +815,7 @@ impl<'a> DB<'a> {
                                   val.as_ptr() as *const _,
                                   val.len(),
                                   &mut status);
-            if status.code == 0 {
-                Ok(())
-            } else {
-                Err(Status::from_ll(&status))
-            }
+            Status::from_ll(status)
         }
     }
 
@@ -912,11 +831,7 @@ impl<'a> DB<'a> {
         unsafe {
             let mut status = mem::zeroed();
             ll::rocks_db_write(self.raw(), options.as_ref().raw(), updates.raw(), &mut status);
-            if status.code == 0 {
-                Ok(())
-            } else {
-                Err(Status::from_ll(&status))
-            }
+            Status::from_ll(status)
         }
     }
 
@@ -929,7 +844,7 @@ impl<'a> DB<'a> {
     /// May return some other Status on an error.
     pub fn get(&self, options: &ReadOptions, key: &[u8]) -> Result<PinnableSlice, Status> {
         unsafe {
-            let mut status = mem::zeroed::<ll::rocks_status_t>();
+            let mut status = ptr::null_mut::<ll::rocks_status_t>();
             let def_cf = ll::rocks_db_default_column_family(self.raw());
             let pinnable_val = PinnableSlice::new();
             ll::rocks_db_get_cf_pinnable(self.raw(),
@@ -939,11 +854,7 @@ impl<'a> DB<'a> {
                                          key.len(),
                                          pinnable_val.raw(),
                                          &mut status);
-            if status.code == 0 {
-                Ok(pinnable_val)
-            } else {
-                Err(Status::from_ll(&status))
-            }
+            Status::from_ll(status).map(|_| pinnable_val)
         }
     }
 
@@ -953,7 +864,7 @@ impl<'a> DB<'a> {
                   key: &[u8])
                   -> Result<PinnableSlice, Status> {
         unsafe {
-            let mut status = mem::zeroed::<ll::rocks_status_t>();
+            let mut status = ptr::null_mut::<ll::rocks_status_t>();
             let pinnable_val = PinnableSlice::new();
             ll::rocks_db_get_cf_pinnable(self.raw(),
                                          options.raw(),
@@ -962,11 +873,7 @@ impl<'a> DB<'a> {
                                          key.len(),
                                          pinnable_val.raw(),
                                          &mut status);
-            if status.code == 0 {
-                Ok(pinnable_val)
-            } else {
-                Err(Status::from_ll(&status))
-            }
+            Status::from_ll(status).map(|_| pinnable_val)
         }
     }
 
@@ -995,7 +902,7 @@ impl<'a> DB<'a> {
                 c_keys_lens.push(key.len());
             }
 
-            let mut status: Vec<ll::rocks_status_t> = vec![mem::zeroed(); num_keys];
+            let mut status: Vec<*mut ll::rocks_status_t> = vec![mem::zeroed(); num_keys];
             let mut ret = Vec::with_capacity(num_keys);
 
             ll::rocks_db_multi_get(self.raw(),
@@ -1005,14 +912,13 @@ impl<'a> DB<'a> {
                                    c_keys_lens.as_ptr(),
                                    vals.as_mut_ptr(),
                                    vals_lens.as_mut_ptr(),
-                                   &mut status[0] as *mut _);
+                                   status.as_mut_ptr());
 
             for i in 0..num_keys {
-                if status[i].code == 0 {
-                    ret.push(Ok(CVec::from_raw_parts(vals[i] as *mut u8, vals_lens[i])));
-                } else {
-                    ret.push(Err(Status::from_ll(&status[i])))
-                }
+                ret.push(
+                    Status::from_ll(status[i]).map(|_| {
+                        CVec::from_raw_parts(vals[i] as *mut u8, vals_lens[i])
+                    }));
             }
             ret
         }
@@ -1038,7 +944,7 @@ impl<'a> DB<'a> {
                 c_cfs.push(column_families[i].raw() as *const _);
             }
 
-            let mut status: Vec<ll::rocks_status_t> = vec![mem::zeroed(); num_keys];
+            let mut status: Vec<*mut ll::rocks_status_t> = vec![mem::zeroed(); num_keys];
             let mut ret = Vec::with_capacity(num_keys);
 
             ll::rocks_db_multi_get_cf(self.raw(),
@@ -1049,14 +955,13 @@ impl<'a> DB<'a> {
                                       c_keys_lens.as_ptr(),
                                       vals.as_mut_ptr(),
                                       vals_lens.as_mut_ptr(),
-                                      &mut status[0] as *mut _);
+                                      status.as_mut_ptr());
 
             for i in 0..num_keys {
-                if status[i].code == 0 {
-                    ret.push(Ok(CVec::from_raw_parts(vals[i] as *mut u8, vals_lens[i])));
-                } else {
-                    ret.push(Err(Status::from_ll(&status[i])))
-                }
+                ret.push(
+                    Status::from_ll(status[i]).map(|_| {
+                        CVec::from_raw_parts(vals[i] as *mut u8, vals_lens[i])
+                    }));
             }
             ret
         }
@@ -1182,14 +1087,12 @@ impl<'a> DB<'a> {
                                           c_iters.as_mut_ptr(),
                                           cfs_len,
                                           &mut status);
-            if status.code == 0 {
-                Ok(c_iters
-                   .into_iter()
-                   .map(|ptr| Iterator::from_ll(ptr))
-                   .collect())
-            } else {
-                Err(Status::from_ll(&status))
-            }
+            Status::from_ll(status).map(|_| {
+                c_iters
+                    .into_iter()
+                    .map(|ptr| Iterator::from_ll(ptr))
+                    .collect()
+            })
         }
     }
 
@@ -1385,11 +1288,7 @@ impl<'a> DB<'a> {
                                            range.end_key() as *const _,
                                            range.end_key_len(),
                                            &mut status);
-            if status.code == 0 {
-                Ok(())
-            } else {
-                Err(Status::from_ll(&status))
-            }
+            Status::from_ll(status)
         }
     }
 
@@ -1405,11 +1304,7 @@ impl<'a> DB<'a> {
         unsafe {
             let mut status = mem::zeroed();
             ll::rocks_db_pause_background_work(self.raw(), &mut status);
-            if status.code == 0 {
-                Ok(())
-            } else {
-                Err(Status::from_ll(&status))
-            }
+            Status::from_ll(status)
         }
     }
 
@@ -1417,11 +1312,7 @@ impl<'a> DB<'a> {
         unsafe {
             let mut status = mem::zeroed();
             ll::rocks_db_continue_background_work(self.raw(), &mut status);
-            if status.code == 0 {
-                Ok(())
-            } else {
-                Err(Status::from_ll(&status))
-            }
+            Status::from_ll(status)
         }
     }
 
@@ -1442,11 +1333,7 @@ impl<'a> DB<'a> {
             let cfs_len = column_family_handles.len();
             let mut status = mem::zeroed();
             ll::rocks_db_enable_auto_compaction(self.raw(), c_cfs.as_ptr(), cfs_len, &mut status);
-            if status.code == 0 {
-                Ok(())
-            } else {
-                Err(Status::from_ll(&status))
-            }
+            Status::from_ll(status)
         }
     }
 
@@ -1485,11 +1372,7 @@ impl<'a> DB<'a> {
         unsafe {
             let mut status = mem::zeroed();
             ll::rocks_db_flush(self.raw(), options.raw(), &mut status);
-            if status.code == 0 {
-                Ok(())
-            } else {
-                Err(Status::from_ll(&status))
-            }
+            Status::from_ll(status)
         }
     }
 
@@ -1502,11 +1385,7 @@ impl<'a> DB<'a> {
         unsafe {
             let mut status = mem::zeroed();
             ll::rocks_db_sync_wal(self.raw(), &mut status);
-            if status.code == 0 {
-                Ok(())
-            } else {
-                Err(Status::from_ll(&status))
-            }
+            Status::from_ll(status)
         }
     }
 
@@ -1522,11 +1401,7 @@ impl<'a> DB<'a> {
         unsafe {
             let mut status = mem::zeroed();
             ll::rocks_db_disable_file_deletions(self.raw(), &mut status);
-            if status.code == 0 {
-                Ok(())
-            } else {
-                Err(Status::from_ll(&status))
-            }
+            Status::from_ll(status)
         }
     }
 
@@ -1545,11 +1420,7 @@ impl<'a> DB<'a> {
         unsafe {
             let mut status = mem::zeroed();
             ll::rocks_db_enable_file_deletions(self.raw(), force as u8, &mut status);
-            if status.code == 0 {
-                Ok(())
-            } else {
-                Err(Status::from_ll(&status))
-            }
+            Status::from_ll(status)
         }
     }
 
@@ -1578,20 +1449,17 @@ impl<'a> DB<'a> {
                                                     flush_memtable as u8,
                                                     &mut file_size,
                                                     &mut status);
-            if status.code == 0 {
+            Status::from_ll(status).map(|_| {
                 let n = ll::cxx_string_vector_size(files) as usize;
                 let mut ret = Vec::with_capacity(n);
                 for i in 0 .. n {
                     let f = slice::from_raw_parts(ll::cxx_string_vector_nth(files, i) as *const u8,
                                                   ll::cxx_string_vector_nth_size(files, i));
-
                     ret.push(String::from_utf8_lossy(f).to_owned().to_string());
                 }
                 ll::cxx_string_vector_destory(files);
-                Ok((file_size, ret))
-            } else {
-                Err(Status::from_ll(&status))
-            }
+                (file_size, ret)
+            })
         }
     }
 
@@ -1609,11 +1477,7 @@ impl<'a> DB<'a> {
                                      name.as_bytes().as_ptr() as *const _,
                                      name.len(),
                                      &mut status);
-            if status.code == 0 {
-                Ok(())
-            } else {
-                Err(Status::from_ll(&status))
-            }
+            Status::from_ll(status)
         }
     }
 
@@ -1791,11 +1655,7 @@ impl<'a> DB<'a> {
                                               num_files,
                                               options.raw(),
                                               &mut status);
-            if status.code == 0 {
-                Ok(())
-            } else {
-                Err(Status::from_ll(&status))
-            }
+            Status::from_ll(status)
         }
     }
 
@@ -1807,11 +1667,7 @@ impl<'a> DB<'a> {
             let mut identity = String::new();
             let mut status = mem::zeroed();
             ll::rocks_db_get_db_identity(self.raw(), &mut identity as *mut String as *mut _, &mut status);
-            if status.code == 0 {
-                Ok(identity)
-            } else {
-                Err(Status::from_ll(&status))
-            }
+            Status::from_ll(status).map(|_| identity)
         }
     }
 

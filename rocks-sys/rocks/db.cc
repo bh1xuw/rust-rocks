@@ -24,16 +24,16 @@ uint32_t rocks_column_family_handle_get_id(
 extern "C" {
 // DB
 rocks_db_t* rocks_db_open(const rocks_options_t* options, const char* name,
-                          rocks_status_t* status) {
+                          rocks_status_t** status) {
   DB* db = nullptr;
   Status st = DB::Open(options->rep, std::string(name), &db);
-  rocks_status_convert(&st, status);
-  if (st.ok()) {
+  if (SaveError(status, std::move(st))) {
+    return nullptr;
+  } else {
     rocks_db_t* result = new rocks_db_t;
     result->rep = db;
     return result;
   }
-  return nullptr;
 }
 
 void rocks_db_close(rocks_db_t* db) {
@@ -44,18 +44,17 @@ void rocks_db_close(rocks_db_t* db) {
 rocks_db_t* rocks_db_open_for_read_only(const rocks_options_t* options,
                                         const char* name,
                                         unsigned char error_if_log_file_exist,
-                                        rocks_status_t* status) {
-  DB* db;
+                                        rocks_status_t** status) {
+  DB* db = nullptr;
   auto st = DB::OpenForReadOnly(options->rep, std::string(name), &db,
                                 error_if_log_file_exist);
-  rocks_status_convert(&st, status);
-
-  if (st.ok()) {
+  if (SaveError(status, std::move(st))) {
+    return nullptr;
+  } else {
     rocks_db_t* result = new rocks_db_t;
     result->rep = db;
     return result;
   }
-  return nullptr;
 }
 
 rocks_db_t* rocks_db_open_column_families(
@@ -63,7 +62,7 @@ rocks_db_t* rocks_db_open_column_families(
     int num_column_families, const char* const* column_family_names,
     const rocks_cfoptions_t* const* column_family_options,
     rocks_column_family_handle_t** column_family_handles,
-    rocks_status_t* status) {
+    rocks_status_t** status) {
   std::vector<ColumnFamilyDescriptor> column_families;
   for (int i = 0; i < num_column_families; i++) {
     column_families.push_back(ColumnFamilyDescriptor(
@@ -71,7 +70,7 @@ rocks_db_t* rocks_db_open_column_families(
         ColumnFamilyOptions(column_family_options[i]->rep)));
   }
 
-  DB* db;
+  DB* db = nullptr;
   std::vector<ColumnFamilyHandle*> handles;
   if (SaveError(status, DB::Open(DBOptions(db_options->rep), std::string(name),
                                  column_families, &handles, &db))) {
@@ -93,7 +92,7 @@ rocks_db_t* rocks_db_open_for_read_only_column_families(
     int num_column_families, const char* const* column_family_names,
     const rocks_cfoptions_t* const* column_family_options,
     rocks_column_family_handle_t** column_family_handles,
-    unsigned char error_if_log_file_exist, rocks_status_t* status) {
+    unsigned char error_if_log_file_exist, rocks_status_t** status) {
   std::vector<ColumnFamilyDescriptor> column_families;
   for (int i = 0; i < num_column_families; i++) {
     column_families.push_back(ColumnFamilyDescriptor(
@@ -122,12 +121,11 @@ rocks_db_t* rocks_db_open_for_read_only_column_families(
 
 char** rocks_db_list_column_families(const rocks_options_t* options,
                                      const char* name, size_t* lencfs,
-                                     rocks_status_t* status) {
+                                     rocks_status_t** status) {
   std::vector<std::string> fams;
   auto st =
       DB::ListColumnFamilies(DBOptions(options->rep), std::string(name), &fams);
-  rocks_status_convert(&st, status);
-  if (!st.ok()) {
+  if (SaveError(status, std::move(st))) {
     *lencfs = 0;
     return nullptr;
   }
@@ -151,7 +149,7 @@ void rocks_db_list_column_families_destroy(char** list, size_t len) {
 
 rocks_column_family_handle_t* rocks_db_create_column_family(
     rocks_db_t* db, const rocks_cfoptions_t* column_family_options,
-    const char* column_family_name, rocks_status_t* status) {
+    const char* column_family_name, rocks_status_t** status) {
   rocks_column_family_handle_t* handle = new rocks_column_family_handle_t;
   SaveError(status, db->rep->CreateColumnFamily(
                         ColumnFamilyOptions(column_family_options->rep),
@@ -165,13 +163,13 @@ rocks_column_family_handle_t* rocks_db_default_column_family(rocks_db_t* db) {
 
 void rocks_db_drop_column_family(rocks_db_t* db,
                                  rocks_column_family_handle_t* handle,
-                                 rocks_status_t* status) {
+                                 rocks_status_t** status) {
   SaveError(status, db->rep->DropColumnFamily(handle->rep));
 }
 
 void rocks_db_destroy_column_family_handle(rocks_db_t* db,
                                            rocks_column_family_handle_t* handle,
-                                           rocks_status_t* status) {
+                                           rocks_status_t** status) {
   SaveError(status, db->rep->DestroyColumnFamilyHandle(handle->rep));
 }
 
@@ -182,7 +180,7 @@ void rocks_column_family_handle_destroy(rocks_column_family_handle_t* handle) {
 
 void rocks_db_put(rocks_db_t* db, const rocks_writeoptions_t* options,
                   const char* key, size_t keylen, const char* val,
-                  size_t vallen, rocks_status_t* status) {
+                  size_t vallen, rocks_status_t** status) {
   SaveError(status,
             db->rep->Put(options->rep, Slice(key, keylen), Slice(val, vallen)));
 }
@@ -192,7 +190,7 @@ void rocks_db_put_slice(
                   rocks_db_t* db,
                   const rocks_writeoptions_t* options,
                   const Slice* key, const Slice* value,
-                  rocks_status_t* status) {
+                  rocks_status_t** status) {
   SaveError(status,
             db->rep->Put(options->rep, *key, *value));
             }*/
@@ -200,27 +198,27 @@ void rocks_db_put_slice(
 void rocks_db_put_cf(rocks_db_t* db, const rocks_writeoptions_t* options,
                      rocks_column_family_handle_t* column_family,
                      const char* key, size_t keylen, const char* val,
-                     size_t vallen, rocks_status_t* status) {
+                     size_t vallen, rocks_status_t** status) {
   SaveError(status, db->rep->Put(options->rep, column_family->rep,
                                  Slice(key, keylen), Slice(val, vallen)));
 }
 
 void rocks_db_delete(rocks_db_t* db, const rocks_writeoptions_t* options,
-                     const char* key, size_t keylen, rocks_status_t* status) {
+                     const char* key, size_t keylen, rocks_status_t** status) {
   SaveError(status, db->rep->Delete(options->rep, Slice(key, keylen)));
 }
 
 void rocks_db_delete_cf(rocks_db_t* db, const rocks_writeoptions_t* options,
                         rocks_column_family_handle_t* column_family,
                         const char* key, size_t keylen,
-                        rocks_status_t* status) {
+                        rocks_status_t** status) {
   SaveError(status, db->rep->Delete(options->rep, column_family->rep,
                                     Slice(key, keylen)));
 }
 
 void rocks_db_single_delete(rocks_db_t* db, const rocks_writeoptions_t* options,
                             const char* key, size_t keylen,
-                            rocks_status_t* status) {
+                            rocks_status_t** status) {
   SaveError(status, db->rep->SingleDelete(options->rep, Slice(key, keylen)));
 }
 
@@ -228,7 +226,7 @@ void rocks_db_single_delete_cf(rocks_db_t* db,
                                const rocks_writeoptions_t* options,
                                rocks_column_family_handle_t* column_family,
                                const char* key, size_t keylen,
-                               rocks_status_t* status) {
+                               rocks_status_t** status) {
   SaveError(status, db->rep->SingleDelete(options->rep, column_family->rep,
                                           Slice(key, keylen)));
 }
@@ -238,7 +236,7 @@ void rocks_db_delete_range_cf(rocks_db_t* db,
                               rocks_column_family_handle_t* column_family,
                               const char* begin_key, size_t begin_keylen,
                               const char* end_key, size_t end_keylen,
-                              rocks_status_t* status) {
+                              rocks_status_t** status) {
   SaveError(status, db->rep->DeleteRange(options->rep, column_family->rep,
                                          Slice(begin_key, begin_keylen),
                                          Slice(end_key, end_keylen)));
@@ -246,7 +244,7 @@ void rocks_db_delete_range_cf(rocks_db_t* db,
 
 void rocks_db_merge(rocks_db_t* db, const rocks_writeoptions_t* options,
                     const char* key, size_t keylen, const char* val,
-                    size_t vallen, rocks_status_t* status) {
+                    size_t vallen, rocks_status_t** status) {
   SaveError(status, db->rep->Merge(options->rep, Slice(key, keylen),
                                    Slice(val, vallen)));
 }
@@ -254,7 +252,7 @@ void rocks_db_merge(rocks_db_t* db, const rocks_writeoptions_t* options,
 void rocks_db_merge_cf(rocks_db_t* db, const rocks_writeoptions_t* options,
                        rocks_column_family_handle_t* column_family,
                        const char* key, size_t keylen, const char* val,
-                       size_t vallen, rocks_status_t* status) {
+                       size_t vallen, rocks_status_t** status) {
   SaveError(status, db->rep->Merge(options->rep, column_family->rep,
                                    Slice(key, keylen), Slice(val, vallen)));
 }
@@ -262,27 +260,20 @@ void rocks_db_merge_cf(rocks_db_t* db, const rocks_writeoptions_t* options,
 void rocks_db_write(
     rocks_db_t* db, const rocks_writeoptions_t* options,
     rocks_raw_writebatch_t* batch,  // raw is pointer, non-raw is a wrapper
-    rocks_status_t* status) {
-  SaveError(status,
-            db->rep->Write(options->rep, reinterpret_cast<WriteBatch*>(batch)));
+    rocks_status_t** status) {
+  auto st = db->rep->Write(options->rep, reinterpret_cast<WriteBatch*>(batch));
+  SaveError(status, std::move(st));
 }
 
 char* rocks_db_get(rocks_db_t* db, const rocks_readoptions_t* options,
                    const char* key, size_t keylen, size_t* vallen,
-                   rocks_status_t* status) {
+                   rocks_status_t** status) {
   char* result = nullptr;
   std::string tmp;
-  Status s = db->rep->Get(options->rep, Slice(key, keylen), &tmp);
-  SaveError(status, s);
-
-  if (s.ok()) {
+  Status st = db->rep->Get(options->rep, Slice(key, keylen), &tmp);
+  if (!SaveError(status, std::move(st))) {
     *vallen = tmp.size();
     result = CopyString(tmp);
-  } else {
-    *vallen = 0;
-    if (!s.IsNotFound()) {
-      SaveError(status, s);
-    }
   }
   return result;
 }
@@ -290,19 +281,14 @@ char* rocks_db_get(rocks_db_t* db, const rocks_readoptions_t* options,
 char* rocks_db_get_cf(rocks_db_t* db, const rocks_readoptions_t* options,
                       rocks_column_family_handle_t* column_family,
                       const char* key, size_t keylen, size_t* vallen,
-                      rocks_status_t* status) {
+                      rocks_status_t** status) {
   char* result = nullptr;
   std::string tmp;
-  Status s =
+  Status st =
       db->rep->Get(options->rep, column_family->rep, Slice(key, keylen), &tmp);
-  if (s.ok()) {
+  if (!SaveError(status, std::move(st))) {
     *vallen = tmp.size();
     result = CopyString(tmp);
-  } else {
-    *vallen = 0;
-    if (!s.IsNotFound()) {
-      SaveError(status, s);
-    }
   }
   return result;
 }
@@ -312,16 +298,16 @@ void rocks_db_get_cf_pinnable(rocks_db_t* db,
                               rocks_column_family_handle_t* column_family,
                               const char* key, size_t keylen,
                               rocks_pinnable_slice_t* value,
-                              rocks_status_t* status) {
-  Status s = db->rep->Get(options->rep, column_family->rep, Slice(key, keylen),
-                          &value->rep);
-  SaveError(status, s);
+                              rocks_status_t** status) {
+  Status st = db->rep->Get(options->rep, column_family->rep, Slice(key, keylen),
+                           &value->rep);
+  SaveError(status, std::move(st));
 }
 
 void rocks_db_multi_get(rocks_db_t* db, const rocks_readoptions_t* options,
                         size_t num_keys, const char* const* keys_list,
                         const size_t* keys_list_sizes, char** values_list,
-                        size_t* values_list_sizes, rocks_status_t* status) {
+                        size_t* values_list_sizes, rocks_status_t** status) {
   std::vector<Slice> keys(num_keys);
   for (size_t i = 0; i < num_keys; i++) {
     keys[i] = Slice(keys_list[i], keys_list_sizes[i]);
@@ -329,13 +315,12 @@ void rocks_db_multi_get(rocks_db_t* db, const rocks_readoptions_t* options,
   std::vector<std::string> values(num_keys);
   std::vector<Status> statuses = db->rep->MultiGet(options->rep, keys, &values);
   for (size_t i = 0; i < num_keys; i++) {
-    rocks_status_convert(&statuses[i], &status[i]);
-    if (statuses[i].ok()) {
-      values_list[i] = CopyString(values[i]);
-      values_list_sizes[i] = values[i].size();
-    } else {
+    if (SaveError(status + i, std::move(Status(statuses[i])))) {
       values_list[i] = nullptr;
       values_list_sizes[i] = 0;
+    } else {
+      values_list[i] = CopyString(values[i]);
+      values_list_sizes[i] = values[i].size();
     }
   }
 }
@@ -344,7 +329,7 @@ void rocks_db_multi_get_cf(
     rocks_db_t* db, const rocks_readoptions_t* options,
     const rocks_column_family_handle_t* const* column_families, size_t num_keys,
     const char* const* keys_list, const size_t* keys_list_sizes,
-    char** values_list, size_t* values_list_sizes, rocks_status_t* status) {
+    char** values_list, size_t* values_list_sizes, rocks_status_t** status) {
   std::vector<Slice> keys(num_keys);
   std::vector<ColumnFamilyHandle*> cfs(num_keys);
   for (size_t i = 0; i < num_keys; i++) {
@@ -355,13 +340,12 @@ void rocks_db_multi_get_cf(
   std::vector<Status> statuses =
       db->rep->MultiGet(options->rep, cfs, keys, &values);
   for (size_t i = 0; i < num_keys; i++) {
-    rocks_status_convert(&statuses[i], &status[i]);
-    if (statuses[i].ok()) {
-      values_list[i] = CopyString(values[i]);
-      values_list_sizes[i] = values[i].size();
-    } else {
+    if (SaveError(status + i, std::move(Status(statuses[i])))) {
       values_list[i] = nullptr;
       values_list_sizes[i] = 0;
+    } else {
+      values_list[i] = CopyString(values[i]);
+      values_list_sizes[i] = values[i].size();
     }
   }
 }
@@ -424,7 +408,7 @@ rocks_iterator_t* rocks_db_create_iterator_cf(
 void rocks_db_create_iterators(rocks_db_t* db, rocks_readoptions_t* opts,
                                rocks_column_family_handle_t** column_families,
                                rocks_iterator_t** iterators, size_t size,
-                               rocks_status_t* status) {
+                               rocks_status_t** status) {
   std::vector<ColumnFamilyHandle*> column_families_vec;
   for (size_t i = 0; i < size; i++) {
     column_families_vec.push_back(column_families[i]->rep);
@@ -433,7 +417,7 @@ void rocks_db_create_iterators(rocks_db_t* db, rocks_readoptions_t* opts,
   std::vector<Iterator*> res;
   Status st = db->rep->NewIterators(opts->rep, column_families_vec, &res);
   assert(res.size() == size);
-  if (SaveError(status, st)) {
+  if (SaveError(status, std::move(st))) {
     return;
   }
 
@@ -530,14 +514,14 @@ void rocks_db_compact_range_opt(rocks_db_t* db,
                                 rocks_compactrange_options_t* opt,
                                 const char* start_key, size_t start_key_len,
                                 const char* limit_key, size_t limit_key_len,
-                                rocks_status_t* status) {
+                                rocks_status_t** status) {
   Slice a, b;
   auto st = db->rep->CompactRange(
       opt->rep,
       // Pass nullptr Slice if corresponding "const char*" is nullptr
       (start_key ? (a = Slice(start_key, start_key_len), &a) : nullptr),
       (limit_key ? (b = Slice(limit_key, limit_key_len), &b) : nullptr));
-  SaveError(status, st);
+  SaveError(status, std::move(st));
 }
 
 void rocks_db_compact_range_opt_cf(rocks_db_t* db,
@@ -545,32 +529,33 @@ void rocks_db_compact_range_opt_cf(rocks_db_t* db,
                                    rocks_column_family_handle_t* column_family,
                                    const char* start_key, size_t start_key_len,
                                    const char* limit_key, size_t limit_key_len,
-                                   rocks_status_t* status) {
+                                   rocks_status_t** status) {
   Slice a, b;
   auto st = db->rep->CompactRange(
       opt->rep, column_family->rep,
       // Pass nullptr Slice if corresponding "const char*" is nullptr
       (start_key ? (a = Slice(start_key, start_key_len), &a) : nullptr),
       (limit_key ? (b = Slice(limit_key, limit_key_len), &b) : nullptr));
-  SaveError(status, st);
+  SaveError(status, std::move(st));
 }
 
-void rocks_db_pause_background_work(rocks_db_t* db, rocks_status_t* status) {
-  SaveError(status, db->rep->PauseBackgroundWork());
+void rocks_db_pause_background_work(rocks_db_t* db, rocks_status_t** status) {
+  SaveError(status, std::move(db->rep->PauseBackgroundWork()));
 }
 
-void rocks_db_continue_background_work(rocks_db_t* db, rocks_status_t* status) {
-  SaveError(status, db->rep->ContinueBackgroundWork());
+void rocks_db_continue_background_work(rocks_db_t* db,
+                                       rocks_status_t** status) {
+  SaveError(status, std::move(db->rep->ContinueBackgroundWork()));
 }
 
 void rocks_db_enable_auto_compaction(
     rocks_db_t* db, const rocks_column_family_handle_t* const* column_families,
-    size_t cf_len, rocks_status_t* status) {
+    size_t cf_len, rocks_status_t** status) {
   std::vector<ColumnFamilyHandle*> cfs;
   for (auto i = 0; i < cf_len; i++) {
     cfs.push_back(column_families[i]->rep);
   }
-  SaveError(status, db->rep->EnableAutoCompaction(cfs));
+  SaveError(status, std::move(db->rep->EnableAutoCompaction(cfs)));
 }
 
 int rocks_db_number_levels_cf(rocks_db_t* db,
@@ -602,14 +587,15 @@ void rocks_db_compact_range_cf_opt(rocks_db_t* db,
                                    rocks_column_family_handle_t* column_family,
                                    rocks_compactrange_options_t* opt,
                                    const char* start_key, size_t start_key_len,
-                                   const char* limit_key,
-                                   size_t limit_key_len) {
+                                   const char* limit_key, size_t limit_key_len,
+                                   rocks_status_t** status) {
   Slice a, b;
-  db->rep->CompactRange(
+  auto st = db->rep->CompactRange(
       opt->rep, column_family->rep,
       // Pass nullptr Slice if corresponding "const char*" is nullptr
       (start_key ? (a = Slice(start_key, start_key_len), &a) : nullptr),
       (limit_key ? (b = Slice(limit_key, limit_key_len), &b) : nullptr));
+  SaveError(status, std::move(st));
 }
 
 const char* rocks_db_get_name(rocks_db_t* db, size_t* len) {
@@ -619,47 +605,51 @@ const char* rocks_db_get_name(rocks_db_t* db, size_t* len) {
 }
 
 void rocks_db_flush(rocks_db_t* db, rocks_flushoptions_t* options,
-                    rocks_status_t* status) {
-  SaveError(status, db->rep->Flush(options->rep));
+                    rocks_status_t** status) {
+  SaveError(status, std::move(db->rep->Flush(options->rep)));
 }
 
 void rocks_db_flush_cf(rocks_db_t* db, rocks_flushoptions_t* options,
                        rocks_column_family_handle_t* column_family,
-                       rocks_status_t* status) {
-  SaveError(status, db->rep->Flush(options->rep, column_family->rep));
+                       rocks_status_t** status) {
+  SaveError(status,
+            std::move(db->rep->Flush(options->rep, column_family->rep)));
 }
 
-void rocks_db_sync_wal(rocks_db_t* db, rocks_status_t* status) {
-  SaveError(status, db->rep->SyncWAL());
+void rocks_db_sync_wal(rocks_db_t* db, rocks_status_t** status) {
+  SaveError(status, std::move(db->rep->SyncWAL()));
 }
 
 uint64_t rocks_db_get_latest_sequence_number(rocks_db_t* db) {
   return db->rep->GetLatestSequenceNumber();
 }
 
-void rocks_db_disable_file_deletions(rocks_db_t* db, rocks_status_t* status) {
-  SaveError(status, db->rep->DisableFileDeletions());
+void rocks_db_disable_file_deletions(rocks_db_t* db, rocks_status_t** status) {
+  SaveError(status, std::move(db->rep->DisableFileDeletions()));
 }
 
 void rocks_db_enable_file_deletions(rocks_db_t* db, unsigned char force,
-                                    rocks_status_t* status) {
-  SaveError(status, db->rep->EnableFileDeletions(force));
+                                    rocks_status_t** status) {
+  SaveError(status, std::move(db->rep->EnableFileDeletions(force)));
 }
 
 cxx_string_vector_t* rocks_db_get_live_files(rocks_db_t* db,
                                              unsigned char flush_memtable,
                                              uint64_t* manifest_file_size,
-                                             rocks_status_t* status) {
+                                             rocks_status_t** status) {
   cxx_string_vector_t* files = new cxx_string_vector_t;
 
   auto st =
       db->rep->GetLiveFiles(files->rep, manifest_file_size, flush_memtable);
-  SaveError(status, st);
+  if (SaveError(status, std::move(st))) {
+    delete files;
+    return nullptr;
+  }
   return files;
 }
 
 void rocks_db_delete_file(rocks_db_t* db, const char* name, size_t name_len,
-                          rocks_status_t* status) {
+                          rocks_status_t** status) {
   SaveError(status, db->rep->DeleteFile(std::string(name, name_len)));
 }
 
@@ -679,50 +669,49 @@ const rocks_column_family_metadata_t* rocks_db_get_column_family_metadata(
 void rocks_db_ingest_external_file(
     rocks_db_t* db, const char* const* file_list, const size_t* file_list_sizes,
     size_t file_len, const rocks_ingestexternalfile_options_t* options,
-    rocks_status_t* status) {
+    rocks_status_t** status) {
   std::vector<std::string> external_files;
   for (auto i = 0; i < file_len; i++) {
     external_files.push_back(std::string(file_list[i], file_list_sizes[i]));
   }
   auto st = db->rep->IngestExternalFile(external_files, options->rep);
-  SaveError(status, st);
+  SaveError(status, std::move(st));
 }
 
 void rocks_db_ingest_external_file_cf(
     rocks_db_t* db, rocks_column_family_handle_t* column_family,
     const char* const* file_list, const size_t* file_list_sizes,
     size_t file_len, const rocks_ingestexternalfile_options_t* options,
-    rocks_status_t* status) {
+    rocks_status_t** status) {
   std::vector<std::string> external_files;
   for (auto i = 0; i < file_len; i++) {
     external_files.push_back(std::string(file_list[i], file_list_sizes[i]));
   }
   auto st = db->rep->IngestExternalFile(column_family->rep, external_files,
                                         options->rep);
-  SaveError(status, st);
+  SaveError(status, std::move(st));
 }
 
 void rocks_db_get_db_identity(rocks_db_t* db,
                               void* identity,  // *mut String
-                              rocks_status_t* status) {
+                              rocks_status_t** status) {
   std::string id;
   auto st = db->rep->GetDbIdentity(id);
-  SaveError(status, st);
-  if (st.ok()) {
+  if (!SaveError(status, std::move(st))) {
     rust_string_assign(identity, id.data(), id.size());
   }
 }
 
 // public functions
 void rocks_destroy_db(const rocks_options_t* options, const char* name,
-                      rocks_status_t* status) {
+                      rocks_status_t** status) {
   auto st = DestroyDB(name, options->rep);
-  rocks_status_convert(&st, status);
+  SaveError(status, std::move(st));
 }
 
 void rocks_repair_db(const rocks_options_t* options, const char* name,
-                     rocks_status_t* status) {
+                     rocks_status_t** status) {
   auto st = RepairDB(name, options->rep);
-  rocks_status_convert(&st, status);
+  SaveError(status, std::move(st));
 }
 }

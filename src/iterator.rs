@@ -146,11 +146,11 @@ impl Iterator {
     /// If an error has occurred, return it.  Else return an ok status.
     /// If non-blocking IO is requested and this operation cannot be
     /// satisfied without doing some IO, then this returns `Status::Incomplete()`.
-    pub fn get_status(&self) -> Status {
+    pub fn get_status(&self) -> Result<(), Status> {
         unsafe {
             let mut status = mem::zeroed();
             ll::rocks_iter_get_status(self.raw, &mut status);
-            Status::from_ll(&status)
+            Status::from_ll(status)
         }
     }
 
@@ -177,11 +177,7 @@ impl Iterator {
                                         &mut ret as *mut String as *mut c_void,
                                         &mut status);
             // FIXME: rocksdb return error string in get_property
-            if status.code == 0 {
-                Ok(ret)
-            } else {
-                Err(Status::from_ll(&status))
-            }
+            Status::from_ll(status).map(|_| ret)
         }
     }
 

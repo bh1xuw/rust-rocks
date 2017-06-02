@@ -133,11 +133,7 @@ impl SstFileWriter {
             let mut status = mem::zeroed();
             let path = file_path.as_ref().to_str().expect("file path");
             ll::rocks_sst_file_writer_open(self.raw, path.as_ptr() as *const _, path.len(), &mut status);
-            if status.code == 0 {
-                Ok(())
-            } else {
-                Err(Status::from_ll(&status))
-            }
+            Status::from_ll(status)
         }
     }
 
@@ -152,11 +148,7 @@ impl SstFileWriter {
                                           value.as_ptr() as *const _,
                                           value.len(),
                                           &mut status);
-            if status.code == 0 {
-                Ok(())
-            } else {
-                Err(Status::from_ll(&status))
-            }
+            Status::from_ll(status)
         }
     }
 
@@ -166,14 +158,10 @@ impl SstFileWriter {
     /// which will be populated with information about the created sst file
     pub fn finish(&self) -> Result<ExternalSstFileInfo, Status> {
         unsafe {
-            let mut status = mem::zeroed();
+            let mut status = ptr::null_mut();
             let info = ExternalSstFileInfo::new();
             ll::rocks_sst_file_writer_finish(self.raw, info.raw, &mut status);
-            if status.code == 0 {
-                Ok(info)
-            } else {
-                Err(Status::from_ll(&status))
-            }
+            Status::from_ll(status).map(|_| info)
         }
     }
 

@@ -51,18 +51,17 @@ const char* rocks_iter_value(const rocks_iterator_t* iter, size_t* vlen) {
 }
 
 void rocks_iter_get_status(const rocks_iterator_t* iter,
-                           rocks_status_t* status) {
-  SaveError(status, iter->rep->status());
+                           rocks_status_t** status) {
+  SaveError(status, std::move(iter->rep->status()));
 }
 
 void rocks_iter_get_property(const rocks_iterator_t* iter, const char* prop,
                              size_t prop_len, void* value,
-                             rocks_status_t* status) {
+                             rocks_status_t** status) {
   std::string cval;
   auto st = iter->rep->GetProperty(std::string(prop, prop_len), &cval);
-  if (st.ok()) {
+  if (!SaveError(status, std::move(st))) {
     rust_string_assign(value, cval.data(), cval.size());
   }
-  SaveError(status, st);
 }
 }

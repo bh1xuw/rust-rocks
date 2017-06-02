@@ -91,26 +91,24 @@ void rocks_sst_file_writer_destroy(rocks_sst_file_writer_t* writer) {
 void rocks_sst_file_writer_open(rocks_sst_file_writer_t* writer,
                                 const char* file_path,
                                 const size_t file_path_len,
-                                rocks_status_t* status) {
+                                rocks_status_t** status) {
   auto path = std::string(file_path, file_path_len);
-  SaveError(status, writer->rep->Open(path));
+  SaveError(status, std::move(writer->rep->Open(path)));
 }
 
 void rocks_sst_file_writer_add(rocks_sst_file_writer_t* writer, const char* key,
                                const size_t key_len, const char* value,
-                               const size_t value_len, rocks_status_t* status) {
-  SaveError(status,
-            writer->rep->Add(Slice(key, key_len), Slice(value, value_len)));
+                               const size_t value_len,
+                               rocks_status_t** status) {
+  auto st = writer->rep->Add(Slice(key, key_len), Slice(value, value_len));
+  SaveError(status, std::move(st));
 }
 
 void rocks_sst_file_writer_finish(rocks_sst_file_writer_t* writer,
                                   rocks_external_sst_file_info_t* info,
-                                  rocks_status_t* status) {
-  if (info != nullptr) {
-    SaveError(status, writer->rep->Finish(&info->rep));
-  } else {
-    SaveError(status, writer->rep->Finish(nullptr));
-  }
+                                  rocks_status_t** status) {
+  auto info_ptr = (info != nullptr) ? &info->rep : nullptr;
+  SaveError(status, std::move(writer->rep->Finish(info_ptr)));
 }
 
 uint64_t rocks_sst_file_writer_file_size(rocks_sst_file_writer_t* writer) {

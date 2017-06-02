@@ -17,13 +17,14 @@
 use std::mem;
 use std::fmt;
 use std::slice;
+use std::ptr;
 
 use rocks_sys as ll;
 
 use status::Status;
 use db::ColumnFamilyHandle;
 
-use to_raw::ToRaw;
+use to_raw::{ToRaw, FromRaw};
 
 pub struct WriteBatch {
     raw: *mut ll::rocks_writebatch_t,
@@ -255,13 +256,9 @@ impl WriteBatch {
     /// Otherwise returns Status::OK().
     pub fn rollback_to_save_point(&mut self) -> Result<(), Status> {
         unsafe {
-            let mut status = mem::zeroed();
+            let mut status = ptr::null_mut();
             ll::rocks_writebatch_rollback_to_save_point(self.raw, &mut status);
-            if status.code == 0 {
-                Ok(())
-            } else {
-                Err(Status::from_ll(&status))
-            }
+            FromRaw::from_ll(status)
         }
     }
 

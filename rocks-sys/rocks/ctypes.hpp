@@ -33,14 +33,13 @@ extern "C" {
 #include <stdint.h>
 
 /* status */
-typedef struct rocks_status_t {
-  int code;
-  int sub_code;
-  const char* state;
-} rocks_status_t;
+struct rocks_status_t {
+  Status rep;
 
-void rocks_status_convert(const Status* status, rocks_status_t* p);
-
+  // rocks_status_t(const Status st) noexcept : rep(st) {}
+  rocks_status_t() : rep(Status()) {}
+  rocks_status_t(const Status&& st) noexcept : rep(std::move(st)) {}
+};
 /* slice */
 struct rocks_pinnable_slice_t {
   PinnableSlice rep;
@@ -328,10 +327,14 @@ struct cxx_string_vector_t {
   std::vector<std::string> rep;
 };
 
-static bool SaveError(rocks_status_t* status, const Status& s) {
-  assert(status != nullptr);
-  rocks_status_convert(&s, status);
-  return !s.ok();
+static bool SaveError(rocks_status_t** status, const Status&& s) {
+  if (s.ok()) {
+    *status = nullptr;
+    return false;
+  } else {
+    *status = new rocks_status_t{std::move(s)};
+    return true;
+  }
 }
 
 static char* CopyString(const std::string& str) {
