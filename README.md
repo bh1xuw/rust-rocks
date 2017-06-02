@@ -12,6 +12,10 @@ for macOS(with rocksdb installed by brew):
 
     LIBRARY_PATH=/usr/local/lib CXXFLAGS=-I/usr/local/include cargo test -- --nocapture
 
+for linux(with rocksdb installed into /usr/local)
+
+    LD_LIBRARY_PATH=/usr/local/lib LIBRARY_PATH=/usr/local/lib CXXFLAGS=-I/usr/local/include cargo test -- --nocapture
+
 ## status
 
 big picture(TODOs):
