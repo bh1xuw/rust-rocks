@@ -23,7 +23,7 @@ big picture(TODOs):
 - [ ] travis-ci integration
 - [ ] Zero-Copy
   - [ ] wraps std::string in Rust
-  - [ ] pinnable slice support
+  - [x] pinnable slice support
   - [x] exports String/Vec<u8> to C++ via `assign`-style API
 - [ ] Full documentation with code examples
   - [x] good enough by copying C++ comments
@@ -97,7 +97,7 @@ big picture(TODOs):
 - [x] ``rocksdb/rate_limiter.h``
 - [x] ``rocksdb/slice.h``
   - [x] use ``&[u8]`` to replace
-  - [ ] pinnable slice
+  - [x] pinnable slice
 - [x] ``rocksdb/slice_transform.h``
 - [x] ``rocksdb/snapshot.h``
   - [ ] ManagedSnapshot

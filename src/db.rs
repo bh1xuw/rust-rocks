@@ -29,6 +29,7 @@ use env::Logger;
 use types::SequenceNumber;
 use to_raw::{ToRaw, FromRaw};
 use metadata::{LiveFileMetaData, SstFileMetaData, LevelMetaData, ColumnFamilyMetaData};
+use super::slice::PinnableSlice;
 
 const DEFAULT_COLUMN_FAMILY_NAME: &'static str = "default";
 
@@ -253,20 +254,19 @@ impl<'a, 'b: 'a> ColumnFamilyHandle<'a, 'b> {
         }
     }
 
-    pub fn get(&self, options: &ReadOptions, key: &[u8]) -> Result<CVec<u8>, Status> {
+    pub fn get(&self, options: &ReadOptions, key: &[u8]) -> Result<PinnableSlice, Status> {
         unsafe {
             let mut status = mem::zeroed::<ll::rocks_status_t>();
-            let mut vallen = 0_usize;
-            let ptr = ll::rocks_db_get_cf(self.db.raw,
-                                          options.raw(),
-                                          self.raw(),
-                                          key.as_ptr() as _,
-                                          key.len(),
-                                          &mut vallen,
-                                          &mut status);
-
+            let pinnable_val = PinnableSlice::new();
+            ll::rocks_db_get_cf_pinnable(self.db.raw,
+                                         options.raw(),
+                                         self.raw(),
+                                         key.as_ptr() as _,
+                                         key.len(),
+                                         pinnable_val.raw(),
+                                         &mut status);
             if status.code == 0 {
-                Ok(CVec::from_raw_parts(ptr as *mut u8, vallen))
+                Ok(pinnable_val)
             } else {
                 Err(Status::from_ll(&status))
             }
@@ -927,19 +927,20 @@ impl<'a> DB<'a> {
     /// a status for which Status::IsNotFound() returns true.
     ///
     /// May return some other Status on an error.
-    pub fn get(&self, options: &ReadOptions, key: &[u8]) -> Result<CVec<u8>, Status> {
+    pub fn get(&self, options: &ReadOptions, key: &[u8]) -> Result<PinnableSlice, Status> {
         unsafe {
             let mut status = mem::zeroed::<ll::rocks_status_t>();
-            let mut vallen = 0_usize;
-            let ptr = ll::rocks_db_get(self.raw(),
-                                       options.as_ref().raw(),
-                                       key.as_ptr() as _,
-                                       key.len(),
-                                       &mut vallen,
-                                       &mut status);
-
+            let def_cf = ll::rocks_db_default_column_family(self.raw());
+            let pinnable_val = PinnableSlice::new();
+            ll::rocks_db_get_cf_pinnable(self.raw(),
+                                         options.raw(),
+                                         def_cf,
+                                         key.as_ptr() as _,
+                                         key.len(),
+                                         pinnable_val.raw(),
+                                         &mut status);
             if status.code == 0 {
-                Ok(CVec::from_raw_parts(ptr as *mut u8, vallen))
+                Ok(pinnable_val)
             } else {
                 Err(Status::from_ll(&status))
             }
@@ -950,26 +951,24 @@ impl<'a> DB<'a> {
                   options: &ReadOptions,
                   column_family: &ColumnFamilyHandle,
                   key: &[u8])
-                  -> Result<CVec<u8>, Status> {
+                  -> Result<PinnableSlice, Status> {
         unsafe {
             let mut status = mem::zeroed::<ll::rocks_status_t>();
-            let mut vallen = 0_usize;
-            let ptr = ll::rocks_db_get_cf(self.raw(),
-                                          options.raw(),
-                                          column_family.raw(),
-                                          key.as_ptr() as _,
-                                          key.len(),
-                                          &mut vallen,
-                                          &mut status);
-
+            let pinnable_val = PinnableSlice::new();
+            ll::rocks_db_get_cf_pinnable(self.raw(),
+                                         options.raw(),
+                                         column_family.raw(),
+                                         key.as_ptr() as _,
+                                         key.len(),
+                                         pinnable_val.raw(),
+                                         &mut status);
             if status.code == 0 {
-                Ok(CVec::from_raw_parts(ptr as *mut u8, vallen))
+                Ok(pinnable_val)
             } else {
                 Err(Status::from_ll(&status))
             }
         }
     }
-
 
     /// If keys[i] does not exist in the database, then the i'th returned
     /// status will be one for which Status::IsNotFound() is true, and

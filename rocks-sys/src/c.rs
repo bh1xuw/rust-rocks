@@ -143,6 +143,19 @@ pub struct rocks_universal_compaction_options_t([u8; 0]);
 #[derive(Debug, Copy, Clone)]
 pub struct cxx_string_vector_t([u8; 0]);
 extern "C" {
+    pub fn rocks_pinnable_slice_create() -> *mut rocks_pinnable_slice_t;
+}
+extern "C" {
+    pub fn rocks_pinnable_slice_destroy(s: *mut rocks_pinnable_slice_t);
+}
+extern "C" {
+    pub fn rocks_pinnable_slice_data(s: *mut rocks_pinnable_slice_t)
+     -> *const ::std::os::raw::c_char;
+}
+extern "C" {
+    pub fn rocks_pinnable_slice_size(s: *mut rocks_pinnable_slice_t) -> usize;
+}
+extern "C" {
     pub fn rocks_options_create() -> *mut rocks_options_t;
 }
 extern "C" {
@@ -1214,6 +1227,16 @@ extern "C" {
                            key: *const ::std::os::raw::c_char, keylen: usize,
                            vallen: *mut usize, status: *mut rocks_status_t)
      -> *mut ::std::os::raw::c_char;
+}
+extern "C" {
+    pub fn rocks_db_get_cf_pinnable(db: *mut rocks_db_t,
+                                    options: *const rocks_readoptions_t,
+                                    column_family:
+                                        *mut rocks_column_family_handle_t,
+                                    key: *const ::std::os::raw::c_char,
+                                    keylen: usize,
+                                    value: *mut rocks_pinnable_slice_t,
+                                    status: *mut rocks_status_t);
 }
 extern "C" {
     pub fn rocks_db_multi_get(db: *mut rocks_db_t,

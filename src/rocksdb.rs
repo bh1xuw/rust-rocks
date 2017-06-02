@@ -10,6 +10,7 @@ pub use options::*;
 pub use write_batch::WriteBatch;
 pub use perf_level::*;
 pub use table::*;
+pub use slice::PinnableSlice;
 
 #[test]
 fn test_version() {

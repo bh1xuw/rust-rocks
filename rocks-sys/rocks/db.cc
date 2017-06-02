@@ -307,6 +307,17 @@ char* rocks_db_get_cf(rocks_db_t* db, const rocks_readoptions_t* options,
   return result;
 }
 
+void rocks_db_get_cf_pinnable(rocks_db_t* db,
+                              const rocks_readoptions_t* options,
+                              rocks_column_family_handle_t* column_family,
+                              const char* key, size_t keylen,
+                              rocks_pinnable_slice_t* value,
+                              rocks_status_t* status) {
+  Status s = db->rep->Get(options->rep, column_family->rep, Slice(key, keylen),
+                          &value->rep);
+  SaveError(status, s);
+}
+
 void rocks_db_multi_get(rocks_db_t* db, const rocks_readoptions_t* options,
                         size_t num_keys, const char* const* keys_list,
                         const size_t* keys_list_sizes, char** values_list,

@@ -31,6 +31,7 @@ pub mod listener;
 pub mod merge_operator;
 pub mod options;
 pub mod rate_limiter;
+pub mod slice;
 pub mod slice_transform;
 pub mod snapshot;
 pub mod sst_file_manager;
@@ -58,6 +59,7 @@ mod to_raw;
 #[doc(hidden)]
 pub mod c {
     use std::ptr;
+    use std::slice;
 
     #[no_mangle]
     pub extern "C" fn rust_hello_world() {
@@ -75,6 +77,7 @@ pub mod c {
 
     #[no_mangle]
     pub unsafe extern "C" fn rust_vec_u8_assign(v: *mut Vec<u8>, p: *const u8, len: usize) {
+        // (*v).extend_from_slice(slice::from_raw_parts(p, len))
         (*v).reserve(len);
         ptr::copy(p, (*v).as_mut_ptr(), len);
         (*v).set_len(len);

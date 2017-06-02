@@ -111,6 +111,15 @@ typedef struct rocks_universal_compaction_options_t
 typedef struct cxx_string_vector_t cxx_string_vector_t;
 
 /* ****************************** functions ****************************** */
+/* slice */
+rocks_pinnable_slice_t* rocks_pinnable_slice_create();
+
+void rocks_pinnable_slice_destroy(rocks_pinnable_slice_t* s);
+
+const char* rocks_pinnable_slice_data(rocks_pinnable_slice_t* s);
+
+size_t rocks_pinnable_slice_size(rocks_pinnable_slice_t* s);
+
 /* options.h */
 /*    start */
 rocks_options_t* rocks_options_create();
@@ -763,6 +772,13 @@ char* rocks_db_get_cf(rocks_db_t* db, const rocks_readoptions_t* options,
                       rocks_column_family_handle_t* column_family,
                       const char* key, size_t keylen, size_t* vallen,
                       rocks_status_t* status);
+
+void rocks_db_get_cf_pinnable(rocks_db_t* db,
+                              const rocks_readoptions_t* options,
+                              rocks_column_family_handle_t* column_family,
+                              const char* key, size_t keylen,
+                              rocks_pinnable_slice_t* value,
+                              rocks_status_t* status);
 
 void rocks_db_multi_get(rocks_db_t* db, const rocks_readoptions_t* options,
                         size_t num_keys, const char* const* keys_list,
