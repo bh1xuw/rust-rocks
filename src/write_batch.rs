@@ -21,7 +21,7 @@ use std::ptr;
 
 use rocks_sys as ll;
 
-use status::Status;
+use error::Status;
 use db::ColumnFamilyHandle;
 
 use to_raw::{ToRaw, FromRaw};

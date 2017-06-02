@@ -5,7 +5,7 @@ use std::path::Path;
 
 use env::Env;
 use env::Logger;
-use status::Status;
+use error::Status;
 
 /// SstFileManager is used to track SST files in the DB and control there
 /// deletion rate.

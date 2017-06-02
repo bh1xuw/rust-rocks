@@ -3,7 +3,7 @@
 //! The RocksDB API in Rustic Style.
 
 /*
-#![cfg_attr(feature = "dev", feature(plugin))]
+n#![cfg_attr(feature = "dev", feature(plugin))]
 #![cfg_attr(feature = "dev", plugin(clippy))]
 #![cfg_attr(not(feature = "dev"), allow(unknown_lints))]
 #![allow(not_unsafe_ptr_arg_deref,
@@ -18,7 +18,7 @@ extern crate rocks_sys;
 #[cfg(test)]
 extern crate tempdir;
 
-pub use status::Status;
+pub use error::Status;
 
 pub mod advanced_options;
 pub mod cache;
@@ -37,7 +37,7 @@ pub mod snapshot;
 pub mod sst_file_manager;
 pub mod sst_file_writer;
 pub mod statistics;
-pub mod status;
+pub mod error;
 pub mod table;
 pub mod table_properties;
 pub mod types;

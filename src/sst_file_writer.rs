@@ -9,7 +9,7 @@ use std::str;
 
 use rocks_sys as ll;
 
-use status::Status;
+use error::Status;
 use env::EnvOptions;
 use options::Options;
 use db::ColumnFamilyHandle;

@@ -13,7 +13,7 @@ use std::os::raw::c_void;
 
 use rocks_sys as ll;
 
-use status::Status;
+use error::Status;
 
 use to_raw::FromRaw;
 

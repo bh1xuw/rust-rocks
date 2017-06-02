@@ -5,7 +5,7 @@ use std::ops::Deref;
 
 use rocks_sys as ll;
 
-use status::Status;
+use error::Status;
 use types::SequenceNumber;
 
 /// The metadata that describes a column family.

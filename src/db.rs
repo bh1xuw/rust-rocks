@@ -16,7 +16,7 @@ use std::path::Path;
 
 use rocks_sys as ll;
 
-use status::Status;
+use error::Status;
 use comparator::Comparator;
 use options::{Options, DBOptions, ColumnFamilyOptions, ReadOptions, WriteOptions, CompactRangeOptions,
               IngestExternalFileOptions, FlushOptions};
