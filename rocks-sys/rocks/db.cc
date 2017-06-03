@@ -539,6 +539,22 @@ void rocks_db_compact_range_opt_cf(rocks_db_t* db,
   SaveError(status, std::move(st));
 }
 
+  void rocks_db_compact_files(rocks_db_t* db,
+                              rocks_compaction_options_t* opt,
+                              size_t num_files,
+                              const char* const* file_names,
+                              const size_t* file_name_lens,
+                              const int output_level,
+                              const int output_path_id,
+                              rocks_status_t** status) {
+    std::vector<std::string> input_file_names;
+    for (auto i = 0; i < num_files ;i++) {
+      input_file_names.push_back(std::string(file_names[i], file_name_lens[i]));
+    }
+    auto st = db->rep->CompactFiles(opt->rep, input_file_names, output_level, output_path_id);
+    SaveError(status, std::move(st));
+  }
+
 void rocks_db_pause_background_work(rocks_db_t* db, rocks_status_t** status) {
   SaveError(status, std::move(db->rep->PauseBackgroundWork()));
 }

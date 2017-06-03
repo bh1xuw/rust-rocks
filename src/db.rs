@@ -19,7 +19,7 @@ use rocks_sys as ll;
 use error::Status;
 use comparator::Comparator;
 use options::{Options, DBOptions, ColumnFamilyOptions, ReadOptions, WriteOptions, CompactRangeOptions,
-              IngestExternalFileOptions, FlushOptions};
+              IngestExternalFileOptions, FlushOptions, CompactionOptions};
 use table_properties::TableProperties;
 use snapshot::Snapshot;
 use write_batch::WriteBatch;
@@ -279,7 +279,7 @@ impl<'a, 'b: 'a> ColumnFamilyHandle<'a, 'b> {
                                       vals.as_mut_ptr(),
                                       vals_lens.as_mut_ptr(),
                                       status.as_mut_ptr());
-
+            
             for i in 0..num_keys {
                 ret.push(Status::from_ll(status[i]).map(|_| {
                     CVec::from_raw_parts(vals[i] as *mut u8, vals_lens[i])
@@ -1296,7 +1296,38 @@ impl<'a> DB<'a> {
 
     // set options
     // set dboptions via Map<K,V>
-    // compact files
+
+    /// CompactFiles() inputs a list of files specified by file numbers and
+    /// compacts them to the specified level. Note that the behavior is different
+    /// from CompactRange() in that CompactFiles() performs the compaction job
+    /// using the CURRENT thread.
+    pub fn compact_files(&self, compact_options: &CompactionOptions, input_file_names: &[&str],
+                         output_level: i32) -> Result<()> {
+        self.compact_files_to(compact_options, input_file_names, output_level, -1)
+    }
+
+    pub fn compact_files_to(&self, compact_options: &CompactionOptions, input_file_names: &[&str],
+                            output_level: i32, output_path_id: i32) -> Result<()> {
+        unsafe {
+            let num_files = input_file_names.len();
+            let mut c_file_names = Vec::with_capacity(num_files);
+            let mut c_file_name_sizes = Vec::with_capacity(num_files);
+            for i in 0 .. num_files {
+                c_file_names.push(input_file_names[i].as_bytes().as_ptr() as *const _);
+                c_file_name_sizes.push(input_file_names[i].len());
+            }
+            let mut status = ptr::null_mut();
+            ll::rocks_db_compact_files(self.raw(),
+                                       compact_options.raw(),
+                                       num_files,
+                                       c_file_names.as_ptr(),
+                                       c_file_name_sizes.as_ptr(),
+                                       output_level as c_int,
+                                       output_path_id as c_int,
+                                       &mut status);
+            Status::from_ll(status)
+        }
+    }
 
 
     /// This function will wait until all currently running background processes
@@ -2339,5 +2370,47 @@ mod tests {
         }
     }
 
+    #[test]
+    fn compact_files() {
+        let tmp_dir = ::tempdir::TempDir::new_in(".", "rocks").unwrap();
+        let db = DB::open(Options::default()
+                          .map_db_options(|db| db.create_if_missing(true))
+                          .map_cf_options(|cf| cf.disable_auto_compactions(true)), // disable
+                          &tmp_dir)
+            .unwrap();
+        assert!(db.put(&Default::default(), b"long-key", vec![b'A'; 1024 * 1024].as_ref())
+                .is_ok());
+        assert!(db.flush(&FlushOptions::default().wait(true)).is_ok());
+        assert!(db.put(&Default::default(), b"long-key-2", vec![b'A'; 2 * 1024].as_ref())
+                .is_ok());
+
+        for i in 0..100 {
+            let key = format!("test2-key-{}", i);
+            let val = format!("rocksdb-value-{}", i * 10);
+            let value: String = iter::repeat(val).take(10).collect::<Vec<_>>().concat();
+
+            db.put(&WriteOptions::default(), key.as_bytes(), value.as_bytes())
+                .unwrap();
+
+            if i % 6 == 0 {
+                assert!(db.flush(&FlushOptions::default().wait(true)).is_ok());
+            }
+        }
+        let v = db.get_live_files(true);
+
+        let sst_files = v.as_ref().unwrap().1.iter()
+            .filter(|name| name.ends_with(".sst"))
+            .map(|name| name.as_ref())
+            .collect::<Vec<&str>>();
+        assert!(sst_files.len() > 2); // many sst files
+
+        let st = db.compact_files(&CompactionOptions::default()
+                                  .compression(CompressionType::BZip2Compression),
+                                  sst_files.as_ref(), 4); // output to level 4
+
+        let result = db.get_live_files_metadata();
+        assert_eq!(result.len(), 1);
+        assert_eq!(result[0].level, 4); // compacted to 4
+    }
 }
 

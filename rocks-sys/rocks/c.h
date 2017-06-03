@@ -660,6 +660,15 @@ void rocks_fifo_compaction_options_set_max_table_files_size(
 void rocks_fifo_compaction_options_destroy(
     rocks_fifo_compaction_options_t* fifo_opts);
 
+/* > compaction_options */
+rocks_compaction_options_t* rocks_compaction_options_create();
+void rocks_compaction_options_destroy(rocks_compaction_options_t* opts);
+
+void rocks_compaction_options_set_compression(rocks_compaction_options_t* opts,
+                                              int val);
+void rocks_compaction_options_set_output_file_size_limit(
+    rocks_compaction_options_t* opts, uint64_t val);
+
 /* db.h */
 
 /* > rocks_column_family_handle_t */
@@ -869,6 +878,14 @@ void rocks_db_compact_range_opt_cf(rocks_db_t* db,
                                    const char* start_key, size_t start_key_len,
                                    const char* limit_key, size_t limit_key_len,
                                    rocks_status_t** status);
+  void rocks_db_compact_files(rocks_db_t* db,
+                              rocks_compaction_options_t* opt,
+                              size_t num_files,
+                              const char* const* file_names,
+                              const size_t* file_name_lens,
+                              const int output_level,
+                              const int output_path_id,
+                              rocks_status_t** status);
 
 void rocks_db_pause_background_work(rocks_db_t* db, rocks_status_t** status);
 void rocks_db_continue_background_work(rocks_db_t* db, rocks_status_t** status);

@@ -1010,3 +1010,23 @@ void rocks_fifo_compaction_options_destroy(
   delete fifo_opts;
 }
 }
+
+extern "C" {
+rocks_compaction_options_t* rocks_compaction_options_create() {
+  return new rocks_compaction_options_t;
+}
+
+void rocks_compaction_options_destroy(rocks_compaction_options_t* opts) {
+  delete opts;
+}
+
+void rocks_compaction_options_set_compression(rocks_compaction_options_t* opts,
+                                              int val) {
+  opts->rep.compression = static_cast<CompressionType>(val);
+}
+
+void rocks_compaction_options_set_output_file_size_limit(
+    rocks_compaction_options_t* opts, uint64_t val) {
+  opts->rep.output_file_size_limit = val;
+}
+}

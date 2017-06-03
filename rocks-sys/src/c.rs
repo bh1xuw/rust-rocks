@@ -1047,6 +1047,25 @@ extern "C" {
                                                      *mut rocks_fifo_compaction_options_t);
 }
 extern "C" {
+    pub fn rocks_compaction_options_create()
+     -> *mut rocks_compaction_options_t;
+}
+extern "C" {
+    pub fn rocks_compaction_options_destroy(opts:
+                                                *mut rocks_compaction_options_t);
+}
+extern "C" {
+    pub fn rocks_compaction_options_set_compression(opts:
+                                                        *mut rocks_compaction_options_t,
+                                                    val:
+                                                        ::std::os::raw::c_int);
+}
+extern "C" {
+    pub fn rocks_compaction_options_set_output_file_size_limit(opts:
+                                                                   *mut rocks_compaction_options_t,
+                                                               val: u64);
+}
+extern "C" {
     pub fn rocks_column_family_handle_get_name(handle:
                                                    *const rocks_column_family_handle_t)
      -> *const ::std::os::raw::c_char;
@@ -1404,6 +1423,17 @@ extern "C" {
                                              *const ::std::os::raw::c_char,
                                          limit_key_len: usize,
                                          status: *mut *mut rocks_status_t);
+}
+extern "C" {
+    pub fn rocks_db_compact_files(db: *mut rocks_db_t,
+                                  opt: *mut rocks_compaction_options_t,
+                                  num_files: usize,
+                                  file_names:
+                                      *const *const ::std::os::raw::c_char,
+                                  file_name_lens: *const usize,
+                                  output_level: ::std::os::raw::c_int,
+                                  output_path_id: ::std::os::raw::c_int,
+                                  status: *mut *mut rocks_status_t);
 }
 extern "C" {
     pub fn rocks_db_pause_background_work(db: *mut rocks_db_t,

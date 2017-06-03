@@ -2710,25 +2710,56 @@ impl FlushOptions {
 /// `CompactionOptions` are used in `CompactFiles()` call.
 #[repr(C)]
 pub struct CompactionOptions {
-    /// Compaction output compression type
-    ///
-    /// Default: snappy
-    pub compression: CompressionType,
-    /// Compaction will create files of size `output_file_size_limit`.
-    ///
-    /// Default: MAX, which means that compaction will create a single file
-    pub output_file_size_limit: u64,
+    raw: *mut ll::rocks_compaction_options_t,
+}
+
+impl ToRaw<ll::rocks_compaction_options_t> for CompactionOptions {
+    fn raw(&self) -> *mut ll::rocks_compaction_options_t {
+        self.raw
+    }
 }
 
 impl Default for CompactionOptions {
     fn default() -> Self {
-        CompactionOptions {
-            compression: CompressionType::SnappyCompression,
-            output_file_size_limit: u64::MAX,
+        CompactionOptions::new()
+    }
+}
+
+impl Drop for CompactionOptions {
+    fn drop(&mut self) {
+        unsafe {
+            ll::rocks_compaction_options_destroy(self.raw);
         }
     }
 }
 
+impl CompactionOptions {
+    pub fn new() -> CompactionOptions {
+        CompactionOptions {
+            raw: unsafe { ll::rocks_compaction_options_create() },
+        }
+    }
+
+    /// Compaction output compression type
+    ///
+    /// Default: snappy
+    pub fn compression(self, val: CompressionType) -> Self {
+        unsafe {
+            ll::rocks_compaction_options_set_compression(self.raw, mem::transmute(val));
+        }
+        self
+    }
+
+    /// Compaction will create files of size `output_file_size_limit`.
+    ///
+    /// Default: MAX, which means that compaction will create a single file
+    pub fn output_file_size_limit(self, val: u64) -> Self {
+        unsafe {
+            ll::rocks_compaction_options_set_output_file_size_limit(self.raw, val);
+        }
+        self
+    }
+}
 
 
 /// For level based compaction, we can configure if we want to skip/force
