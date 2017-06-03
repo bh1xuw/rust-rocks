@@ -1246,20 +1246,12 @@ extern "C" {
                           status: *mut *mut rocks_status_t);
 }
 extern "C" {
-    pub fn rocks_db_get(db: *mut rocks_db_t,
-                        options: *const rocks_readoptions_t,
-                        key: *const ::std::os::raw::c_char, keylen: usize,
-                        vallen: *mut usize, status: *mut *mut rocks_status_t)
-     -> *mut ::std::os::raw::c_char;
-}
-extern "C" {
-    pub fn rocks_db_get_cf(db: *mut rocks_db_t,
-                           options: *const rocks_readoptions_t,
-                           column_family: *mut rocks_column_family_handle_t,
-                           key: *const ::std::os::raw::c_char, keylen: usize,
-                           vallen: *mut usize,
-                           status: *mut *mut rocks_status_t)
-     -> *mut ::std::os::raw::c_char;
+    pub fn rocks_db_get_pinnable(db: *mut rocks_db_t,
+                                 options: *const rocks_readoptions_t,
+                                 key: *const ::std::os::raw::c_char,
+                                 keylen: usize,
+                                 value: *mut rocks_pinnable_slice_t,
+                                 status: *mut *mut rocks_status_t);
 }
 extern "C" {
     pub fn rocks_db_get_cf_pinnable(db: *mut rocks_db_t,

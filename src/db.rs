@@ -847,15 +847,13 @@ impl<'a> DB<'a> {
     pub fn get(&self, options: &ReadOptions, key: &[u8]) -> Result<PinnableSlice> {
         unsafe {
             let mut status = ptr::null_mut::<ll::rocks_status_t>();
-            let def_cf = ll::rocks_db_default_column_family(self.raw());
             let pinnable_val = PinnableSlice::new();
-            ll::rocks_db_get_cf_pinnable(self.raw(),
-                                         options.raw(),
-                                         def_cf,
-                                         key.as_ptr() as _,
-                                         key.len(),
-                                         pinnable_val.raw(),
-                                         &mut status);
+            ll::rocks_db_get_pinnable(self.raw(),
+                                      options.raw(),
+                                      key.as_ptr() as _,
+                                      key.len(),
+                                      pinnable_val.raw(),
+                                      &mut status);
             Status::from_ll(status).map(|_| pinnable_val)
         }
     }
@@ -1397,7 +1395,6 @@ impl<'a> DB<'a> {
     }
 
     // get options
-
     // get db options
 
     /// Flush all mem-table data.

@@ -265,32 +265,13 @@ void rocks_db_write(
   SaveError(status, std::move(st));
 }
 
-char* rocks_db_get(rocks_db_t* db, const rocks_readoptions_t* options,
-                   const char* key, size_t keylen, size_t* vallen,
-                   rocks_status_t** status) {
-  char* result = nullptr;
-  std::string tmp;
-  Status st = db->rep->Get(options->rep, Slice(key, keylen), &tmp);
-  if (!SaveError(status, std::move(st))) {
-    *vallen = tmp.size();
-    result = CopyString(tmp);
-  }
-  return result;
-}
-
-char* rocks_db_get_cf(rocks_db_t* db, const rocks_readoptions_t* options,
-                      rocks_column_family_handle_t* column_family,
-                      const char* key, size_t keylen, size_t* vallen,
-                      rocks_status_t** status) {
-  char* result = nullptr;
-  std::string tmp;
-  Status st =
-      db->rep->Get(options->rep, column_family->rep, Slice(key, keylen), &tmp);
-  if (!SaveError(status, std::move(st))) {
-    *vallen = tmp.size();
-    result = CopyString(tmp);
-  }
-  return result;
+void rocks_db_get_pinnable(rocks_db_t* db, const rocks_readoptions_t* options,
+                           const char* key, size_t keylen,
+                           rocks_pinnable_slice_t* value,
+                           rocks_status_t** status) {
+  Status st = db->rep->Get(options->rep, db->rep->DefaultColumnFamily(),
+                           Slice(key, keylen), &value->rep);
+  SaveError(status, std::move(st));
 }
 
 void rocks_db_get_cf_pinnable(rocks_db_t* db,
@@ -539,21 +520,19 @@ void rocks_db_compact_range_opt_cf(rocks_db_t* db,
   SaveError(status, std::move(st));
 }
 
-  void rocks_db_compact_files(rocks_db_t* db,
-                              rocks_compaction_options_t* opt,
-                              size_t num_files,
-                              const char* const* file_names,
-                              const size_t* file_name_lens,
-                              const int output_level,
-                              const int output_path_id,
-                              rocks_status_t** status) {
-    std::vector<std::string> input_file_names;
-    for (auto i = 0; i < num_files ;i++) {
-      input_file_names.push_back(std::string(file_names[i], file_name_lens[i]));
-    }
-    auto st = db->rep->CompactFiles(opt->rep, input_file_names, output_level, output_path_id);
-    SaveError(status, std::move(st));
+void rocks_db_compact_files(rocks_db_t* db, rocks_compaction_options_t* opt,
+                            size_t num_files, const char* const* file_names,
+                            const size_t* file_name_lens,
+                            const int output_level, const int output_path_id,
+                            rocks_status_t** status) {
+  std::vector<std::string> input_file_names;
+  for (auto i = 0; i < num_files; i++) {
+    input_file_names.push_back(std::string(file_names[i], file_name_lens[i]));
   }
+  auto st = db->rep->CompactFiles(opt->rep, input_file_names, output_level,
+                                  output_path_id);
+  SaveError(status, std::move(st));
+}
 
 void rocks_db_pause_background_work(rocks_db_t* db, rocks_status_t** status) {
   SaveError(status, std::move(db->rep->PauseBackgroundWork()));

@@ -779,14 +779,10 @@ void rocks_db_merge_cf(rocks_db_t* db, const rocks_writeoptions_t* options,
 void rocks_db_write(rocks_db_t* db, const rocks_writeoptions_t* options,
                     rocks_raw_writebatch_t* batch, rocks_status_t** status);
 
-char* rocks_db_get(rocks_db_t* db, const rocks_readoptions_t* options,
-                   const char* key, size_t keylen, size_t* vallen,
-                   rocks_status_t** status);
-
-char* rocks_db_get_cf(rocks_db_t* db, const rocks_readoptions_t* options,
-                      rocks_column_family_handle_t* column_family,
-                      const char* key, size_t keylen, size_t* vallen,
-                      rocks_status_t** status);
+void rocks_db_get_pinnable(rocks_db_t* db, const rocks_readoptions_t* options,
+                           const char* key, size_t keylen,
+                           rocks_pinnable_slice_t* value,
+                           rocks_status_t** status);
 
 void rocks_db_get_cf_pinnable(rocks_db_t* db,
                               const rocks_readoptions_t* options,
@@ -878,14 +874,11 @@ void rocks_db_compact_range_opt_cf(rocks_db_t* db,
                                    const char* start_key, size_t start_key_len,
                                    const char* limit_key, size_t limit_key_len,
                                    rocks_status_t** status);
-  void rocks_db_compact_files(rocks_db_t* db,
-                              rocks_compaction_options_t* opt,
-                              size_t num_files,
-                              const char* const* file_names,
-                              const size_t* file_name_lens,
-                              const int output_level,
-                              const int output_path_id,
-                              rocks_status_t** status);
+void rocks_db_compact_files(rocks_db_t* db, rocks_compaction_options_t* opt,
+                            size_t num_files, const char* const* file_names,
+                            const size_t* file_name_lens,
+                            const int output_level, const int output_path_id,
+                            rocks_status_t** status);
 
 void rocks_db_pause_background_work(rocks_db_t* db, rocks_status_t** status);
 void rocks_db_continue_background_work(rocks_db_t* db, rocks_status_t** status);
