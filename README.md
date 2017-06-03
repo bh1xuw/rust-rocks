@@ -64,7 +64,7 @@ big picture(TODOs):
   - [x] compact range
   - [x] flush
   - [x] ingest sst file
-  - [ ] compact files
+  - [x] compact files
   - [x] misc functions related to config
   - [x] get live files metadata
   - [x] list live files
