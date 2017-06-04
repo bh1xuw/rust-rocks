@@ -68,7 +68,7 @@ big picture(TODOs):
   - [x] misc functions related to config
   - [x] get live files metadata
   - [x] list live files
-  - [ ] set options
+  - [x] set options
 - [ ] ~~``rocksdb/db_bench_tool.h``~~
 - [x] ``rocksdb/db_dump_tool.h``
 - [ ] ``rocksdb/env.h``

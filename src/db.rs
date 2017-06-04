@@ -13,6 +13,7 @@ use std::fmt;
 use std::iter::IntoIterator;
 use std::marker::PhantomData;
 use std::path::Path;
+use std::collections::hash_map::HashMap;
 
 use rocks_sys as ll;
 
@@ -377,6 +378,35 @@ impl<'a, 'b: 'a> ColumnFamilyHandle<'a, 'b> {
             Status::from_ll(status)
         }
     }
+
+    pub fn set_options(&self, new_options: &HashMap<&str, &str>) -> Result<()> {
+        let num_options = new_options.len();
+        let mut key_ptrs = Vec::with_capacity(num_options);
+        let mut key_lens = Vec::with_capacity(num_options);
+        let mut val_ptrs = Vec::with_capacity(num_options);
+        let mut val_lens = Vec::with_capacity(num_options);
+        new_options.iter()
+            .map(|(key, val)| {
+                key_ptrs.push(key.as_ptr() as *const c_char);
+                key_lens.push(key.len());
+                val_ptrs.push(val.as_ptr() as *const c_char);
+                val_lens.push(val.len());
+            })
+            .last();
+        unsafe {
+            let mut status = ptr::null_mut();
+            ll::rocks_db_set_options_cf(self.db.raw,
+                                        self.raw(),
+                                        num_options,
+                                        key_ptrs.as_ptr(),
+                                        key_lens.as_ptr(),
+                                        val_ptrs.as_ptr(),
+                                        val_lens.as_ptr(),
+                                        &mut status);
+            Status::from_ll(status)
+        }
+    }
+
 
     // ================================================================================
 }
@@ -1292,8 +1322,64 @@ impl<'a> DB<'a> {
         }
     }
 
-    // set options
-    // set dboptions via Map<K,V>
+    pub fn set_options(&self, new_options: &HashMap<&str, &str>) -> Result<()> {
+        self.set_options_cf(&self.default_column_family(), new_options)
+    }
+
+    pub fn set_options_cf(&self, column_family: &ColumnFamilyHandle, new_options: &HashMap<&str, &str>) -> Result<()> {
+        let num_options = new_options.len();
+        let mut key_ptrs = Vec::with_capacity(num_options);
+        let mut key_lens = Vec::with_capacity(num_options);
+        let mut val_ptrs = Vec::with_capacity(num_options);
+        let mut val_lens = Vec::with_capacity(num_options);
+        new_options.iter()
+            .map(|(key, val)| {
+                key_ptrs.push(key.as_ptr() as *const c_char);
+                key_lens.push(key.len());
+                val_ptrs.push(val.as_ptr() as *const c_char);
+                val_lens.push(val.len());
+            })
+            .last();
+        unsafe {
+            let mut status = ptr::null_mut();
+            ll::rocks_db_set_options_cf(self.raw(),
+                                        column_family.raw,
+                                        num_options,
+                                        key_ptrs.as_ptr(),
+                                        key_lens.as_ptr(),
+                                        val_ptrs.as_ptr(),
+                                        val_lens.as_ptr(),
+                                        &mut status);
+            Status::from_ll(status)
+        }
+    }
+
+    pub fn set_db_options(&self, new_options: &HashMap<&str, &str>) -> Result<()> {
+        let num_options = new_options.len();
+        let mut key_ptrs = Vec::with_capacity(num_options);
+        let mut key_lens = Vec::with_capacity(num_options);
+        let mut val_ptrs = Vec::with_capacity(num_options);
+        let mut val_lens = Vec::with_capacity(num_options);
+        new_options.iter()
+            .map(|(key, val)| {
+                key_ptrs.push(key.as_ptr() as *const c_char);
+                key_lens.push(key.len());
+                val_ptrs.push(val.as_ptr() as *const c_char);
+                val_lens.push(val.len());
+            })
+            .last();
+        unsafe {
+            let mut status = ptr::null_mut();
+            ll::rocks_db_set_db_options(self.raw(),
+                                        num_options,
+                                        key_ptrs.as_ptr(),
+                                        key_lens.as_ptr(),
+                                        val_ptrs.as_ptr(),
+                                        val_lens.as_ptr(),
+                                        &mut status);
+            Status::from_ll(status)
+        }
+    }
 
     /// CompactFiles() inputs a list of files specified by file numbers and
     /// compacts them to the specified level. Note that the behavior is different
@@ -2365,6 +2451,44 @@ mod tests {
         } else {
             assert!(false, "get_live_files fails");
         }
+    }
+
+    #[test]
+    fn change_options() {
+        let tmp_dir = ::tempdir::TempDir::new_in(".", "rocks").unwrap();
+        let db = DB::open(Options::default()
+                          .map_db_options(|db| db.create_if_missing(true))
+                          .map_cf_options(|cf| cf.disable_auto_compactions(true)), // disable
+                          &tmp_dir)
+            .unwrap();
+        assert!(db.put(&Default::default(), b"long-key", vec![b'A'; 1024 * 1024].as_ref())
+                .is_ok());
+        assert!(db.flush(&FlushOptions::default().wait(true)).is_ok());
+        assert!(db.put(&Default::default(), b"long-key-2", vec![b'A'; 2 * 1024].as_ref())
+                .is_ok());
+
+
+        let new_opt: HashMap<&str, &str> =
+            [("base_background_compactions", "6"),
+             ("stats_dump_period_sec", "10")] // dump every 10s
+            .iter().cloned().collect();
+        let ret = db.set_db_options(&new_opt);
+        assert!(ret.is_ok());
+
+        let new_opt: HashMap<&str, &str> =
+            [("write_buffer_size", "10000000"),
+             ("level0_file_num_compaction_trigger", "2")]
+            .iter().cloned().collect();
+        assert!(db.set_options(&new_opt).is_ok());
+
+
+        let new_opt: HashMap<&str, &str> =
+            [("non-exist-write_buffer_size", "10000000")]
+            .iter().cloned().collect();
+        let ret = db.set_options(&new_opt);
+        assert!(ret.is_err());
+        assert!(format!("{:?}", ret).contains("Unrecognized option"));
+
     }
 
     #[test]

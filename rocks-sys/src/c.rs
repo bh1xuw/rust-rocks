@@ -1417,6 +1417,25 @@ extern "C" {
                                          status: *mut *mut rocks_status_t);
 }
 extern "C" {
+    pub fn rocks_db_set_options_cf(db: *mut rocks_db_t,
+                                   column_family:
+                                       *mut rocks_column_family_handle_t,
+                                   num_options: usize,
+                                   keys: *const *const ::std::os::raw::c_char,
+                                   key_lens: *const usize,
+                                   vals: *const *const ::std::os::raw::c_char,
+                                   val_lens: *const usize,
+                                   status: *mut *mut rocks_status_t);
+}
+extern "C" {
+    pub fn rocks_db_set_db_options(db: *mut rocks_db_t, num_options: usize,
+                                   keys: *const *const ::std::os::raw::c_char,
+                                   key_lens: *const usize,
+                                   vals: *const *const ::std::os::raw::c_char,
+                                   val_lens: *const usize,
+                                   status: *mut *mut rocks_status_t);
+}
+extern "C" {
     pub fn rocks_db_compact_files(db: *mut rocks_db_t,
                                   opt: *mut rocks_compaction_options_t,
                                   num_files: usize,

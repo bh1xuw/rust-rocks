@@ -874,6 +874,18 @@ void rocks_db_compact_range_opt_cf(rocks_db_t* db,
                                    const char* start_key, size_t start_key_len,
                                    const char* limit_key, size_t limit_key_len,
                                    rocks_status_t** status);
+
+void rocks_db_set_options_cf(rocks_db_t* db,
+                             rocks_column_family_handle_t* column_family,
+                             size_t num_options, const char* const* keys,
+                             const size_t* key_lens, const char* const* vals,
+                             const size_t* val_lens, rocks_status_t** status);
+
+void rocks_db_set_db_options(rocks_db_t* db, size_t num_options,
+                             const char* const* keys, const size_t* key_lens,
+                             const char* const* vals, const size_t* val_lens,
+                             rocks_status_t** status);
+
 void rocks_db_compact_files(rocks_db_t* db, rocks_compaction_options_t* opt,
                             size_t num_files, const char* const* file_names,
                             const size_t* file_name_lens,

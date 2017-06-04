@@ -4,6 +4,7 @@
 #include "rocks/rust_export.h"
 
 #include <iostream>
+#include <unordered_map>
 
 using namespace rocksdb;
 
@@ -517,6 +518,33 @@ void rocks_db_compact_range_opt_cf(rocks_db_t* db,
       // Pass nullptr Slice if corresponding "const char*" is nullptr
       (start_key ? (a = Slice(start_key, start_key_len), &a) : nullptr),
       (limit_key ? (b = Slice(limit_key, limit_key_len), &b) : nullptr));
+  SaveError(status, std::move(st));
+}
+
+void rocks_db_set_options_cf(rocks_db_t* db,
+                             rocks_column_family_handle_t* column_family,
+                             size_t num_options, const char* const* keys,
+                             const size_t* key_lens, const char* const* vals,
+                             const size_t* val_lens, rocks_status_t** status) {
+  std::unordered_map<std::string, std::string> new_options;
+  for (auto i = 0; i < num_options; i++) {
+    new_options[std::string(keys[i], key_lens[i])] =
+        std::string(vals[i], val_lens[i]);
+  }
+  auto st = db->rep->SetOptions(column_family->rep, new_options);
+  SaveError(status, std::move(st));
+}
+
+void rocks_db_set_db_options(rocks_db_t* db, size_t num_options,
+                             const char* const* keys, const size_t* key_lens,
+                             const char* const* vals, const size_t* val_lens,
+                             rocks_status_t** status) {
+  std::unordered_map<std::string, std::string> new_options;
+  for (auto i = 0; i < num_options; i++) {
+    new_options[std::string(keys[i], key_lens[i])] =
+        std::string(vals[i], val_lens[i]);
+  }
+  auto st = db->rep->SetDBOptions(new_options);
   SaveError(status, std::move(st));
 }
 
