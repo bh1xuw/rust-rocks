@@ -56,6 +56,7 @@ pub mod iostats_context;
 pub mod perf_context;
 pub mod wal_filter;
 pub mod filter_policy;
+pub mod convenience;
 
 pub mod rocksdb;
 

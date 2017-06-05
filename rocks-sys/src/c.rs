@@ -1493,6 +1493,32 @@ extern "C" {
      -> ::std::os::raw::c_int;
 }
 extern "C" {
+    pub fn rocks_db_get_approximate_sizes_cf(db: *mut rocks_db_t,
+                                             column_family:
+                                                 *mut rocks_column_family_handle_t,
+                                             num_ranges: usize,
+                                             range_start_ptrs:
+                                                 *const *const ::std::os::raw::c_char,
+                                             range_start_lens: *const usize,
+                                             range_limit_ptrs:
+                                                 *const *const ::std::os::raw::c_char,
+                                             range_limit_lens: *const usize,
+                                             sizes: *mut u64);
+}
+extern "C" {
+    pub fn rocks_db_get_approximate_memtable_stats_cf(db: *mut rocks_db_t,
+                                                      column_family:
+                                                          *mut rocks_column_family_handle_t,
+                                                      range_start_ptr:
+                                                          *const ::std::os::raw::c_char,
+                                                      range_start_len: usize,
+                                                      range_limit_ptr:
+                                                          *const ::std::os::raw::c_char,
+                                                      range_limit_len: usize,
+                                                      count: *mut u64,
+                                                      size: *mut u64);
+}
+extern "C" {
     pub fn rocks_db_get_name(db: *mut rocks_db_t, len: *mut usize)
      -> *const ::std::os::raw::c_char;
 }
@@ -2734,6 +2760,14 @@ extern "C" {
                                                                          *mut rocks_universal_compaction_options_t,
                                                                      val:
                                                                          ::std::os::raw::c_uchar);
+}
+extern "C" {
+    pub fn rocks_get_supported_compressions(len: *mut usize)
+     -> *mut ::std::os::raw::c_int;
+}
+extern "C" {
+    pub fn rocks_get_supported_compressions_destroy(ptr:
+                                                        *mut ::std::os::raw::c_int);
 }
 extern "C" {
     pub fn free(p: *mut ::std::os::raw::c_void);

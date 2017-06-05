@@ -606,6 +606,30 @@ int rocks_db_level0_stop_write_trigger(rocks_db_t* db) {
   return db->rep->Level0StopWriteTrigger();
 }
 
+void rocks_db_get_approximate_sizes_cf(
+    rocks_db_t* db, rocks_column_family_handle_t* column_family,
+    size_t num_ranges, const char* const* range_start_ptrs,
+    const size_t* range_start_lens, const char* const* range_limit_ptrs,
+    const size_t* range_limit_lens, uint64_t* sizes) {
+  std::vector<Range> ranges;
+  for (int i = 0; i < num_ranges; i++) {
+    ranges.push_back(Range(Slice(range_start_ptrs[i], range_start_lens[i]),
+                           Slice(range_limit_ptrs[i], range_limit_lens[i])));
+  }
+  db->rep->GetApproximateSizes(column_family->rep, ranges.data(), num_ranges,
+                               sizes);
+}
+
+void rocks_db_get_approximate_memtable_stats_cf(
+    rocks_db_t* db, rocks_column_family_handle_t* column_family,
+    const char* range_start_ptr, size_t range_start_len,
+    const char* range_limit_ptr, size_t range_limit_len, uint64_t* count,
+    uint64_t* size) {
+  auto range = Range(Slice(range_start_ptr, range_start_len),
+                     Slice(range_limit_ptr, range_limit_len));
+  db->rep->GetApproximateMemTableStats(column_family->rep, range, count, size);
+}
+
 void rocks_db_compact_range_cf_opt(rocks_db_t* db,
                                    rocks_column_family_handle_t* column_family,
                                    rocks_compactrange_options_t* opt,

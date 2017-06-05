@@ -407,6 +407,49 @@ impl<'a, 'b: 'a> ColumnFamilyHandle<'a, 'b> {
         }
     }
 
+    pub fn get_approximate_sizes(&self,
+                                 ranges: &[ops::Range<&[u8]>]) -> Vec<u64> {
+        let num_ranges = ranges.len();
+        let mut range_start_ptrs = Vec::with_capacity(num_ranges);
+        let mut range_start_lens = Vec::with_capacity(num_ranges);
+        let mut range_end_ptrs = Vec::with_capacity(num_ranges);
+        let mut range_end_lens = Vec::with_capacity(num_ranges);
+        let mut sizes = vec![0_u64; num_ranges];
+        for r in ranges {
+            range_start_ptrs.push(r.start.as_ptr() as *const c_char);
+            range_start_lens.push(r.start.len());
+            range_end_ptrs.push(r.end.as_ptr() as *const c_char);
+            range_end_lens.push(r.end.len());
+        }
+        unsafe {
+            ll::rocks_db_get_approximate_sizes_cf(self.db.raw,
+                                                  self.raw(),
+                                                  num_ranges,
+                                                  range_start_ptrs.as_ptr(),
+                                                  range_start_lens.as_ptr(),
+                                                  range_end_ptrs.as_ptr(),
+                                                  range_end_lens.as_ptr(),
+                                                  sizes.as_mut_ptr());
+        }
+        sizes
+    }
+
+    pub fn get_approximate_memtable_stats(&self,
+                                          range: ops::Range<&[u8]>) -> (u64, u64) {
+        let mut count = 0;
+        let mut size = 0;
+        unsafe {
+            ll::rocks_db_get_approximate_memtable_stats_cf(self.db.raw,
+                                                           self.raw(),
+                                                           range.start.as_ptr() as *const c_char,
+                                                           range.start.len(),
+                                                           range.end.as_ptr() as *const c_char,
+                                                           range.end.len(),
+                                                           &mut count,
+                                                           &mut size);
+        }
+        (count, size)
+    }
 
     // ================================================================================
 }
@@ -1278,14 +1321,62 @@ impl<'a> DB<'a> {
     /// the recently written data in the mem-tables (if
     /// the mem-table type supports it), data serialized to disk, or both.
     /// include_flags should be of type DB::SizeApproximationFlags
-    pub fn get_approximate_sizes(&self, range: &[ops::Range<&[u8]>], include_flags: u8) -> u64 {
-        unimplemented!()
+    pub fn get_approximate_sizes(&self, ranges: &[ops::Range<&[u8]>]) -> Vec<u64> {
+        self.get_approximate_sizes_cf(&self.default_column_family(),
+                                      ranges)
+    }
+
+    pub fn get_approximate_sizes_cf(&self,
+                                    column_family: &ColumnFamilyHandle,
+                                    ranges: &[ops::Range<&[u8]>]) -> Vec<u64> {
+        // include_flags: u8) ->
+        let num_ranges = ranges.len();
+        let mut range_start_ptrs = Vec::with_capacity(num_ranges);
+        let mut range_start_lens = Vec::with_capacity(num_ranges);
+        let mut range_end_ptrs = Vec::with_capacity(num_ranges);
+        let mut range_end_lens = Vec::with_capacity(num_ranges);
+        let mut sizes = vec![0_u64; num_ranges];
+        for r in ranges {
+            range_start_ptrs.push(r.start.as_ptr() as *const c_char);
+            range_start_lens.push(r.start.len());
+            range_end_ptrs.push(r.end.as_ptr() as *const c_char);
+            range_end_lens.push(r.end.len());
+        }
+        unsafe {
+            ll::rocks_db_get_approximate_sizes_cf(self.raw(),
+                                                  column_family.raw,
+                                                  num_ranges,
+                                                  range_start_ptrs.as_ptr(),
+                                                  range_start_lens.as_ptr(),
+                                                  range_end_ptrs.as_ptr(),
+                                                  range_end_lens.as_ptr(),
+                                                  sizes.as_mut_ptr());
+        }
+        sizes
     }
 
     /// The method is similar to GetApproximateSizes, except it
     /// returns approximate number of records in memtables.
-    pub fn get_approximate_memtable_stats(&self, range: &[ops::Range<&[u8]>], include_flags: u8) -> u64 {
-        unimplemented!()
+    pub fn get_approximate_memtable_stats(&self, range: ops::Range<&[u8]>) -> (u64, u64) {
+        self.get_approximate_memtable_stats_cf(&self.default_column_family(), range)
+    }
+
+    pub fn get_approximate_memtable_stats_cf(&self,
+                                             column_family: &ColumnFamilyHandle,
+                                             range: ops::Range<&[u8]>) -> (u64, u64) {
+        let mut count = 0;
+        let mut size = 0;
+        unsafe {
+            ll::rocks_db_get_approximate_memtable_stats_cf(self.raw(),
+                                                           column_family.raw,
+                                                           range.start.as_ptr() as *const c_char,
+                                                           range.start.len(),
+                                                           range.end.as_ptr() as *const c_char,
+                                                           range.end.len(),
+                                                           &mut count,
+                                                           &mut size);
+        }
+        (count, size)
     }
 
 
@@ -1480,6 +1571,7 @@ impl<'a> DB<'a> {
         }
     }
 
+    // TODO:
     // get options
     // get db options
 
@@ -2490,6 +2582,37 @@ mod tests {
         assert!(format!("{:?}", ret).contains("Unrecognized option"));
 
     }
+
+    #[test]
+    fn approximate_sizes() {
+        let tmp_dir = ::tempdir::TempDir::new_in(".", "rocks").unwrap();
+        let db = DB::open(Options::default()
+                          .map_db_options(|db| db.create_if_missing(true))
+                          .map_cf_options(|cf| cf.disable_auto_compactions(true)), // disable
+                          &tmp_dir)
+            .unwrap();
+        assert!(db.put(&Default::default(), b"long-key", vec![b'A'; 1024 * 1024].as_ref())
+                .is_ok());
+        assert!(db.flush(&FlushOptions::default().wait(true)).is_ok());
+        assert!(db.put(&Default::default(), b"long-key-2", vec![b'A'; 2 * 1024].as_ref())
+                .is_ok());
+
+        let sizes = db.get_approximate_sizes(&[b"long-key".as_ref() .. &b"long-key-".as_ref()]);
+        assert_eq!(sizes.len(), 1);
+        assert!(sizes[0] > 0);
+
+        for i in 0..100 {
+            let key = format!("k{}", i);
+            let val = format!("v{}", i * 10);
+
+            db.put(&WriteOptions::default(), key.as_bytes(), val.as_bytes())
+                .unwrap();
+        }
+        let (count, size) = db.get_approximate_memtable_stats(b"a".as_ref() .. &b"z".as_ref());
+        assert!(count > 0 && count < 200);
+        assert!(size > 0);
+    }
+
 
     #[test]
     fn compact_files() {

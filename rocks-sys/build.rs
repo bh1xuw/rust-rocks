@@ -363,6 +363,7 @@ fn main() {
         .file("rocks/metadata.cc")
         .file("rocks/universal_compaction.cc")
         .file("rocks/slice.cc")
+        .file("rocks/convenience.cc")
         .file("rocks/aux.cc")
         .flag("-fPIC")
         .flag("-O2")

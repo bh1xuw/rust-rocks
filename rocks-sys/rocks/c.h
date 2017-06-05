@@ -911,6 +911,18 @@ int rocks_db_level0_stop_write_trigger_cf(
     rocks_db_t* db, rocks_column_family_handle_t* column_family);
 int rocks_db_level0_stop_write_trigger(rocks_db_t* db);
 
+void rocks_db_get_approximate_sizes_cf(
+    rocks_db_t* db, rocks_column_family_handle_t* column_family,
+    size_t num_ranges, const char* const* range_start_ptrs,
+    const size_t* range_start_lens, const char* const* range_limit_ptrs,
+    const size_t* range_limit_lens, uint64_t* sizes);
+
+void rocks_db_get_approximate_memtable_stats_cf(
+    rocks_db_t* db, rocks_column_family_handle_t* column_family,
+    const char* range_start_ptr, size_t range_start_len,
+    const char* range_limit_ptr, size_t range_limit_len, uint64_t* count,
+    uint64_t* size);
+
 const char* rocks_db_get_name(rocks_db_t* db, size_t* len);
 
 void rocks_db_flush(rocks_db_t* db, rocks_flushoptions_t* options,
@@ -1533,6 +1545,10 @@ void rocks_universal_compaction_options_destroy(
 
 void rocks_universal_compaction_options_set_allow_trivial_move(
     rocks_universal_compaction_options_t* uco, unsigned char val);
+
+/* convenience */
+int* rocks_get_supported_compressions(size_t* len);
+void rocks_get_supported_compressions_destroy(int* ptr);
 
 /* aux */
 void free(void* p);

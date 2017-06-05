@@ -69,6 +69,8 @@ big picture(TODOs):
   - [x] get live files metadata
   - [x] list live files
   - [x] set options
+  - [ ] get options: no plan
+  - [x] get approximate sizes
 - [ ] ~~``rocksdb/db_bench_tool.h``~~
 - [x] ``rocksdb/db_dump_tool.h``
 - [ ] ``rocksdb/env.h``
