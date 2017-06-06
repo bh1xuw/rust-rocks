@@ -100,7 +100,7 @@ impl Status {
     pub fn state(&self) -> &str {
         unsafe {
             let ptr = ll::rocks_status_get_state(self.raw);
-            CStr::from_ptr(ptr).to_str().unwrap_or("")
+            ptr.as_ref().and_then(|s| CStr::from_ptr(s).to_str().ok()).unwrap_or("")
         }
     }
 
