@@ -117,7 +117,7 @@ impl PinnableSlice {
 impl fmt::Debug for PinnableSlice {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         let s = unsafe { slice::from_raw_parts(self.data(), self.len()) };
-        write!(f, "{}", String::from_utf8_lossy(s))
+        write!(f, "{:?}", String::from_utf8_lossy(s))
     }
 }
 

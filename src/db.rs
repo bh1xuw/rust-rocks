@@ -451,6 +451,30 @@ impl<'a, 'b: 'a> ColumnFamilyHandle<'a, 'b> {
         (count, size)
     }
 
+    pub fn ingest_external_file(&self,
+                                external_files: &[String],
+                                options: &IngestExternalFileOptions)
+                                -> Result<()> {
+        unsafe {
+            let mut status = mem::zeroed();
+            let num_files = external_files.len();
+            let mut c_files = Vec::with_capacity(num_files);
+            let mut c_files_lens = Vec::with_capacity(num_files);
+            for f in external_files {
+                c_files.push(f.as_ptr() as *const _);
+                c_files_lens.push(f.len());
+            }
+            ll::rocks_db_ingest_external_file_cf(self.db.raw,
+                                                 self.raw(),
+                                                 c_files.as_ptr() as *const _,
+                                                 c_files_lens.as_ptr(),
+                                                 num_files,
+                                                 options.raw(),
+                                                 &mut status);
+            Status::from_ll(status)
+        }
+    }
+
     // ================================================================================
 }
 
@@ -1863,6 +1887,31 @@ impl<'a> DB<'a> {
                                               num_files,
                                               options.raw(),
                                               &mut status);
+            Status::from_ll(status)
+        }
+    }
+
+    pub fn ingest_external_file_cf(&self,
+                                   column_family: &ColumnFamilyHandle,
+                                   external_files: &[String],
+                                   options: &IngestExternalFileOptions)
+                                   -> Result<()> {
+        unsafe {
+            let mut status = mem::zeroed();
+            let num_files = external_files.len();
+            let mut c_files = Vec::with_capacity(num_files);
+            let mut c_files_lens = Vec::with_capacity(num_files);
+            for f in external_files {
+                c_files.push(f.as_ptr() as *const _);
+                c_files_lens.push(f.len());
+            }
+            ll::rocks_db_ingest_external_file_cf(self.raw(),
+                                                 column_family.raw,
+                                                 c_files.as_ptr() as *const _,
+                                                 c_files_lens.as_ptr(),
+                                                 num_files,
+                                                 options.raw(),
+                                                 &mut status);
             Status::from_ll(status)
         }
     }

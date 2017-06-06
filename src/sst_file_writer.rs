@@ -35,7 +35,7 @@ impl Drop for ExternalSstFileInfo {
 impl fmt::Debug for ExternalSstFileInfo {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         write!(f,
-               "ExternalSstFileInfo#{} <path: {}, key: {:?}..{:?}, entries: {}>",
+               "ExternalSstFileInfo#{} <path: {}, key: {:?}...{:?}, entries: {}>",
                self.sequence_number(),
                self.file_path(),
                String::from_utf8_lossy(self.smallest_key()),
@@ -184,6 +184,11 @@ pub struct SstFileWriterBuilder {
 }
 
 impl SstFileWriterBuilder {
+    pub fn column_family(&mut self, cf: &ColumnFamilyHandle) -> &mut Self {
+        self.column_family = cf.raw();
+        self
+    }
+
     pub fn build(&mut self) -> SstFileWriter {
         let env_options = self.env_options.take().unwrap_or_default();
         let options = self.options.take().unwrap_or_default();
