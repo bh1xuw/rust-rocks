@@ -152,8 +152,6 @@ impl<'a, 'b> PartialEq<&'b [u8]> for &'a PinnableSlice {
     }
 }
 
-
-
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -162,6 +160,6 @@ mod tests {
     fn pinnable_slice() {
         let s = PinnableSlice::new();
         assert_eq!(s, b"");
-        assert_eq!(&format!("{:?}", s), "");
+        assert_eq!(&format!("{:?}", s), "\"\"");
     }
 }
