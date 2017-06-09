@@ -107,7 +107,7 @@ big picture(TODOs):
   - [x] pinnable slice
 - [x] ``rocksdb/slice_transform.h``
 - [x] ``rocksdb/snapshot.h``
-  - [ ] ManagedSnapshot
+  - [x] ManagedSnapshot
 - [ ] ``rocksdb/sst_dump_tool.h``
 - [ ] ``rocksdb/sst_file_manager.h``
 - [x] ``rocksdb/sst_file_writer.h``
