@@ -22,7 +22,7 @@ use std::result;
 
 pub use error::Status;
 
-/// The type returned by RocksDB
+/// The result type returned by RocksDB, wraps Status
 pub type Result<T> = result::Result<T, Status>;
 
 pub mod advanced_options;
@@ -58,11 +58,11 @@ pub mod wal_filter;
 pub mod filter_policy;
 pub mod convenience;
 
+// the prelude
 pub mod rocksdb;
 
 // for raw pointer infomation hiding
 mod to_raw;
-
 
 #[doc(hidden)]
 pub mod c {

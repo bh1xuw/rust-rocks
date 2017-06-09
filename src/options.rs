@@ -2260,7 +2260,7 @@ impl DBOptions {
 /// ```
 /// use rocks::options::Options;
 ///
-/// let opt = Options::default()
+/// let _opt = Options::default()
 ///           .map_db_options(|db| db.create_if_missing(true))
 ///           .map_cf_options(|cf| cf.disable_auto_compactions(true));
 /// ```
@@ -2368,7 +2368,7 @@ pub enum ReadTier {
 /// ```
 /// use rocks::options::{ReadOptions, ReadTier};
 ///
-/// let ropt = ReadOptions::default()
+/// let _ropt = ReadOptions::default()
 ///     .fill_cache(true)
 ///     .managed(true)
 ///     .read_tier(ReadTier::PersistedTier);
@@ -2429,9 +2429,9 @@ impl ReadOptions {
     ///
     /// Default: nullptr
     // FIXME: lifetime, val should be longer than self
-    pub fn snapshot(self, val: Option<&Snapshot>) -> Self {
+    pub fn snapshot<'a, T: AsRef<Snapshot<'a>>>(self, val: Option<T>) -> Self {
         unsafe {
-            ll::rocks_readoptions_set_snapshot(self.raw, val.map(|v| v.raw()).unwrap_or(ptr::null_mut()));
+            ll::rocks_readoptions_set_snapshot(self.raw, val.map(|v| v.as_ref().raw()).unwrap_or(ptr::null_mut()));
         }
         self
     }

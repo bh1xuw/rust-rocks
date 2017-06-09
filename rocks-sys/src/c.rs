@@ -1709,6 +1709,10 @@ extern "C" {
                                   snapshot: *const rocks_snapshot_t);
 }
 extern "C" {
+    pub fn rocks_snapshot_get_sequence_number(snapshot: *mut rocks_snapshot_t)
+     -> u64;
+}
+extern "C" {
     pub fn rocks_writebatch_create() -> *mut rocks_writebatch_t;
 }
 extern "C" {

@@ -1028,6 +1028,7 @@ const rocks_snapshot_t* rocks_create_snapshot(rocks_db_t* db);
 
 void rocks_release_snapshot(rocks_db_t* db, const rocks_snapshot_t* snapshot);
 
+uint64_t rocks_snapshot_get_sequence_number(rocks_snapshot_t* snapshot);
 /* iterator.h */
 
 /* write_batch.h */
