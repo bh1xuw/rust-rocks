@@ -101,7 +101,7 @@ impl<'a, 'b> Drop for ColumnFamilyHandle<'a, 'b> {
         // unsafe { ll::rocks_column_family_handle_destroy(self.raw) }
         unsafe {
             if self.owned {
-                let mut status = mem::zeroed();
+                let mut status = ptr::null_mut::<ll::rocks_status_t>();
                 ll::rocks_db_destroy_column_family_handle(self.db.raw, self.raw(), &mut status);
                 assert!(Status::from_ll(status).is_ok())
             }
@@ -183,7 +183,7 @@ impl<'a, 'b: 'a> ColumnFamilyHandle<'a, 'b> {
 
     pub fn delete(&self, options: &WriteOptions, key: &[u8]) -> Result<()> {
         unsafe {
-            let mut status = mem::zeroed();
+            let mut status = ptr::null_mut::<ll::rocks_status_t>();
             ll::rocks_db_delete_cf(self.db.raw,
                                    options.as_ref().raw(),
                                    self.raw(),
@@ -196,7 +196,7 @@ impl<'a, 'b: 'a> ColumnFamilyHandle<'a, 'b> {
 
     pub fn single_delete(&self, options: &WriteOptions, key: &[u8]) -> Result<()> {
         unsafe {
-            let mut status = mem::zeroed();
+            let mut status = ptr::null_mut::<ll::rocks_status_t>();
             ll::rocks_db_single_delete_cf(self.db.raw,
                                           options.as_ref().raw(),
                                           self.raw(),
@@ -209,7 +209,7 @@ impl<'a, 'b: 'a> ColumnFamilyHandle<'a, 'b> {
 
     pub fn delete_range(&self, options: &WriteOptions, begin_key: &[u8], end_key: &[u8]) -> Result<()> {
         unsafe {
-            let mut status = mem::zeroed();
+            let mut status = ptr::null_mut::<ll::rocks_status_t>();
             ll::rocks_db_delete_range_cf(self.db.raw,
                                          options.as_ref().raw(),
                                          self.raw(),
@@ -224,7 +224,7 @@ impl<'a, 'b: 'a> ColumnFamilyHandle<'a, 'b> {
 
     pub fn merge(&self, options: &WriteOptions, key: &[u8], val: &[u8]) -> Result<()> {
         unsafe {
-            let mut status = mem::zeroed();
+            let mut status = ptr::null_mut::<ll::rocks_status_t>();
             ll::rocks_db_merge_cf(self.db.raw,
                                   options.as_ref().raw(),
                                   self.raw(),
@@ -366,7 +366,7 @@ impl<'a, 'b: 'a> ColumnFamilyHandle<'a, 'b> {
 
     pub fn compact_range<R: ToCompactRange>(&self, options: &CompactRangeOptions, range: R) -> Result<()> {
         unsafe {
-            let mut status = mem::zeroed();
+            let mut status = ptr::null_mut::<ll::rocks_status_t>();
             ll::rocks_db_compact_range_opt_cf(self.db.raw,
                                               options.raw(),
                                               self.raw(),
@@ -456,7 +456,7 @@ impl<'a, 'b: 'a> ColumnFamilyHandle<'a, 'b> {
                                 options: &IngestExternalFileOptions)
                                 -> Result<()> {
         unsafe {
-            let mut status = mem::zeroed();
+            let mut status = ptr::null_mut::<ll::rocks_status_t>();
             let num_files = external_files.len();
             let mut c_files = Vec::with_capacity(num_files);
             let mut c_files_lens = Vec::with_capacity(num_files);
@@ -526,6 +526,12 @@ impl<'a> fmt::Debug for DB<'a> {
 
 unsafe impl<'a> Sync for DB<'a> {}
 
+impl<'a> ToRaw<ll::rocks_db_t> for DB<'a> {
+    fn raw(&self) -> *mut ll::rocks_db_t {
+        self.context.raw
+    }
+}
+
 impl<'a> DB<'a> {
     unsafe fn from_ll<'b>(raw: *mut ll::rocks_db_t) -> DB<'b> {
         let context = DBContext {
@@ -533,10 +539,6 @@ impl<'a> DB<'a> {
             _marker: PhantomData,
         };
         DB { context: Rc::new(context) }
-    }
-
-    fn raw(&self) -> *mut ll::rocks_db_t {
-        self.context.raw
     }
 
     /// Open the database with the specified `name`.
@@ -776,7 +778,7 @@ impl<'a> DB<'a> {
     /// Note: consider setting `options.sync = true`.
     pub fn delete<W: AsRef<WriteOptions>>(&self, options: W, key: &[u8]) -> Result<()> {
         unsafe {
-            let mut status = mem::zeroed();
+            let mut status = ptr::null_mut::<ll::rocks_status_t>();
             ll::rocks_db_delete(self.raw(), options.as_ref().raw(), key.as_ptr() as *const _, key.len(), &mut status);
             Status::from_ll(status)
         }
@@ -788,7 +790,7 @@ impl<'a> DB<'a> {
                                              key: &[u8])
                                              -> Result<()> {
         unsafe {
-            let mut status = mem::zeroed();
+            let mut status = ptr::null_mut::<ll::rocks_status_t>();
             ll::rocks_db_delete_cf(self.raw(),
                                    options.as_ref().raw(),
                                    column_family.raw(),
@@ -817,7 +819,7 @@ impl<'a> DB<'a> {
     /// Note: consider setting `options.sync = true`.
     pub fn single_delete<W: AsRef<WriteOptions>>(&self, options: W, key: &[u8]) -> Result<()> {
         unsafe {
-            let mut status = mem::zeroed();
+            let mut status = ptr::null_mut::<ll::rocks_status_t>();
             ll::rocks_db_single_delete(self.raw(),
                                        options.as_ref().raw(),
                                        key.as_ptr() as *const _,
@@ -833,7 +835,7 @@ impl<'a> DB<'a> {
                             key: &[u8])
                             -> Result<()> {
         unsafe {
-            let mut status = mem::zeroed();
+            let mut status = ptr::null_mut::<ll::rocks_status_t>();
             ll::rocks_db_single_delete_cf(self.raw(),
                                           options.as_ref().raw(),
                                           column_family.raw(),
@@ -866,7 +868,7 @@ impl<'a> DB<'a> {
                                                    end_key: &[u8])
                                                    -> Result<()> {
         unsafe {
-            let mut status = mem::zeroed();
+            let mut status = ptr::null_mut::<ll::rocks_status_t>();
             ll::rocks_db_delete_range_cf(self.raw(),
                                          options.as_ref().raw(),
                                          column_family.raw(),
@@ -886,7 +888,7 @@ impl<'a> DB<'a> {
     /// Note: consider setting `options.sync = true`.
     pub fn merge<W: AsRef<WriteOptions>>(&self, options: W, key: &[u8], val: &[u8]) -> Result<()> {
         unsafe {
-            let mut status = mem::zeroed();
+            let mut status = ptr::null_mut::<ll::rocks_status_t>();
             ll::rocks_db_merge(self.raw(),
                                options.as_ref().raw(),
                                key.as_ptr() as *const _,
@@ -905,7 +907,7 @@ impl<'a> DB<'a> {
                                             val: &[u8])
                                             -> Result<()> {
         unsafe {
-            let mut status = mem::zeroed();
+            let mut status = ptr::null_mut::<ll::rocks_status_t>();
             ll::rocks_db_merge_cf(self.raw(),
                                   options.as_ref().raw(),
                                   column_family.raw(),
@@ -928,7 +930,7 @@ impl<'a> DB<'a> {
     /// Note: consider setting `options.sync = true`.
     pub fn write<W: AsRef<WriteOptions>>(&self, options: W, updates: WriteBatch) -> Result<()> {
         unsafe {
-            let mut status = mem::zeroed();
+            let mut status = ptr::null_mut::<ll::rocks_status_t>();
             ll::rocks_db_write(self.raw(), options.as_ref().raw(), updates.raw(), &mut status);
             Status::from_ll(status)
         }
@@ -1175,7 +1177,7 @@ impl<'a> DB<'a> {
         unsafe {
             let c_cfs = cfs.iter().map(|cf| cf.as_ref().raw()).collect::<Vec<_>>();
             let cfs_len = cfs.len();
-            let mut status = mem::zeroed();
+            let mut status = ptr::null_mut::<ll::rocks_status_t>();
 
             let mut c_iters = vec![ptr::null_mut(); cfs_len];
             ll::rocks_db_create_iterators(self.raw(),
@@ -1425,7 +1427,7 @@ impl<'a> DB<'a> {
     /// or a given level (specified by non-negative options.target_level).
     pub fn compact_range<R: ToCompactRange>(&self, options: &CompactRangeOptions, range: R) -> Result<()> {
         unsafe {
-            let mut status = mem::zeroed();
+            let mut status = ptr::null_mut::<ll::rocks_status_t>();
             ll::rocks_db_compact_range_opt(self.raw(),
                                            options.raw(),
                                            range.start_key() as *const _,
@@ -1534,7 +1536,7 @@ impl<'a> DB<'a> {
     /// UnblockBackgroundWork is called
     pub fn pause_background_work(&self) -> Result<()> {
         unsafe {
-            let mut status = mem::zeroed();
+            let mut status = ptr::null_mut::<ll::rocks_status_t>();
             ll::rocks_db_pause_background_work(self.raw(), &mut status);
             Status::from_ll(status)
         }
@@ -1542,7 +1544,7 @@ impl<'a> DB<'a> {
 
     pub fn continue_background_work(&self) -> Result<()> {
         unsafe {
-            let mut status = mem::zeroed();
+            let mut status = ptr::null_mut::<ll::rocks_status_t>();
             ll::rocks_db_continue_background_work(self.raw(), &mut status);
             Status::from_ll(status)
         }
@@ -1563,7 +1565,7 @@ impl<'a> DB<'a> {
                 .map(|cf| cf.as_ref().raw() as *const _)
                 .collect::<Vec<*const _>>();
             let cfs_len = column_family_handles.len();
-            let mut status = mem::zeroed();
+            let mut status = ptr::null_mut::<ll::rocks_status_t>();
             ll::rocks_db_enable_auto_compaction(self.raw(), c_cfs.as_ptr(), cfs_len, &mut status);
             Status::from_ll(status)
         }
@@ -1602,7 +1604,7 @@ impl<'a> DB<'a> {
     /// Flush all mem-table data.
     pub fn flush(&self, options: &FlushOptions) -> Result<()> {
         unsafe {
-            let mut status = mem::zeroed();
+            let mut status = ptr::null_mut::<ll::rocks_status_t>();
             ll::rocks_db_flush(self.raw(), options.raw(), &mut status);
             Status::from_ll(status)
         }
@@ -1615,7 +1617,7 @@ impl<'a> DB<'a> {
     /// Currently only works if allow_mmap_writes = false in Options.
     pub fn sync_wal(&self) -> Result<()> {
         unsafe {
-            let mut status = mem::zeroed();
+            let mut status = ptr::null_mut::<ll::rocks_status_t>();
             ll::rocks_db_sync_wal(self.raw(), &mut status);
             Status::from_ll(status)
         }
@@ -1631,7 +1633,7 @@ impl<'a> DB<'a> {
     /// times have the same effect as calling it once.
     pub fn disable_file_deletions(&self) -> Result<()> {
         unsafe {
-            let mut status = mem::zeroed();
+            let mut status = ptr::null_mut::<ll::rocks_status_t>();
             ll::rocks_db_disable_file_deletions(self.raw(), &mut status);
             Status::from_ll(status)
         }
@@ -1650,7 +1652,7 @@ impl<'a> DB<'a> {
     /// threads call EnableFileDeletions()
     pub fn enable_file_deletions(&self, force: bool) -> Result<()> {
         unsafe {
-            let mut status = mem::zeroed();
+            let mut status = ptr::null_mut::<ll::rocks_status_t>();
             ll::rocks_db_enable_file_deletions(self.raw(), force as u8, &mut status);
             Status::from_ll(status)
         }
@@ -1676,7 +1678,7 @@ impl<'a> DB<'a> {
     pub fn get_live_files(&self, flush_memtable: bool) -> Result<(u64, Vec<String>)> {
         unsafe {
             let mut file_size = 0;
-            let mut status = mem::zeroed();
+            let mut status = ptr::null_mut::<ll::rocks_status_t>();
             let files = ll::rocks_db_get_live_files(self.raw(),
                                                     flush_memtable as u8,
                                                     &mut file_size,
@@ -1704,7 +1706,7 @@ impl<'a> DB<'a> {
     /// path relative to the db directory. eg. 000001.sst, /archive/000003.log
     pub fn delete_file(&self, name: &str) -> Result<()> {
         unsafe {
-            let mut status = mem::zeroed();
+            let mut status = ptr::null_mut::<ll::rocks_status_t>();
             ll::rocks_db_delete_file(self.raw(),
                                      name.as_bytes().as_ptr() as *const _,
                                      name.len(),
@@ -1873,7 +1875,7 @@ impl<'a> DB<'a> {
                                 options: &IngestExternalFileOptions)
                                 -> Result<()> {
         unsafe {
-            let mut status = mem::zeroed();
+            let mut status = ptr::null_mut::<ll::rocks_status_t>();
             let num_files = external_files.len();
             let mut c_files = Vec::with_capacity(num_files);
             let mut c_files_lens = Vec::with_capacity(num_files);
@@ -1897,7 +1899,7 @@ impl<'a> DB<'a> {
                                    options: &IngestExternalFileOptions)
                                    -> Result<()> {
         unsafe {
-            let mut status = mem::zeroed();
+            let mut status = ptr::null_mut::<ll::rocks_status_t>();
             let num_files = external_files.len();
             let mut c_files = Vec::with_capacity(num_files);
             let mut c_files_lens = Vec::with_capacity(num_files);
@@ -1922,7 +1924,7 @@ impl<'a> DB<'a> {
     pub fn get_db_identity(&self) -> Result<String> {
         unsafe {
             let mut identity = String::new();
-            let mut status = mem::zeroed();
+            let mut status = ptr::null_mut::<ll::rocks_status_t>();
             ll::rocks_db_get_db_identity(self.raw(), &mut identity as *mut String as *mut _, &mut status);
             Status::from_ll(status).map(|_| identity)
         }
