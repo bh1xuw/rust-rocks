@@ -1,0 +1,27 @@
+language: rust
+dist: trusty
+sudo: required
+rust:
+  - beta
+  - nightly
+  - stable
+  
+cache:
+  directories:
+    - target
+
+os:
+  - linux
+  - osx
+
+before_script:
+  - git submodule update --init --recursive
+
+script:
+  - cargo build --features static-link
+  - cargo test --features static-link -- --nocapture
+
+env:
+  global:
+    - RUST_TEST_THREADS=1
+    - LD_LIBRARY_PATH: "/usr/local/lib"
