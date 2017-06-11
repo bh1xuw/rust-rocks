@@ -64,4 +64,9 @@ void rocks_iter_get_property(const rocks_iterator_t* iter, const char* prop,
     rust_string_assign(value, cval.data(), cval.size());
   }
 }
+
+rocks_iterator_t* rocks_new_empty_iterator() {
+  auto it = NewEmptyIterator();
+  return new rocks_iterator_t { it };
+}
 }

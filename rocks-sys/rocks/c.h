@@ -1297,6 +1297,8 @@ void rocks_iter_get_property(const rocks_iterator_t* iter, const char* prop,
                              size_t prop_len, void* value,
                              rocks_status_t** status);
 
+rocks_iterator_t* rocks_new_empty_iterator();
+
 /* filter_policy */
 rocks_raw_filterpolicy_t* rocks_raw_filterpolicy_new_bloomfilter(
     int bits_per_key, unsigned char use_block_based_builder);

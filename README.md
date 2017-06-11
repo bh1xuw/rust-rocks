@@ -97,7 +97,7 @@ big picture(TODOs):
 - [x] ``rocksdb/iostats_context.h``
 - [x] ``rocksdb/iterator.h``
   - [x] adapter for Rust Iterator
-  - [ ] reverse iterator
+  - [x] reverse iterator
 - [ ] ~~``rocksdb/ldb_tool.h``~~
 - [ ] ``rocksdb/listener.h``
 - [ ] ``rocksdb/memtablerep.h``

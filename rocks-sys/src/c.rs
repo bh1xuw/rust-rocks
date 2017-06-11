@@ -2260,6 +2260,9 @@ extern "C" {
                                    status: *mut *mut rocks_status_t);
 }
 extern "C" {
+    pub fn rocks_new_empty_iterator() -> *mut rocks_iterator_t;
+}
+extern "C" {
     pub fn rocks_raw_filterpolicy_new_bloomfilter(bits_per_key:
                                                       ::std::os::raw::c_int,
                                                   use_block_based_builder:

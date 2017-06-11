@@ -225,7 +225,7 @@ mod tests {
         assert!(db.put(&WriteOptions::default(), b"kEy2", b"").is_ok());
 
         let ks = db.new_iterator(&ReadOptions::default().pin_data(true))
-            .iter()
+            .into_iter()
             .map(|kv| String::from_utf8_lossy(kv.0))
             .collect::<Vec<_>>();
 
