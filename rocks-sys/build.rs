@@ -77,6 +77,8 @@ mod imp {
     use std::fs::File;
     use std::path::Path;
 
+    use gcc;
+
     pub fn build() {
         #[cfg(feature = "snappy")]
         snappy();
