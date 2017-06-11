@@ -1637,6 +1637,18 @@ extern "C" {
     pub fn rocks_env_join_all_threads(env: *mut rocks_env_t);
 }
 extern "C" {
+    pub fn rocks_env_get_thread_pool_queue_len(env: *mut rocks_env_t,
+                                               pri: ::std::os::raw::c_int)
+     -> ::std::os::raw::c_uint;
+}
+extern "C" {
+    pub fn rocks_env_new_logger(env: *mut rocks_env_t,
+                                name_ptr: *const ::std::os::raw::c_char,
+                                name_len: usize,
+                                status: *mut *mut rocks_status_t)
+     -> *mut rocks_logger_t;
+}
+extern "C" {
     pub fn rocks_env_destroy(env: *mut rocks_env_t);
 }
 extern "C" {
@@ -1699,6 +1711,23 @@ extern "C" {
 }
 extern "C" {
     pub fn rocks_logger_destroy(logger: *mut rocks_logger_t);
+}
+extern "C" {
+    pub fn rocks_logger_log(logger: *mut rocks_logger_t,
+                            log_level: ::std::os::raw::c_int,
+                            msg_ptr: *const ::std::os::raw::c_char,
+                            msg_len: usize);
+}
+extern "C" {
+    pub fn rocks_logger_flush(logger: *mut rocks_logger_t);
+}
+extern "C" {
+    pub fn rocks_logger_set_log_level(logger: *mut rocks_logger_t,
+                                      log_level: ::std::os::raw::c_int);
+}
+extern "C" {
+    pub fn rocks_logger_get_log_level(logger: *mut rocks_logger_t)
+     -> ::std::os::raw::c_int;
 }
 extern "C" {
     pub fn rocks_create_snapshot(db: *mut rocks_db_t)

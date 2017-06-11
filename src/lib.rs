@@ -25,6 +25,7 @@ pub use error::Status;
 /// The result type returned by RocksDB, wraps Status
 pub type Result<T> = result::Result<T, Status>;
 
+
 pub mod advanced_options;
 pub mod cache;
 pub mod compaction_filter;

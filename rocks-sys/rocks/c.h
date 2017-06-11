@@ -993,6 +993,11 @@ void rocks_env_set_high_priority_background_threads(rocks_env_t* env, int n);
 
 void rocks_env_join_all_threads(rocks_env_t* env);
 
+unsigned int rocks_env_get_thread_pool_queue_len(rocks_env_t* env, int pri);
+
+rocks_logger_t* rocks_env_new_logger(rocks_env_t* env, const char* name_ptr,
+                                     size_t name_len, rocks_status_t** status);
+
 void rocks_env_destroy(rocks_env_t* env);
 
 rocks_envoptions_t* rocks_envoptions_create();
@@ -1021,6 +1026,15 @@ void rocks_envoptions_set_writable_file_max_buffer_size(rocks_envoptions_t* opt,
                                                         size_t val);
 
 void rocks_logger_destroy(rocks_logger_t* logger);
+
+void rocks_logger_log(rocks_logger_t* logger, int log_level,
+                      const char* msg_ptr, size_t msg_len);
+
+void rocks_logger_flush(rocks_logger_t* logger);
+
+void rocks_logger_set_log_level(rocks_logger_t* logger, int log_level);
+
+int rocks_logger_get_log_level(rocks_logger_t* logger);
 
 /* snapshot.h */
 

@@ -73,8 +73,11 @@ big picture(TODOs):
   - [x] get approximate sizes
 - [ ] ~~``rocksdb/db_bench_tool.h``~~
 - [x] ``rocksdb/db_dump_tool.h``
-- [ ] ``rocksdb/env.h``
-  - [ ] logger
+- [x] ``rocksdb/env.h``
+  - [x] logger: log/create
+  - [x] EnvOptions
+  - [x] Env basic
+  - [ ] Env advanced
 - [ ] ~~``rocksdb/experimental.h``~~
 - [x] ``rocksdb/filter_policy.h``
   - [x] basic bloom filter

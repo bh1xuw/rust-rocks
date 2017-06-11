@@ -7,15 +7,26 @@
 //! All Env implementations are safe for concurrent access from
 //! multiple threads without any external synchronization.
 
+use std::mem;
+use std::ptr;
+use std::path::Path;
 
 use rocks_sys as ll;
 
+use error::Status;
+use super::Result;
 use rate_limiter::RateLimiter;
-
 use to_raw::ToRaw;
 
 
 pub const DEFAULT_PAGE_SIZE: usize = 4 * 1024;
+
+#[repr(C)]
+pub enum Priority {
+    Low,
+    High,
+    Total,
+}
 
 /// Options while opening a file to read/write
 pub struct EnvOptions {
@@ -150,6 +161,7 @@ impl Default for EnvOptions {
 
 
 #[repr(C)]
+#[derive(Debug, Copy, Clone, PartialEq, Eq, Hash)]
 pub enum InfoLogLevel {
     Debug = 0,
     Info,
@@ -161,6 +173,7 @@ pub enum InfoLogLevel {
 
 
 /// An interface for writing log messages.
+#[derive(Debug)]
 pub struct Logger {
     raw: *mut ll::rocks_logger_t,
 }
@@ -168,12 +181,6 @@ pub struct Logger {
 impl ToRaw<ll::rocks_logger_t> for Logger {
     fn raw(&self) -> *mut ll::rocks_logger_t {
         self.raw
-    }
-}
-
-impl Logger {
-    unsafe fn from_ll(raw: *mut ll::rocks_logger_t) -> Logger {
-        Logger { raw: raw }
     }
 }
 
@@ -185,4 +192,160 @@ impl Drop for Logger {
     }
 }
 
-pub struct Env;
+impl Logger {
+    unsafe fn from_ll(raw: *mut ll::rocks_logger_t) -> Logger {
+        Logger { raw: raw }
+    }
+
+    /// Write an entry to the log file with the specified log level
+    /// and format.  Any log with level under the internal log level
+    /// of *this (see @SetInfoLogLevel and @GetInfoLogLevel) will not be
+    /// printed.
+    pub fn log(&self, log_level: InfoLogLevel, msg: &str) {
+        unsafe {
+            ll::rocks_logger_log(self.raw,
+                                 mem::transmute(log_level),
+                                 msg.as_ptr() as *const _,
+                                 msg.len());
+        }
+    }
+
+    /// Flush to the OS buffers
+    pub fn flush(&self) {
+        unsafe {
+            ll::rocks_logger_flush(self.raw);
+        }
+    }
+
+    pub fn get_log_level(&self) -> InfoLogLevel {
+        unsafe {
+            mem::transmute(ll::rocks_logger_get_log_level(self.raw))
+        }
+    }
+
+    pub fn set_log_level(&mut self, log_level: InfoLogLevel) {
+        unsafe {
+            ll::rocks_logger_set_log_level(self.raw, mem::transmute(log_level));
+        }
+    }
+}
+
+
+pub struct Env {
+    raw: *mut ll::rocks_env_t,
+}
+
+impl ToRaw<ll::rocks_env_t> for Env {
+    fn raw(&self) -> *mut ll::rocks_env_t {
+        self.raw
+    }
+}
+
+impl Drop for Env {
+    fn drop(&mut self) {
+        unsafe {
+            // ffi function will skip dealloc Env::Default() ptr
+            ll::rocks_env_destroy(self.raw)
+        }
+    }
+}
+
+impl Default for Env {
+    /// Return a default environment suitable for the current operating
+    /// system.  Sophisticated users may wish to provide their own Env
+    /// implementation instead of relying on this default environment.
+    ///
+    /// The result of Default() belongs to rocksdb and must never be deleted.
+    fn default() -> Self {
+        Env {
+            raw: unsafe { ll::rocks_create_default_env() },
+        }
+    }
+}
+
+impl Env {
+    pub fn new_mem() -> Env {
+        Env {
+            raw: unsafe { ll::rocks_create_mem_env() },
+        }
+    }
+
+    /// The number of background worker threads of a specific thread pool
+    pub fn set_background_threads(&self, number: i32) {
+        unsafe {
+            ll::rocks_env_set_background_threads(self.raw, number);
+        }
+    }
+
+    pub fn set_high_priority_background_threads(&self, number: i32) {
+        unsafe {
+            ll::rocks_env_set_high_priority_background_threads(self.raw, number);
+        }
+    }
+
+    /// Wait for all threads started by StartThread to terminate.
+    pub fn wait_for_join(&self) {
+        unsafe {
+            ll::rocks_env_join_all_threads(self.raw);
+        }
+    }
+
+    /// Get thread pool queue length for specific thrad pool.
+    pub fn get_thread_pool_queue_len(&self, pri: Priority) -> u32 {
+        unsafe {
+            ll::rocks_env_get_thread_pool_queue_len(self.raw, mem::transmute(pri)) as u32
+        }
+    }
+
+    // Create and return a log file for storing informational messages.
+    pub fn create_logger<P: AsRef<Path>>(&self, fname: P) -> Result<Logger> {
+        unsafe {
+            let mut status = ptr::null_mut();
+            let name = fname.as_ref().to_str().unwrap();
+            let logger = ll::rocks_env_new_logger(self.raw,
+                                                  name.as_ptr() as *const _,
+                                                  name.len(),
+                                                  &mut status);
+            Status::from_ll(status).map(|_| Logger::from_ll(logger))
+        }
+    }
+}
+
+
+#[cfg(test)]
+mod tests {
+    use std::fs::File;
+    use std::io::prelude::*;
+    use super::*;
+
+    #[test]
+    fn logger() {
+        let log_dir = ::tempdir::TempDir::new_in(".", "log").unwrap();
+        let env = Env::default();
+
+        {
+            let logger = env.create_logger(log_dir.path().join("./test.log"));
+            assert!(logger.is_ok());
+
+            let mut logger = logger.unwrap();
+
+            logger.set_log_level(InfoLogLevel::Info);
+            assert_eq!(logger.get_log_level(), InfoLogLevel::Info);
+
+            logger.log(InfoLogLevel::Error, "test log message");
+
+            logger.log(InfoLogLevel::Debug, "debug log message");
+
+            logger.flush();
+
+        }
+
+        let mut f = File::open(log_dir.path().join("./test.log")).unwrap();
+        let mut s = String::new();
+        f.read_to_string(&mut s).unwrap();
+
+        assert!(s.contains("[ERROR] test log message"));
+        assert!(!s.contains("debug log message"));
+    }
+}
+

@@ -31,6 +31,22 @@ void rocks_env_set_high_priority_background_threads(rocks_env_t* env, int n) {
 
 void rocks_env_join_all_threads(rocks_env_t* env) { env->rep->WaitForJoin(); }
 
+unsigned int rocks_env_get_thread_pool_queue_len(rocks_env_t* env, int pri) {
+  return env->rep->GetThreadPoolQueueLen(static_cast<Env::Priority>(pri));
+}
+
+rocks_logger_t* rocks_env_new_logger(rocks_env_t* env, const char* name_ptr,
+                                     size_t name_len, rocks_status_t** status) {
+  auto logger = new rocks_logger_t;
+  auto st = env->rep->NewLogger(std::string(name_ptr, name_len), &logger->rep);
+  if (SaveError(status, std::move(st))) {
+    delete logger;
+    return nullptr;
+  } else {
+    return logger;
+  }
+}
+
 void rocks_env_destroy(rocks_env_t* env) {
   if (!env->is_default) delete env->rep;
   delete env;
@@ -102,4 +118,32 @@ void rocks_envoptions_set_rate_limiter(rocks_envoptions_t* opt, ....) {
 
 extern "C" {
 void rocks_logger_destroy(rocks_logger_t* logger) { delete logger; }
+
+void rocks_logger_log(rocks_logger_t* logger, int log_level,
+                      const char* msg_ptr, size_t msg_len) {
+  if (logger->rep) {
+    auto msg = std::string(msg_ptr, msg_len);
+    va_list ap;
+    logger->rep->Logv(static_cast<InfoLogLevel>(log_level), msg.c_str(), ap);
+  }
+}
+
+void rocks_logger_flush(rocks_logger_t* logger) {
+  if (logger->rep) {
+    logger->rep->Flush();
+  }
+}
+
+void rocks_logger_set_log_level(rocks_logger_t* logger, int log_level) {
+  if (logger->rep) {
+    logger->rep->SetInfoLogLevel(static_cast<InfoLogLevel>(log_level));
+  }
+}
+
+int rocks_logger_get_log_level(rocks_logger_t* logger) {
+  if (logger->rep) {
+    return static_cast<int>(logger->rep->GetInfoLogLevel());
+  }
+  return 0;
+}
 }
