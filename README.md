@@ -28,14 +28,19 @@ big picture(TODOs):
 
 - [x] git submodule, static-link, compression as feature gate
 - [x] information hiding (DO NOT EXPORT raw pointers)
-- [x] wraps Status into a Rust style ``Result<T>``
+- [x] Rust style error handling
+  - [x] wraps Status into a Rust style ``Result<T>``
+  - [ ] wraps Status as a Error variant?
 - [ ] Proof of usablility
 - [ ] bench across C++/Java/other-rust binding
-- [x] travis-ci integration
-- [ ] Zero-Copy
-  - [ ] wraps std::string in Rust
+- [ ] Windows support
+- [ ] CI
+  - [x] travis-ci integration
+  - [ ] appveyor integration for windows
+- [x] Zero-Copy
   - [x] pinnable slice support
   - [x] exports String/Vec<u8> to C++ via `assign`-style API
+  - [ ] wraps std::string in Rust, use `std::move`
 - [ ] Full documentation with code examples
   - [x] good enough by copying C++ comments
   - [ ] rename C++ function names to rust name in doc comments
@@ -117,7 +122,7 @@ big picture(TODOs):
 - [x] ``rocksdb/slice_transform.h``
 - [x] ``rocksdb/snapshot.h``
   - [x] ManagedSnapshot
-- [ ] ``rocksdb/sst_dump_tool.h``
+- [ ] ~~``rocksdb/sst_dump_tool.h``~~
 - [ ] ``rocksdb/sst_file_manager.h``
 - [x] ``rocksdb/sst_file_writer.h``
 - [x] ``rocksdb/statistics.h``
@@ -178,7 +183,7 @@ big picture(TODOs):
 - [ ] ~~``rocksdb/utilities/utility_db.h``~~
 - [ ] ``rocksdb/utilities/write_batch_with_index.h``
 
-[trav-ci-img]: https://travis-ci.org/bh1xuw/rust-rocks.png?branch=master
+[trav-ci-img]: https://travis-ci.org/bh1xuw/rust-rocks.svg?branch=master
 [trav-ci]: https://travis-ci.org/bh1xuw/rust-rocks
 [crates-io-badge]: https://img.shields.io/crates/v/rocks.svg
 [crates-io-url]: https://crates.io/crates/rocks
