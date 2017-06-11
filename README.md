@@ -1,4 +1,6 @@
-# RustRocks [![crates.io badge][crates-io-badge]][crates-io-url]
+# RustRocks [![Build Status][trav-ci-img]][trav-ci] [![crates.io badge][crates-io-badge]][crates-io-url]
+
+Another RocksDB binding for Rust.
 
 Make RocksDB really rocks!
 
@@ -12,9 +14,13 @@ for macOS(with rocksdb installed by brew):
 
     LIBRARY_PATH=/usr/local/lib CXXFLAGS=-I/usr/local/include cargo test -- --nocapture
 
-for linux(with rocksdb installed into /usr/local)
+for linux(with rocksdb installed into /usr/local):
 
     LD_LIBRARY_PATH=/usr/local/lib LIBRARY_PATH=/usr/local/lib CXXFLAGS=-I/usr/local/include cargo test -- --nocapture
+
+for static build:
+
+    refer .travis.yml
 
 ## status
 
@@ -25,7 +31,7 @@ big picture(TODOs):
 - [x] wraps Status into a Rust style ``Result<T>``
 - [ ] Proof of usablility
 - [ ] bench across C++/Java/other-rust binding
-- [ ] travis-ci integration
+- [x] travis-ci integration
 - [ ] Zero-Copy
   - [ ] wraps std::string in Rust
   - [x] pinnable slice support
@@ -172,5 +178,7 @@ big picture(TODOs):
 - [ ] ~~``rocksdb/utilities/utility_db.h``~~
 - [ ] ``rocksdb/utilities/write_batch_with_index.h``
 
+[trav-ci-img]: https://travis-ci.org/bh1xuw/rust-rocks.png?branch=master
+[trav-ci]: https://travis-ci.org/bh1xuw/rust-rocks
 [crates-io-badge]: https://img.shields.io/crates/v/rocks.svg
 [crates-io-url]: https://crates.io/crates/rocks
