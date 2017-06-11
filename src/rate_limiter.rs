@@ -5,7 +5,7 @@ use rocks_sys as ll;
 
 use to_raw::ToRaw;
 
-/// RateLimiter object, which can be shared among RocksDB instances to
+/// `RateLimiter` object, which can be shared among RocksDB instances to
 /// control write rate of flush and compaction.
 pub struct RateLimiter {
     raw: *mut ll::rocks_ratelimiter_t,

@@ -1,6 +1,6 @@
 //! The Merge Operator
 //!
-//! Essentially, a MergeOperator specifies the SEMANTICS of a merge, which only
+//! Essentially, a `MergeOperator` specifies the SEMANTICS of a merge, which only
 //! client knows. It could be numeric addition, list append, string
 //! concatenation, edit data structure, ... , anything.
 //! The library, on the other hand, is concerned with the exercise of this
@@ -144,7 +144,7 @@ pub trait MergeOperator {
     ///       no checking is enforced. Client is responsible for providing
     ///       consistent MergeOperator between DB opens.
     // FIXME: \0 is required
-    fn name(&self) -> &'static str {
+    fn name(&self) -> &str {
         "RustMergeOperator\0"
     }
 }
@@ -181,7 +181,7 @@ pub trait AssociativeMergeOperator {
     ///       no checking is enforced. Client is responsible for providing
     ///       consistent MergeOperator between DB opens.
     // FIXME: \0 is required
-    fn name(&self) -> &'static str {
+    fn name(&self) -> &str {
         "RustAssociativeMergeOperator\0"
     }
 }

@@ -87,7 +87,7 @@ pub trait FilterPolicy {
     // changes in an incompatible way, the name returned by this method
     // must be changed.  Otherwise, old incompatible filters may be
     // passed to methods of this type.
-    fn name(&self) -> &'static str {
+    fn name(&self) -> &str {
         "RustFilterPolicy\0"
     }
 

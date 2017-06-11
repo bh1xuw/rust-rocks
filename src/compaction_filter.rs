@@ -1,4 +1,4 @@
-//! CompactionFilter allows an application to modify/delete a key-value at
+//! `CompactionFilter` allows an application to modify/delete a key-value at
 //! the time of compaction.
 
 use std::os::raw::{c_int, c_char};
@@ -44,7 +44,7 @@ impl Decision {
     }
 }
 
-/// CompactionFilter allows an application to modify/delete a key-value at
+/// `CompactionFilter` allows an application to modify/delete a key-value at
 /// the time of compaction.
 pub trait CompactionFilter {
     /*
@@ -171,7 +171,7 @@ pub trait CompactionFilter {
 
     /// Returns a name that identifies this compaction filter.
     /// The name will be printed to LOG file on start up for diagnosis.
-    fn name(&self) -> &'static str {
+    fn name(&self) -> &str {
         "RustCompactionFilterV2\0"
     }
 }
@@ -231,7 +231,7 @@ pub mod c {
     }
 }
 
-/// Each compaction will create a new CompactionFilter allowing the
+/// Each compaction will create a new `CompactionFilter` allowing the
 /// application to know about different compactions
 pub struct CompactionFilterFactory;
 
@@ -241,7 +241,7 @@ impl CompactionFilterFactory {
     }
 
     /// Returns a name that identifies this compaction filter factory.
-    pub fn name(&self) -> &'static str {
+    pub fn name(&self) -> &str {
         "RustCompactionFilterFactory\0"
     }
 }

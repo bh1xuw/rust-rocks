@@ -38,7 +38,7 @@ impl ToRaw<ll::rocks_cache_t> for Cache {
 
 impl Cache {
     /// The type of the Cache
-    pub fn name(&self) -> &'static str {
+    pub fn name(&self) -> &str {
         unsafe {
             let ptr = ll::rocks_cache_name(self.raw);
             CStr::from_ptr(ptr).to_str().unwrap()

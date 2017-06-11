@@ -99,7 +99,7 @@ pub trait WalFilter {
     /// Returns a name that identifies this WAL filter.
     ///
     /// The name will be printed to LOG file on start up for diagnosis.
-    fn name(&self) -> &'static str {
+    fn name(&self) -> &str {
         "RustWalFilter\0"
     }
 }

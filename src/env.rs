@@ -21,7 +21,9 @@ use to_raw::ToRaw;
 
 pub const DEFAULT_PAGE_SIZE: usize = 4 * 1024;
 
+/// Priority for scheduling job in thread pool
 #[repr(C)]
+#[derive(Debug, Copy, Clone, PartialEq, Eq, Hash)]
 pub enum Priority {
     Low,
     High,
@@ -158,8 +160,7 @@ impl Default for EnvOptions {
     }
 }
 
-
-
+/// Log levels for `Logger`
 #[repr(C)]
 #[derive(Debug, Copy, Clone, PartialEq, Eq, Hash)]
 pub enum InfoLogLevel {
@@ -231,6 +232,8 @@ impl Logger {
 }
 
 
+/// An `Env` is an interface used by the rocksdb implementation to access
+/// operating system functionality like the filesystem etc.
 pub struct Env {
     raw: *mut ll::rocks_env_t,
 }
@@ -264,6 +267,8 @@ impl Default for Env {
 }
 
 impl Env {
+    /// Returns a new environment that stores its data in memory and delegates
+    /// all non-file-storage tasks to base_env.
     pub fn new_mem() -> Env {
         Env {
             raw: unsafe { ll::rocks_create_mem_env() },
@@ -277,6 +282,7 @@ impl Env {
         }
     }
 
+    /// The number of background worker threads of a high priority thread pool
     pub fn set_high_priority_background_threads(&self, number: i32) {
         unsafe {
             ll::rocks_env_set_high_priority_background_threads(self.raw, number);
@@ -297,7 +303,7 @@ impl Env {
         }
     }
 
-    // Create and return a log file for storing informational messages.
+    /// Create and return a log file for storing informational messages.
     pub fn create_logger<P: AsRef<Path>>(&self, fname: P) -> Result<Logger> {
         unsafe {
             let mut status = ptr::null_mut();

@@ -6,10 +6,7 @@
 //! define InDomain and InRange to determine which slices are in either
 //! of these sets respectively.
 
-use std::os::raw::c_char;
-
-
-/// A SliceTranform is a generic pluggable way of transforming one string
+/// A `SliceTranform` is a generic pluggable way of transforming one string
 /// to another. Its primary use-case is in configuring rocksdb
 /// to store prefix blooms by setting prefix_extractor in
 /// ColumnFamilyOptions.
@@ -34,47 +31,51 @@ pub trait SliceTransform {
     ///
     /// Wiki documentation here:
     /// https://github.com/facebook/rocksdb/wiki/Prefix-Seek-API-Changes
-    ///
     fn in_domain(&self, key: &[u8]) -> bool {
         true // default: use transform
     }
 
     /// Return the name of this transformation.
-    fn name(&self) -> &'static str {
+    fn name(&self) -> &str {
         "RustSliceTransform\0"
     }
 }
 
 // rust -> c part
+#[doc(hidden)]
+pub mod c {
+    use std::os::raw::c_char;
 
+    use super::SliceTransform;
 
-#[no_mangle]
-pub unsafe extern "C" fn rust_slice_transform_call(t: *mut (),
-                                                   key: &&[u8], // *Slice
-                                                   ret_value: *mut *const c_char,
-                                                   ret_len: *mut usize) {
-    let trans = t as *mut Box<SliceTransform>;
-    let ret = (*trans).transform(key);
-    *ret_value = ret.as_ptr() as *const _;
-    *ret_len = ret.len();
-}
+    #[no_mangle]
+    pub unsafe extern "C" fn rust_slice_transform_call(t: *mut (),
+                                                       key: &&[u8], // *Slice
+                                                       ret_value: *mut *const c_char,
+                                                       ret_len: *mut usize) {
+        let trans = t as *mut Box<SliceTransform>;
+        let ret = (*trans).transform(key);
+        *ret_value = ret.as_ptr() as *const _;
+        *ret_len = ret.len();
+    }
 
-#[no_mangle]
-pub unsafe extern "C" fn rust_slice_transform_name(t: *mut ()) -> *const c_char {
-    let trans = t as *mut Box<SliceTransform>;
-    (*trans).name().as_ptr() as *const _
-}
+    #[no_mangle]
+    pub unsafe extern "C" fn rust_slice_transform_name(t: *mut ()) -> *const c_char {
+        let trans = t as *mut Box<SliceTransform>;
+        (*trans).name().as_ptr() as *const _
+    }
 
-#[no_mangle]
-pub unsafe extern "C" fn rust_slice_transform_in_domain(t: *mut (), key: &&[u8]) -> c_char {
-    let trans = t as *mut Box<SliceTransform>;
-    (*trans).in_domain(key) as c_char
-}
+    #[no_mangle]
+    pub unsafe extern "C" fn rust_slice_transform_in_domain(t: *mut (), key: &&[u8]) -> c_char {
+        let trans = t as *mut Box<SliceTransform>;
+        (*trans).in_domain(key) as c_char
+    }
 
-#[no_mangle]
-pub unsafe extern "C" fn rust_slice_transform_drop(t: *mut ()) {
-    let trans = t as *mut Box<SliceTransform>;
-    Box::from_raw(trans);
+    #[no_mangle]
+    pub unsafe extern "C" fn rust_slice_transform_drop(t: *mut ()) {
+        let trans = t as *mut Box<SliceTransform>;
+        Box::from_raw(trans);
+    }
 }
 
 #[cfg(test)]

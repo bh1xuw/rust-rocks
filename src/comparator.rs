@@ -42,7 +42,7 @@ pub trait Comparator {
     /// Names starting with "rocksdb." are reserved and should not be used
     /// by any clients of this package.
     // FIXME: \0 ended
-    fn name(&self) -> &'static str {
+    fn name(&self) -> &str {
         "rust-rocks.Comparator\0"
     }
 

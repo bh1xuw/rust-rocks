@@ -1,4 +1,4 @@
-
+//! Misc utility functions.
 
 use std::mem;
 use std::ptr;

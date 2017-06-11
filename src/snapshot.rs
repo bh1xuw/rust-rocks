@@ -49,7 +49,7 @@ impl<'a> FromRaw<ll::rocks_snapshot_t> for Snapshot<'a> {
 
 impl<'a> AsRef<Snapshot<'a>> for Snapshot<'a> {
     fn as_ref<'b>(&'b self) -> &'b Snapshot<'a> {
-        &self
+        self
     }
 }
 

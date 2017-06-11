@@ -67,6 +67,6 @@ void rocks_iter_get_property(const rocks_iterator_t* iter, const char* prop,
 
 rocks_iterator_t* rocks_new_empty_iterator() {
   auto it = NewEmptyIterator();
-  return new rocks_iterator_t { it };
+  return new rocks_iterator_t{it};
 }
 }

@@ -2255,7 +2255,7 @@ impl DBOptions {
     }
 }
 
-/// Options to control the behavior of a database (passed to DB::Open)
+/// Options to control the behavior of a database (passed to `DB::Open`)
 ///
 /// ```
 /// use rocks::options::Options;
@@ -2777,7 +2777,7 @@ pub enum BottommostLevelCompaction {
 }
 
 
-/// CompactRangeOptions is used by CompactRange() call.
+/// `CompactRangeOptions` is used by `compact_range()` call.
 pub struct CompactRangeOptions {
     raw: *mut ll::rocks_compactrange_options_t,
 }
@@ -2850,7 +2850,7 @@ impl CompactRangeOptions {
 }
 
 
-/// IngestExternalFileOptions is used by IngestExternalFile()
+/// `IngestExternalFileOptions` is used by `ingest_external_file()`
 #[repr(C)]
 pub struct IngestExternalFileOptions {
     raw: *mut ll::rocks_ingestexternalfile_options_t,

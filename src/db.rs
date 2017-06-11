@@ -542,12 +542,6 @@ impl<'a> DB<'a> {
     }
 
     /// Open the database with the specified `name`.
-    ///
-    /// Stores a pointer to a heap-allocated database in *dbptr and returns
-    /// OK on success.
-    ///
-    /// Stores nullptr in *dbptr and returns a non-OK status on error.
-    /// Caller should delete *dbptr when it is no longer needed.
     pub fn open<'b, T: AsRef<Options>, P: AsRef<Path>>(options: T, name: P) -> Result<DB<'b>> {
         let opt = options.as_ref().raw();
         let dbname = name.as_ref()
@@ -577,9 +571,6 @@ impl<'a> DB<'a> {
     /// If everything is OK, handles will on return be the same size
     /// as `column_families` --- `handles[i]` will be a handle that you
     /// will use to operate on column family `column_family[i]`.
-    ///
-    /// Before delete DB, you have to close All column families by calling
-    /// `DestroyColumnFamilyHandle()` with all the handles.
     pub fn open_with_column_families<'b: 'c, 'c, CF: Into<ColumnFamilyDescriptor>>
         (options: &Options, // FIXME: this should be DBOptions
          name: &str,
@@ -640,9 +631,6 @@ impl<'a> DB<'a> {
     /// that modify data, like `put/delete`, will return error.
     /// If the db is opened in read only mode, then no compactions
     /// will happen.
-    ///
-    /// Not supported in ROCKSDB_LITE, in which case the function will
-    /// return `Status::NotSupported`.
     pub fn open_for_readonly<'b, P: AsRef<Path>>(options: &Options,
                                                  name: P,
                                                  error_if_log_file_exist: bool)
@@ -1137,14 +1125,14 @@ impl<'a> DB<'a> {
     ///
     /// Caller should delete the iterator when it is no longer needed.
     /// The returned iterator should be deleted before this db is deleted.
-    pub fn new_iterator(&self, options: &ReadOptions) -> Iterator {
+    pub fn new_iterator<'c, 'd: 'c>(&'d self, options: &ReadOptions) -> Iterator<'c> {
         unsafe {
             let ptr = ll::rocks_db_create_iterator(self.raw(), options.raw());
             Iterator::from_ll(ptr)
         }
     }
 
-    pub fn new_iterator_cf(&self, options: &ReadOptions, cf: &ColumnFamilyHandle) -> Iterator {
+    pub fn new_iterator_cf<'c, 'd: 'c>(&self, options: &ReadOptions, cf: &'d ColumnFamilyHandle) -> Iterator<'c> {
         unsafe {
             let ptr = ll::rocks_db_create_iterator_cf(self.raw(), options.raw(), cf.raw());
             Iterator::from_ll(ptr)
@@ -1154,7 +1142,7 @@ impl<'a> DB<'a> {
     pub fn new_iterators<'c, 'b: 'c, T: AsRef<ColumnFamilyHandle<'c, 'b>>>(&'b self,
                                                                            options: &ReadOptions,
                                                                            cfs: &[T])
-                                                                           -> Result<Vec<Iterator>> {
+                                                                           -> Result<Vec<Iterator<'c>>> {
         let c_cfs = cfs.iter().map(|cf| cf.as_ref().raw()).collect::<Vec<_>>();
         let cfs_len = cfs.len();
         let mut c_iters = vec![ptr::null_mut(); cfs_len];
@@ -1192,7 +1180,6 @@ impl<'a> DB<'a> {
             }
         }
     }
-
 
     /// Release a previously acquired snapshot.  The caller must not
     /// use "snapshot" after this call.
@@ -1410,6 +1397,9 @@ impl<'a> DB<'a> {
     /// the files. In this case, client could set options.change_level to true, to
     /// move the files back to the minimum level capable of holding the data set
     /// or a given level (specified by non-negative options.target_level).
+    ///
+    /// For Rust: use range expr, and since `compact_range()` use superset of range,
+    /// we ignore inclusive relation.
     pub fn compact_range<R: ToCompactRange>(&self, options: &CompactRangeOptions, range: R) -> Result<()> {
         let mut status = ptr::null_mut::<ll::rocks_status_t>();
         unsafe {
@@ -1497,9 +1487,9 @@ impl<'a> DB<'a> {
         let num_files = input_file_names.len();
         let mut c_file_names = Vec::with_capacity(num_files);
         let mut c_file_name_sizes = Vec::with_capacity(num_files);
-        for i in 0 .. num_files {
-            c_file_names.push(input_file_names[i].as_bytes().as_ptr() as *const _);
-            c_file_name_sizes.push(input_file_names[i].len());
+        for file_name in input_file_names {
+            c_file_names.push(file_name.as_bytes().as_ptr() as *const _);
+            c_file_name_sizes.push(file_name.len());
         }
         let mut status = ptr::null_mut();
         unsafe {
@@ -2086,10 +2076,10 @@ fn test_list_cfs() {
         assert!(db.is_ok());
 
         let db = db.unwrap();
-        let ret = db.create_column_family(&ColumnFamilyOptions::default(), "lock");
+        let ret = db.create_column_family(&ColumnFamilyOptions::default(), "cf1");
         assert!(ret.is_ok());
 
-        let ret = db.create_column_family(&ColumnFamilyOptions::default(), "write");
+        let ret = db.create_column_family(&ColumnFamilyOptions::default(), "cf2");
         assert!(ret.is_ok());
     }
 
@@ -2097,8 +2087,8 @@ fn test_list_cfs() {
     let ret = DB::list_column_families(&opt, path);
     assert!(ret.is_ok());
     assert!(ret.as_ref().unwrap().contains(&"default".to_owned()));
-    assert!(ret.as_ref().unwrap().contains(&"lock".to_owned()));
-    assert!(ret.as_ref().unwrap().contains(&"write".to_owned()));
+    assert!(ret.as_ref().unwrap().contains(&"cf1".to_owned()));
+    assert!(ret.as_ref().unwrap().contains(&"cf2".to_owned()));
 
     let cfs = ret.unwrap();
     if let Ok((db, cf_handles)) = DB::open_with_column_families(&Options::default(), path, cfs) {
@@ -2155,12 +2145,11 @@ fn test_db_paths() {
     let _ = db.put(&WriteOptions::default(), b"name", b"BH1XUW")
         .unwrap();
     for i in 0..100 {
-        let key = format!("test2-key-{}", i);
-        let val = format!("rocksdb-value-{}", i * 10);
-        let value: String = iter::repeat(val).take(10).collect::<Vec<_>>().concat();
+        let key = format!("k{}", i);
+        let value = format!("v{:03}", i * 10);
         if i == 50 {
             let s = db.get_snapshot();
-            println!("debug snapshot => {:?}", s);
+            assert!(s.is_some());
         }
 
         db.put(&WriteOptions::default(), key.as_bytes(), value.as_bytes())
@@ -2168,6 +2157,18 @@ fn test_db_paths() {
 
         assert!(db.flush(&FlushOptions::default()).is_ok());
     }
+
+    let d1 = dir1.path().read_dir().expect("should have a sst dir");
+    assert!(d1.count() > 1);
+
+    let d2 = dir2.path().read_dir().expect("should have a sst dir");
+    assert!(d2.count() > 1);
+
+    let w = wal_dir.path().read_dir().expect("should have a wal dir");
+    assert!(w.count() >= 1);    // at least 1 log file
+
+    let d = tmp_dir.path().read_dir().expect("should have a data dir");
+    assert!(d.count() >= 2);    // OPTIONS, MANIFEST, etc.
 }
 
 

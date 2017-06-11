@@ -1,3 +1,4 @@
+//! Slice data structure for interacting with rocksdb keys and values.
 
 use std::fmt;
 use std::slice;
