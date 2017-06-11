@@ -18,8 +18,7 @@ before_script:
   - git submodule update --init --recursive
 
 script:
-  - cargo build --features static-link
-  - cargo test --features static-link -- --nocapture
+  - cargo test --features "static-link rocks-sys/snappy rocks-sys/zlib rocks-sys/bzip2 rocks-sys/lz4 rocks-sys/zstd" -v -- --nocapture
 
 env:
   global:

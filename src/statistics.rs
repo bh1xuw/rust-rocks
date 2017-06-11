@@ -558,7 +558,7 @@ mod tests {
     use super::super::rate_limiter::RateLimiter;
 
     #[test]
-    fn statistics() {
+    fn statistics_rate_limiter() {
         let tmp_dir = ::tempdir::TempDir::new_in(".", "rocks").unwrap();
 
         let stat = Statistics::new();
