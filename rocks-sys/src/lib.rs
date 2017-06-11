@@ -1,6 +1,3 @@
-#![feature(untagged_unions)]
-
-
 #[cfg(test)]
 use std::ffi::{CStr, CString};
 #[cfg(test)]
