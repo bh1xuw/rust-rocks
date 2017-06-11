@@ -99,9 +99,9 @@ pub struct ColumnFamilyHandle<'a, 'b: 'a> {
 impl<'a, 'b> Drop for ColumnFamilyHandle<'a, 'b> {
     fn drop(&mut self) {
         // unsafe { ll::rocks_column_family_handle_destroy(self.raw) }
-        unsafe {
-            if self.owned {
-                let mut status = ptr::null_mut::<ll::rocks_status_t>();
+        if self.owned {
+            let mut status = ptr::null_mut::<ll::rocks_status_t>();
+            unsafe {
                 ll::rocks_db_destroy_column_family_handle(self.db.raw, self.raw(), &mut status);
                 assert!(Status::from_ll(status).is_ok())
             }
@@ -151,7 +151,6 @@ impl<'a, 'b: 'a> ColumnFamilyHandle<'a, 'b> {
     ///
     /// Note that this function is not supported in RocksDBLite.
     pub fn descriptor(&self) -> Result<ColumnFamilyDescriptor> {
-    
 }
      */
 
@@ -166,15 +165,14 @@ impl<'a, 'b: 'a> ColumnFamilyHandle<'a, 'b> {
     // Rust: migrate API from DB
 
     pub fn put(&self, options: &WriteOptions, key: &[u8], value: &[u8]) -> Result<()> {
+        let mut status = ptr::null_mut::<ll::rocks_status_t>();
         unsafe {
-            let mut status = ptr::null_mut::<ll::rocks_status_t>();
-            // since rocksdb::DB::put without cf is for compatibility
             ll::rocks_db_put_cf(self.db.raw,
                                 options.raw(),
                                 self.raw(),
-                                key.as_ptr() as _,
+                                key.as_ptr() as *const _,
                                 key.len(),
-                                value.as_ptr() as _,
+                                value.as_ptr() as *const _,
                                 value.len(),
                                 &mut status);
             Status::from_ll(status)
@@ -182,8 +180,8 @@ impl<'a, 'b: 'a> ColumnFamilyHandle<'a, 'b> {
     }
 
     pub fn delete(&self, options: &WriteOptions, key: &[u8]) -> Result<()> {
+        let mut status = ptr::null_mut::<ll::rocks_status_t>();
         unsafe {
-            let mut status = ptr::null_mut::<ll::rocks_status_t>();
             ll::rocks_db_delete_cf(self.db.raw,
                                    options.as_ref().raw(),
                                    self.raw(),
@@ -195,8 +193,8 @@ impl<'a, 'b: 'a> ColumnFamilyHandle<'a, 'b> {
     }
 
     pub fn single_delete(&self, options: &WriteOptions, key: &[u8]) -> Result<()> {
+        let mut status = ptr::null_mut::<ll::rocks_status_t>();
         unsafe {
-            let mut status = ptr::null_mut::<ll::rocks_status_t>();
             ll::rocks_db_single_delete_cf(self.db.raw,
                                           options.as_ref().raw(),
                                           self.raw(),
@@ -208,8 +206,8 @@ impl<'a, 'b: 'a> ColumnFamilyHandle<'a, 'b> {
     }
 
     pub fn delete_range(&self, options: &WriteOptions, begin_key: &[u8], end_key: &[u8]) -> Result<()> {
+        let mut status = ptr::null_mut::<ll::rocks_status_t>();
         unsafe {
-            let mut status = ptr::null_mut::<ll::rocks_status_t>();
             ll::rocks_db_delete_range_cf(self.db.raw,
                                          options.as_ref().raw(),
                                          self.raw(),
@@ -223,8 +221,8 @@ impl<'a, 'b: 'a> ColumnFamilyHandle<'a, 'b> {
     }
 
     pub fn merge(&self, options: &WriteOptions, key: &[u8], val: &[u8]) -> Result<()> {
+        let mut status = ptr::null_mut::<ll::rocks_status_t>();
         unsafe {
-            let mut status = ptr::null_mut::<ll::rocks_status_t>();
             ll::rocks_db_merge_cf(self.db.raw,
                                   options.as_ref().raw(),
                                   self.raw(),
@@ -238,13 +236,14 @@ impl<'a, 'b: 'a> ColumnFamilyHandle<'a, 'b> {
     }
 
     pub fn get(&self, options: &ReadOptions, key: &[u8]) -> Result<PinnableSlice> {
+        let mut status = ptr::null_mut::<ll::rocks_status_t>();
+        // FIXME: should be mut, should hide `new()`
+        let pinnable_val = PinnableSlice::new();
         unsafe {
-            let mut status = ptr::null_mut::<ll::rocks_status_t>();
-            let pinnable_val = PinnableSlice::new();
             ll::rocks_db_get_cf_pinnable(self.db.raw,
                                          options.raw(),
                                          self.raw(),
-                                         key.as_ptr() as _,
+                                         key.as_ptr() as *const _,
                                          key.len(),
                                          pinnable_val.raw(),
                                          &mut status);
@@ -253,24 +252,23 @@ impl<'a, 'b: 'a> ColumnFamilyHandle<'a, 'b> {
     }
 
     pub fn multi_get(&self, options: &ReadOptions, keys: &[&[u8]]) -> Vec<Result<CVec<u8>>> {
+        let num_keys = keys.len();
+        let mut c_keys: Vec<*const c_char> = Vec::with_capacity(num_keys);
+        let mut c_keys_lens = Vec::with_capacity(num_keys);
+
+        let c_cfs = vec![self.raw() as *const _; num_keys];
+
+        let mut vals = vec![ptr::null_mut(); num_keys];
+        let mut vals_lens = vec![0_usize; num_keys];
+
+        for key in keys {
+            c_keys.push(key.as_ptr() as *const c_char);
+            c_keys_lens.push(key.len());
+        }
+
+        let mut status: Vec<*mut ll::rocks_status_t> = vec![ptr::null_mut(); num_keys];
+        let mut ret = Vec::with_capacity(num_keys);
         unsafe {
-            let num_keys = keys.len();
-            let mut c_keys: Vec<*const c_char> = Vec::with_capacity(num_keys);
-            let mut c_keys_lens = Vec::with_capacity(num_keys);
-
-            let c_cfs = vec![self.raw() as *const _; num_keys];
-
-            let mut vals = vec![ptr::null_mut(); num_keys];
-            let mut vals_lens = vec![0_usize; num_keys];
-
-            for key in keys {
-                c_keys.push(key.as_ptr() as *const c_char);
-                c_keys_lens.push(key.len());
-            }
-
-            let mut status: Vec<*mut ll::rocks_status_t> = vec![mem::zeroed(); num_keys];
-            let mut ret = Vec::with_capacity(num_keys);
-
             ll::rocks_db_multi_get_cf(self.db.raw,
                                       options.raw(),
                                       c_cfs.as_ptr(),
@@ -280,7 +278,7 @@ impl<'a, 'b: 'a> ColumnFamilyHandle<'a, 'b> {
                                       vals.as_mut_ptr(),
                                       vals_lens.as_mut_ptr(),
                                       status.as_mut_ptr());
-            
+
             for i in 0..num_keys {
                 ret.push(Status::from_ll(status[i]).map(|_| {
                     CVec::from_raw_parts(vals[i] as *mut u8, vals_lens[i])
@@ -304,10 +302,10 @@ impl<'a, 'b: 'a> ColumnFamilyHandle<'a, 'b> {
     }
 
     pub fn key_may_get(&self, options: &ReadOptions, key: &[u8]) -> (bool, Option<CVec<u8>>) {
+        let mut found = 0;
+        let mut value: *mut c_char = ptr::null_mut();
+        let mut value_len: usize = 0;
         unsafe {
-            let mut found = 0;
-            let mut value: *mut c_char = ptr::null_mut();
-            let mut value_len: usize = 0;
             let ret = ll::rocks_db_key_may_exist_cf(self.db.raw,
                                                     options.raw(),
                                                     self.raw(),
@@ -335,38 +333,40 @@ impl<'a, 'b: 'a> ColumnFamilyHandle<'a, 'b> {
     }
 
     pub fn get_property(&self, property: &str) -> Option<String> {
-        unsafe {
-            let mut ret = String::new();
-            if ll::rocks_db_get_property_cf(self.db.raw,
-                                            self.raw(),
-                                            property.as_bytes().as_ptr() as *const _,
-                                            property.len(),
-                                            &mut ret as *mut String as *mut c_void) != 0 {
-                Some(ret)
-            } else {
-                None
-            }
+        let mut ret = String::new();
+        let ok = unsafe {
+            ll::rocks_db_get_property_cf(self.db.raw,
+                                         self.raw(),
+                                         property.as_bytes().as_ptr() as *const _,
+                                         property.len(),
+                                         &mut ret as *mut String as *mut c_void) != 0
+        };
+        if ok {
+            Some(ret)
+        } else {
+            None
         }
     }
 
     pub fn get_int_property(&self, property: &str) -> Option<u64> {
-        unsafe {
-            let mut val = 0;
-            if ll::rocks_db_get_int_property_cf(self.db.raw,
-                                                self.raw(),
-                                                property.as_bytes().as_ptr() as *const _,
-                                                property.len(),
-                                                &mut val) != 0 {
-                Some(val)
-            } else {
-                None
-            }
+        let mut val = 0;
+        let ok = unsafe {
+            ll::rocks_db_get_int_property_cf(self.db.raw,
+                                             self.raw(),
+                                             property.as_bytes().as_ptr() as *const _,
+                                             property.len(),
+                                             &mut val) != 0
+        };
+        if ok {
+            Some(val)
+        } else {
+            None
         }
     }
 
     pub fn compact_range<R: ToCompactRange>(&self, options: &CompactRangeOptions, range: R) -> Result<()> {
+        let mut status = ptr::null_mut::<ll::rocks_status_t>();
         unsafe {
-            let mut status = ptr::null_mut::<ll::rocks_status_t>();
             ll::rocks_db_compact_range_opt_cf(self.db.raw,
                                               options.raw(),
                                               self.raw(),
@@ -393,8 +393,8 @@ impl<'a, 'b: 'a> ColumnFamilyHandle<'a, 'b> {
                 val_lens.push(val.len());
             })
             .last();
+        let mut status = ptr::null_mut();
         unsafe {
-            let mut status = ptr::null_mut();
             ll::rocks_db_set_options_cf(self.db.raw,
                                         self.raw(),
                                         num_options,
@@ -455,15 +455,15 @@ impl<'a, 'b: 'a> ColumnFamilyHandle<'a, 'b> {
                                 external_files: &[String],
                                 options: &IngestExternalFileOptions)
                                 -> Result<()> {
+        let mut status = ptr::null_mut::<ll::rocks_status_t>();
+        let num_files = external_files.len();
+        let mut c_files = Vec::with_capacity(num_files);
+        let mut c_files_lens = Vec::with_capacity(num_files);
+        for f in external_files {
+            c_files.push(f.as_ptr() as *const _);
+            c_files_lens.push(f.len());
+        }
         unsafe {
-            let mut status = ptr::null_mut::<ll::rocks_status_t>();
-            let num_files = external_files.len();
-            let mut c_files = Vec::with_capacity(num_files);
-            let mut c_files_lens = Vec::with_capacity(num_files);
-            for f in external_files {
-                c_files.push(f.as_ptr() as *const _);
-                c_files_lens.push(f.len());
-            }
             ll::rocks_db_ingest_external_file_cf(self.db.raw,
                                                  self.raw(),
                                                  c_files.as_ptr() as *const _,
@@ -549,13 +549,13 @@ impl<'a> DB<'a> {
     /// Stores nullptr in *dbptr and returns a non-OK status on error.
     /// Caller should delete *dbptr when it is no longer needed.
     pub fn open<'b, T: AsRef<Options>, P: AsRef<Path>>(options: T, name: P) -> Result<DB<'b>> {
+        let opt = options.as_ref().raw();
+        let dbname = name.as_ref()
+            .to_str()
+            .and_then(|s| CString::new(s).ok())
+            .unwrap();
+        let mut status = ptr::null_mut::<ll::rocks_status_t>();
         unsafe {
-            let opt = options.as_ref().raw();
-            let dbname = name.as_ref()
-                .to_str()
-                .and_then(|s| CString::new(s).ok())
-                .unwrap();
-            let mut status = ptr::null_mut::<ll::rocks_status_t>();
             let db_ptr = ll::rocks_db_open(opt, dbname.as_ptr(), &mut status);
             Status::from_ll(status).map(|_| DB::from_ll(db_ptr))
         }
@@ -580,36 +580,36 @@ impl<'a> DB<'a> {
     ///
     /// Before delete DB, you have to close All column families by calling
     /// `DestroyColumnFamilyHandle()` with all the handles.
-    pub fn open_with_column_families<'b, 'c: 'b, CF: Into<ColumnFamilyDescriptor>>
+    pub fn open_with_column_families<'b: 'c, 'c, CF: Into<ColumnFamilyDescriptor>>
         (options: &Options, // FIXME: this should be DBOptions
          name: &str,
          column_families: Vec<CF>)
          -> Result<(DB<'b>, Vec<ColumnFamilyHandle<'c, 'b>>)> {
+            let opt = options.raw();
+            let dbname = CString::new(name).unwrap();
+
+            let cfs: Vec<ColumnFamilyDescriptor> = column_families
+                .into_iter()
+                .map(|desc| desc.into())
+                .collect();
+
+            let num_column_families = cfs.len();
+            // for ffi
+            let mut cfnames: Vec<*const c_char> = Vec::with_capacity(num_column_families);
+            let mut cfopts: Vec<*const ll::rocks_cfoptions_t> = Vec::with_capacity(num_column_families);
+            let mut cfhandles = vec![ptr::null_mut(); num_column_families];
+
+            // FIXME: is it necessary to create?
+            // hold it to call ffi function
+            let default_cfopt = ColumnFamilyOptions::from_options(options);
+
+            for cf in &cfs {
+                cfnames.push(cf.name_as_ptr());
+                cfopts.push(cf.options.as_ref().unwrap_or_else(|| &default_cfopt).raw());
+            }
+
+            let mut status = ptr::null_mut::<ll::rocks_status_t>();
             unsafe {
-                let opt = options.raw();
-                let mut status = ptr::null_mut::<ll::rocks_status_t>();
-                let dbname = CString::new(name).unwrap();
-
-                let cfs: Vec<ColumnFamilyDescriptor> = column_families
-                    .into_iter()
-                    .map(|desc| desc.into())
-                    .collect();
-
-                let num_column_families = cfs.len();
-                // for ffi
-                let mut cfnames: Vec<*const c_char> = Vec::with_capacity(num_column_families);
-                let mut cfopts: Vec<*const ll::rocks_cfoptions_t> = Vec::with_capacity(num_column_families);
-                let mut cfhandles = vec![ptr::null_mut(); num_column_families];
-
-                // FIXME: is it necessary to create?
-                // hold it to call ffi function
-                let default_cfopt = ColumnFamilyOptions::from_options(options);
-
-                for cf in &cfs {
-                    cfnames.push(cf.name_as_ptr());
-                    cfopts.push(cf.options.as_ref().unwrap_or_else(|| &default_cfopt).raw());
-                }
-
                 let db_ptr = ll::rocks_db_open_column_families(options.raw(),
                                                                dbname.as_ptr(),
                                                                num_column_families as c_int,
@@ -647,12 +647,12 @@ impl<'a> DB<'a> {
                                                  name: P,
                                                  error_if_log_file_exist: bool)
                                                  -> Result<DB<'b>> {
+        let dbname = name.as_ref()
+            .to_str()
+            .and_then(|s| CString::new(s).ok())
+            .unwrap();
+        let mut status = ptr::null_mut::<ll::rocks_status_t>();
         unsafe {
-            let dbname = name.as_ref()
-                .to_str()
-                .and_then(|s| CString::new(s).ok())
-                .unwrap();
-            let mut status = ptr::null_mut::<ll::rocks_status_t>();
             let db_ptr = ll::rocks_db_open_for_read_only(options.raw(),
                                                          dbname.as_ptr(),
                                                          error_if_log_file_exist as u8,
@@ -667,10 +667,10 @@ impl<'a> DB<'a> {
     /// through `column_families` argument. The ordering of
     /// column families in column_families is unspecified.
     pub fn list_column_families(options: &Options, name: &str) -> Result<Vec<String>> {
+        let dbname = CString::new(name).unwrap();
+        let mut status = ptr::null_mut::<ll::rocks_status_t>();
+        let mut lencfs = 0;
         unsafe {
-            let dbname = CString::new(name).unwrap();
-            let mut status = ptr::null_mut::<ll::rocks_status_t>();
-            let mut lencfs = 0;
             let cfs = ll::rocks_db_list_column_families(options.raw(), dbname.as_ptr(), &mut lencfs, &mut status);
             Status::from_ll(status).map(|_| {
                 if lencfs == 0 {
@@ -718,13 +718,13 @@ impl<'a> DB<'a> {
     ///
     /// Note: consider setting `options.sync = true`.
     pub fn put(&self, options: &WriteOptions, key: &[u8], value: &[u8]) -> Result<()> {
+        let mut status = ptr::null_mut::<ll::rocks_status_t>();
         unsafe {
-            let mut status = ptr::null_mut::<ll::rocks_status_t>();
             ll::rocks_db_put(self.raw(),
                              options.raw(),
-                             key.as_ptr() as _,
+                             key.as_ptr() as *const _,
                              key.len(),
-                             value.as_ptr() as _,
+                             value.as_ptr() as *const _,
                              value.len(),
                              &mut status);
             Status::from_ll(status)
@@ -737,39 +737,19 @@ impl<'a> DB<'a> {
                   key: &[u8],
                   value: &[u8])
                   -> Result<()> {
+        let mut status = ptr::null_mut::<ll::rocks_status_t>();
         unsafe {
-            let mut status = ptr::null_mut::<ll::rocks_status_t>();
-            // since rocksdb::DB::put without cf is for compatibility
             ll::rocks_db_put_cf(self.raw(),
                                 options.raw(),
                                 column_family.raw(),
-                                key.as_ptr() as _,
+                                key.as_ptr() as *const _,
                                 key.len(),
-                                value.as_ptr() as _,
+                                value.as_ptr() as *const _,
                                 value.len(),
                                 &mut status);
             Status::from_ll(status)
         }
     }
-
-    // pub fn put_slice(&self, options: &WriteOptions,
-    // key: &[u8], value: &[u8]) -> Result<()> {
-    // unsafe {
-    // let mut status = mem::uninitialized::<ll::rocks_status_t>();
-    // ll::rocks_db_put_slice(
-    // self.raw,
-    // options.raw(),
-    // mem::transmute::<&&[u8], *const ll::Slice>(&key),
-    // mem::transmute::<&&[u8], *const ll::Slice>(&value),
-    // &mut status);
-    // if status.code == 0 {
-    // Ok(())
-    // } else {
-    // Err(Status::from_ll(&status))
-    // }
-    // }
-    // }
-    //
 
     /// Remove the database entry (if any) for "key".  Returns OK on
     /// success, and a non-OK status on error.  It is not an error if "key"
@@ -777,8 +757,8 @@ impl<'a> DB<'a> {
     ///
     /// Note: consider setting `options.sync = true`.
     pub fn delete<W: AsRef<WriteOptions>>(&self, options: W, key: &[u8]) -> Result<()> {
+        let mut status = ptr::null_mut::<ll::rocks_status_t>();
         unsafe {
-            let mut status = ptr::null_mut::<ll::rocks_status_t>();
             ll::rocks_db_delete(self.raw(), options.as_ref().raw(), key.as_ptr() as *const _, key.len(), &mut status);
             Status::from_ll(status)
         }
@@ -789,8 +769,8 @@ impl<'a> DB<'a> {
                                              column_family: &ColumnFamilyHandle,
                                              key: &[u8])
                                              -> Result<()> {
+        let mut status = ptr::null_mut::<ll::rocks_status_t>();
         unsafe {
-            let mut status = ptr::null_mut::<ll::rocks_status_t>();
             ll::rocks_db_delete_cf(self.raw(),
                                    options.as_ref().raw(),
                                    column_family.raw(),
@@ -818,8 +798,8 @@ impl<'a> DB<'a> {
     ///
     /// Note: consider setting `options.sync = true`.
     pub fn single_delete<W: AsRef<WriteOptions>>(&self, options: W, key: &[u8]) -> Result<()> {
+        let mut status = ptr::null_mut::<ll::rocks_status_t>();
         unsafe {
-            let mut status = ptr::null_mut::<ll::rocks_status_t>();
             ll::rocks_db_single_delete(self.raw(),
                                        options.as_ref().raw(),
                                        key.as_ptr() as *const _,
@@ -834,8 +814,8 @@ impl<'a> DB<'a> {
                             column_family: &ColumnFamilyHandle,
                             key: &[u8])
                             -> Result<()> {
+        let mut status = ptr::null_mut::<ll::rocks_status_t>();
         unsafe {
-            let mut status = ptr::null_mut::<ll::rocks_status_t>();
             ll::rocks_db_single_delete_cf(self.raw(),
                                           options.as_ref().raw(),
                                           column_family.raw(),
@@ -867,8 +847,8 @@ impl<'a> DB<'a> {
                                                    begin_key: &[u8],
                                                    end_key: &[u8])
                                                    -> Result<()> {
+        let mut status = ptr::null_mut::<ll::rocks_status_t>();
         unsafe {
-            let mut status = ptr::null_mut::<ll::rocks_status_t>();
             ll::rocks_db_delete_range_cf(self.raw(),
                                          options.as_ref().raw(),
                                          column_family.raw(),
@@ -887,8 +867,8 @@ impl<'a> DB<'a> {
     ///
     /// Note: consider setting `options.sync = true`.
     pub fn merge<W: AsRef<WriteOptions>>(&self, options: W, key: &[u8], val: &[u8]) -> Result<()> {
+        let mut status = ptr::null_mut::<ll::rocks_status_t>();
         unsafe {
-            let mut status = ptr::null_mut::<ll::rocks_status_t>();
             ll::rocks_db_merge(self.raw(),
                                options.as_ref().raw(),
                                key.as_ptr() as *const _,
@@ -906,8 +886,8 @@ impl<'a> DB<'a> {
                                             key: &[u8],
                                             val: &[u8])
                                             -> Result<()> {
+        let mut status = ptr::null_mut::<ll::rocks_status_t>();
         unsafe {
-            let mut status = ptr::null_mut::<ll::rocks_status_t>();
             ll::rocks_db_merge_cf(self.raw(),
                                   options.as_ref().raw(),
                                   column_family.raw(),
@@ -929,8 +909,8 @@ impl<'a> DB<'a> {
     ///
     /// Note: consider setting `options.sync = true`.
     pub fn write<W: AsRef<WriteOptions>>(&self, options: W, updates: WriteBatch) -> Result<()> {
+        let mut status = ptr::null_mut::<ll::rocks_status_t>();
         unsafe {
-            let mut status = ptr::null_mut::<ll::rocks_status_t>();
             ll::rocks_db_write(self.raw(), options.as_ref().raw(), updates.raw(), &mut status);
             Status::from_ll(status)
         }
@@ -944,9 +924,10 @@ impl<'a> DB<'a> {
     ///
     /// May return some other Status on an error.
     pub fn get(&self, options: &ReadOptions, key: &[u8]) -> Result<PinnableSlice> {
+        let mut status = ptr::null_mut::<ll::rocks_status_t>();
+        // FIXME: should be mut
+        let pinnable_val = PinnableSlice::new();
         unsafe {
-            let mut status = ptr::null_mut::<ll::rocks_status_t>();
-            let pinnable_val = PinnableSlice::new();
             ll::rocks_db_get_pinnable(self.raw(),
                                       options.raw(),
                                       key.as_ptr() as _,
@@ -962,9 +943,10 @@ impl<'a> DB<'a> {
                   column_family: &ColumnFamilyHandle,
                   key: &[u8])
                   -> Result<PinnableSlice> {
+        let mut status = ptr::null_mut::<ll::rocks_status_t>();
+        // FIXME: should be mut
+        let pinnable_val = PinnableSlice::new();
         unsafe {
-            let mut status = ptr::null_mut::<ll::rocks_status_t>();
-            let pinnable_val = PinnableSlice::new();
             ll::rocks_db_get_cf_pinnable(self.raw(),
                                          options.raw(),
                                          column_family.raw(),
@@ -988,22 +970,22 @@ impl<'a> DB<'a> {
     /// Note: keys will not be "de-duplicated". Duplicate keys will return
     /// duplicate values in order.
     pub fn multi_get(&self, options: &ReadOptions, keys: &[&[u8]]) -> Vec<Result<CVec<u8>>> {
+        let num_keys = keys.len();
+        let mut c_keys: Vec<*const c_char> = Vec::with_capacity(num_keys);
+        let mut c_keys_lens = Vec::with_capacity(num_keys);
+
+        let mut vals = vec![ptr::null_mut(); num_keys];
+        let mut vals_lens = vec![0_usize; num_keys];
+
+        for key in keys {
+            c_keys.push(key.as_ptr() as *const c_char);
+            c_keys_lens.push(key.len());
+        }
+
+        let mut status: Vec<*mut ll::rocks_status_t> = vec![ptr::null_mut(); num_keys];
+        let mut ret = Vec::with_capacity(num_keys);
+
         unsafe {
-            let num_keys = keys.len();
-            let mut c_keys: Vec<*const c_char> = Vec::with_capacity(num_keys);
-            let mut c_keys_lens = Vec::with_capacity(num_keys);
-
-            let mut vals = vec![ptr::null_mut(); num_keys];
-            let mut vals_lens = vec![0_usize; num_keys];
-
-            for key in keys {
-                c_keys.push(key.as_ptr() as *const c_char);
-                c_keys_lens.push(key.len());
-            }
-
-            let mut status: Vec<*mut ll::rocks_status_t> = vec![mem::zeroed(); num_keys];
-            let mut ret = Vec::with_capacity(num_keys);
-
             ll::rocks_db_multi_get(self.raw(),
                                    options.raw(),
                                    num_keys,
@@ -1028,24 +1010,24 @@ impl<'a> DB<'a> {
                         column_families: &[&ColumnFamilyHandle],
                         keys: &[&[u8]])
                         -> Vec<Result<CVec<u8>>> {
+        let num_keys = keys.len();
+        let mut c_keys: Vec<*const c_char> = Vec::with_capacity(num_keys);
+        let mut c_keys_lens = Vec::with_capacity(num_keys);
+        let mut c_cfs = Vec::with_capacity(num_keys);
+
+        let mut vals = vec![ptr::null_mut(); num_keys];
+        let mut vals_lens = vec![0_usize; num_keys];
+
+        for i in 0..num_keys {
+            c_keys.push(keys[i].as_ptr() as *const c_char);
+            c_keys_lens.push(keys[i].len());
+            c_cfs.push(column_families[i].raw() as *const _);
+        }
+
+        let mut status: Vec<*mut ll::rocks_status_t> = vec![ptr::null_mut(); num_keys];
+        let mut ret = Vec::with_capacity(num_keys);
+
         unsafe {
-            let num_keys = keys.len();
-            let mut c_keys: Vec<*const c_char> = Vec::with_capacity(num_keys);
-            let mut c_keys_lens = Vec::with_capacity(num_keys);
-            let mut c_cfs = Vec::with_capacity(num_keys);
-
-            let mut vals = vec![ptr::null_mut(); num_keys];
-            let mut vals_lens = vec![0_usize; num_keys];
-
-            for i in 0..num_keys {
-                c_keys.push(keys[i].as_ptr() as *const c_char);
-                c_keys_lens.push(keys[i].len());
-                c_cfs.push(column_families[i].raw() as *const _);
-            }
-
-            let mut status: Vec<*mut ll::rocks_status_t> = vec![mem::zeroed(); num_keys];
-            let mut ret = Vec::with_capacity(num_keys);
-
             ll::rocks_db_multi_get_cf(self.raw(),
                                       options.raw(),
                                       c_cfs.as_ptr(),
@@ -1088,10 +1070,10 @@ impl<'a> DB<'a> {
     }
 
     pub fn key_may_get(&self, options: &ReadOptions, key: &[u8]) -> (bool, Option<CVec<u8>>) {
+        let mut found = 0;
+        let mut value: *mut c_char = ptr::null_mut();
+        let mut value_len: usize = 0;
         unsafe {
-            let mut found = 0;
-            let mut value: *mut c_char = ptr::null_mut();
-            let mut value_len: usize = 0;
             let ret = ll::rocks_db_key_may_exist(self.raw(),
                                                  options.raw(),
                                                  key.as_ptr() as *const _,
@@ -1127,11 +1109,10 @@ impl<'a> DB<'a> {
                           column_family: &ColumnFamilyHandle,
                           key: &[u8])
                           -> (bool, Option<CVec<u8>>) {
+        let mut found = 0;
+        let mut value: *mut c_char = ptr::null_mut();
+        let mut value_len: usize = 0;
         unsafe {
-
-            let mut found = 0;
-            let mut value: *mut c_char = ptr::null_mut();
-            let mut value_len: usize = 0;
             let ret = ll::rocks_db_key_may_exist_cf(self.raw(),
                                                     options.raw(),
                                                     column_family.raw(),
@@ -1174,12 +1155,11 @@ impl<'a> DB<'a> {
                                                                            options: &ReadOptions,
                                                                            cfs: &[T])
                                                                            -> Result<Vec<Iterator>> {
+        let c_cfs = cfs.iter().map(|cf| cf.as_ref().raw()).collect::<Vec<_>>();
+        let cfs_len = cfs.len();
+        let mut c_iters = vec![ptr::null_mut(); cfs_len];
+        let mut status = ptr::null_mut::<ll::rocks_status_t>();
         unsafe {
-            let c_cfs = cfs.iter().map(|cf| cf.as_ref().raw()).collect::<Vec<_>>();
-            let cfs_len = cfs.len();
-            let mut status = ptr::null_mut::<ll::rocks_status_t>();
-
-            let mut c_iters = vec![ptr::null_mut(); cfs_len];
             ll::rocks_db_create_iterators(self.raw(),
                                           options.raw(),
                                           c_cfs.as_ptr() as _,
@@ -1227,31 +1207,33 @@ impl<'a> DB<'a> {
     /// Properties struct above for valid options), fills "*value" with its current
     /// value and returns true.  Otherwise, returns false.
     pub fn get_property(&self, property: &str) -> Option<String> {
-        unsafe {
-            let mut ret = String::new();
-            if ll::rocks_db_get_property(self.raw(),
-                                         property.as_bytes().as_ptr() as *const _,
-                                         property.len(),
-                                         &mut ret as *mut String as *mut c_void) != 0 {
-                Some(ret)
-            } else {
-                None
-            }
+        let mut ret = String::new();
+        let ok = unsafe {
+            ll::rocks_db_get_property(self.raw(),
+                                      property.as_bytes().as_ptr() as *const _,
+                                      property.len(),
+                                      &mut ret as *mut String as *mut c_void) != 0
+        };
+        if ok {
+            Some(ret)
+        } else {
+            None
         }
     }
 
     pub fn get_property_cf(&self, column_family: &ColumnFamilyHandle, property: &str) -> Option<String> {
-        unsafe {
-            let mut ret = String::new();
-            if ll::rocks_db_get_property_cf(self.raw(),
-                                            column_family.raw(),
-                                            property.as_bytes().as_ptr() as *const _,
-                                            property.len(),
-                                            &mut ret as *mut String as *mut c_void) != 0 {
-                Some(ret)
-            } else {
-                None
-            }
+        let mut ret = String::new();
+        let ok = unsafe {
+            ll::rocks_db_get_property_cf(self.raw(),
+                                         column_family.raw(),
+                                         property.as_bytes().as_ptr() as *const _,
+                                         property.len(),
+                                         &mut ret as *mut String as *mut c_void) != 0
+        };
+        if ok {
+            Some(ret)
+        } else {
+            None
         }
     }
 
@@ -1292,47 +1274,50 @@ impl<'a> DB<'a> {
     /// + `"rocksdb.actual-delayed-write-rate"`
     /// + `"rocksdb.is-write-stopped"`
     pub fn get_int_property(&self, property: &str) -> Option<u64> {
-        unsafe {
-            let mut val = 0;
-            if ll::rocks_db_get_int_property(self.raw(),
-                                             property.as_bytes().as_ptr() as *const _,
-                                             property.len(),
-                                             &mut val) != 0 {
-                Some(val)
-            } else {
-                None
-            }
+        let mut val = 0;
+        let ok = unsafe {
+            ll::rocks_db_get_int_property(self.raw(),
+                                          property.as_bytes().as_ptr() as *const _,
+                                          property.len(),
+                                          &mut val) != 0
+        };
+        if ok {
+            Some(val)
+        } else {
+            None
         }
     }
 
     pub fn get_int_property_cf(&self, column_family: &ColumnFamilyHandle, property: &str) -> Option<u64> {
-        unsafe {
-            let mut val = 0;
-            if ll::rocks_db_get_int_property_cf(self.raw(),
-                                                column_family.raw(),
-                                                property.as_bytes().as_ptr() as *const _,
-                                                property.len(),
-                                                &mut val) != 0 {
-                Some(val)
-            } else {
-                None
-            }
+        let mut val = 0;
+        let ok = unsafe {
+            ll::rocks_db_get_int_property_cf(self.raw(),
+                                             column_family.raw(),
+                                             property.as_bytes().as_ptr() as *const _,
+                                             property.len(),
+                                             &mut val) != 0
+        };
+        if ok {
+            Some(val)
+        } else {
+            None
         }
     }
 
     /// Same as GetIntProperty(), but this one returns the aggregated int
     /// property from all column families.
     pub fn get_aggregated_int_property(&self, property: &str) -> Option<u64> {
-        unsafe {
-            let mut val = 0;
-            if ll::rocks_db_get_aggregated_int_property(self.raw(),
-                                                        property.as_bytes().as_ptr() as *const _,
-                                                        property.len(),
-                                                        &mut val) != 0 {
-                Some(val)
-            } else {
-                None
-            }
+        let mut val = 0;
+        let ok = unsafe {
+            ll::rocks_db_get_aggregated_int_property(self.raw(),
+                                                     property.as_bytes().as_ptr() as *const _,
+                                                     property.len(),
+                                                     &mut val) != 0
+        };
+        if ok {
+            Some(val)
+        } else {
+            None
         }
     }
 
@@ -1355,7 +1340,7 @@ impl<'a> DB<'a> {
     pub fn get_approximate_sizes_cf(&self,
                                     column_family: &ColumnFamilyHandle,
                                     ranges: &[ops::Range<&[u8]>]) -> Vec<u64> {
-        // include_flags: u8) ->
+        // include_flags: u8
         let num_ranges = ranges.len();
         let mut range_start_ptrs = Vec::with_capacity(num_ranges);
         let mut range_start_lens = Vec::with_capacity(num_ranges);
@@ -1426,8 +1411,8 @@ impl<'a> DB<'a> {
     /// move the files back to the minimum level capable of holding the data set
     /// or a given level (specified by non-negative options.target_level).
     pub fn compact_range<R: ToCompactRange>(&self, options: &CompactRangeOptions, range: R) -> Result<()> {
+        let mut status = ptr::null_mut::<ll::rocks_status_t>();
         unsafe {
-            let mut status = ptr::null_mut::<ll::rocks_status_t>();
             ll::rocks_db_compact_range_opt(self.raw(),
                                            options.raw(),
                                            range.start_key() as *const _,
@@ -1457,8 +1442,8 @@ impl<'a> DB<'a> {
                 val_lens.push(val.len());
             })
             .last();
+        let mut status = ptr::null_mut();
         unsafe {
-            let mut status = ptr::null_mut();
             ll::rocks_db_set_options_cf(self.raw(),
                                         column_family.raw,
                                         num_options,
@@ -1485,8 +1470,8 @@ impl<'a> DB<'a> {
                 val_lens.push(val.len());
             })
             .last();
+        let mut status = ptr::null_mut();
         unsafe {
-            let mut status = ptr::null_mut();
             ll::rocks_db_set_db_options(self.raw(),
                                         num_options,
                                         key_ptrs.as_ptr(),
@@ -1509,15 +1494,15 @@ impl<'a> DB<'a> {
 
     pub fn compact_files_to(&self, compact_options: &CompactionOptions, input_file_names: &[&str],
                             output_level: i32, output_path_id: i32) -> Result<()> {
+        let num_files = input_file_names.len();
+        let mut c_file_names = Vec::with_capacity(num_files);
+        let mut c_file_name_sizes = Vec::with_capacity(num_files);
+        for i in 0 .. num_files {
+            c_file_names.push(input_file_names[i].as_bytes().as_ptr() as *const _);
+            c_file_name_sizes.push(input_file_names[i].len());
+        }
+        let mut status = ptr::null_mut();
         unsafe {
-            let num_files = input_file_names.len();
-            let mut c_file_names = Vec::with_capacity(num_files);
-            let mut c_file_name_sizes = Vec::with_capacity(num_files);
-            for i in 0 .. num_files {
-                c_file_names.push(input_file_names[i].as_bytes().as_ptr() as *const _);
-                c_file_name_sizes.push(input_file_names[i].len());
-            }
-            let mut status = ptr::null_mut();
             ll::rocks_db_compact_files(self.raw(),
                                        compact_options.raw(),
                                        num_files,
@@ -1535,16 +1520,16 @@ impl<'a> DB<'a> {
     /// finish. After it returns, no background process will be run until
     /// UnblockBackgroundWork is called
     pub fn pause_background_work(&self) -> Result<()> {
+        let mut status = ptr::null_mut::<ll::rocks_status_t>();
         unsafe {
-            let mut status = ptr::null_mut::<ll::rocks_status_t>();
             ll::rocks_db_pause_background_work(self.raw(), &mut status);
             Status::from_ll(status)
         }
     }
 
     pub fn continue_background_work(&self) -> Result<()> {
+        let mut status = ptr::null_mut::<ll::rocks_status_t>();
         unsafe {
-            let mut status = ptr::null_mut::<ll::rocks_status_t>();
             ll::rocks_db_continue_background_work(self.raw(), &mut status);
             Status::from_ll(status)
         }
@@ -1559,13 +1544,13 @@ impl<'a> DB<'a> {
     /// does NOT schedule a flush/compaction afterwards, and only changes the
     /// parameter itself within the column family option.
     pub fn enable_auto_compaction(&self, column_family_handles: &[&ColumnFamilyHandle]) -> Result<()> {
+        let c_cfs = column_family_handles
+            .iter()
+            .map(|cf| cf.as_ref().raw() as *const _)
+            .collect::<Vec<*const _>>();
+        let cfs_len = column_family_handles.len();
+        let mut status = ptr::null_mut::<ll::rocks_status_t>();
         unsafe {
-            let c_cfs = column_family_handles
-                .iter()
-                .map(|cf| cf.as_ref().raw() as *const _)
-                .collect::<Vec<*const _>>();
-            let cfs_len = column_family_handles.len();
-            let mut status = ptr::null_mut::<ll::rocks_status_t>();
             ll::rocks_db_enable_auto_compaction(self.raw(), c_cfs.as_ptr(), cfs_len, &mut status);
             Status::from_ll(status)
         }
@@ -1590,8 +1575,8 @@ impl<'a> DB<'a> {
     /// Get DB name -- the exact same name that was provided as an argument to
     /// `DB::Open()`
     pub fn get_name(&self) -> &str {
+        let mut len = 0;
         unsafe {
-            let mut len = 0;
             let ptr = ll::rocks_db_get_name(self.raw(), &mut len);
             str::from_utf8_unchecked(slice::from_raw_parts(ptr as *const _, len))
         }
@@ -1603,8 +1588,8 @@ impl<'a> DB<'a> {
 
     /// Flush all mem-table data.
     pub fn flush(&self, options: &FlushOptions) -> Result<()> {
+        let mut status = ptr::null_mut::<ll::rocks_status_t>();
         unsafe {
-            let mut status = ptr::null_mut::<ll::rocks_status_t>();
             ll::rocks_db_flush(self.raw(), options.raw(), &mut status);
             Status::from_ll(status)
         }
@@ -1616,8 +1601,8 @@ impl<'a> DB<'a> {
     ///
     /// Currently only works if allow_mmap_writes = false in Options.
     pub fn sync_wal(&self) -> Result<()> {
+        let mut status = ptr::null_mut::<ll::rocks_status_t>();
         unsafe {
-            let mut status = ptr::null_mut::<ll::rocks_status_t>();
             ll::rocks_db_sync_wal(self.raw(), &mut status);
             Status::from_ll(status)
         }
@@ -1632,8 +1617,8 @@ impl<'a> DB<'a> {
     /// but no obsolete files will be deleted. Calling this multiple
     /// times have the same effect as calling it once.
     pub fn disable_file_deletions(&self) -> Result<()> {
+        let mut status = ptr::null_mut::<ll::rocks_status_t>();
         unsafe {
-            let mut status = ptr::null_mut::<ll::rocks_status_t>();
             ll::rocks_db_disable_file_deletions(self.raw(), &mut status);
             Status::from_ll(status)
         }
@@ -1651,8 +1636,8 @@ impl<'a> DB<'a> {
     /// synchronization -- i.e., file deletions will be enabled only after both
     /// threads call EnableFileDeletions()
     pub fn enable_file_deletions(&self, force: bool) -> Result<()> {
+        let mut status = ptr::null_mut::<ll::rocks_status_t>();
         unsafe {
-            let mut status = ptr::null_mut::<ll::rocks_status_t>();
             ll::rocks_db_enable_file_deletions(self.raw(), force as u8, &mut status);
             Status::from_ll(status)
         }
@@ -1676,9 +1661,9 @@ impl<'a> DB<'a> {
     /// for new data that arrived to already-flushed column families while other
     /// column families were flushing
     pub fn get_live_files(&self, flush_memtable: bool) -> Result<(u64, Vec<String>)> {
+        let mut file_size = 0;
+        let mut status = ptr::null_mut::<ll::rocks_status_t>();
         unsafe {
-            let mut file_size = 0;
-            let mut status = ptr::null_mut::<ll::rocks_status_t>();
             let files = ll::rocks_db_get_live_files(self.raw(),
                                                     flush_memtable as u8,
                                                     &mut file_size,
@@ -1705,8 +1690,8 @@ impl<'a> DB<'a> {
     /// reflect that. Supports deletion of sst and log files only. 'name' must be
     /// path relative to the db directory. eg. 000001.sst, /archive/000003.log
     pub fn delete_file(&self, name: &str) -> Result<()> {
+        let mut status = ptr::null_mut::<ll::rocks_status_t>();
         unsafe {
-            let mut status = ptr::null_mut::<ll::rocks_status_t>();
             ll::rocks_db_delete_file(self.raw(),
                                      name.as_bytes().as_ptr() as *const _,
                                      name.len(),
@@ -1874,15 +1859,15 @@ impl<'a> DB<'a> {
                                 external_files: &[String],
                                 options: &IngestExternalFileOptions)
                                 -> Result<()> {
+        let num_files = external_files.len();
+        let mut c_files = Vec::with_capacity(num_files);
+        let mut c_files_lens = Vec::with_capacity(num_files);
+        for f in external_files {
+            c_files.push(f.as_ptr() as *const _);
+            c_files_lens.push(f.len());
+        }
+        let mut status = ptr::null_mut::<ll::rocks_status_t>();
         unsafe {
-            let mut status = ptr::null_mut::<ll::rocks_status_t>();
-            let num_files = external_files.len();
-            let mut c_files = Vec::with_capacity(num_files);
-            let mut c_files_lens = Vec::with_capacity(num_files);
-            for f in external_files {
-                c_files.push(f.as_ptr() as *const _);
-                c_files_lens.push(f.len());
-            }
             ll::rocks_db_ingest_external_file(self.raw(),
                                               c_files.as_ptr() as *const _,
                                               c_files_lens.as_ptr(),
@@ -1898,15 +1883,15 @@ impl<'a> DB<'a> {
                                    external_files: &[String],
                                    options: &IngestExternalFileOptions)
                                    -> Result<()> {
+        let num_files = external_files.len();
+        let mut c_files = Vec::with_capacity(num_files);
+        let mut c_files_lens = Vec::with_capacity(num_files);
+        for f in external_files {
+            c_files.push(f.as_ptr() as *const _);
+            c_files_lens.push(f.len());
+        }
+        let mut status = ptr::null_mut::<ll::rocks_status_t>();
         unsafe {
-            let mut status = ptr::null_mut::<ll::rocks_status_t>();
-            let num_files = external_files.len();
-            let mut c_files = Vec::with_capacity(num_files);
-            let mut c_files_lens = Vec::with_capacity(num_files);
-            for f in external_files {
-                c_files.push(f.as_ptr() as *const _);
-                c_files_lens.push(f.len());
-            }
             ll::rocks_db_ingest_external_file_cf(self.raw(),
                                                  column_family.raw,
                                                  c_files.as_ptr() as *const _,
@@ -1922,9 +1907,9 @@ impl<'a> DB<'a> {
     /// `Env::GenerateUniqueId()`, in identity. Returns Status::OK if identity could
     /// be set properly
     pub fn get_db_identity(&self) -> Result<String> {
+        let mut identity = String::new();
+        let mut status = ptr::null_mut::<ll::rocks_status_t>();
         unsafe {
-            let mut identity = String::new();
-            let mut status = ptr::null_mut::<ll::rocks_status_t>();
             ll::rocks_db_get_db_identity(self.raw(), &mut identity as *mut String as *mut _, &mut status);
             Status::from_ll(status).map(|_| identity)
         }
@@ -2148,15 +2133,20 @@ fn test_db_get() {
 
 #[test]
 fn test_db_paths() {
+    let tmp_dir = ::tempdir::TempDir::new_in(".", "rocks").unwrap();
+    let dir1 = ::tempdir::TempDir::new_in(".", "rocks").unwrap();
+    let dir2 = ::tempdir::TempDir::new_in(".", "rocks").unwrap();
+    let wal_dir = ::tempdir::TempDir::new_in(".", "rocks").unwrap();
+
 
     let opt = Options::default().map_db_options(|dbopt| {
         dbopt
             .create_if_missing(true)
-            .db_paths(vec!["./sample1", "./sample2"])        /* only puts sst file */
-            .wal_dir("./my_wal")
+            .db_paths(vec![&dir1.path(), &dir2.path()])        /* only puts sst file */
+            .wal_dir(&wal_dir)
     });
 
-    let db = DB::open(opt, "multi");
+    let db = DB::open(opt, &tmp_dir);
     if db.is_err() {
         println!("err => {:?}", db.unwrap_err());
         return;
@@ -2175,6 +2165,8 @@ fn test_db_paths() {
 
         db.put(&WriteOptions::default(), key.as_bytes(), value.as_bytes())
             .unwrap();
+
+        assert!(db.flush(&FlushOptions::default()).is_ok());
     }
 }
 

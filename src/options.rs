@@ -92,11 +92,11 @@ pub struct DbPath {
 
 impl DbPath {
     pub fn new<P: AsRef<Path>>(p: P, t: u64) -> DbPath {
-    DbPath {
-        path: p.as_ref().to_path_buf(),
-        target_size: t,
+        DbPath {
+            path: p.as_ref().to_path_buf(),
+            target_size: t,
+        }
     }
-}
 }
 
 impl Default for DbPath {
