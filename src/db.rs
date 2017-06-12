@@ -579,10 +579,10 @@ impl<'a> DB<'a> {
             let opt = options.raw();
             let dbname = CString::new(name).unwrap();
 
-            let cfs: Vec<ColumnFamilyDescriptor> = column_families
+            let cfs = column_families
                 .into_iter()
                 .map(|desc| desc.into())
-                .collect();
+                .collect::<Vec<ColumnFamilyDescriptor>>();
 
             let num_column_families = cfs.len();
             // for ffi
@@ -918,7 +918,7 @@ impl<'a> DB<'a> {
         unsafe {
             ll::rocks_db_get_pinnable(self.raw(),
                                       options.raw(),
-                                      key.as_ptr() as _,
+                                      key.as_ptr() as *const _,
                                       key.len(),
                                       pinnable_val.raw(),
                                       &mut status);
@@ -2122,58 +2122,6 @@ fn test_db_get() {
 
 
 #[test]
-fn test_db_paths() {
-    let tmp_dir = ::tempdir::TempDir::new_in(".", "rocks").unwrap();
-    let dir1 = ::tempdir::TempDir::new_in(".", "rocks").unwrap();
-    let dir2 = ::tempdir::TempDir::new_in(".", "rocks").unwrap();
-    let wal_dir = ::tempdir::TempDir::new_in(".", "rocks").unwrap();
-
-
-    let opt = Options::default().map_db_options(|dbopt| {
-        dbopt
-            .create_if_missing(true)
-            .db_paths(vec![&dir1.path(), &dir2.path()])        /* only puts sst file */
-            .wal_dir(&wal_dir)
-    });
-
-    let db = DB::open(opt, &tmp_dir);
-    if db.is_err() {
-        println!("err => {:?}", db.unwrap_err());
-        return;
-    }
-    let db = db.unwrap();
-    let _ = db.put(&WriteOptions::default(), b"name", b"BH1XUW")
-        .unwrap();
-    for i in 0..100 {
-        let key = format!("k{}", i);
-        let value = format!("v{:03}", i * 10);
-        if i == 50 {
-            let s = db.get_snapshot();
-            assert!(s.is_some());
-        }
-
-        db.put(&WriteOptions::default(), key.as_bytes(), value.as_bytes())
-            .unwrap();
-
-        assert!(db.flush(&FlushOptions::default()).is_ok());
-    }
-
-    let d1 = dir1.path().read_dir().expect("should have a sst dir");
-    assert!(d1.count() > 1);
-
-    let d2 = dir2.path().read_dir().expect("should have a sst dir");
-    assert!(d2.count() > 1);
-
-    let w = wal_dir.path().read_dir().expect("should have a wal dir");
-    assert!(w.count() >= 1);    // at least 1 log file
-
-    let d = tmp_dir.path().read_dir().expect("should have a data dir");
-    assert!(d.count() >= 2);    // OPTIONS, MANIFEST, etc.
-}
-
-
-
-#[test]
 fn test_open_cf() {
     use tempdir::TempDir;
     let tmp_dir = TempDir::new_in(".", "rocks").unwrap();
@@ -2383,6 +2331,53 @@ mod tests {
         assert!(ret[5].as_ref().unwrap_err().is_not_found());
 
         // mem::forget(def);
+    }
+
+    #[test]
+    fn db_paths() {
+        let tmp_dir = ::tempdir::TempDir::new_in(".", "rocks").unwrap();
+        let dir1 = ::tempdir::TempDir::new_in(".", "rocks").unwrap();
+        let dir2 = ::tempdir::TempDir::new_in(".", "rocks").unwrap();
+        let wal_dir = ::tempdir::TempDir::new_in(".", "rocks").unwrap();
+
+        let opt = Options::default().map_db_options(|dbopt| {
+            dbopt
+                .create_if_missing(true)
+                .db_paths(vec![&dir1.path(), &dir2.path()])        /* only puts sst file */
+                .wal_dir(&wal_dir)
+        });
+
+        let db = DB::open(opt, &tmp_dir);
+        if db.is_err() {
+            println!("err => {:?}", db.unwrap_err());
+            return;
+        }
+        let db = db.unwrap();
+        let _ = db.put(&WriteOptions::default(), b"name", b"BH1XUW")
+            .unwrap();
+        for i in 0..100 {
+            let key = format!("k{}", i);
+            let value = format!("v{:03}", i * 10);
+            if i == 50 {
+                let s = db.get_snapshot();
+                assert!(s.is_some());
+            }
+
+            db.put(&WriteOptions::default(), key.as_bytes(), value.as_bytes())
+                .unwrap();
+
+            assert!(db.flush(&FlushOptions::default()).is_ok());
+        }
+
+        let d1 = dir1.path().read_dir().expect("should have a sst dir");
+        let d2 = dir2.path().read_dir().expect("should have a sst dir");
+        assert!(d1.count() > 0 || d2.count() > 0);
+
+        let w = wal_dir.path().read_dir().expect("should have a wal dir");
+        assert!(w.count() >= 1);    // at least 1 log file
+
+        let d = tmp_dir.path().read_dir().expect("should have a data dir");
+        assert!(d.count() >= 2);    // OPTIONS, MANIFEST, etc.
     }
 
     #[test]
