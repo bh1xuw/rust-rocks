@@ -33,14 +33,13 @@ big picture(TODOs):
   - [ ] wraps Status as a Error variant?
 - [ ] Proof of usablility
 - [ ] bench across C++/Java/other-rust binding
-- [ ] Windows support
 - [ ] CI
   - [x] travis-ci integration
   - [ ] appveyor integration for windows
 - [x] Zero-Copy
   - [x] pinnable slice support
   - [x] exports String/Vec<u8> to C++ via `assign`-style API
-  - [ ] wraps std::string in Rust, use `std::move`
+  - [ ] wraps std::string in Rust, use `std::move`, replace `malloc/free`
 - [ ] Full documentation with code examples
   - [x] good enough by copying C++ comments
   - [ ] rename C++ function names to rust name in doc comments
@@ -100,7 +99,8 @@ big picture(TODOs):
   - [x] reverse iterator
 - [ ] ~~``rocksdb/ldb_tool.h``~~
 - [ ] ``rocksdb/listener.h``
-- [ ] ``rocksdb/memtablerep.h``
+- [x] ``rocksdb/memtablerep.h``
+  - [x] via options surffix
 - [x] ``rocksdb/merge_operator.h``
   - [x] associative merge operator
   - [x] merge operator - full merge v2

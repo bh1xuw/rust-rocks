@@ -85,6 +85,7 @@ rocks_sst_file_writer_t* rocks_sst_file_writer_create_from_rust_comparator(
 }
 
 void rocks_sst_file_writer_destroy(rocks_sst_file_writer_t* writer) {
+  delete writer->rep;
   delete writer;
 }
 

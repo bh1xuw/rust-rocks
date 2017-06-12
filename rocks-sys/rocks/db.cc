@@ -152,9 +152,13 @@ rocks_column_family_handle_t* rocks_db_create_column_family(
     rocks_db_t* db, const rocks_cfoptions_t* column_family_options,
     const char* column_family_name, rocks_status_t** status) {
   rocks_column_family_handle_t* handle = new rocks_column_family_handle_t;
-  SaveError(status, db->rep->CreateColumnFamily(
-                        ColumnFamilyOptions(column_family_options->rep),
-                        std::string(column_family_name), &(handle->rep)));
+  auto st = db->rep->CreateColumnFamily(
+      ColumnFamilyOptions(column_family_options->rep),
+      std::string(column_family_name), &(handle->rep));
+  if (SaveError(status, std::move(st))) {
+    delete handle;
+    handle = nullptr;
+  }
   return handle;
 }
 
@@ -172,6 +176,7 @@ void rocks_db_destroy_column_family_handle(rocks_db_t* db,
                                            rocks_column_family_handle_t* handle,
                                            rocks_status_t** status) {
   SaveError(status, db->rep->DestroyColumnFamilyHandle(handle->rep));
+  delete handle;
 }
 
 void rocks_column_family_handle_destroy(rocks_column_family_handle_t* handle) {

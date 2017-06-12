@@ -113,8 +113,6 @@ impl Drop for SstFileWriter {
     }
 }
 
-
-
 impl SstFileWriter {
     pub fn builder() -> SstFileWriterBuilder {
         SstFileWriterBuilder {

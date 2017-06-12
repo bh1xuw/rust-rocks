@@ -22,7 +22,13 @@ void rocks_dboptions_destroy(rocks_dboptions_t* options) { delete options; }
 
 rocks_cfoptions_t* rocks_cfoptions_create() { return new rocks_cfoptions_t; }
 
-void rocks_cfoptions_destroy(rocks_cfoptions_t* options) { delete options; }
+void rocks_cfoptions_destroy(rocks_cfoptions_t* options) {
+  if (options->rep.compaction_filter != nullptr) {
+    // FIXME: how to avoid leaks and make shared ref save
+    // delete options->rep.compaction_filter;
+  }
+  delete options;
+}
 
 // upconvert, downconvert
 rocks_options_t* rocks_options_create_from_db_cf_options(
@@ -92,6 +98,7 @@ void rocks_cfoptions_set_merge_operator_by_merge_op_trait(
 // FIXME: mem leaks?
 void rocks_cfoptions_set_compaction_filter_by_trait(rocks_cfoptions_t* opt,
                                                     void* filter_trait_obj) {
+  // FIXME: will leaks
   opt->rep.compaction_filter = new rocks_compaction_filter_t{filter_trait_obj};
 }
 /*
