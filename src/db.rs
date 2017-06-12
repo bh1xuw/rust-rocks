@@ -98,12 +98,16 @@ pub struct ColumnFamilyHandle<'a, 'b: 'a> {
 
 impl<'a, 'b> Drop for ColumnFamilyHandle<'a, 'b> {
     fn drop(&mut self) {
-        // unsafe { ll::rocks_column_family_handle_destroy(self.raw) }
         if self.owned {
             let mut status = ptr::null_mut::<ll::rocks_status_t>();
             unsafe {
                 ll::rocks_db_destroy_column_family_handle(self.db.raw, self.raw(), &mut status);
-                assert!(Status::from_ll(status).is_ok())
+                assert!(Status::from_ll(status).is_ok());
+            }
+        } else {
+            unsafe {
+                // this will not delete default CF
+                ll::rocks_column_family_handle_destroy(self.raw);
             }
         }
     }

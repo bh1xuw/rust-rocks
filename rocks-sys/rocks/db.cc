@@ -180,7 +180,10 @@ void rocks_db_destroy_column_family_handle(rocks_db_t* db,
 }
 
 void rocks_column_family_handle_destroy(rocks_column_family_handle_t* handle) {
-  delete handle->rep;
+  // if this is not default CF
+  if (handle->rep->GetID() != 0) {
+    delete handle->rep;
+  }
   delete handle;
 }
 
