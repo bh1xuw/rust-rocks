@@ -703,6 +703,17 @@ cxx_string_vector_t* rocks_db_get_live_files(rocks_db_t* db,
   return files;
 }
 
+rocks_logfiles_t* rocks_db_get_sorted_wal_files(rocks_db_t* db,
+                                                rocks_status_t** status) {
+  rocks_logfiles_t* files = new rocks_logfiles_t;
+  auto st = db->rep->GetSortedWalFiles(files->rep);
+  if (SaveError(status, std::move(st))) {
+    delete files;
+    return nullptr;
+  }
+  return files;
+}
+
 void rocks_db_delete_file(rocks_db_t* db, const char* name, size_t name_len,
                           rocks_status_t** status) {
   SaveError(status, db->rep->DeleteFile(std::string(name, name_len)));

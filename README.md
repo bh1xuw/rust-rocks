@@ -36,6 +36,7 @@ big picture(TODOs):
 - [ ] CI
   - [x] travis-ci integration
   - [ ] appveyor integration for windows
+  - [ ] memory leaks proof via valgrind
 - [x] Zero-Copy
   - [x] pinnable slice support
   - [x] exports String/Vec<u8> to C++ via `assign`-style API
@@ -81,6 +82,8 @@ big picture(TODOs):
   - [x] set options
   - [ ] get options: no plan
   - [x] get approximate sizes
+  - [x] get sorted wal files
+  - [ ] get update since
 - [ ] ~~``rocksdb/db_bench_tool.h``~~
 - [x] ``rocksdb/db_dump_tool.h``
 - [x] ``rocksdb/env.h``
@@ -135,7 +138,9 @@ big picture(TODOs):
 - [ ] ``rocksdb/table_properties.h``
 - [ ] ``rocksdb/thread_status.h``
 - [ ] ``rocksdb/threadpool.h``
-- [ ] ``rocksdb/transaction_log.h``
+- [x] ``rocksdb/transaction_log.h``
+  - [x] LogFile
+  - [ ] log iterator (DB::GetUpdatesSince)
 - [x] ``rocksdb/types.h``
   - [x] a sequence number type, wrapped in Snapshot
 - [x] ``rocksdb/version.h``

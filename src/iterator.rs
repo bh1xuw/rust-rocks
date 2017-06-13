@@ -186,6 +186,7 @@ impl<'a> Iterator<'a> {
     }
 
     // FIXME: leaks value?
+    // TODO: failes under empty db
     /// Consume and make a rust style iterator
     pub fn into_iter(mut self) -> IntoIter<'a> {
         if !self.is_valid() {

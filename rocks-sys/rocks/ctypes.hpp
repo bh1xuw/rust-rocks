@@ -18,6 +18,7 @@
 #include "rocksdb/sst_file_writer.h"
 #include "rocksdb/status.h"
 #include "rocksdb/table.h"
+#include "rocksdb/transaction_log.h"
 
 #include "rust_export.h"
 
@@ -320,6 +321,11 @@ struct rocks_column_family_metadata_t {
 /* universal_compaction */
 struct rocks_universal_compaction_options_t {
   rocksdb::CompactionOptionsUniversal rep;
+};
+
+/* transaction_log */
+struct rocks_logfiles_t {
+  VectorLogPtr rep;
 };
 
 /* aux */

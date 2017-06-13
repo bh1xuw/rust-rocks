@@ -103,6 +103,9 @@ typedef struct rocks_column_family_metadata_t rocks_column_family_metadata_t;
 typedef struct rocks_universal_compaction_options_t
     rocks_universal_compaction_options_t;
 
+/* transaction_log */
+typedef struct rocks_logfiles_t rocks_logfiles_t;
+
 /* aux */
 typedef struct cxx_string_vector_t cxx_string_vector_t;
 
@@ -945,6 +948,9 @@ cxx_string_vector_t* rocks_db_get_live_files(rocks_db_t* db,
                                              uint64_t* manifest_file_size,
                                              rocks_status_t** status);
 
+rocks_logfiles_t* rocks_db_get_sorted_wal_files(rocks_db_t* db,
+                                                rocks_status_t** status);
+
 void rocks_db_delete_file(rocks_db_t* db, const char* name, size_t name_len,
                           rocks_status_t** status);
 
@@ -1562,6 +1568,16 @@ void rocks_universal_compaction_options_destroy(
 
 void rocks_universal_compaction_options_set_allow_trivial_move(
     rocks_universal_compaction_options_t* uco, unsigned char val);
+
+/* transaction_log */
+void rocks_logfiles_destroy(rocks_logfiles_t* files);
+
+size_t rocks_logfiles_size(rocks_logfiles_t* files);
+void rocks_logfiles_nth_path_name(rocks_logfiles_t* files, size_t nth, void* s);
+uint64_t rocks_logfiles_nth_log_number(rocks_logfiles_t* files, size_t nth);
+int rocks_logfiles_nth_type(rocks_logfiles_t* files, size_t nth);
+uint64_t rocks_logfiles_nth_start_sequence(rocks_logfiles_t* files, size_t nth);
+uint64_t rocks_logfiles_nth_file_size(rocks_logfiles_t* files, size_t nth);
 
 /* convenience */
 int* rocks_get_supported_compressions(size_t* len);

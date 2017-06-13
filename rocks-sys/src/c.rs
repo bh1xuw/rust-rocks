@@ -134,6 +134,9 @@ pub struct rocks_column_family_metadata_t([u8; 0]);
 pub struct rocks_universal_compaction_options_t([u8; 0]);
 #[repr(C)]
 #[derive(Debug, Copy, Clone)]
+pub struct rocks_logfiles_t([u8; 0]);
+#[repr(C)]
+#[derive(Debug, Copy, Clone)]
 pub struct cxx_string_vector_t([u8; 0]);
 extern "C" {
     pub fn rocks_status_create() -> *mut *mut rocks_status_t;
@@ -1557,6 +1560,11 @@ extern "C" {
      -> *mut cxx_string_vector_t;
 }
 extern "C" {
+    pub fn rocks_db_get_sorted_wal_files(db: *mut rocks_db_t,
+                                         status: *mut *mut rocks_status_t)
+     -> *mut rocks_logfiles_t;
+}
+extern "C" {
     pub fn rocks_db_delete_file(db: *mut rocks_db_t,
                                 name: *const ::std::os::raw::c_char,
                                 name_len: usize,
@@ -2796,6 +2804,33 @@ extern "C" {
                                                                          *mut rocks_universal_compaction_options_t,
                                                                      val:
                                                                          ::std::os::raw::c_uchar);
+}
+extern "C" {
+    pub fn rocks_logfiles_destroy(files: *mut rocks_logfiles_t);
+}
+extern "C" {
+    pub fn rocks_logfiles_size(files: *mut rocks_logfiles_t) -> usize;
+}
+extern "C" {
+    pub fn rocks_logfiles_nth_path_name(files: *mut rocks_logfiles_t,
+                                        nth: usize,
+                                        s: *mut ::std::os::raw::c_void);
+}
+extern "C" {
+    pub fn rocks_logfiles_nth_log_number(files: *mut rocks_logfiles_t,
+                                         nth: usize) -> u64;
+}
+extern "C" {
+    pub fn rocks_logfiles_nth_type(files: *mut rocks_logfiles_t, nth: usize)
+     -> ::std::os::raw::c_int;
+}
+extern "C" {
+    pub fn rocks_logfiles_nth_start_sequence(files: *mut rocks_logfiles_t,
+                                             nth: usize) -> u64;
+}
+extern "C" {
+    pub fn rocks_logfiles_nth_file_size(files: *mut rocks_logfiles_t,
+                                        nth: usize) -> u64;
 }
 extern "C" {
     pub fn rocks_get_supported_compressions(len: *mut usize)

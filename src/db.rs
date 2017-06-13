@@ -30,6 +30,7 @@ use env::Logger;
 use types::SequenceNumber;
 use to_raw::{ToRaw, FromRaw};
 use metadata::{LiveFileMetaData, SstFileMetaData, LevelMetaData, ColumnFamilyMetaData};
+use transaction_log::LogFile;
 
 use super::Result;
 use super::slice::{CVec, PinnableSlice};
@@ -122,7 +123,7 @@ impl<'a, 'b> AsRef<ColumnFamilyHandle<'a, 'b>> for ColumnFamilyHandle<'a, 'b> {
 
 impl<'a, 'b> fmt::Debug for ColumnFamilyHandle<'a, 'b> {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        write!(f, "CFHandle({:?})", self.raw)
+        write!(f, "CFHandle(id={}, name={:?})", self.id(), self.name())
     }
 }
 
@@ -479,6 +480,86 @@ impl<'a, 'b: 'a> ColumnFamilyHandle<'a, 'b> {
         }
     }
 
+    /// Obtains the meta data of the current column family of the DB.
+    pub fn metadata(&self) -> ColumnFamilyMetaData {
+        unsafe {
+            let cfmeta = ll::rocks_db_get_column_family_metadata(self.db.raw, self.raw());
+
+            let total_size = ll::rocks_column_family_metadata_size(cfmeta);
+            let file_count = ll::rocks_column_family_metadata_file_count(cfmeta);
+            let name = CStr::from_ptr(ll::rocks_column_family_metadata_name(cfmeta))
+                .to_string_lossy()
+                .to_owned()
+                .to_string();
+
+            let num_levels = ll::rocks_column_family_metadata_levels_count(cfmeta);
+
+            let mut meta = ColumnFamilyMetaData {
+                size: total_size,
+                file_count: file_count,
+                name: name,
+                levels: Vec::with_capacity(num_levels as usize),
+            };
+
+            for lv in 0 .. num_levels {
+                let level = ll::rocks_column_family_metadata_levels_level(cfmeta, lv);
+                let lv_size = ll::rocks_column_family_metadata_levels_size(cfmeta, lv);
+
+                let num_sstfiles = ll::rocks_column_family_metadata_levels_files_count(cfmeta, lv);
+
+                // return
+                let mut current_level = LevelMetaData {
+                    level: level as u32,
+                    size: lv_size,
+                    files: Vec::with_capacity(num_sstfiles as usize),
+                };
+
+                for i in 0 .. num_sstfiles {
+                    let name = CStr::from_ptr(ll::rocks_column_family_metadata_levels_files_name(cfmeta, lv, i))
+                        .to_string_lossy()
+                        .to_owned()
+                        .to_string();
+                    let db_path: String = CStr::from_ptr(ll::rocks_column_family_metadata_levels_files_db_path(cfmeta, lv, i))
+                        .to_string_lossy()
+                        .to_owned()
+                        .to_string();
+                    let size = ll::rocks_column_family_metadata_levels_files_size(cfmeta, lv, i);
+
+                    let small_seqno = ll::rocks_column_family_metadata_levels_files_smallest_seqno(cfmeta, lv, i);
+                    let large_seqno = ll::rocks_column_family_metadata_levels_files_largest_seqno(cfmeta, lv, i);
+
+                    let mut key_len = 0;
+                    let small_key_ptr = ll::rocks_column_family_metadata_levels_files_smallestkey(cfmeta, lv, i, &mut key_len);
+                    let small_key = slice::from_raw_parts(small_key_ptr as *const u8, key_len).to_vec();
+
+                    let large_key_ptr = ll::rocks_column_family_metadata_levels_files_largestkey(cfmeta, lv, i, &mut key_len);
+                    let large_key = slice::from_raw_parts(large_key_ptr as *const u8, key_len).to_vec();
+
+                    let being_compacted = ll::rocks_column_family_metadata_levels_files_being_compacted(cfmeta, lv, i) != 0;
+
+                    let sst_file = SstFileMetaData {
+                        size: size as u64,
+                        name: name,
+                        db_path: db_path,
+                        smallest_seqno: small_seqno,
+                        largest_seqno: large_seqno,
+                        smallestkey: small_key,
+                        largestkey: large_key,
+                        being_compacted: being_compacted,
+                    };
+
+                    current_level.files.push(sst_file);
+                }
+
+                meta.levels.push(current_level);
+            }
+
+            ll::rocks_column_family_metadata_destroy(cfmeta);
+
+            meta
+        }
+    }
+
     // ================================================================================
 }
 
@@ -524,7 +605,7 @@ pub struct DB<'a> {
 
 impl<'a> fmt::Debug for DB<'a> {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        write!(f, "DB({:?})", self.context.raw)
+        write!(f, "DB({:?})", self.name())
     }
 }
 
@@ -1568,7 +1649,7 @@ impl<'a> DB<'a> {
 
     /// Get DB name -- the exact same name that was provided as an argument to
     /// `DB::Open()`
-    pub fn get_name(&self) -> &str {
+    pub fn name(&self) -> &str {
         let mut len = 0;
         unsafe {
             let ptr = ll::rocks_db_get_name(self.raw(), &mut len);
@@ -1676,8 +1757,38 @@ impl<'a> DB<'a> {
         }
     }
 
+    /// Retrieve the sorted list of all wal files with earliest file first
+    pub fn get_sorted_wal_files(&self) -> Result<Vec<LogFile>> {
+        let mut status = ptr::null_mut::<ll::rocks_status_t>();
+        unsafe {
+            let cfiles = ll::rocks_db_get_sorted_wal_files(self.raw(), &mut status);
+            Status::from_ll(status).map(|()| {
+                let num_files = ll::rocks_logfiles_size(cfiles);
+                let mut files = Vec::with_capacity(num_files);
+                for i in 0..num_files {
+                    let mut path_name = String::new();
+                    ll::rocks_logfiles_nth_path_name(cfiles, i, &mut path_name as *mut String as *mut c_void);
+                    let log_num = ll::rocks_logfiles_nth_log_number(cfiles, i);
+                    let file_type = mem::transmute(ll::rocks_logfiles_nth_type(cfiles, i));
+                    let start_seq = ll::rocks_logfiles_nth_start_sequence(cfiles, i);
+                    let file_size = ll::rocks_logfiles_nth_file_size(cfiles, i);
+                    files.push(LogFile {
+                         path_name: path_name,
+                         log_number: log_num,
+                         file_type: file_type,
+                         start_sequence: start_seq,
+                         size_in_bytes: file_size,
+                    })
+                }
+                ll::rocks_logfiles_destroy(cfiles);
+                files
+            })
+        }
+    }
+
+
     // TODO:
-    // get_sorted_wal_files
+    //
     // get_updates_since
 
     /// Delete the file name from the db directory and update the internal state to
@@ -1755,11 +1866,6 @@ impl<'a> DB<'a> {
     }
 
     /// Obtains the meta data of the specified column family of the DB.
-    /// Status::NotFound() will be returned if the current DB does not have
-    /// any column family match the specified name.
-    ///
-    /// If cf_name is not pspecified, then the metadata of the default
-    /// column family will be returned.
     pub fn get_column_family_metadata(&self, column_family: &ColumnFamilyHandle) -> ColumnFamilyMetaData {
         unsafe {
             let cfmeta = ll::rocks_db_get_column_family_metadata(self.raw(), column_family.raw());
@@ -2046,7 +2152,7 @@ fn it_works() {
     let cfhandle = db.create_column_family(&ColumnFamilyOptions::default(), "lock");
     println!("cf => {:?}", cfhandle);
 
-    assert!(db.get_name().contains("rocks"));
+    assert!(db.name().contains("rocks"));
 }
 
 #[test]
@@ -2586,6 +2692,28 @@ mod tests {
         } else {
             assert!(false, "get_live_files fails");
         }
+    }
+
+    #[test]
+    fn get_sorted_wal_files() {
+        let tmp_dir = ::tempdir::TempDir::new_in(".", "rocks").unwrap();
+        let db = DB::open(Options::default()
+                          .map_db_options(|db| {
+                              db.create_if_missing(true)
+                                  .db_write_buffer_size(2 << 20) // 2MB per wal log
+                                  .wal_ttl_seconds(1000)
+                          }),
+                          &tmp_dir)
+            .unwrap();
+        for i in 0..10 {
+            assert!(db.put(&Default::default(),
+                           format!("key{}", i).as_bytes(),
+                           format!("val{:01000000}", i).as_bytes()) // 1MB value
+                    .is_ok());
+        }
+        let files = db.get_sorted_wal_files();
+        assert!(files.is_ok());
+        assert!(files.unwrap().len() > 2);
     }
 
     #[test]
