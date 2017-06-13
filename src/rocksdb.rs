@@ -10,13 +10,14 @@ pub use options::*;
 pub use write_batch::WriteBatch;
 pub use perf_level::*;
 pub use table::*;
-pub use slice::PinnableSlice;
+pub use slice::{CVec, PinnableSlice};
+pub use types::SequenceNumber;
+pub use transaction_log::LogFile;
 
 pub use super::Result;
 
 #[test]
 fn test_version() {
     let v = version();
-    assert!(v >= "5.2.1".into());
-    println!("ver = {}", v);
+    assert!(v >= "5.3.1".into());
 }

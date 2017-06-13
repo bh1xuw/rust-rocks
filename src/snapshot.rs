@@ -56,7 +56,7 @@ impl<'a> AsRef<Snapshot<'a>> for Snapshot<'a> {
 impl<'a> Snapshot<'a> {
     pub fn get_sequence_number(&self) -> SequenceNumber {
         unsafe {
-            ll::rocks_snapshot_get_sequence_number(self.raw)
+            ll::rocks_snapshot_get_sequence_number(self.raw).into()
         }
     }
 }

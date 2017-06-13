@@ -35,7 +35,7 @@ impl Drop for ExternalSstFileInfo {
 impl fmt::Debug for ExternalSstFileInfo {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         write!(f,
-               "ExternalSstFileInfo#{} <path: {}, key: {:?}...{:?}, entries: {}>",
+               "ExternalSstFileInfo#{:?} <path: {}, key: {:?}...{:?}, entries: {}>",
                self.sequence_number(),
                self.file_path(),
                String::from_utf8_lossy(self.smallest_key()),
@@ -79,7 +79,7 @@ impl ExternalSstFileInfo {
     }
 
     pub fn sequence_number(&self) -> SequenceNumber {
-        unsafe { ll::rocks_external_sst_file_info_get_sequence_number(self.raw) as SequenceNumber }
+        unsafe { ll::rocks_external_sst_file_info_get_sequence_number(self.raw).into() }
     }
 
     pub fn file_size(&self) -> u64 {

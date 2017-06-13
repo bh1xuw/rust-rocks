@@ -541,8 +541,8 @@ impl<'a, 'b: 'a> ColumnFamilyHandle<'a, 'b> {
                         size: size as u64,
                         name: name,
                         db_path: db_path,
-                        smallest_seqno: small_seqno,
-                        largest_seqno: large_seqno,
+                        smallest_seqno: small_seqno.into(),
+                        largest_seqno: large_seqno.into(),
                         smallestkey: small_key,
                         largestkey: large_key,
                         being_compacted: being_compacted,
@@ -1685,7 +1685,7 @@ impl<'a> DB<'a> {
 
     /// The sequence number of the most recent transaction.
     pub fn get_latest_sequence_number(&self) -> SequenceNumber {
-        unsafe { ll::rocks_db_get_latest_sequence_number(self.raw()) }
+        unsafe { ll::rocks_db_get_latest_sequence_number(self.raw()).into() }
     }
 
     /// Prevent file deletions. Compactions will continue to occur,
@@ -1776,7 +1776,7 @@ impl<'a> DB<'a> {
                          path_name: path_name,
                          log_number: log_num,
                          file_type: file_type,
-                         start_sequence: start_seq,
+                         start_sequence: start_seq.into(),
                          size_in_bytes: file_size,
                     })
                 }
@@ -1847,8 +1847,8 @@ impl<'a> DB<'a> {
                         size: size as u64,
                         name: name,
                         db_path: db_path,
-                        smallest_seqno: small_seqno,
-                        largest_seqno: large_seqno,
+                        smallest_seqno: small_seqno.into(),
+                        largest_seqno: large_seqno.into(),
                         smallestkey: small_key,
                         largestkey: large_key,
                         being_compacted: being_compacted,
@@ -1926,8 +1926,8 @@ impl<'a> DB<'a> {
                         size: size as u64,
                         name: name,
                         db_path: db_path,
-                        smallest_seqno: small_seqno,
-                        largest_seqno: large_seqno,
+                        smallest_seqno: small_seqno.into(),
+                        largest_seqno: large_seqno.into(),
                         smallestkey: small_key,
                         largestkey: large_key,
                         being_compacted: being_compacted,
@@ -2583,7 +2583,7 @@ mod tests {
                           &tmp_dir)
             .unwrap();
 
-        assert_eq!(db.get_latest_sequence_number(), 0);
+        assert_eq!(*db.get_latest_sequence_number(), 0);
 
         assert!(db.put(&Default::default(), b"long-key", vec![b'A'; 1024 * 1024].as_ref())
                 .is_ok());
@@ -2595,7 +2595,7 @@ mod tests {
         assert!(db.sync_wal().is_ok());
 
         // 5th transaction
-        assert_eq!(db.get_latest_sequence_number(), 4);
+        assert_eq!(*db.get_latest_sequence_number(), 4);
     }
 
     #[test]
