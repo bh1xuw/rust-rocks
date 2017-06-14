@@ -18,6 +18,7 @@
 #include "rocksdb/sst_file_writer.h"
 #include "rocksdb/status.h"
 #include "rocksdb/table.h"
+#include "rocksdb/table_properties.h"
 #include "rocksdb/transaction_log.h"
 
 #include "rust_export.h"
@@ -326,6 +327,30 @@ struct rocks_universal_compaction_options_t {
 /* transaction_log */
 struct rocks_logfiles_t {
   VectorLogPtr rep;
+};
+
+/* table_properties */
+struct rocks_table_props_collection_t {
+  // std::unordered_map<std::string, std::shared_ptr<const TableProperties>>
+  TablePropertiesCollection rep;
+};
+
+struct rocks_table_props_collection_iter_t {
+  TablePropertiesCollection::const_iterator rep;
+  const TablePropertiesCollection::const_iterator cend;
+};
+
+struct rocks_table_props_t {
+  std::shared_ptr<const TableProperties> rep;
+};
+
+// std::map<std::string, std::string>*
+// ie. UserCollectedProperties*
+typedef struct rocks_user_collected_props_t rocks_user_collected_props_t;
+
+struct rocks_user_collected_props_iter_t {
+  UserCollectedProperties::const_iterator rep;
+  const UserCollectedProperties::const_iterator cend;
 };
 
 /* aux */

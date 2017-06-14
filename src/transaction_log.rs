@@ -1,7 +1,10 @@
+//! WAL logs
+
 use std::fmt;
 
 use types::SequenceNumber;
 
+/// Is WAL file archived or alive
 #[derive(Debug, Copy, Clone, PartialEq, Eq, Hash)]
 #[repr(C)]
 pub enum WalFileType {
@@ -15,12 +18,20 @@ pub enum WalFileType {
     Alive = 1
 }
 
-
+/// Represents a single WAL file
 pub struct LogFile {
+    /// Returns log file's pathname relative to the main db dir
+    /// Eg. For a live-log-file = /000003.log
+    ///     For an archived-log-file = /archive/000003.log
     pub path_name: String,
+    /// Primary identifier for log file.
+    /// This is directly proportional to creation time of the log file
     pub log_number: u64,
+    /// Log file can be either alive or archived
     pub file_type: WalFileType,
+    /// Starting sequence number of writebatch written in this log file
     pub start_sequence: SequenceNumber,
+    /// Size of log file on disk in Bytes
     pub size_in_bytes: u64,
 }
 

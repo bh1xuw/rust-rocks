@@ -15,6 +15,8 @@ use std::marker::PhantomData;
 use std::path::Path;
 use std::collections::hash_map::HashMap;
 
+use table_properties::TablePropertiesCollection;
+
 use rocks_sys as ll;
 
 use error::Status;
@@ -585,7 +587,7 @@ impl<'a> Drop for DBContext<'a> {
 ///
 /// # Examples
 ///
-/// ```
+/// ```rust
 /// use rocks::rocksdb::*;
 ///
 /// let db = DB::open(Options::default().map_db_options(|db| db.create_if_missing(true)),
@@ -769,10 +771,9 @@ impl<'a> DB<'a> {
                                 cfopts: &ColumnFamilyOptions,
                                 column_family_name: &str)
                                 -> Result<ColumnFamilyHandle> {
+        let dbname = CString::new(column_family_name).unwrap();
+        let mut status = ptr::null_mut::<ll::rocks_status_t>();
         unsafe {
-            let dbname = CString::new(column_family_name).unwrap();
-            let mut status = ptr::null_mut::<ll::rocks_status_t>();
-
             let handle = ll::rocks_db_create_column_family(self.raw(), cfopts.raw(), dbname.as_ptr(), &mut status);
             Status::from_ll(status).map(|_| {
                 ColumnFamilyHandle {
@@ -902,7 +903,7 @@ impl<'a> DB<'a> {
     /// Removes the database entries in the range ["begin_key", "end_key"), i.e.,
     /// including "begin_key" and excluding "end_key". Returns OK on success, and
     /// a non-OK status on error. It is not an error if no keys exist in the range
-    /// ["begin_key", "end_key").
+    /// `["begin_key", "end_key")`.
     ///
     /// This feature is currently an experimental performance optimization for
     /// deleting very large ranges of contiguous keys. Invoking it many times or on
@@ -2025,11 +2026,21 @@ impl<'a> DB<'a> {
         }
     }
 
+    pub fn get_properties_of_all_tables_cf(&self, column_family: &ColumnFamilyHandle) -> Result<TablePropertiesCollection> {
+        let mut status = ptr::null_mut();
+        unsafe {
+            let props_ptr = ll::rocks_db_get_properties_of_all_tables(self.raw(), column_family.raw, &mut status);
+            println!("props => {:?}", props_ptr);
+            Status::from_ll(status).map(|()| {
+                TablePropertiesCollection::from_ll(props_ptr)
+            })
+        }
+    }
     // TODO:
-    // GetPropertiesOfAllTables
     // GetPropertiesOfTablesInRange
 }
 
+// ==================================================
 
 // public functions
 
@@ -2826,6 +2837,54 @@ mod tests {
         let result = db.get_live_files_metadata();
         assert_eq!(result.len(), 1);
         assert_eq!(result[0].level, 4); // compacted to 4
+    }
+
+    #[test]
+    fn get_properties_of_all_tables() {
+        let tmp_dir = ::tempdir::TempDir::new_in("", "rocks").unwrap();
+        let db = DB::open(Options::default()
+                          .map_db_options(|db| db.create_if_missing(true))
+                          .map_cf_options(|cf| cf.disable_auto_compactions(true)), // disable
+                          &tmp_dir).unwrap();
+
+        for i in 0..100 {
+            let key = format!("k{}", i);
+            let val = format!("v{}", i * i);
+            let value: String = iter::repeat(val).take(i*i).collect::<Vec<_>>().concat();
+
+            db.put(&WriteOptions::default(), key.as_bytes(), value.as_bytes())
+                .unwrap();
+
+            if i % 6 == 0 {
+                assert!(db.flush(&FlushOptions::default().wait(true)).is_ok());
+            }
+        }
+
+        let props = db.get_properties_of_all_tables_cf(&db.default_column_family());
+        assert!(props.is_ok());
+        let props = props.unwrap();
+        assert!(props.len() > 10, "should be more than 10 sst files");
+
+        for (k, prop) in props.iter() {
+            println!("key => {:?}", k);
+            println!("    => {:?}", prop);
+            println!("data size ={}", prop.data_size());
+            let user_prop = prop.user_collected_properties();
+            println!("user => {:?}", user_prop);
+            println!("len => {:?}", user_prop.len());
+            for (k, v) in user_prop.iter() {
+                println!("    {}=>{:?}", k, v);
+            }
+            let readable_prop = prop.readable_properties();
+            println!("readable => {:?}", readable_prop);
+            println!("len => {:?}", readable_prop.len());
+
+        }
+
+        let vals = props.iter().map(|(k, _)| k).collect::<Vec<_>>();
+        assert!(vals.len() > 10);
+        let vals = props.iter().map(|(_, v)| v).collect::<Vec<_>>();
+        assert!(vals.len() > 10);
     }
 }
 

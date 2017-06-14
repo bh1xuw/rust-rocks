@@ -137,6 +137,21 @@ pub struct rocks_universal_compaction_options_t([u8; 0]);
 pub struct rocks_logfiles_t([u8; 0]);
 #[repr(C)]
 #[derive(Debug, Copy, Clone)]
+pub struct rocks_table_props_collection_t([u8; 0]);
+#[repr(C)]
+#[derive(Debug, Copy, Clone)]
+pub struct rocks_table_props_collection_iter_t([u8; 0]);
+#[repr(C)]
+#[derive(Debug, Copy, Clone)]
+pub struct rocks_table_props_t([u8; 0]);
+#[repr(C)]
+#[derive(Debug, Copy, Clone)]
+pub struct rocks_user_collected_props_t([u8; 0]);
+#[repr(C)]
+#[derive(Debug, Copy, Clone)]
+pub struct rocks_user_collected_props_iter_t([u8; 0]);
+#[repr(C)]
+#[derive(Debug, Copy, Clone)]
 pub struct cxx_string_vector_t([u8; 0]);
 extern "C" {
     pub fn rocks_status_create() -> *mut *mut rocks_status_t;
@@ -1608,6 +1623,14 @@ extern "C" {
                                     status: *mut *mut rocks_status_t);
 }
 extern "C" {
+    pub fn rocks_db_get_properties_of_all_tables(db: *mut rocks_db_t,
+                                                 cf:
+                                                     *mut rocks_column_family_handle_t,
+                                                 status:
+                                                     *mut *mut rocks_status_t)
+     -> *mut rocks_table_props_collection_t;
+}
+extern "C" {
     pub fn rocks_destroy_db(options: *const rocks_options_t,
                             name: *const ::std::os::raw::c_char,
                             status: *mut *mut rocks_status_t);
@@ -2839,6 +2862,111 @@ extern "C" {
 extern "C" {
     pub fn rocks_get_supported_compressions_destroy(ptr:
                                                         *mut ::std::os::raw::c_int);
+}
+extern "C" {
+    pub fn rocks_table_props_collection_destroy(coll:
+                                                    *mut rocks_table_props_collection_t);
+}
+extern "C" {
+    pub fn rocks_table_props_destroy(props: *mut rocks_table_props_t);
+}
+extern "C" {
+    pub fn rocks_table_props_collection_iter_destroy(it:
+                                                         *mut rocks_table_props_collection_iter_t);
+}
+extern "C" {
+    pub fn rocks_user_collected_props_iter_destroy(it:
+                                                       *mut rocks_user_collected_props_iter_t);
+}
+extern "C" {
+    pub fn rocks_table_props_collection_size(coll:
+                                                 *mut rocks_table_props_collection_t)
+     -> usize;
+}
+extern "C" {
+    pub fn rocks_table_props_collection_at(coll:
+                                               *mut rocks_table_props_collection_t,
+                                           key_ptr:
+                                               *const ::std::os::raw::c_char,
+                                           key_len: usize)
+     -> *mut rocks_table_props_t;
+}
+extern "C" {
+    pub fn rocks_table_props_collection_iter_create(coll:
+                                                        *mut rocks_table_props_collection_t)
+     -> *mut rocks_table_props_collection_iter_t;
+}
+extern "C" {
+    pub fn rocks_table_props_collection_iter_next(it:
+                                                      *mut rocks_table_props_collection_iter_t)
+     -> ::std::os::raw::c_uchar;
+}
+extern "C" {
+    pub fn rocks_table_props_collection_iter_key(it:
+                                                     *mut rocks_table_props_collection_iter_t,
+                                                 s:
+                                                     *mut ::std::os::raw::c_void)
+     -> *const ::std::os::raw::c_char;
+}
+extern "C" {
+    pub fn rocks_table_props_collection_iter_value(it:
+                                                       *mut rocks_table_props_collection_iter_t)
+     -> *mut rocks_table_props_t;
+}
+extern "C" {
+    pub fn rocks_table_props_get_data_size(prop: *mut rocks_table_props_t)
+     -> u64;
+}
+extern "C" {
+    pub fn rocks_table_props_to_string(prop: *mut rocks_table_props_t,
+                                       s: *mut ::std::os::raw::c_void);
+}
+extern "C" {
+    pub fn rocks_table_props_get_user_collected_properties(prop:
+                                                               *mut rocks_table_props_t)
+     -> *mut rocks_user_collected_props_t;
+}
+extern "C" {
+    pub fn rocks_table_props_get_readable_properties(prop:
+                                                         *mut rocks_table_props_t)
+     -> *mut rocks_user_collected_props_t;
+}
+extern "C" {
+    pub fn rocks_user_collected_props_insert(prop:
+                                                 *mut rocks_user_collected_props_t,
+                                             key_ptr:
+                                                 *const ::std::os::raw::c_char,
+                                             key_len: usize,
+                                             val_ptr:
+                                                 *const ::std::os::raw::c_char,
+                                             val_len: usize);
+}
+extern "C" {
+    pub fn rocks_user_collected_props_size(prop:
+                                               *mut rocks_user_collected_props_t)
+     -> usize;
+}
+extern "C" {
+    pub fn rocks_user_collected_props_iter_create(prop:
+                                                      *mut rocks_user_collected_props_t)
+     -> *mut rocks_user_collected_props_iter_t;
+}
+extern "C" {
+    pub fn rocks_user_collected_props_iter_next(it:
+                                                    *mut rocks_user_collected_props_iter_t)
+     -> ::std::os::raw::c_uchar;
+}
+extern "C" {
+    pub fn rocks_user_collected_props_iter_key(it:
+                                                   *mut rocks_user_collected_props_iter_t,
+                                               s:
+                                                   *mut ::std::os::raw::c_void);
+}
+extern "C" {
+    pub fn rocks_user_collected_props_iter_value(it:
+                                                     *mut rocks_user_collected_props_iter_t,
+                                                 v:
+                                                     *mut ::std::os::raw::c_void);
 }
 extern "C" {
     pub fn free(p: *mut ::std::os::raw::c_void);

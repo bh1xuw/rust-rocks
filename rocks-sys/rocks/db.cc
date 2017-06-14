@@ -768,6 +768,17 @@ void rocks_db_get_db_identity(rocks_db_t* db,
   }
 }
 
+rocks_table_props_collection_t* rocks_db_get_properties_of_all_tables(
+    rocks_db_t* db, rocks_column_family_handle_t* cf, rocks_status_t** status) {
+  auto coll = new rocks_table_props_collection_t;
+  auto st = db->rep->GetPropertiesOfAllTables(cf->rep, &coll->rep);
+  if (!SaveError(status, std::move(st))) {
+    return coll;
+  }
+  delete coll;
+  return nullptr;
+}
+
 // public functions
 void rocks_destroy_db(const rocks_options_t* options, const char* name,
                       rocks_status_t** status) {

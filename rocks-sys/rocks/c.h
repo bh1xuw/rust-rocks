@@ -106,6 +106,19 @@ typedef struct rocks_universal_compaction_options_t
 /* transaction_log */
 typedef struct rocks_logfiles_t rocks_logfiles_t;
 
+/* table_properties */
+typedef struct rocks_table_props_collection_t rocks_table_props_collection_t;
+
+typedef struct rocks_table_props_collection_iter_t
+    rocks_table_props_collection_iter_t;
+
+typedef struct rocks_table_props_t rocks_table_props_t;
+
+typedef struct rocks_user_collected_props_t rocks_user_collected_props_t;
+
+typedef struct rocks_user_collected_props_iter_t
+    rocks_user_collected_props_iter_t;
+
 /* aux */
 typedef struct cxx_string_vector_t cxx_string_vector_t;
 
@@ -974,6 +987,9 @@ void rocks_db_get_db_identity(rocks_db_t* db,
                               void* identity,  // *mut String
                               rocks_status_t** status);
 
+rocks_table_props_collection_t* rocks_db_get_properties_of_all_tables(
+    rocks_db_t* db, rocks_column_family_handle_t* cf, rocks_status_t** status);
+
 /*    pub fn */
 void rocks_destroy_db(const rocks_options_t* options, const char* name,
                       rocks_status_t** status);
@@ -1582,6 +1598,62 @@ uint64_t rocks_logfiles_nth_file_size(rocks_logfiles_t* files, size_t nth);
 /* convenience */
 int* rocks_get_supported_compressions(size_t* len);
 void rocks_get_supported_compressions_destroy(int* ptr);
+
+/* table_properties */
+void rocks_table_props_collection_destroy(rocks_table_props_collection_t* coll);
+
+void rocks_table_props_destroy(rocks_table_props_t* props);
+
+void rocks_table_props_collection_iter_destroy(
+    rocks_table_props_collection_iter_t* it);
+
+void rocks_user_collected_props_iter_destroy(
+    rocks_user_collected_props_iter_t* it);
+
+size_t rocks_table_props_collection_size(rocks_table_props_collection_t* coll);
+
+rocks_table_props_t* rocks_table_props_collection_at(
+    rocks_table_props_collection_t* coll, const char* key_ptr, size_t key_len);
+
+rocks_table_props_collection_iter_t* rocks_table_props_collection_iter_create(
+    rocks_table_props_collection_t* coll);
+
+unsigned char rocks_table_props_collection_iter_next(
+    rocks_table_props_collection_iter_t* it);
+
+const char* rocks_table_props_collection_iter_key(
+    rocks_table_props_collection_iter_t* it, void* s);
+
+rocks_table_props_t* rocks_table_props_collection_iter_value(
+    rocks_table_props_collection_iter_t* it);
+
+uint64_t rocks_table_props_get_data_size(rocks_table_props_t* prop);
+
+void rocks_table_props_to_string(rocks_table_props_t* prop, void* s);
+
+rocks_user_collected_props_t* rocks_table_props_get_user_collected_properties(
+    rocks_table_props_t* prop);
+
+rocks_user_collected_props_t* rocks_table_props_get_readable_properties(
+    rocks_table_props_t* prop);
+
+void rocks_user_collected_props_insert(rocks_user_collected_props_t* prop,
+                                       const char* key_ptr, size_t key_len,
+                                       const char* val_ptr, size_t val_len);
+
+size_t rocks_user_collected_props_size(rocks_user_collected_props_t* prop);
+
+rocks_user_collected_props_iter_t* rocks_user_collected_props_iter_create(
+    rocks_user_collected_props_t* prop);
+
+unsigned char rocks_user_collected_props_iter_next(
+    rocks_user_collected_props_iter_t* it);
+
+void rocks_user_collected_props_iter_key(rocks_user_collected_props_iter_t* it,
+                                         void* s);
+
+void rocks_user_collected_props_iter_value(
+    rocks_user_collected_props_iter_t* it, void* v);
 
 /* aux */
 void free(void* p);

@@ -20,6 +20,8 @@ extern void rust_drop_vec_u8(char* op, size_t len);
 
 extern void rust_string_assign(void* s, const char* p, size_t len);
 
+extern void rust_vec_u8_assign(void* v, const char* p, size_t len);
+
 /* compaction filter */
 extern int rust_compaction_filter_call(void* f, int level,
                                        const Slice* key,  // &&[u8]
