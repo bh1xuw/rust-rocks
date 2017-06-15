@@ -83,8 +83,8 @@ impl<'a> Iterator for TablePropertiesCollectionIter<'a> {
         if self.raw.is_null() || self.at_end {
             None
         } else {
+            let mut key = String::new();
             unsafe {
-                let mut key = String::new();
                 ll::rocks_table_props_collection_iter_key(self.raw,
                                                           &mut key as *mut String as *mut c_void);
                 let prop = TableProperties::from_ll(ll::rocks_table_props_collection_iter_value(self.raw));
@@ -171,16 +171,16 @@ impl<'a> Iterator for UserCollectedPropertiesIter<'a> {
         if self.raw.is_null() || self.at_end {
             None
         } else {
+            let mut key = String::new();
+            let mut value = Vec::new();
             unsafe {
-                let mut key = String::new();
                 ll::rocks_user_collected_props_iter_key(self.raw,
                                                         &mut key as *mut String as *mut c_void);
-                let mut value = Vec::new();
                 ll::rocks_user_collected_props_iter_value(self.raw,
                                                         &mut value as *mut Vec<u8> as *mut c_void);
                 self.at_end = ll::rocks_user_collected_props_iter_next(self.raw) == 0;
-                Some((key, value))
             }
+            Some((key, value))
         }
     }
 
