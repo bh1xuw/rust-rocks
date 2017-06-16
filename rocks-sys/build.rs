@@ -343,7 +343,7 @@ fn main() {
         .cpp(true)
         .include("rocksdb/include")
         .include(".")
-        .file("rocks/aux.cc")
+        .file("rocks/util.cc")
         .file("rocks/cache.cc")
         .file("rocks/comparator.cc")
         .file("rocks/convenience.cc")
