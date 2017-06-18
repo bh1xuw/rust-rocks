@@ -294,92 +294,155 @@ impl<'a> fmt::Debug for TableProperties<'a> {
 
 
 impl<'a> TableProperties<'a> {
-    // the total size of all data blocks.
+    /// the total size of all data blocks.
     pub fn data_size(&self) -> u64 {
         unsafe {
             ll::rocks_table_props_get_data_size(self.raw)
         }
     }
-    // the size of index block.
+    /// the size of index block.
     pub fn index_size(&self) -> u64 {
-        0
+        unsafe {
+            ll::rocks_table_props_get_index_size(self.raw)
+        }
     }
-    // the size of filter block.
+    /// the size of filter block.
     pub fn filter_size(&self) -> u64 {
-        0
+        unsafe {
+            ll::rocks_table_props_get_filter_size(self.raw)
+        }
     }
-    // total raw key size
+    /// total raw key size
     pub fn raw_key_size(&self) -> u64 {
-        0
+        unsafe {
+            ll::rocks_table_props_get_raw_key_size(self.raw)
+        }
     }
-    // total raw value size
+    /// total raw value size
     pub fn raw_value_size(&self) -> u64 {
-        0
+        unsafe {
+            ll::rocks_table_props_get_raw_value_size(self.raw)
+        }
     }
-    // the number of blocks in this table
+    /// the number of blocks in this table
     pub fn num_data_blocks(&self) -> u64 {
-        0
+        unsafe {
+            ll::rocks_table_props_get_num_data_blocks(self.raw)
+        }
     }
-    // the number of entries in this table
+    /// the number of entries in this table
     pub fn num_entries(&self) -> u64 {
-        0
+        unsafe {
+            ll::rocks_table_props_get_num_entries(self.raw)
+        }
     }
-    // format version, reserved for backward compatibility
+    /// format version, reserved for backward compatibility
     pub fn format_version(&self) -> u64 {
-        0
+        unsafe {
+            ll::rocks_table_props_get_format_version(self.raw)
+        }
     }
-    // If 0, key is variable length. Otherwise number of bytes for each key.
+    /// If 0, key is variable length. Otherwise number of bytes for each key.
     pub fn fixed_key_len(&self) -> u64 {
-        0
+        unsafe {
+            ll::rocks_table_props_get_format_version(self.raw)
+        }
     }
-    // ID of column family for this SST file, corresponding to the CF identified
-    // by column_family_name.
-    pub fn column_family_id(&self) -> u64 {
-        0
+    /// ID of column family for this SST file, corresponding to the CF identified
+    /// by column_family_name.
+    pub fn column_family_id(&self) -> u32 {
+        unsafe {
+            ll::rocks_table_props_get_column_family_id(self.raw)
+        }
     }
 
-    // Name of the column family with which this SST file is associated.
-    // If column family is unknown, `column_family_name` will be an empty string.
+    /// Name of the column family with which this SST file is associated.
+    /// If column family is unknown, `column_family_name` will be an empty string.
     pub fn column_family_name(&self) -> Option<&str> {
-        None
+        let mut len = 0;
+        unsafe {
+            let ptr = ll::rocks_table_props_get_column_family_name(self.raw, &mut len);
+            if len != 0 {
+                Some(str::from_utf8_unchecked(slice::from_raw_parts(ptr as *const _, len)))
+            } else {
+                None
+            }
+        }
     }
 
-    // The name of the filter policy used in this table.
-    // If no filter policy is used, `filter_policy_name` will be an empty string.
+    /// The name of the filter policy used in this table.
+    /// If no filter policy is used, `filter_policy_name` will be an empty string.
     pub fn filter_policy_name(&self) -> Option<&str> {
-        None
+        let mut len = 0;
+        unsafe {
+            let ptr = ll::rocks_table_props_get_filter_policy_name(self.raw, &mut len);
+            if len != 0 {
+                Some(str::from_utf8_unchecked(slice::from_raw_parts(ptr as *const _, len)))
+            } else {
+                None
+            }
+        }
     }
 
-    // The name of the comparator used in this table.
+    /// The name of the comparator used in this table.
     pub fn comparator_name(&self) -> &str {
-        ""
+        let mut len = 0;
+        unsafe {
+            let ptr = ll::rocks_table_props_get_comparator_name(self.raw, &mut len);
+            str::from_utf8_unchecked(slice::from_raw_parts(ptr as *const _, len))
+        }
     }
 
-    // The name of the merge operator used in this table.
-    // If no merge operator is used, `merge_operator_name` will be "nullptr".
+    /// The name of the merge operator used in this table.
+    /// If no merge operator is used, `merge_operator_name` will be "nullptr".
     pub fn merge_operator_name(&self) -> Option<&str> {
-        None
+        let mut len = 0;
+        unsafe {
+            let ptr = ll::rocks_table_props_get_merge_operator_name(self.raw, &mut len);
+            if len != 0 {
+                Some(str::from_utf8_unchecked(slice::from_raw_parts(ptr as *const _, len)))
+            } else {
+                None
+            }
+        }
     }
 
-    // The name of the prefix extractor used in this table
-    // If no prefix extractor is used, `prefix_extractor_name` will be "nullptr".
+    /// The name of the prefix extractor used in this table
+    /// If no prefix extractor is used, `prefix_extractor_name` will be "nullptr".
     pub fn prefix_extractor_name(&self) -> Option<&str> {
-        None
+        let mut len = 0;
+        unsafe {
+            let ptr = ll::rocks_table_props_get_prefix_extractor_name(self.raw, &mut len);
+            if len != 0 {
+                Some(str::from_utf8_unchecked(slice::from_raw_parts(ptr as *const _, len)))
+            } else {
+                None
+            }
+        }
     }
 
-    // The names of the property collectors factories used in this table
-    // separated by commas
-    // {collector_name[1]},{collector_name[2]},{collector_name[3]} ..
+    /// The names of the property collectors factories used in this table
+    /// separated by commas
+    /// {collector_name[1]},{collector_name[2]},{collector_name[3]} ..
+    /// or []
     pub fn property_collectors_names(&self) -> &str {
-        ""
+        let mut len = 0;
+        unsafe {
+            let ptr = ll::rocks_table_props_get_property_collectors_names(self.raw, &mut len);
+            str::from_utf8_unchecked(slice::from_raw_parts(ptr as *const _, len))
+        }
     }
 
-    // The compression algo used to compress the SST files.
+    /// The compression algo used to compress the SST files.
     pub fn compression_name(&self) -> &str {
-        ""
+        let mut len = 0;
+        unsafe {
+            let ptr = ll::rocks_table_props_get_compression_name(self.raw, &mut len);
+            str::from_utf8_unchecked(slice::from_raw_parts(ptr as *const _, len))
+        }
     }
 
-    // user collected properties
+    /// user collected properties
     pub fn user_collected_properties(&self) -> &UserCollectedProperties {
         unsafe {
             let raw_ptr = ll::rocks_table_props_get_user_collected_properties(self.raw);

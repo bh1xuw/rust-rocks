@@ -2869,16 +2869,22 @@ mod tests {
             println!("key => {:?}", k);
             println!("    => {:?}", prop);
             println!("data size ={}", prop.data_size());
+            assert_eq!(prop.column_family_name(), Some("default"));
+
+            println!("filter policy name = {:?}", prop.filter_policy_name());
+            println!("comparator name = {:?}", prop.comparator_name());
+
+            assert_eq!(prop.property_collectors_names(), "[]");
+
+            // assert_eq!(prop.compression_name(), "Snappy");
+
             let user_prop = prop.user_collected_properties();
-            println!("user => {:?}", user_prop);
             println!("len => {:?}", user_prop.len());
             for (k, v) in user_prop.iter() {
                 println!("    {}=>{:?}", k, v);
             }
             let readable_prop = prop.readable_properties();
             println!("readable => {:?}", readable_prop);
-            println!("len => {:?}", readable_prop.len());
-
         }
 
         let vals = props.iter().map(|(k, _)| k).collect::<Vec<_>>();

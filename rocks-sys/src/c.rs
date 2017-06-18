@@ -2918,6 +2918,88 @@ extern "C" {
      -> u64;
 }
 extern "C" {
+    pub fn rocks_table_props_get_index_size(prop: *mut rocks_table_props_t)
+     -> u64;
+}
+extern "C" {
+    pub fn rocks_table_props_get_filter_size(prop: *mut rocks_table_props_t)
+     -> u64;
+}
+extern "C" {
+    pub fn rocks_table_props_get_raw_key_size(prop: *mut rocks_table_props_t)
+     -> u64;
+}
+extern "C" {
+    pub fn rocks_table_props_get_raw_value_size(prop:
+                                                    *mut rocks_table_props_t)
+     -> u64;
+}
+extern "C" {
+    pub fn rocks_table_props_get_num_data_blocks(prop:
+                                                     *mut rocks_table_props_t)
+     -> u64;
+}
+extern "C" {
+    pub fn rocks_table_props_get_num_entries(prop: *mut rocks_table_props_t)
+     -> u64;
+}
+extern "C" {
+    pub fn rocks_table_props_get_format_version(prop:
+                                                    *mut rocks_table_props_t)
+     -> u64;
+}
+extern "C" {
+    pub fn rocks_table_props_get_fixed_key_len(prop: *mut rocks_table_props_t)
+     -> u64;
+}
+extern "C" {
+    pub fn rocks_table_props_get_column_family_id(prop:
+                                                      *mut rocks_table_props_t)
+     -> u32;
+}
+extern "C" {
+    pub fn rocks_table_props_get_column_family_name(prop:
+                                                        *mut rocks_table_props_t,
+                                                    len: *mut usize)
+     -> *const ::std::os::raw::c_char;
+}
+extern "C" {
+    pub fn rocks_table_props_get_filter_policy_name(prop:
+                                                        *mut rocks_table_props_t,
+                                                    len: *mut usize)
+     -> *const ::std::os::raw::c_char;
+}
+extern "C" {
+    pub fn rocks_table_props_get_comparator_name(prop:
+                                                     *mut rocks_table_props_t,
+                                                 len: *mut usize)
+     -> *const ::std::os::raw::c_char;
+}
+extern "C" {
+    pub fn rocks_table_props_get_merge_operator_name(prop:
+                                                         *mut rocks_table_props_t,
+                                                     len: *mut usize)
+     -> *const ::std::os::raw::c_char;
+}
+extern "C" {
+    pub fn rocks_table_props_get_prefix_extractor_name(prop:
+                                                           *mut rocks_table_props_t,
+                                                       len: *mut usize)
+     -> *const ::std::os::raw::c_char;
+}
+extern "C" {
+    pub fn rocks_table_props_get_property_collectors_names(prop:
+                                                               *mut rocks_table_props_t,
+                                                           len: *mut usize)
+     -> *const ::std::os::raw::c_char;
+}
+extern "C" {
+    pub fn rocks_table_props_get_compression_name(prop:
+                                                      *mut rocks_table_props_t,
+                                                  len: *mut usize)
+     -> *const ::std::os::raw::c_char;
+}
+extern "C" {
     pub fn rocks_table_props_to_string(prop: *mut rocks_table_props_t,
                                        s: *mut ::std::os::raw::c_void);
 }

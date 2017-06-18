@@ -1628,6 +1628,29 @@ rocks_table_props_t* rocks_table_props_collection_iter_value(
     rocks_table_props_collection_iter_t* it);
 
 uint64_t rocks_table_props_get_data_size(rocks_table_props_t* prop);
+uint64_t rocks_table_props_get_index_size(rocks_table_props_t* prop);
+uint64_t rocks_table_props_get_filter_size(rocks_table_props_t* prop);
+uint64_t rocks_table_props_get_raw_key_size(rocks_table_props_t* prop);
+uint64_t rocks_table_props_get_raw_value_size(rocks_table_props_t* prop);
+uint64_t rocks_table_props_get_num_data_blocks(rocks_table_props_t* prop);
+uint64_t rocks_table_props_get_num_entries(rocks_table_props_t* prop);
+uint64_t rocks_table_props_get_format_version(rocks_table_props_t* prop);
+uint64_t rocks_table_props_get_fixed_key_len(rocks_table_props_t* prop);
+uint32_t rocks_table_props_get_column_family_id(rocks_table_props_t* prop);
+const char* rocks_table_props_get_column_family_name(rocks_table_props_t* prop,
+                                                     size_t* len);
+const char* rocks_table_props_get_filter_policy_name(rocks_table_props_t* prop,
+                                                     size_t* len);
+const char* rocks_table_props_get_comparator_name(rocks_table_props_t* prop,
+                                                  size_t* len);
+const char* rocks_table_props_get_merge_operator_name(rocks_table_props_t* prop,
+                                                      size_t* len);
+const char* rocks_table_props_get_prefix_extractor_name(
+    rocks_table_props_t* prop, size_t* len);
+const char* rocks_table_props_get_property_collectors_names(
+    rocks_table_props_t* prop, size_t* len);
+const char* rocks_table_props_get_compression_name(rocks_table_props_t* prop,
+                                                   size_t* len);
 
 void rocks_table_props_to_string(rocks_table_props_t* prop, void* s);
 
