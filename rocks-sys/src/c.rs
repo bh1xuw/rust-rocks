@@ -152,6 +152,12 @@ pub struct rocks_user_collected_props_t([u8; 0]);
 pub struct rocks_user_collected_props_iter_t([u8; 0]);
 #[repr(C)]
 #[derive(Debug, Copy, Clone)]
+pub struct rocks_table_props_collector_t([u8; 0]);
+#[repr(C)]
+#[derive(Debug, Copy, Clone)]
+pub struct rocks_table_props_collector_factory_t([u8; 0]);
+#[repr(C)]
+#[derive(Debug, Copy, Clone)]
 pub struct cxx_string_vector_t([u8; 0]);
 extern "C" {
     pub fn rocks_status_create() -> *mut *mut rocks_status_t;
@@ -531,6 +537,12 @@ extern "C" {
                                                average_data_size: usize,
                                                hash_function_count:
                                                    ::std::os::raw::c_uint);
+}
+extern "C" {
+    pub fn rocks_cfoptions_add_table_properties_collector_factories_by_trait(opt:
+                                                                                 *mut rocks_cfoptions_t,
+                                                                             factory_trait_obj:
+                                                                                 *mut ::std::os::raw::c_void);
 }
 extern "C" {
     pub fn rocks_cfoptions_set_max_successive_merges(opt:

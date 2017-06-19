@@ -353,6 +353,59 @@ struct rocks_user_collected_props_iter_t {
   const UserCollectedProperties::const_iterator cend;
 };
 
+struct rocks_table_props_collector_t : public TablePropertiesCollector {
+  void* obj;  // rust Box<trait obj>
+
+  rocks_table_props_collector_t(void* trait_obj) : obj(trait_obj) {}
+
+  ~rocks_table_props_collector_t() {
+    rust_table_props_collector_drop(this->obj);
+  }
+
+  const char* Name() const override {
+    return rust_table_props_collector_name(this->obj);
+  }
+
+  Status AddUserKey(const Slice& key, const Slice& value, EntryType type,
+                    SequenceNumber seq, uint64_t file_size) override {
+    rust_table_props_collector_add_user_key(
+        this->obj, &key, &value, static_cast<int>(type), seq, file_size);
+    return Status::OK();
+  }
+
+  Status Finish(UserCollectedProperties* properties) override {
+    rust_table_props_collector_finish(this->obj, properties);
+    return Status::OK();
+  }
+
+  // TODO:
+  UserCollectedProperties GetReadableProperties() const override {
+    return UserCollectedProperties{};
+  }
+};
+
+struct rocks_table_props_collector_factory_t
+    : public TablePropertiesCollectorFactory {
+  void* obj;  // rust Box<trait obj>
+
+  rocks_table_props_collector_factory_t(void* trait_obj) : obj(trait_obj) {}
+
+  ~rocks_table_props_collector_factory_t() {
+    rust_table_props_collector_factory_drop(this->obj);
+  }
+
+  const char* Name() const override {
+    return rust_table_props_collector_factory_name(this->obj);
+  }
+
+  TablePropertiesCollector* CreateTablePropertiesCollector(
+      TablePropertiesCollectorFactory::Context context) override {
+    auto collector = rust_table_props_collector_factory_new_collector(
+        this->obj, context.column_family_id);
+    return new rocks_table_props_collector_t(collector);
+  }
+};
+
 /* aux */
 struct cxx_string_vector_t {
   std::vector<std::string> rep;

@@ -119,6 +119,11 @@ typedef struct rocks_user_collected_props_t rocks_user_collected_props_t;
 typedef struct rocks_user_collected_props_iter_t
     rocks_user_collected_props_iter_t;
 
+typedef struct rocks_table_props_collector_t rocks_table_props_collector_t;
+
+typedef struct rocks_table_props_collector_factory_t
+    rocks_table_props_collector_factory_t;
+
 /* aux */
 typedef struct cxx_string_vector_t cxx_string_vector_t;
 
@@ -339,10 +344,8 @@ void rocks_cfoptions_set_hash_cuckoo_rep(rocks_cfoptions_t* opt,
                                          size_t average_data_size,
                                          unsigned int hash_function_count);
 
-/*
-void rocks_cfoptions_set_table_properties_collector_factories(rocks_cfoptions_t
-*opt, rocks_table_properties_collector_factory_t* factories, size_t n);
-*/
+void rocks_cfoptions_add_table_properties_collector_factories_by_trait(
+    rocks_cfoptions_t* opt, void* factory_trait_obj);
 
 void rocks_cfoptions_set_max_successive_merges(rocks_cfoptions_t* opt,
                                                size_t v);

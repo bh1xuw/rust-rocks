@@ -215,7 +215,6 @@ pub mod c {
         Box::from_raw(filter);
     }
 
-
     #[no_mangle]
     pub unsafe extern "C" fn rust_compaction_filter_name(f: *mut ()) -> *const c_char {
         assert!(!f.is_null());

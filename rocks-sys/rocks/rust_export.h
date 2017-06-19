@@ -2,6 +2,7 @@
 #include "rocksdb/compaction_filter.h"
 #include "rocksdb/env.h"
 #include "rocksdb/slice.h"
+#include "rocksdb/table_properties.h"
 
 #include <cstdint>
 #include <string>
@@ -9,6 +10,8 @@
 using rocksdb::Slice;
 using rocksdb::Logger;
 using rocksdb::CompactionFilter;
+using rocksdb::UserCollectedProperties;
+using rocksdb::TablePropertiesCollectorFactory;
 
 #ifdef __cplusplus
 extern "C" {
@@ -79,6 +82,28 @@ extern void rust_comparator_find_shortest_separator(
 extern void rust_comparator_find_short_successor(void* cp, std::string* key);
 
 extern void rust_comparator_drop(void* cp);
+
+/* table_properties */
+
+extern void rust_table_props_collector_add_user_key(void* c, const Slice* key,
+                                                    const Slice* value,
+                                                    int type, uint64_t seq,
+                                                    uint64_t file_size);
+
+extern void rust_table_props_collector_finish(void* c,
+                                              UserCollectedProperties* props);
+
+extern const char* rust_table_props_collector_name(void* c);
+
+extern void rust_table_props_collector_drop(void* c);
+
+// *mut TablePropertiesCollector
+extern void* rust_table_props_collector_factory_new_collector(void* f,
+                                                              uint32_t context);
+
+extern const char* rust_table_props_collector_factory_name(void* f);
+
+extern void rust_table_props_collector_factory_drop(void* f);
 
 #ifdef __cplusplus
 }

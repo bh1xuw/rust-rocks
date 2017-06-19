@@ -124,8 +124,15 @@ impl ToRaw<ll::rocks_user_collected_props_t> for UserCollectedProperties {
 }
 
 impl UserCollectedProperties {
-    pub fn insert(&mut self, k: &str, v: &[u8]) {
-        unimplemented!()
+    pub fn insert(&mut self, key: &str, value: &[u8]) {
+        unsafe {
+            println!("invert {:?}, {:?}", key, value);
+            ll::rocks_user_collected_props_insert(self.raw(),
+                                                  key.as_ptr() as *const _,
+                                                  key.len(),
+                                                  value.as_ptr() as *const _,
+                                                  value.len());
+        }
     }
 
     pub fn len(&self) -> usize {
@@ -189,67 +196,6 @@ impl<'a> Iterator for UserCollectedPropertiesIter<'a> {
     }
 }
 
-
-
-
-
-#[derive(Debug, Copy, Clone, PartialEq, Eq, Hash)]
-pub enum EntryType {
-    EntryPut,
-    EntryDelete,
-    EntrySingleDelete,
-    EntryMerge,
-    EntryOther,
-}
-
-
-
-/// `TablePropertiesCollector` provides the mechanism for users to collect
-/// their own properties that they are interested in. This class is essentially
-/// a collection of callback functions that will be invoked during table
-/// building. It is construced with TablePropertiesCollectorFactory. The methods
-/// don't need to be thread-safe, as we will create exactly one
-/// TablePropertiesCollector object per table and then call it sequentially
-pub trait TablePropertiesCollector {
-    /// AddUserKey() will be called when a new key/value pair is inserted into the
-    /// table.
-    /// 
-    /// @params key    the user key that is inserted into the table.
-    /// @params value  the value that is inserted into the table.
-    fn add_user_key(&mut self, key: &[u8],  value: &[u8],
-                    type_: EntryType, seq: SequenceNumber,
-                    file_size: u64);
-
-    /// Finish() will be called when a table has already been built and is ready
-    /// for writing the properties block.
-    /// @params properties  User will add their collected statistics to
-    /// `properties`.
-    fn finish(&mut self, properties: &mut UserCollectedProperties);
-
-    /// The name of the properties collector can be used for debugging purpose.
-    fn name(&self) -> &str {
-        "RustTablePropertiesCollector\0"
-    }
-
-    // fn need_compact(&self) -> bool
-}
-
-#[derive(Debug, Copy, Clone, PartialEq, Eq, Hash)]
-pub struct Context {
-    column_family_id: u32,
-}
-
-// Constructs TablePropertiesCollector. Internals create a new
-// TablePropertiesCollector for each new table
-pub trait TablePropertiesCollectorFactory {
-    fn create_table_properties_collector(&mut self, context: Context) -> Box<TablePropertiesCollector>;
-
-    fn name(&self) -> &str {
-        "RustTablePropertiesCollectorFactory\0"
-    }
-}
-
-
 /// TableProperties contains a bunch of read-only properties of its associated
 /// table.
 #[repr(C)]
@@ -290,8 +236,6 @@ impl<'a> fmt::Debug for TableProperties<'a> {
         write!(f, "TableProperties({:?})", self.to_string())
     }
 }
-
-
 
 impl<'a> TableProperties<'a> {
     /// the total size of all data blocks.
@@ -458,3 +402,203 @@ impl<'a> TableProperties<'a> {
     }
 }
 
+#[derive(Debug, Copy, Clone, PartialEq, Eq, Hash)]
+#[repr(C)]
+pub enum EntryType {
+    EntryPut,
+    EntryDelete,                // value will be empty
+    EntrySingleDelete,          // value will be empty
+    EntryMerge,
+    EntryOther,
+}
+
+/// `TablePropertiesCollector` provides the mechanism for users to collect
+/// their own properties that they are interested in. This class is essentially
+/// a collection of callback functions that will be invoked during table
+/// building. It is construced with TablePropertiesCollectorFactory. The methods
+/// don't need to be thread-safe, as we will create exactly one
+/// TablePropertiesCollector object per table and then call it sequentially
+pub trait TablePropertiesCollector {
+    /// AddUserKey() will be called when a new key/value pair is inserted into the
+    /// table.
+    ///
+    /// @params key    the user key that is inserted into the table.
+    /// @params value  the value that is inserted into the table.
+    fn add_user_key(&mut self, key: &[u8],  value: &[u8],
+                    type_: EntryType, seq: SequenceNumber,
+                    file_size: u64);
+
+    /// Finish() will be called when a table has already been built and is ready
+    /// for writing the properties block.
+    /// @params properties  User will add their collected statistics to
+    /// `properties`.
+    fn finish(&mut self, properties: &mut UserCollectedProperties);
+
+    /// The name of the properties collector can be used for debugging purpose.
+    fn name(&self) -> &str {
+        "RustTablePropertiesCollector\0"
+    }
+
+    // fn need_compact(&self) -> bool
+}
+
+#[derive(Debug, Copy, Clone, PartialEq, Eq, Hash)]
+#[repr(C)]
+pub struct Context {
+    pub column_family_id: u32,
+}
+
+// Constructs TablePropertiesCollector. Internals create a new
+// TablePropertiesCollector for each new table
+pub trait TablePropertiesCollectorFactory {
+    fn new_collector(&mut self, context: Context) -> Box<TablePropertiesCollector>;
+
+    fn name(&self) -> &str {
+        "RustTablePropertiesCollectorFactory\0"
+    }
+}
+
+#[doc(hidden)]
+pub mod c {
+    use std::mem;
+    use std::os::raw::{c_int, c_char};
+
+    use super::*;
+
+    #[no_mangle]
+    pub unsafe extern "C" fn rust_table_props_collector_add_user_key(c: *mut (),
+                                                                     key: &&[u8],
+                                                                     value: &&[u8],
+                                                                     type_: c_int,
+                                                                     seq: u64,
+                                                                     file_size: u64) {
+        assert!(!c.is_null());
+        let collector = c as *mut Box<TablePropertiesCollector>;
+        (*collector).add_user_key(key,
+                                  value,
+                                  mem::transmute(type_),
+                                  SequenceNumber(seq),
+                                  file_size);
+    }
+
+    #[no_mangle]
+    pub unsafe extern "C" fn rust_table_props_collector_finish(c: *mut (),
+                                                               props: *mut UserCollectedProperties) {
+        assert!(!c.is_null());
+        let collector = c as *mut Box<TablePropertiesCollector>;
+        props.as_mut().map(|p| {
+            (*collector).finish(p)
+        });
+    }
+
+    #[no_mangle]
+    pub unsafe extern "C" fn rust_table_props_collector_name(c: *mut ()) -> *const c_char {
+        assert!(!c.is_null());
+        let collector = c as *mut Box<TablePropertiesCollector>;
+        (*collector).name().as_ptr() as *const _
+    }
+
+    // yes, will be called :)
+    #[no_mangle]
+    pub unsafe extern "C" fn rust_table_props_collector_drop(f: *mut ()) {
+        assert!(!f.is_null());
+        let filter = f as *mut Box<TablePropertiesCollector>;
+        Box::from_raw(filter);
+    }
+
+    #[no_mangle]
+    pub unsafe extern "C" fn rust_table_props_collector_factory_new_collector(f: *mut (), cf_id: u32) -> *mut Box<TablePropertiesCollector> {
+        println!("debug f=> {:?}", f);
+        assert!(!f.is_null());
+        let factory = f as *mut Box<TablePropertiesCollectorFactory>;
+        let collector = (*factory).new_collector(Context { column_family_id: cf_id });
+        Box::into_raw(Box::new(collector))
+    }
+
+    #[no_mangle]
+    pub unsafe extern "C" fn rust_table_props_collector_factory_name(f: *mut ()) -> *const c_char {
+        assert!(!f.is_null());
+        let factory = f as *mut Box<TablePropertiesCollectorFactory>;
+        (*factory).name().as_ptr() as *const _
+    }
+
+    #[no_mangle]
+    pub unsafe extern "C" fn rust_table_props_collector_factory_drop(f: *mut ()) {
+        assert!(!f.is_null());
+        let filter = f as *mut Box<TablePropertiesCollectorFactory>;
+        Box::from_raw(filter);
+    }
+}
+
+
+#[cfg(test)]
+mod tests {
+    use std::iter;
+    use std::collections::HashMap;
+
+    use super::*;
+    use super::super::rocksdb::*;
+
+    pub struct MyTblPropsCollector {
+        data: HashMap<String, String>,
+    }
+
+    impl TablePropertiesCollector for MyTblPropsCollector {
+        fn add_user_key(&mut self, key: &[u8],  value: &[u8],
+                        type_: EntryType, seq: SequenceNumber,
+                        file_size: u64) {
+            println!("now add_user_key {:?} {:?}", type_, seq);
+            println!("key => {:?}", key);
+            println!("value => {:?}", value.len());
+        }
+
+        /// Finish() will be called when a table has already been built and is ready
+        /// for writing the properties block.
+        ///
+        /// @params properties  User will add their collected statistics to
+        /// `properties`.
+        fn finish(&mut self, props: &mut UserCollectedProperties) {
+            props.insert("hello", b"World");
+        }
+    }
+
+    pub struct MyTblPropsCollectorFactory;
+
+    impl TablePropertiesCollectorFactory for MyTblPropsCollectorFactory {
+        fn new_collector(&mut self, context: Context) -> Box<TablePropertiesCollector> {
+            println!("now create new collector");
+            Box::new(MyTblPropsCollector{
+                data: HashMap::default(),
+            })
+        }
+    }
+
+
+    #[test]
+    fn table_properties() {
+        let tmp_dir = ::tempdir::TempDir::new_in("", "rocks").unwrap();
+        let db = DB::open(Options::default()
+                          .map_db_options(|db| db.create_if_missing(true))
+                          .map_cf_options(|cf| {
+                              cf.disable_auto_compactions(true)
+                                  .table_properties_collector_factory(Box::new(MyTblPropsCollectorFactory))
+                          }),
+                          &tmp_dir).unwrap();
+
+        for i in 0..100 {
+            let key = format!("k{}", i);
+            let val = format!("v{}", i * i);
+            let value: String = iter::repeat(val).take(i*i).collect::<Vec<_>>().concat();
+
+
+            db.delete(&WriteOptions::default(), b"k4");
+            db.single_delete(&WriteOptions::default(), b"k5");
+            db.put(&WriteOptions::default(), key.as_bytes(), value.as_bytes())
+                .unwrap();
+
+            if i % 6 == 0 {
+                assert!(db.flush(&FlushOptions::default().wait(true)).is_ok());
+            }
+        }
+    }
+}

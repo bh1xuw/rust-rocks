@@ -390,11 +390,13 @@ void rocks_cfoptions_set_hash_cuckoo_rep(rocks_cfoptions_t* opt,
       write_buffer_size, average_data_size, hash_function_count));
 }
 
-/*
-void rocks_cfoptions_set_table_properties_collector_factories(rocks_cfoptions_t
-*opt, rocks_table_properties_collector_factory_t* factories, size_t n) {
+// since default is empty vector, add is ok
+void rocks_cfoptions_add_table_properties_collector_factories_by_trait(
+    rocks_cfoptions_t* opt, void* factory_trait_obj) {
+  opt->rep.table_properties_collector_factories.push_back(
+      std::shared_ptr<TablePropertiesCollectorFactory>(
+          new rocks_table_props_collector_factory_t(factory_trait_obj)));
 }
-*/
 
 void rocks_cfoptions_set_max_successive_merges(rocks_cfoptions_t* opt,
                                                size_t v) {

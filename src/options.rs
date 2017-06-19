@@ -26,6 +26,7 @@ use table::{PlainTableOptions, BlockBasedTableOptions, CuckooTableOptions};
 use comparator::Comparator;
 use slice_transform::SliceTransform;
 use snapshot::Snapshot;
+use table_properties::TablePropertiesCollectorFactory;
 
 use to_raw::ToRaw;
 
@@ -1206,12 +1207,16 @@ impl ColumnFamilyOptions {
     ///
     /// Default: empty vector -- no user-defined statistics collection will be
     /// performed.
-    pub fn table_properties_collector_factories(self, val: Vec<()>) -> Self {
-        unimplemented!()
-        //     unsafe {
-        //         ll::rocks_cfoptions_set_table_properties_collector_factories(self.raw, val);
-        //     }
-        //     self
+    ///
+    /// Rust: add one at a time
+    pub fn table_properties_collector_factory(self, val: Box<TablePropertiesCollectorFactory>) -> Self {
+        unsafe {
+            let raw_ptr = Box::into_raw(Box::new(val));
+            println!("raw_ptr => {:?}", raw_ptr);
+            ll::rocks_cfoptions_add_table_properties_collector_factories_by_trait(self.raw, raw_ptr as *mut _);
+
+        }
+        self
     }
 
     /// Maximum number of successive merge operations on a key in the memtable.
