@@ -49,10 +49,12 @@ pub mod c {
     use super::SliceTransform;
 
     #[no_mangle]
-    pub unsafe extern "C" fn rust_slice_transform_call(t: *mut (),
-                                                       key: &&[u8], // *Slice
-                                                       ret_value: *mut *const c_char,
-                                                       ret_len: *mut usize) {
+    pub unsafe extern "C" fn rust_slice_transform_call(
+        t: *mut (),
+        key: &&[u8], // *Slice
+        ret_value: *mut *const c_char,
+        ret_len: *mut usize,
+    ) {
         let trans = t as *mut Box<SliceTransform>;
         let ret = (*trans).transform(key);
         *ret_value = ret.as_ptr() as *const _;
@@ -97,31 +99,44 @@ mod tests {
     #[test]
     fn prefix_extractor_customized() {
         let tmp_dir = ::tempdir::TempDir::new_in(".", "rocks").unwrap();
-        let db = DB::open(Options::default()
-                          .map_db_options(|db| db.create_if_missing(true))
-                          .map_cf_options(|cf| {
-                              cf.prefix_extractor(Box::new(MySliceTransform))
-                                  .memtable_prefix_bloom_size_ratio(0.1) // enable prefix bloom filter
-                          }),
-                          &tmp_dir)
-            .unwrap();
+        let db = DB::open(
+            Options::default()
+                .map_db_options(|db| db.create_if_missing(true))
+                .map_cf_options(|cf| {
+                    cf.prefix_extractor(Box::new(MySliceTransform))
+                        .memtable_prefix_bloom_size_ratio(0.1) // enable prefix bloom filter
+                }),
+            &tmp_dir,
+        ).unwrap();
 
         // NOTE: all these has same prefixes
         // if use another prefix, iterator may be wrong.
         // since it will find a non-included key and skip following.
         // FOR TEST ONLY, this kind of prefix extractor is joking!
-        assert!(db.put(&WriteOptions::default(), b"AA-abcdef-003", b"23333")
-                .is_ok());
-        assert!(db.put(&WriteOptions::default(), b"AA-abcdef-001", b"23333")
-                .is_ok());
-        assert!(db.put(&WriteOptions::default(), b"AA-abcdef-002", b"23333")
-                .is_ok());
-        assert!(db.put(&WriteOptions::default(), b"BB-abcdef-005", b"23333")
-                .is_ok());
-        assert!(db.put(&WriteOptions::default(), b"AA-abcdef-002", b"23333")
-                .is_ok());
-        assert!(db.put(&WriteOptions::default(), b"CC-abcdef-001", b"23333")
-                .is_ok());
+        assert!(
+            db.put(&WriteOptions::default(), b"AA-abcdef-003", b"23333")
+                .is_ok()
+        );
+        assert!(
+            db.put(&WriteOptions::default(), b"AA-abcdef-001", b"23333")
+                .is_ok()
+        );
+        assert!(
+            db.put(&WriteOptions::default(), b"AA-abcdef-002", b"23333")
+                .is_ok()
+        );
+        assert!(
+            db.put(&WriteOptions::default(), b"BB-abcdef-005", b"23333")
+                .is_ok()
+        );
+        assert!(
+            db.put(&WriteOptions::default(), b"AA-abcdef-002", b"23333")
+                .is_ok()
+        );
+        assert!(
+            db.put(&WriteOptions::default(), b"CC-abcdef-001", b"23333")
+                .is_ok()
+        );
 
         let mut it = db.new_iterator(&ReadOptions::default().prefix_same_as_start(true));
         it.seek(b"---abcdef--");
@@ -143,29 +158,44 @@ mod tests {
     #[test]
     fn prefix_extractor_capped() {
         let tmp_dir = ::tempdir::TempDir::new_in(".", "rocks").unwrap();
-        let db = DB::open(Options::default()
-                          .map_db_options(|db| db.create_if_missing(true))
-                          .map_cf_options(|cf| {
-                              cf.prefix_extractor_capped(3) // first 3 chars
+        let db = DB::open(
+            Options::default()
+                .map_db_options(|db| db.create_if_missing(true))
+                .map_cf_options(|cf| {
+                    cf.prefix_extractor_capped(3) // first 3 chars
                                   .memtable_prefix_bloom_size_ratio(0.1) // enable prefix bloom filter
-                          }),
-                          &tmp_dir)
-            .unwrap();
+                }),
+            &tmp_dir,
+        ).unwrap();
 
-        assert!(db.put(&WriteOptions::default(), b"abc-003", b"23333")
-                .is_ok());
-        assert!(db.put(&WriteOptions::default(), b"abc-001", b"23333")
-                .is_ok());
-        assert!(db.put(&WriteOptions::default(), b"abc-002", b"23333")
-                .is_ok());
-        assert!(db.put(&WriteOptions::default(), b"abc-005", b"23333")
-                .is_ok());
-        assert!(db.put(&WriteOptions::default(), b"abc-002", b"23333")
-                .is_ok());
-        assert!(db.put(&WriteOptions::default(), b"abc-006", b"23333")
-                .is_ok());
-        assert!(db.put(&WriteOptions::default(), b"def-000", b"23333")
-                .is_ok());
+        assert!(
+            db.put(&WriteOptions::default(), b"abc-003", b"23333")
+                .is_ok()
+        );
+        assert!(
+            db.put(&WriteOptions::default(), b"abc-001", b"23333")
+                .is_ok()
+        );
+        assert!(
+            db.put(&WriteOptions::default(), b"abc-002", b"23333")
+                .is_ok()
+        );
+        assert!(
+            db.put(&WriteOptions::default(), b"abc-005", b"23333")
+                .is_ok()
+        );
+        assert!(
+            db.put(&WriteOptions::default(), b"abc-002", b"23333")
+                .is_ok()
+        );
+        assert!(
+            db.put(&WriteOptions::default(), b"abc-006", b"23333")
+                .is_ok()
+        );
+        assert!(
+            db.put(&WriteOptions::default(), b"def-000", b"23333")
+                .is_ok()
+        );
 
         let mut it = db.new_iterator(&ReadOptions::default().prefix_same_as_start(true));
         it.seek(b"abc-");

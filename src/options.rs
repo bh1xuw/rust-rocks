@@ -34,7 +34,8 @@ use to_raw::ToRaw;
 /// sequence of key,value pairs.  Each block may be compressed before
 /// being stored in a file.  The following enum describes which
 /// compression method (if any) is used to compress a block.
-#[repr(C)] // FIXME: u8 in rocksdb
+#[repr(C)]
+// FIXME: u8 in rocksdb
 #[derive(Debug, Copy, Clone, PartialEq, Eq, Hash)]
 pub enum CompressionType {
     /// NOTE: do not change the values of existing entries, as these are
@@ -290,10 +291,10 @@ impl ColumnFamilyOptions {
     ///
     /// Default: nullptr
     pub fn compaction_filter_factory(self, factory: Option<CompactionFilterFactory>) -> Self {
-        /*unsafe {
-            ll::rocks_cfoptions_set_compaction_filter_factory(self.raw, )
-        }
-        self*/
+        // unsafe {
+        // ll::rocks_cfoptions_set_compaction_filter_factory(self.raw, )
+        // }
+        // self
         unimplemented!()
     }
 
@@ -363,11 +364,13 @@ impl ColumnFamilyOptions {
     pub fn compression_opts(self, val: CompressionOptions) -> Self {
         unsafe {
             // FIXME: name changes from opts to options
-            ll::rocks_cfoptions_set_compression_options(self.raw,
-                                                        val.window_bits,
-                                                        val.level,
-                                                        val.strategy,
-                                                        val.max_dict_bytes);
+            ll::rocks_cfoptions_set_compression_options(
+                self.raw,
+                val.window_bits,
+                val.level,
+                val.strategy,
+                val.max_dict_bytes,
+            );
         }
         self
     }
@@ -485,11 +488,10 @@ impl ColumnFamilyOptions {
         self
     }
 
-    /*
-    pub fn table_factory(self, val: ()) -> Self {
-        panic!("use any of plain_table_factory, block_based_table_factory and cuckoo_table_factory")
-    }
-    */
+    // pub fn table_factory(self, val: ()) -> Self {
+    // panic!("use any of plain_table_factory, block_based_table_factory and cuckoo_table_factory")
+    // }
+    //
 
     // Following: AdvancedColumnFamilyOptions
 
@@ -784,9 +786,11 @@ impl ColumnFamilyOptions {
     /// change when data grows.
     pub fn compression_per_level(self, val: Vec<CompressionType>) -> Self {
         unsafe {
-            ll::rocks_cfoptions_set_compression_per_level(self.raw,
-                                                          mem::transmute(val.as_slice().as_ptr()), // repr(C)
-                                                          val.len());
+            ll::rocks_cfoptions_set_compression_per_level(
+                self.raw,
+                mem::transmute(val.as_slice().as_ptr()), // repr(C)
+                val.len(),
+            );
         }
         self
     }
@@ -1049,7 +1053,7 @@ impl ColumnFamilyOptions {
     }
 
     /// This is a factory that provides MemTableRep objects.
-    /// 
+    ///
     /// Default: a factory that provides a skip-list-based implementation of
     /// MemTableRep.
     pub fn memtable_factory(self, val: ()) -> Self {
@@ -1089,15 +1093,19 @@ impl ColumnFamilyOptions {
     ///   link lists in the skiplist
     ///
     ///   Default: 4
-    pub fn memtable_factory_hash_skip_list_rep(self,
-                                               bucket_count: usize,
-                                               skiplist_height: i32,
-                                               skiplist_branching_factor: i32) -> Self {
+    pub fn memtable_factory_hash_skip_list_rep(
+        self,
+        bucket_count: usize,
+        skiplist_height: i32,
+        skiplist_branching_factor: i32,
+    ) -> Self {
         unsafe {
-            ll::rocks_cfoptions_set_hash_skip_list_rep(self.raw,
-                                                       bucket_count,
-                                                       skiplist_height,
-                                                       skiplist_branching_factor);
+            ll::rocks_cfoptions_set_hash_skip_list_rep(
+                self.raw,
+                bucket_count,
+                skiplist_height,
+                skiplist_branching_factor,
+            );
         }
         self
     }
@@ -1135,8 +1143,7 @@ impl ColumnFamilyOptions {
     ///   Default: 256
     pub fn memtable_factory_hash_link_list_rep(self, bucket_count: usize) -> Self {
         unsafe {
-            ll::rocks_cfoptions_set_hash_link_list_rep(self.raw,
-                                                       bucket_count);
+            ll::rocks_cfoptions_set_hash_link_list_rep(self.raw, bucket_count);
         }
         self
     }
@@ -1177,12 +1184,19 @@ impl ColumnFamilyOptions {
     ///   buckets each key will have.
     ///
     ///   Default: 4
-    pub fn memtable_factory_hash_cuckoo_rep(self,
-                                            write_buffer_size: usize,
-                                            average_data_size: usize,
-                                            hash_function_count: u32) -> Self {
+    pub fn memtable_factory_hash_cuckoo_rep(
+        self,
+        write_buffer_size: usize,
+        average_data_size: usize,
+        hash_function_count: u32,
+    ) -> Self {
         unsafe {
-            ll::rocks_cfoptions_set_hash_cuckoo_rep(self.raw, write_buffer_size, average_data_size, hash_function_count);
+            ll::rocks_cfoptions_set_hash_cuckoo_rep(
+                self.raw,
+                write_buffer_size,
+                average_data_size,
+                hash_function_count,
+            );
         }
         self
     }
@@ -1413,8 +1427,8 @@ impl DBOptions {
             if let Some(limiter) = val {
                 ll::rocks_dboptions_set_ratelimiter(self.raw, limiter.raw());
                 mem::forget(limiter); // FIXME: leaks? or not
-                // since the inner RateLimiter will be freed by DBImpl::~DBImpl()
-                // outer rocks_ratelimiter_t leaks.
+            // since the inner RateLimiter will be freed by DBImpl::~DBImpl()
+            // outer rocks_ratelimiter_t leaks.
             } else {
                 ll::rocks_dboptions_set_ratelimiter(self.raw, ptr::null_mut());
             }
@@ -1567,21 +1581,25 @@ impl DBOptions {
         let mut cpath_lens = Vec::with_capacity(num_paths);
         let mut sizes = Vec::with_capacity(num_paths);
         for dbpath in &paths {
-            cpaths.push(dbpath
-                            .path
-                            .to_str()
-                            .map(|s| s.as_ptr() as _)
-                            .unwrap_or_else(ptr::null));
+            cpaths.push(
+                dbpath
+                    .path
+                    .to_str()
+                    .map(|s| s.as_ptr() as _)
+                    .unwrap_or_else(ptr::null),
+            );
             cpath_lens.push(dbpath.path.to_str().map(|s| s.len()).unwrap_or_default());
             sizes.push(dbpath.target_size);
         }
 
         unsafe {
-            ll::rocks_dboptions_set_db_paths(self.raw,
-                                             cpaths.as_ptr(),
-                                             cpath_lens.as_ptr(),
-                                             sizes.as_ptr(),
-                                             num_paths as c_int);
+            ll::rocks_dboptions_set_db_paths(
+                self.raw,
+                cpaths.as_ptr(),
+                cpath_lens.as_ptr(),
+                sizes.as_ptr(),
+                num_paths as c_int,
+            );
         }
         self
     }
@@ -2739,9 +2757,7 @@ impl Drop for CompactionOptions {
 
 impl CompactionOptions {
     pub fn new() -> CompactionOptions {
-        CompactionOptions {
-            raw: unsafe { ll::rocks_compaction_options_create() },
-        }
+        CompactionOptions { raw: unsafe { ll::rocks_compaction_options_create() } }
     }
 
     /// Compaction output compression type
@@ -2925,42 +2941,49 @@ mod tests {
     fn readoptions() {
         // FIXME: is disable nlock cache works?
         let tmp_dir = ::tempdir::TempDir::new_in(".", "rocks").unwrap();
-        let db = DB::open(Options::default()
-                          .map_db_options(|db| db.create_if_missing(true))
-                          .map_cf_options(|cf| {
-                              cf.table_factory_block_based(
-                                  BlockBasedTableOptions::default()
-                                      .no_block_cache(true)
-                                      .block_cache(None)
-                              )
-                          }),
-                          &tmp_dir)
-            .unwrap();
-        assert!(db.put(&Default::default(), b"long-key", vec![b'A'; 1024].as_ref())
-                .is_ok());
+        let db = DB::open(
+            Options::default()
+                .map_db_options(|db| db.create_if_missing(true))
+                .map_cf_options(|cf| {
+                    cf.table_factory_block_based(
+                        BlockBasedTableOptions::default()
+                            .no_block_cache(true)
+                            .block_cache(None),
+                    )
+                }),
+            &tmp_dir,
+        ).unwrap();
+        assert!(
+            db.put(&Default::default(), b"long-key", vec![b'A'; 1024].as_ref())
+                .is_ok()
+        );
         assert!(db.compact_range(&Default::default(), ..).is_ok());
-        let val = db.get(&ReadOptions::default().read_tier(ReadTier::BlockCacheTier),
-                         b"long-key");
+        let val = db.get(&ReadOptions::default().read_tier(ReadTier::BlockCacheTier), b"long-key");
         assert!(val.is_ok());
     }
 
     #[test]
     fn compact_range_options() {
         let tmp_dir = ::tempdir::TempDir::new_in(".", "rocks").unwrap();
-        let db = DB::open(Options::default()
-                          .map_db_options(|db| db.create_if_missing(true)),
-                          &tmp_dir)
-            .unwrap();
-        assert!(db.put(&Default::default(), b"long-key", vec![b'A'; 1024 * 1024].as_ref())
-                .is_ok());
+        let db = DB::open(Options::default().map_db_options(|db| db.create_if_missing(true)), &tmp_dir).unwrap();
+        assert!(
+            db.put(&Default::default(), b"long-key", vec![b'A'; 1024 * 1024].as_ref())
+                .is_ok()
+        );
         assert!(db.flush(&FlushOptions::default().wait(true)).is_ok());
-        assert!(db.put(&Default::default(), b"long-key-2", vec![b'A'; 2 * 1024].as_ref())
-                .is_ok());
+        assert!(
+            db.put(&Default::default(), b"long-key-2", vec![b'A'; 2 * 1024].as_ref())
+                .is_ok()
+        );
 
-        assert!(db.compact_range(&CompactRangeOptions::default()
-                                         .change_level(true)
-                                         .target_level(4), // TO level 4
-                                         ..).is_ok());
+        assert!(
+            db.compact_range(
+                &CompactRangeOptions::default()
+                    .change_level(true)
+                    .target_level(4), // TO level 4
+                ..,
+            ).is_ok()
+        );
 
         let meta = db.get_column_family_metadata(&db.default_column_family());
         println!("Meta => {:?}", meta);

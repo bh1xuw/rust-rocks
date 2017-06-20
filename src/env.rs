@@ -145,13 +145,13 @@ impl EnvOptions {
     }
 
     // If not nullptr, write rate limiting is enabled for flush and compaction
-    /*
-    pub fn rate_limiter(self, val: Option<RateLimiter>) -> Self {
-    unsafe {
-    ll::rocks_envoptions_set_
-    }
-    self
-     */
+    //
+    // pub fn rate_limiter(self, val: Option<RateLimiter>) -> Self {
+    // unsafe {
+    // ll::rocks_envoptions_set_
+    // }
+    // self
+    //
 }
 
 impl Default for EnvOptions {
@@ -204,10 +204,7 @@ impl Logger {
     /// printed.
     pub fn log(&self, log_level: InfoLogLevel, msg: &str) {
         unsafe {
-            ll::rocks_logger_log(self.raw,
-                                 mem::transmute(log_level),
-                                 msg.as_ptr() as *const _,
-                                 msg.len());
+            ll::rocks_logger_log(self.raw, mem::transmute(log_level), msg.as_ptr() as *const _, msg.len());
         }
     }
 
@@ -219,9 +216,7 @@ impl Logger {
     }
 
     pub fn get_log_level(&self) -> InfoLogLevel {
-        unsafe {
-            mem::transmute(ll::rocks_logger_get_log_level(self.raw))
-        }
+        unsafe { mem::transmute(ll::rocks_logger_get_log_level(self.raw)) }
     }
 
     pub fn set_log_level(&mut self, log_level: InfoLogLevel) {
@@ -260,9 +255,7 @@ impl Default for Env {
     ///
     /// The result of Default() belongs to rocksdb and must never be deleted.
     fn default() -> Self {
-        Env {
-            raw: unsafe { ll::rocks_create_default_env() },
-        }
+        Env { raw: unsafe { ll::rocks_create_default_env() } }
     }
 }
 
@@ -270,9 +263,7 @@ impl Env {
     /// Returns a new environment that stores its data in memory and delegates
     /// all non-file-storage tasks to base_env.
     pub fn new_mem() -> Env {
-        Env {
-            raw: unsafe { ll::rocks_create_mem_env() },
-        }
+        Env { raw: unsafe { ll::rocks_create_mem_env() } }
     }
 
     /// The number of background worker threads of a specific thread pool
@@ -298,9 +289,7 @@ impl Env {
 
     /// Get thread pool queue length for specific thrad pool.
     pub fn get_thread_pool_queue_len(&self, pri: Priority) -> u32 {
-        unsafe {
-            ll::rocks_env_get_thread_pool_queue_len(self.raw, mem::transmute(pri)) as u32
-        }
+        unsafe { ll::rocks_env_get_thread_pool_queue_len(self.raw, mem::transmute(pri)) as u32 }
     }
 
     /// Create and return a log file for storing informational messages.
@@ -308,10 +297,7 @@ impl Env {
         unsafe {
             let mut status = ptr::null_mut();
             let name = fname.as_ref().to_str().unwrap();
-            let logger = ll::rocks_env_new_logger(self.raw,
-                                                  name.as_ptr() as *const _,
-                                                  name.len(),
-                                                  &mut status);
+            let logger = ll::rocks_env_new_logger(self.raw, name.as_ptr() as *const _, name.len(), &mut status);
             Status::from_ll(status).map(|_| Logger::from_ll(logger))
         }
     }
@@ -354,4 +340,3 @@ mod tests {
         assert!(!s.contains("debug log message"));
     }
 }
-

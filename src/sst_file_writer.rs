@@ -34,13 +34,15 @@ impl Drop for ExternalSstFileInfo {
 
 impl fmt::Debug for ExternalSstFileInfo {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        write!(f,
-               "ExternalSstFileInfo#{:?} <path: {}, key: {:?}...{:?}, entries: {}>",
-               self.sequence_number(),
-               self.file_path(),
-               String::from_utf8_lossy(self.smallest_key()),
-               String::from_utf8_lossy(self.largest_key()),
-               self.num_entries())
+        write!(
+            f,
+            "ExternalSstFileInfo#{:?} <path: {}, key: {:?}...{:?}, entries: {}>",
+            self.sequence_number(),
+            self.file_path(),
+            String::from_utf8_lossy(self.smallest_key()),
+            String::from_utf8_lossy(self.largest_key()),
+            self.num_entries()
+        )
     }
 }
 
@@ -141,12 +143,14 @@ impl SstFileWriter {
     pub fn add(&self, key: &[u8], value: &[u8]) -> Result<()> {
         unsafe {
             let mut status = mem::zeroed();
-            ll::rocks_sst_file_writer_add(self.raw,
-                                          key.as_ptr() as *const _,
-                                          key.len(),
-                                          value.as_ptr() as *const _,
-                                          value.len(),
-                                          &mut status);
+            ll::rocks_sst_file_writer_add(
+                self.raw,
+                key.as_ptr() as *const _,
+                key.len(),
+                value.as_ptr() as *const _,
+                value.len(),
+                &mut status,
+            );
             Status::from_ll(status)
         }
     }
@@ -192,19 +196,23 @@ impl SstFileWriterBuilder {
         let options = self.options.take().unwrap_or_default();
         let ptr = if self.use_rust_comparator {
             unsafe {
-                ll::rocks_sst_file_writer_create_from_rust_comparator(env_options.raw(),
-                                                                      options.raw(),
-                                                                      self.rust_comparator as *const _,
-                                                                      self.column_family,
-                                                                      self.invalidate_page_cache as u8)
+                ll::rocks_sst_file_writer_create_from_rust_comparator(
+                    env_options.raw(),
+                    options.raw(),
+                    self.rust_comparator as *const _,
+                    self.column_family,
+                    self.invalidate_page_cache as u8,
+                )
             }
         } else {
             unsafe {
-                ll::rocks_sst_file_writer_create_from_c_comparator(env_options.raw(),
-                                                                   options.raw(),
-                                                                   self.c_comparator as *const _,
-                                                                   self.column_family,
-                                                                   self.invalidate_page_cache as u8)
+                ll::rocks_sst_file_writer_create_from_c_comparator(
+                    env_options.raw(),
+                    options.raw(),
+                    self.c_comparator as *const _,
+                    self.column_family,
+                    self.invalidate_page_cache as u8,
+                )
             }
         };
         SstFileWriter {

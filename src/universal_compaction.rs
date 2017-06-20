@@ -24,9 +24,7 @@ pub struct CompactionOptionsUniversal {
 
 impl Default for CompactionOptionsUniversal {
     fn default() -> Self {
-        CompactionOptionsUniversal {
-            raw: unsafe { ll::rocks_universal_compaction_options_create() },
-        }
+        CompactionOptionsUniversal { raw: unsafe { ll::rocks_universal_compaction_options_create() } }
     }
 }
 
@@ -46,7 +44,7 @@ impl CompactionOptionsUniversal {
     /// Percentage flexibilty while comparing file size. If the candidate file(s)
     /// size is 1% smaller than the next file's size, then include next file into
     /// this candidate set.
-    /// 
+    ///
     /// Default: 1
     pub fn size_ratio(self, val: u32) -> Self {
         unsafe {
@@ -81,7 +79,7 @@ impl CompactionOptionsUniversal {
     /// a size amplification of 0%. Rocksdb uses the following heuristic
     /// to calculate size amplification: it assumes that all files excluding
     /// the earliest file contribute to the size amplification.
-    /// 
+    ///
     /// Default: 200, which means that a 100 byte database could require upto
     /// 300 bytes of storage.
     pub fn max_size_amplification_percent(self, val: u32) -> Self {
@@ -138,4 +136,3 @@ impl CompactionOptionsUniversal {
         self
     }
 }
-

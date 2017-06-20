@@ -25,9 +25,11 @@ impl DbDumpTool {
             let db_path = db_path.as_ref().to_str().expect("valid path");
             let dump_location = dump_location.as_ref().to_str().expect("valid path");
             ll::rocks_dump_options_set_db_path(raw, db_path.as_bytes().as_ptr() as *const _, db_path.as_bytes().len());
-            ll::rocks_dump_options_set_dump_location(raw,
-                                                     dump_location.as_bytes().as_ptr() as *const _,
-                                                     dump_location.as_bytes().len());
+            ll::rocks_dump_options_set_dump_location(
+                raw,
+                dump_location.as_bytes().as_ptr() as *const _,
+                dump_location.as_bytes().len(),
+            );
             DbDumpTool { raw: raw }
         }
     }
@@ -64,12 +66,16 @@ impl DbUndumpTool {
             let raw = ll::rocks_undump_options_create();
             let db_path = db_path.as_ref().to_str().expect("valid path");
             let dump_location = dump_location.as_ref().to_str().expect("valid path");
-            ll::rocks_undump_options_set_db_path(raw,
-                                                 db_path.as_bytes().as_ptr() as *const _,
-                                                 db_path.as_bytes().len());
-            ll::rocks_undump_options_set_dump_location(raw,
-                                                       dump_location.as_bytes().as_ptr() as *const _,
-                                                       dump_location.as_bytes().len());
+            ll::rocks_undump_options_set_db_path(
+                raw,
+                db_path.as_bytes().as_ptr() as *const _,
+                db_path.as_bytes().len(),
+            );
+            ll::rocks_undump_options_set_dump_location(
+                raw,
+                dump_location.as_bytes().as_ptr() as *const _,
+                dump_location.as_bytes().len(),
+            );
             DbUndumpTool { raw: raw }
         }
     }
@@ -135,9 +141,7 @@ mod tests {
             let opt = Options::default();
             let db = DB::open_for_readonly(&opt, &tmp_dir2, false).unwrap();
 
-            assert_eq!(db.get(&Default::default(),
-                              b"key_").as_ref().unwrap(),
-                       b"BY1CQ".as_ref());
+            assert_eq!(db.get(&Default::default(), b"key_").as_ref().unwrap(), b"BY1CQ".as_ref());
         }
     }
 }

@@ -52,9 +52,11 @@ pub trait WalFilter {
     ///
     /// * cf_lognumber_map - column_family_id to lognumber map
     /// * cf_name_id_map -   column_family_name to column_family_id map
-    fn column_family_log_number_map(&mut self,
-                                    cf_lognumber_map: &BTreeMap<u32, u64>,
-                                    cf_name_id_map: &BTreeMap<String, u32>) {
+    fn column_family_log_number_map(
+        &mut self,
+        cf_lognumber_map: &BTreeMap<u32, u64>,
+        cf_name_id_map: &BTreeMap<String, u32>,
+    ) {
     }
 
     /// LogRecord is invoked for each log record encountered for all the logs

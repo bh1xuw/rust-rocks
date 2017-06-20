@@ -55,9 +55,7 @@ impl<'a> AsRef<Snapshot<'a>> for Snapshot<'a> {
 
 impl<'a> Snapshot<'a> {
     pub fn get_sequence_number(&self) -> SequenceNumber {
-        unsafe {
-            ll::rocks_snapshot_get_sequence_number(self.raw).into()
-        }
+        unsafe { ll::rocks_snapshot_get_sequence_number(self.raw).into() }
     }
 }
 
@@ -99,7 +97,7 @@ impl<'a, 'b> ManagedSnapshot<'a, 'b> {
         let snap = db.get_snapshot().expect("should get snapshot");
         ManagedSnapshot {
             snapshot: snap,
-            db: db
+            db: db,
         }
     }
 }
@@ -112,10 +110,7 @@ mod tests {
     #[test]
     fn snapshot_read() {
         let tmp_dir = ::tempdir::TempDir::new_in(".", "rocks").unwrap();
-        let db = DB::open(Options::default()
-                          .map_db_options(|db| db.create_if_missing(true)),
-                          &tmp_dir)
-            .unwrap();
+        let db = DB::open(Options::default().map_db_options(|db| db.create_if_missing(true)), &tmp_dir).unwrap();
 
         assert!(db.put(&WriteOptions::default(), b"k1", b"v1").is_ok());
         assert!(db.put(&WriteOptions::default(), b"k2", b"v2").is_ok());
@@ -147,10 +142,7 @@ mod tests {
     #[test]
     fn managed_snapshot_read() {
         let tmp_dir = ::tempdir::TempDir::new_in(".", "rocks").unwrap();
-        let db = DB::open(Options::default()
-                          .map_db_options(|db| db.create_if_missing(true)),
-                          &tmp_dir)
-            .unwrap();
+        let db = DB::open(Options::default().map_db_options(|db| db.create_if_missing(true)), &tmp_dir).unwrap();
 
         assert!(db.put(&WriteOptions::default(), b"k1", b"v1").is_ok());
         assert!(db.put(&WriteOptions::default(), b"k2", b"v2").is_ok());

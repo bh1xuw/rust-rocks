@@ -56,8 +56,10 @@ impl<'a> MergeOperationInput<'a> {
     /// A list of operands to apply.
     pub fn operands(&self) -> &[&[u8]] {
         unsafe {
-            slice::from_raw_parts(ll::cxx_vector_slice_nth(self.operand_list as *const _, 0) as *const _,
-                                  ll::cxx_vector_slice_size(self.operand_list as *const _))
+            slice::from_raw_parts(
+                ll::cxx_vector_slice_nth(self.operand_list as *const _, 0) as *const _,
+                ll::cxx_vector_slice_size(self.operand_list as *const _),
+            )
         }
     }
 
@@ -193,10 +195,11 @@ pub mod c {
     use super::*;
 
     #[no_mangle]
-    pub extern "C" fn rust_merge_operator_call_full_merge_v2(op: *mut (),
-                                                             merge_in: *const MergeOperationInput,
-                                                             merge_out: *mut MergeOperationOutput)
-                                                             -> i32 {
+    pub extern "C" fn rust_merge_operator_call_full_merge_v2(
+        op: *mut (),
+        merge_in: *const MergeOperationInput,
+        merge_out: *mut MergeOperationOutput,
+    ) -> i32 {
         assert!(!op.is_null());
         unsafe {
             let operator = op as *mut Box<MergeOperator>;
@@ -217,14 +220,15 @@ pub mod c {
     }
 
     #[no_mangle]
-    pub extern "C" fn rust_associative_merge_operator_call(op: *mut (),
-                                                           key: &&[u8],
-                                                           existing_value: Option<&&[u8]>,
-                                                           value: &&[u8],
-                                                           new_value: *mut *const u8,
-                                                           new_value_len: *mut usize,
-                                                           logger: &Logger)
-                                                           -> i32 {
+    pub extern "C" fn rust_associative_merge_operator_call(
+        op: *mut (),
+        key: &&[u8],
+        existing_value: Option<&&[u8]>,
+        value: &&[u8],
+        new_value: *mut *const u8,
+        new_value_len: *mut usize,
+        logger: &Logger,
+    ) -> i32 {
         // FIXME: this is very dangerous and unsafe play.
         assert!(!op.is_null());
         unsafe {
@@ -307,12 +311,13 @@ mod tests {
         pub struct MyAssocMergeOp;
 
         impl AssociativeMergeOperator for MyAssocMergeOp {
-            fn merge(&self,
-                     key: &[u8],
-                     existing_value: Option<&[u8]>,
-                     value: &[u8],
-                     logger: &Logger)
-                     -> Option<Vec<u8>> {
+            fn merge(
+                &self,
+                key: &[u8],
+                existing_value: Option<&[u8]>,
+                value: &[u8],
+                logger: &Logger,
+            ) -> Option<Vec<u8>> {
 
                 let mut ret: Vec<u8> = existing_value.map(|s| s.into()).unwrap_or(b"HEAD".to_vec());
                 ret.push(b'|');
@@ -321,11 +326,12 @@ mod tests {
             }
         }
 
-        let db = DB::open(Options::default()
-                          .map_db_options(|db| db.create_if_missing(true))
-                          .map_cf_options(|cf| cf.associative_merge_operator(Box::new(MyAssocMergeOp))),
-                          tmp_dir)
-            .unwrap();
+        let db = DB::open(
+            Options::default()
+                .map_db_options(|db| db.create_if_missing(true))
+                .map_cf_options(|cf| cf.associative_merge_operator(Box::new(MyAssocMergeOp))),
+            tmp_dir,
+        ).unwrap();
 
         let ret = db.merge(&WriteOptions::default(), b"name", b"value");
         let ret = db.merge(&WriteOptions::default(), b"name", b"value2");
@@ -364,11 +370,12 @@ mod tests {
             }
         }
 
-        let db = DB::open(Options::default()
-                          .map_db_options(|db| db.create_if_missing(true))
-                          .map_cf_options(|cf| cf.merge_operator(Box::new(MyMergeOp))),
-                          tmp_dir)
-            .unwrap();
+        let db = DB::open(
+            Options::default()
+                .map_db_options(|db| db.create_if_missing(true))
+                .map_cf_options(|cf| cf.merge_operator(Box::new(MyMergeOp))),
+            tmp_dir,
+        ).unwrap();
 
         let ret = db.merge(&WriteOptions::default(), b"name", b"value");
         assert!(ret.is_ok());
@@ -412,11 +419,12 @@ mod tests {
             }
         }
 
-        let db = DB::open(Options::default()
-                          .map_db_options(|db| db.create_if_missing(true))
-                          .map_cf_options(|cf| cf.merge_operator(Box::new(MyMergeOp))),
-                          &tmp_dir)
-            .unwrap();
+        let db = DB::open(
+            Options::default()
+                .map_db_options(|db| db.create_if_missing(true))
+                .map_cf_options(|cf| cf.merge_operator(Box::new(MyMergeOp))),
+            &tmp_dir,
+        ).unwrap();
 
         let ret = db.merge(&WriteOptions::default(), b"name", b"randome-key");
         assert!(ret.is_ok());

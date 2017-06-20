@@ -55,9 +55,7 @@ impl ToRaw<ll::rocks_fifo_compaction_options_t> for CompactionOptionsFIFO {
 
 impl Default for CompactionOptionsFIFO {
     fn default() -> Self {
-        CompactionOptionsFIFO {
-            raw: unsafe { ll::rocks_fifo_compaction_options_create() },
-        }
+        CompactionOptionsFIFO { raw: unsafe { ll::rocks_fifo_compaction_options_create() } }
     }
 }
 

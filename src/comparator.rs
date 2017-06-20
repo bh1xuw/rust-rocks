@@ -96,9 +96,11 @@ pub mod c {
     }
 
     #[no_mangle]
-    pub extern "C" fn rust_comparator_find_shortest_separator(cp: *mut (),
-                                                              start: *mut (), // std::string*
-                                                              limit: *const &[u8]) {
+    pub extern "C" fn rust_comparator_find_shortest_separator(
+        cp: *mut (),
+        start: *mut (), // std::string*
+        limit: *const &[u8],
+    ) {
         // Slice&
         unsafe {
             let comparator = cp as *mut Box<Comparator>;
@@ -106,8 +108,8 @@ pub mod c {
             let start_ptr = ll::cxx_string_data(start as *const _);
             let start_len = ll::cxx_string_size(start as *const _);
 
-            let ret = (*comparator)
-                .find_shortest_separator(slice::from_raw_parts(start_ptr as *const _, start_len), *limit);
+            let ret =
+                (*comparator).find_shortest_separator(slice::from_raw_parts(start_ptr as *const _, start_len), *limit);
             if let Some(new_start) = ret {
                 ll::cxx_string_assign(start as *mut _, new_start.as_ptr() as *const _, new_start.len())
             }
@@ -152,11 +154,12 @@ mod tests {
     #[test]
     fn bitwise_comparator_normal() {
         let tmp_dir = ::tempdir::TempDir::new_in(".", "rocks").unwrap();
-        let db = DB::open(Options::default()
-                              .map_db_options(|db| db.create_if_missing(true))
-                              .map_cf_options(|cf| cf.bitwise_comparator_reversed(false)),
-                          tmp_dir)
-                .unwrap();
+        let db = DB::open(
+            Options::default()
+                .map_db_options(|db| db.create_if_missing(true))
+                .map_cf_options(|cf| cf.bitwise_comparator_reversed(false)),
+            tmp_dir,
+        ).unwrap();
 
         assert!(db.put(&WriteOptions::default(), b"key1", b"val2").is_ok());
         assert!(db.put(&WriteOptions::default(), b"key2", b"val2").is_ok());
@@ -177,11 +180,12 @@ mod tests {
     #[test]
     fn bitwise_comparator_reversed() {
         let tmp_dir = ::tempdir::TempDir::new_in(".", "rocks").unwrap();
-        let db = DB::open(Options::default()
-                              .map_db_options(|db| db.create_if_missing(true))
-                              .map_cf_options(|cf| cf.bitwise_comparator_reversed(true)),
-                          tmp_dir)
-                .unwrap();
+        let db = DB::open(
+            Options::default()
+                .map_db_options(|db| db.create_if_missing(true))
+                .map_cf_options(|cf| cf.bitwise_comparator_reversed(true)),
+            tmp_dir,
+        ).unwrap();
 
         assert!(db.put(&WriteOptions::default(), b"key1", b"").is_ok());
         assert!(db.put(&WriteOptions::default(), b"key2", b"").is_ok());
@@ -213,11 +217,12 @@ mod tests {
             }
         }
 
-        let db = DB::open(Options::default()
-                              .map_db_options(|db| db.create_if_missing(true))
-                              .map_cf_options(|cf| cf.comparator(Box::new(MyComparator))),
-                          tmp_dir)
-                .unwrap();
+        let db = DB::open(
+            Options::default()
+                .map_db_options(|db| db.create_if_missing(true))
+                .map_cf_options(|cf| cf.comparator(Box::new(MyComparator))),
+            tmp_dir,
+        ).unwrap();
 
         assert!(db.put(&WriteOptions::default(), b"Key1", b"").is_ok());
         assert!(db.put(&WriteOptions::default(), b"kEY3", b"").is_ok());

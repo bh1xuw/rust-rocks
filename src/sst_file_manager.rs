@@ -14,12 +14,13 @@ pub struct SstFileManager;
 
 
 impl SstFileManager {
-    pub fn new(env: Env,
-               info_log: Option<Logger>,
-               trash_dir: &Path,
-               rate_bytes_per_sec: i64,
-               delete_existing_trash: bool)
-               -> Result<SstFileManager, Status> {
+    pub fn new(
+        env: Env,
+        info_log: Option<Logger>,
+        trash_dir: &Path,
+        rate_bytes_per_sec: i64,
+        delete_existing_trash: bool,
+    ) -> Result<SstFileManager, Status> {
         unimplemented!()
     }
 }

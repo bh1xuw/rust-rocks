@@ -126,10 +126,12 @@ impl CacheBuilder {
     pub fn build(&mut self) -> Option<Cache> {
         let ptr = match self.type_ {
             CacheType::LRU => unsafe {
-                ll::rocks_cache_create_lru(self.capacity,
-                                           self.num_shard_bits,
-                                           self.strict_capacity_limit as c_char,
-                                           self.high_pri_pool_ratio)
+                ll::rocks_cache_create_lru(
+                    self.capacity,
+                    self.num_shard_bits,
+                    self.strict_capacity_limit as c_char,
+                    self.high_pri_pool_ratio,
+                )
             },
             CacheType::Clock => unsafe {
                 ll::rocks_cache_create_clock(self.capacity, self.num_shard_bits, self.strict_capacity_limit as c_char)

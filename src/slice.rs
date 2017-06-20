@@ -94,23 +94,17 @@ impl Drop for PinnableSlice {
 
 impl PinnableSlice {
     pub fn new() -> PinnableSlice {
-        PinnableSlice {
-            raw: unsafe { ll::rocks_pinnable_slice_create() },
-        }
+        PinnableSlice { raw: unsafe { ll::rocks_pinnable_slice_create() } }
     }
 
     #[inline]
     pub fn data(&self) -> *const u8 {
-        unsafe {
-            ll::rocks_pinnable_slice_data(self.raw) as *const u8
-        }
+        unsafe { ll::rocks_pinnable_slice_data(self.raw) as *const u8 }
     }
 
     #[inline]
     pub fn size(&self) -> usize {
-        unsafe {
-            ll::rocks_pinnable_slice_size(self.raw) as usize
-        }
+        unsafe { ll::rocks_pinnable_slice_size(self.raw) as usize }
     }
 }
 

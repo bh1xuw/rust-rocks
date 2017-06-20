@@ -33,9 +33,7 @@ impl fmt::Debug for TablePropertiesCollection {
 
 impl FromRaw<ll::rocks_table_props_collection_t> for TablePropertiesCollection {
     unsafe fn from_ll(raw: *mut ll::rocks_table_props_collection_t) -> Self {
-        TablePropertiesCollection {
-            raw: raw
-        }
+        TablePropertiesCollection { raw: raw }
     }
 }
 
@@ -49,9 +47,7 @@ impl Drop for TablePropertiesCollection {
 
 impl TablePropertiesCollection {
     pub fn len(&self) -> usize {
-        unsafe {
-            ll::rocks_table_props_collection_size(self.raw) as usize
-        }
+        unsafe { ll::rocks_table_props_collection_size(self.raw) as usize }
     }
 
     pub fn is_empty(&self) -> bool {
@@ -92,8 +88,7 @@ impl<'a> Iterator for TablePropertiesCollectionIter<'a> {
         } else {
             let mut key = String::new();
             unsafe {
-                ll::rocks_table_props_collection_iter_key(self.raw,
-                                                          &mut key as *mut String as *mut c_void);
+                ll::rocks_table_props_collection_iter_key(self.raw, &mut key as *mut String as *mut c_void);
                 let prop = TableProperties::from_ll(ll::rocks_table_props_collection_iter_value(self.raw));
                 self.at_end = ll::rocks_table_props_collection_iter_next(self.raw) == 0;
                 // FIXME: can't use &str here, since each time iterator->first will be reused
@@ -129,27 +124,25 @@ impl fmt::Debug for UserCollectedProperties {
 
 impl ToRaw<ll::rocks_user_collected_props_t> for UserCollectedProperties {
     fn raw(&self) -> *mut ll::rocks_user_collected_props_t {
-        unsafe {
-            mem::transmute(self as *const UserCollectedProperties as *mut c_void)
-        }
+        unsafe { mem::transmute(self as *const UserCollectedProperties as *mut c_void) }
     }
 }
 
 impl UserCollectedProperties {
     pub fn insert(&mut self, key: &str, value: &[u8]) {
         unsafe {
-            ll::rocks_user_collected_props_insert(self.raw(),
-                                                  key.as_ptr() as *const _,
-                                                  key.len(),
-                                                  value.as_ptr() as *const _,
-                                                  value.len());
+            ll::rocks_user_collected_props_insert(
+                self.raw(),
+                key.as_ptr() as *const _,
+                key.len(),
+                value.as_ptr() as *const _,
+                value.len(),
+            );
         }
     }
 
     pub fn len(&self) -> usize {
-        unsafe {
-            ll::rocks_user_collected_props_size(self.raw()) as usize
-        }
+        unsafe { ll::rocks_user_collected_props_size(self.raw()) as usize }
     }
 
     pub fn is_empty(&self) -> bool {
@@ -171,10 +164,12 @@ impl<'a> ops::Index<&'a str> for UserCollectedProperties {
     fn index(&self, index: &'a str) -> &[u8] {
         let mut size = 0;
         unsafe {
-            let val_ptr = ll::rocks_user_collected_props_at(self.raw(),
-                                              index.as_bytes().as_ptr() as *const c_char,
-                                              index.len(),
-                                              &mut size);
+            let val_ptr = ll::rocks_user_collected_props_at(
+                self.raw(),
+                index.as_bytes().as_ptr() as *const c_char,
+                index.len(),
+                &mut size,
+            );
             if val_ptr.is_null() {
                 panic!("key not found {:?}", index);
             }
@@ -209,10 +204,8 @@ impl<'a> Iterator for UserCollectedPropertiesIter<'a> {
             let mut key = String::new();
             let mut value = Vec::new();
             unsafe {
-                ll::rocks_user_collected_props_iter_key(self.raw,
-                                                        &mut key as *mut String as *mut c_void);
-                ll::rocks_user_collected_props_iter_value(self.raw,
-                                                        &mut value as *mut Vec<u8> as *mut c_void);
+                ll::rocks_user_collected_props_iter_key(self.raw, &mut key as *mut String as *mut c_void);
+                ll::rocks_user_collected_props_iter_value(self.raw, &mut value as *mut Vec<u8> as *mut c_void);
                 self.at_end = ll::rocks_user_collected_props_iter_next(self.raw) == 0;
             }
             Some((key, value))
@@ -268,64 +261,44 @@ impl<'a> fmt::Debug for TableProperties<'a> {
 impl<'a> TableProperties<'a> {
     /// the total size of all data blocks.
     pub fn data_size(&self) -> u64 {
-        unsafe {
-            ll::rocks_table_props_get_data_size(self.raw)
-        }
+        unsafe { ll::rocks_table_props_get_data_size(self.raw) }
     }
     /// the size of index block.
     pub fn index_size(&self) -> u64 {
-        unsafe {
-            ll::rocks_table_props_get_index_size(self.raw)
-        }
+        unsafe { ll::rocks_table_props_get_index_size(self.raw) }
     }
     /// the size of filter block.
     pub fn filter_size(&self) -> u64 {
-        unsafe {
-            ll::rocks_table_props_get_filter_size(self.raw)
-        }
+        unsafe { ll::rocks_table_props_get_filter_size(self.raw) }
     }
     /// total raw key size
     pub fn raw_key_size(&self) -> u64 {
-        unsafe {
-            ll::rocks_table_props_get_raw_key_size(self.raw)
-        }
+        unsafe { ll::rocks_table_props_get_raw_key_size(self.raw) }
     }
     /// total raw value size
     pub fn raw_value_size(&self) -> u64 {
-        unsafe {
-            ll::rocks_table_props_get_raw_value_size(self.raw)
-        }
+        unsafe { ll::rocks_table_props_get_raw_value_size(self.raw) }
     }
     /// the number of blocks in this table
     pub fn num_data_blocks(&self) -> u64 {
-        unsafe {
-            ll::rocks_table_props_get_num_data_blocks(self.raw)
-        }
+        unsafe { ll::rocks_table_props_get_num_data_blocks(self.raw) }
     }
     /// the number of entries in this table
     pub fn num_entries(&self) -> u64 {
-        unsafe {
-            ll::rocks_table_props_get_num_entries(self.raw)
-        }
+        unsafe { ll::rocks_table_props_get_num_entries(self.raw) }
     }
     /// format version, reserved for backward compatibility
     pub fn format_version(&self) -> u64 {
-        unsafe {
-            ll::rocks_table_props_get_format_version(self.raw)
-        }
+        unsafe { ll::rocks_table_props_get_format_version(self.raw) }
     }
     /// If 0, key is variable length. Otherwise number of bytes for each key.
     pub fn fixed_key_len(&self) -> u64 {
-        unsafe {
-            ll::rocks_table_props_get_format_version(self.raw)
-        }
+        unsafe { ll::rocks_table_props_get_format_version(self.raw) }
     }
     /// ID of column family for this SST file, corresponding to the CF identified
     /// by column_family_name.
     pub fn column_family_id(&self) -> u32 {
-        unsafe {
-            ll::rocks_table_props_get_column_family_id(self.raw)
-        }
+        unsafe { ll::rocks_table_props_get_column_family_id(self.raw) }
     }
 
     /// Name of the column family with which this SST file is associated.
@@ -434,8 +407,8 @@ impl<'a> TableProperties<'a> {
 #[repr(C)]
 pub enum EntryType {
     EntryPut,
-    EntryDelete,                // value will be empty
-    EntrySingleDelete,          // value will be empty
+    EntryDelete, // value will be empty
+    EntrySingleDelete, // value will be empty
     EntryMerge,
     EntryOther,
 }
@@ -452,9 +425,7 @@ pub trait TablePropertiesCollector {
     ///
     /// @params key    the user key that is inserted into the table.
     /// @params value  the value that is inserted into the table.
-    fn add_user_key(&mut self, key: &[u8],  value: &[u8],
-                    type_: EntryType, seq: SequenceNumber,
-                    file_size: u64);
+    fn add_user_key(&mut self, key: &[u8], value: &[u8], type_: EntryType, seq: SequenceNumber, file_size: u64);
 
     /// Finish() will be called when a table has already been built and is ready
     /// for writing the properties block.
@@ -477,8 +448,8 @@ pub struct Context {
     pub column_family_id: u32,
 }
 
-/// Constructs TablePropertiesCollector. Internals create a new
-/// TablePropertiesCollector for each new table
+/// Constructs `TablePropertiesCollector`. Internals create a new
+/// `TablePropertiesCollector` for each new table
 pub trait TablePropertiesCollectorFactory {
     /// has to be thread-safe
     fn new_collector(&mut self, context: Context) -> Box<TablePropertiesCollector>;
@@ -497,29 +468,24 @@ pub mod c {
     use super::*;
 
     #[no_mangle]
-    pub unsafe extern "C" fn rust_table_props_collector_add_user_key(c: *mut (),
-                                                                     key: &&[u8],
-                                                                     value: &&[u8],
-                                                                     type_: c_int,
-                                                                     seq: u64,
-                                                                     file_size: u64) {
+    pub unsafe extern "C" fn rust_table_props_collector_add_user_key(
+        c: *mut (),
+        key: &&[u8],
+        value: &&[u8],
+        type_: c_int,
+        seq: u64,
+        file_size: u64,
+    ) {
         assert!(!c.is_null());
         let collector = c as *mut Box<TablePropertiesCollector>;
-        (*collector).add_user_key(key,
-                                  value,
-                                  mem::transmute(type_),
-                                  SequenceNumber(seq),
-                                  file_size);
+        (*collector).add_user_key(key, value, mem::transmute(type_), SequenceNumber(seq), file_size);
     }
 
     #[no_mangle]
-    pub unsafe extern "C" fn rust_table_props_collector_finish(c: *mut (),
-                                                               props: *mut UserCollectedProperties) {
+    pub unsafe extern "C" fn rust_table_props_collector_finish(c: *mut (), props: *mut UserCollectedProperties) {
         assert!(!c.is_null());
         let collector = c as *mut Box<TablePropertiesCollector>;
-        props.as_mut().map(|p| {
-            (*collector).finish(p)
-        });
+        props.as_mut().map(|p| (*collector).finish(p));
     }
 
     #[no_mangle]
@@ -538,7 +504,10 @@ pub mod c {
     }
 
     #[no_mangle]
-    pub unsafe extern "C" fn rust_table_props_collector_factory_new_collector(f: *mut (), cf_id: u32) -> *mut Box<TablePropertiesCollector> {
+    pub unsafe extern "C" fn rust_table_props_collector_factory_new_collector(
+        f: *mut (),
+        cf_id: u32,
+    ) -> *mut Box<TablePropertiesCollector> {
         assert!(!f.is_null());
         let factory = f as *mut Box<TablePropertiesCollectorFactory>;
         let collector = (*factory).new_collector(Context { column_family_id: cf_id });
@@ -574,10 +543,7 @@ mod tests {
     }
 
     impl TablePropertiesCollector for MyTblPropsCollector {
-        fn add_user_key(&mut self, key: &[u8],  value: &[u8],
-                        type_: EntryType, seq: SequenceNumber,
-                        file_size: u64) {
-        }
+        fn add_user_key(&mut self, key: &[u8], value: &[u8], type_: EntryType, seq: SequenceNumber, file_size: u64) {}
 
         fn finish(&mut self, props: &mut UserCollectedProperties) {
             props.insert("hello", b"world");
@@ -588,9 +554,7 @@ mod tests {
 
     impl TablePropertiesCollectorFactory for MyTblPropsCollectorFactory {
         fn new_collector(&mut self, context: Context) -> Box<TablePropertiesCollector> {
-            Box::new(MyTblPropsCollector{
-                data: HashMap::default(),
-            })
+            Box::new(MyTblPropsCollector { data: HashMap::default() })
         }
     }
 
@@ -598,18 +562,20 @@ mod tests {
     #[test]
     fn table_properties() {
         let tmp_dir = ::tempdir::TempDir::new_in("", "rocks").unwrap();
-        let db = DB::open(Options::default()
-                          .map_db_options(|db| db.create_if_missing(true))
-                          .map_cf_options(|cf| {
-                              cf.disable_auto_compactions(true)
-                                  .table_properties_collector_factory(Box::new(MyTblPropsCollectorFactory))
-                          }),
-                          &tmp_dir).unwrap();
+        let db = DB::open(
+            Options::default()
+                .map_db_options(|db| db.create_if_missing(true))
+                .map_cf_options(|cf| {
+                    cf.disable_auto_compactions(true)
+                        .table_properties_collector_factory(Box::new(MyTblPropsCollectorFactory))
+                }),
+            &tmp_dir,
+        ).unwrap();
 
         for i in 0..100 {
             let key = format!("k{}", i);
             let val = format!("v{}", i * i);
-            let value: String = iter::repeat(val).take(i*i).collect::<Vec<_>>().concat();
+            let value: String = iter::repeat(val).take(i * i).collect::<Vec<_>>().concat();
 
             db.single_delete(&WriteOptions::default(), b"k5").unwrap();
             db.put(&WriteOptions::default(), key.as_bytes(), value.as_bytes())
@@ -617,15 +583,17 @@ mod tests {
         }
         assert!(db.flush(&FlushOptions::default().wait(true)).is_ok());
 
-        let props = db.get_properties_of_tables_in_range(&db.default_column_family(),
-                                                         vec![b"k4".as_ref()..b"k40".as_ref()]);
+        let props =
+            db.get_properties_of_tables_in_range(&db.default_column_family(), vec![b"k4".as_ref()..b"k40".as_ref()]);
         assert!(props.is_ok());
         let props = props.unwrap();
 
         assert!(props.len() > 0);
         for (file, prop) in props.iter() {
             assert!(file.ends_with(".sst"));
-            assert!(prop.property_collectors_names().contains("RustTablePropertiesCollectorFactory"));
+            assert!(prop.property_collectors_names().contains(
+                "RustTablePropertiesCollectorFactory",
+            ));
 
             let user_prop = prop.user_collected_properties();
             assert_eq!(&user_prop["hello"], b"world");

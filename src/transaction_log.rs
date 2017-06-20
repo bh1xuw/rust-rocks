@@ -15,7 +15,7 @@ pub enum WalFileType {
     /// `Options::WAL_ttl_seconds`.
     Archived = 0,
     /// Indicates that WAL file is live and resides in the main db directory
-    Alive = 1
+    Alive = 1,
 }
 
 /// Represents a single WAL file
@@ -37,11 +37,13 @@ pub struct LogFile {
 
 impl fmt::Debug for LogFile {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        write!(f, "WalFile({:?}, {:?}, #{}, {} bytes)",
-               self.path_name,
-               self.file_type,
-               self.log_number,
-               self.size_in_bytes)
+        write!(
+            f,
+            "WalFile({:?}, {:?}, #{}, {} bytes)",
+            self.path_name,
+            self.file_type,
+            self.log_number,
+            self.size_in_bytes
+        )
     }
 }
-

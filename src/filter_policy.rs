@@ -57,12 +57,11 @@ impl FilterPolicy {
     // trailing spaces in keys.
     pub fn new_bloom_filter(bits_per_key: i32, use_block_based_builder: bool) -> FilterPolicy {
         FilterPolicy {
-            raw: unsafe { ll::rocks_raw_filterpolicy_new_bloomfilter(bits_per_key, use_block_based_builder as u8) }
+            raw: unsafe { ll::rocks_raw_filterpolicy_new_bloomfilter(bits_per_key, use_block_based_builder as u8) },
         }
     }
 }
 
-/*
 // We add a new format of filter block called full filter block
 // This new interface gives you more space of customization
 //
@@ -82,30 +81,30 @@ impl FilterPolicy {
 // it would use Set 1 instead.
 //
 // You can choose filter type in NewBloomFilterPolicy
-pub trait FilterPolicy {
-    // Return the name of this policy.  Note that if the filter encoding
-    // changes in an incompatible way, the name returned by this method
-    // must be changed.  Otherwise, old incompatible filters may be
-    // passed to methods of this type.
-    fn name(&self) -> &str {
-        "RustFilterPolicy\0"
-    }
-
-    // keys[0,n-1] contains a list of keys (potentially with duplicates)
-    // that are ordered according to the user supplied comparator.
-    // Append a filter that summarizes keys[0,n-1] to *dst.
-    //
-    // Warning: do not change the initial contents of *dst.  Instead,
-    // append the newly constructed filter to *dst.
-    //
-    // For Rust: must call dst.extend_from_slice() or dst.push()
-    fn create_filter(&self, keys: &[&[u8]], dst: &mut Vec<u8>);
-
-    // "filter" contains the data appended by a preceding call to
-    // CreateFilter() on this class.  This method must return true if
-    // the key was in the list of keys passed to CreateFilter().
-    // This method may return true or false if the key was not on the
-    // list, but it should aim to return false with a high probability.
-    fn key_may_match(&self, key: &[u8], filter: &[u8]) -> bool;
-}
-*/
+// pub trait FilterPolicy {
+// Return the name of this policy.  Note that if the filter encoding
+// changes in an incompatible way, the name returned by this method
+// must be changed.  Otherwise, old incompatible filters may be
+// passed to methods of this type.
+// fn name(&self) -> &str {
+// "RustFilterPolicy\0"
+// }
+//
+// keys[0,n-1] contains a list of keys (potentially with duplicates)
+// that are ordered according to the user supplied comparator.
+// Append a filter that summarizes keys[0,n-1] to *dst.
+//
+// Warning: do not change the initial contents of *dst.  Instead,
+// append the newly constructed filter to *dst.
+//
+// For Rust: must call dst.extend_from_slice() or dst.push()
+// fn create_filter(&self, keys: &[&[u8]], dst: &mut Vec<u8>);
+//
+// "filter" contains the data appended by a preceding call to
+// CreateFilter() on this class.  This method must return true if
+// the key was in the list of keys passed to CreateFilter().
+// This method may return true or false if the key was not on the
+// list, but it should aim to return false with a high probability.
+// fn key_may_match(&self, key: &[u8], filter: &[u8]) -> bool;
+// }
+//

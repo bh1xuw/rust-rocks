@@ -494,9 +494,11 @@ impl Statistics {
     pub fn histogram_data(&self, type_: Histograms) -> HistogramData {
         unsafe {
             let mut data: HistogramData = mem::zeroed();
-            ll::rocks_statistics_histogram_data(self.raw,
-                                                mem::transmute(type_),
-                                                &mut data as *mut HistogramData as *mut ll::rocks_histogram_data_t);
+            ll::rocks_statistics_histogram_data(
+                self.raw,
+                mem::transmute(type_),
+                &mut data as *mut HistogramData as *mut ll::rocks_histogram_data_t,
+            );
             data
         }
     }
@@ -504,9 +506,11 @@ impl Statistics {
     pub fn get_histogram_string(&self, type_: Histograms) -> String {
         let mut ret = String::new();
         unsafe {
-            ll::rocks_statistics_get_histogram_string(self.raw,
-                                                      mem::transmute(type_),
-                                                      &mut ret as *mut String as *mut _);
+            ll::rocks_statistics_get_histogram_string(
+                self.raw,
+                mem::transmute(type_),
+                &mut ret as *mut String as *mut _,
+            );
         }
         ret
     }
@@ -563,18 +567,21 @@ mod tests {
 
         let stat = Statistics::new();
 
-        let db = DB::open(Options::default().map_db_options(|db| {
-            db.create_if_missing(true)
+        let db = DB::open(
+            Options::default().map_db_options(|db| {
+                db.create_if_missing(true)
                 .statistics(Some(stat.clone())) // FIXME: is this the best way?
                 .rate_limiter(Some(RateLimiter::new(4096, // 4 KiB/s
                                                     10_000, // 10 ms
                                                     10)))
-        }),
-                          &tmp_dir)
-            .unwrap();
+            }),
+            &tmp_dir,
+        ).unwrap();
 
-        assert!(db.put(&Default::default(), b"long-key", vec![b'A'; 1024 * 1024].as_ref())
-                .is_ok());
+        assert!(
+            db.put(&Default::default(), b"long-key", vec![b'A'; 1024 * 1024].as_ref())
+                .is_ok()
+        );
         assert!(db.put(&Default::default(), b"a", b"1").is_ok());
         assert!(db.put(&Default::default(), b"b", b"2").is_ok());
         assert!(db.put(&Default::default(), b"c", b"3").is_ok());

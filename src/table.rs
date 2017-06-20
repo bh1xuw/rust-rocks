@@ -1,7 +1,7 @@
 //! Table options.
 //!
 //! Currently we support two types of tables: plain table and block-based table.
-//! 
+//!
 //! 1. Block-based table: this is the default table type that we inherited from
 //!    LevelDB, which was designed for storing data in hard disk or flash
 //!    device.
@@ -37,7 +37,7 @@ pub enum IndexType {
     /// TODO(myabandeh): this feature is in experimental phase and shall not be
     /// used in production; either remove the feature or remove this comment if
     /// it is ready to be used in production.
-    /// 
+    ///
     /// A two-level index implementation. Both levels are binary search indexes.
     TwoLevelIndexSearch,
 }
@@ -49,9 +49,7 @@ pub struct BlockBasedTableOptions {
 
 impl Default for BlockBasedTableOptions {
     fn default() -> Self {
-        BlockBasedTableOptions {
-            raw: unsafe { ll::rocks_block_based_table_options_create() },
-        }
+        BlockBasedTableOptions { raw: unsafe { ll::rocks_block_based_table_options_create() } }
     }
 }
 
@@ -77,7 +75,7 @@ impl BlockBasedTableOptions {
     /// to be false.
     ///
     /// Indicating if we'd put index/filter blocks to the block cache.
-    /// 
+    ///
     /// If not specified, each "table reader" object will pre-load index/filter
     /// block during table initialization.
     pub fn cache_index_and_filter_blocks(self, val: bool) -> Self {
@@ -93,7 +91,10 @@ impl BlockBasedTableOptions {
     /// than data blocks.
     pub fn cache_index_and_filter_blocks_with_high_priority(self, val: bool) -> Self {
         unsafe {
-            ll::rocks_block_based_table_options_set_cache_index_and_filter_blocks_with_high_priority(self.raw, val as u8);
+            ll::rocks_block_based_table_options_set_cache_index_and_filter_blocks_with_high_priority(
+                self.raw,
+                val as u8,
+            );
         }
         self
     }
@@ -110,9 +111,7 @@ impl BlockBasedTableOptions {
     }
 
     pub fn index_type(self, val: IndexType) -> Self {
-        unsafe {
-            ll::rocks_block_based_table_options_set_index_type(self.raw, mem::transmute(val))
-        }
+        unsafe { ll::rocks_block_based_table_options_set_index_type(self.raw, mem::transmute(val)) }
         self
     }
 
@@ -158,7 +157,7 @@ impl BlockBasedTableOptions {
     // std::shared_ptr<PersistentCache> persistent_cache = nullptr;
 
     /// If non-NULL use the specified cache for compressed blocks.
-    /// 
+    ///
     /// If NULL, rocksdb will not use a compressed block cache.
     pub fn block_cache_compressed(self, val: Option<Cache>) -> Self {
         unsafe {
@@ -212,7 +211,7 @@ impl BlockBasedTableOptions {
 
     /// Block size for partitioned metadata. Currently applied to indexes when
     /// `kTwoLevelIndexSearch` is used and to filters when partition_filters is used.
-    /// 
+    ///
     /// Note: Since in the current implementation the filters and index partitions
     /// are aligned, an index/filter block is created when either index or filter
     /// block size reaches the specified limit.
@@ -227,7 +226,7 @@ impl BlockBasedTableOptions {
         //     ll::rocks_block_based_table_options_set_metadata_block_size(self.raw, val);
         // }
         // self
-        unimplemented!()        // FIXME: in 5.4
+        unimplemented!() // FIXME: in 5.4
     }
 
     /// Note: currently this option requires kTwoLevelIndexSearch to be set as
@@ -373,9 +372,7 @@ pub struct PlainTableOptions {
 
 impl Default for PlainTableOptions {
     fn default() -> Self {
-        PlainTableOptions {
-            raw: unsafe { ll::rocks_plain_table_options_create() },
-        }
+        PlainTableOptions { raw: unsafe { ll::rocks_plain_table_options_create() } }
     }
 }
 
@@ -484,9 +481,7 @@ pub struct CuckooTableOptions {
 
 impl Default for CuckooTableOptions {
     fn default() -> Self {
-        CuckooTableOptions {
-            raw: unsafe { ll::rocks_cuckoo_table_options_create() },
-        }
+        CuckooTableOptions { raw: unsafe { ll::rocks_cuckoo_table_options_create() } }
     }
 }
 
@@ -556,7 +551,5 @@ mod tests {
     use super::*;
 
     #[test]
-    fn it_works() {
-        
-    }
+    fn it_works() {}
 }

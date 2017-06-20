@@ -54,9 +54,7 @@ impl fmt::Debug for WriteBatch {
 //        not the rocks wrapped
 impl ToRaw<ll::rocks_raw_writebatch_t> for WriteBatch {
     fn raw(&self) -> *mut ll::rocks_raw_writebatch_t {
-        unsafe {
-            ll::rocks_writebatch_get_writebatch(self.raw)
-        }
+        unsafe { ll::rocks_writebatch_get_writebatch(self.raw) }
     }
 }
 
@@ -92,12 +90,14 @@ impl WriteBatch {
 
     pub fn put_cf(&mut self, column_family: &ColumnFamilyHandle, key: &[u8], value: &[u8]) -> &mut Self {
         unsafe {
-            ll::rocks_writebatch_put_cf(self.raw,
-                                        column_family.raw(),
-                                        key.as_ptr() as _,
-                                        key.len(),
-                                        value.as_ptr() as _,
-                                        value.len());
+            ll::rocks_writebatch_put_cf(
+                self.raw,
+                column_family.raw(),
+                key.as_ptr() as _,
+                key.len(),
+                value.as_ptr() as _,
+                value.len(),
+            );
         }
         self
     }
@@ -164,23 +164,32 @@ impl WriteBatch {
     /// WriteBatch implementation of DB::DeleteRange().  See db.h.
     pub fn delete_range(&mut self, begin_key: &[u8], end_key: &[u8]) -> &mut Self {
         unsafe {
-            ll::rocks_writebatch_delete_range(self.raw,
-                                              begin_key.as_ptr() as _,
-                                              begin_key.len(),
-                                              end_key.as_ptr() as _,
-                                              end_key.len());
+            ll::rocks_writebatch_delete_range(
+                self.raw,
+                begin_key.as_ptr() as _,
+                begin_key.len(),
+                end_key.as_ptr() as _,
+                end_key.len(),
+            );
         }
         self
     }
 
-    pub fn delete_range_cf(&mut self, column_family: &ColumnFamilyHandle, begin_key: &[u8], end_key: &[u8]) -> &mut Self {
+    pub fn delete_range_cf(
+        &mut self,
+        column_family: &ColumnFamilyHandle,
+        begin_key: &[u8],
+        end_key: &[u8],
+    ) -> &mut Self {
         unsafe {
-            ll::rocks_writebatch_delete_range_cf(self.raw,
-                                                 column_family.raw(),
-                                                 begin_key.as_ptr() as _,
-                                                 begin_key.len(),
-                                                 end_key.as_ptr() as _,
-                                                 end_key.len());
+            ll::rocks_writebatch_delete_range_cf(
+                self.raw,
+                column_family.raw(),
+                begin_key.as_ptr() as _,
+                begin_key.len(),
+                end_key.as_ptr() as _,
+                end_key.len(),
+            );
         }
         self
     }
@@ -190,7 +199,12 @@ impl WriteBatch {
         unimplemented!()
     }
 
-    pub fn deletev_range_cf(&mut self, column_family: &ColumnFamilyHandle, begin_key: &[&[u8]], end_key: &[&[u8]]) -> &mut Self {
+    pub fn deletev_range_cf(
+        &mut self,
+        column_family: &ColumnFamilyHandle,
+        begin_key: &[&[u8]],
+        end_key: &[&[u8]],
+    ) -> &mut Self {
         unimplemented!()
     }
 
@@ -206,12 +220,14 @@ impl WriteBatch {
 
     pub fn merge_cf(&mut self, column_family: &ColumnFamilyHandle, key: &[u8], value: &[u8]) -> &mut Self {
         unsafe {
-            ll::rocks_writebatch_merge_cf(self.raw,
-                                          column_family.raw(),
-                                          key.as_ptr() as _,
-                                          key.len(),
-                                          value.as_ptr() as _,
-                                          value.len());
+            ll::rocks_writebatch_merge_cf(
+                self.raw,
+                column_family.raw(),
+                key.as_ptr() as _,
+                key.len(),
+                value.as_ptr() as _,
+                value.len(),
+            );
         }
         self
     }
@@ -407,4 +423,3 @@ mod tests {
         assert_eq!(db.get(&ReadOptions::default(), b"site").unwrap().as_ref(), b"github");
     }
 }
-

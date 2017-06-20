@@ -2,14 +2,13 @@
 //!
 //! The RocksDB API in Rustic Style.
 
-/*
-#![cfg_attr(feature = "dev", feature(plugin))]
-#![cfg_attr(feature = "dev", plugin(clippy))]
-#![cfg_attr(not(feature = "dev"), allow(unknown_lints))]
-#![allow(not_unsafe_ptr_arg_deref,
-         wrong_self_convention,
-         doc_markdown)]
-*/
+// #![cfg_attr(feature = "dev", feature(plugin))]
+// #![cfg_attr(feature = "dev", plugin(clippy))]
+// #![cfg_attr(not(feature = "dev"), allow(unknown_lints))]
+// #![allow(not_unsafe_ptr_arg_deref,
+// wrong_self_convention,
+// doc_markdown)]
+//
 
 #![allow(unused_variables, unused_imports, dead_code)]
 

@@ -171,8 +171,10 @@ mod tests {
         let tmp_dir = ::tempdir::TempDir::new_in(".", "rocks").unwrap();
         let db = DB::open(Options::default().map_db_options(|db| db.create_if_missing(true)), &tmp_dir).unwrap();
 
-        assert!(db.put(&Default::default(), b"long-key", vec![b'A'; 1024 * 1024].as_ref())
-                .is_ok());
+        assert!(
+            db.put(&Default::default(), b"long-key", vec![b'A'; 1024 * 1024].as_ref())
+                .is_ok()
+        );
         assert!(db.put(&Default::default(), b"a", b"1").is_ok());
         assert!(db.put(&Default::default(), b"b", b"2").is_ok());
         assert!(db.put(&Default::default(), b"c", b"3").is_ok());

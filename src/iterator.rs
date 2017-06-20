@@ -23,7 +23,7 @@ use super::Result;
 /// external synchronization.
 pub struct Iterator<'a> {
     raw: *mut ll::rocks_iterator_t,
-    _marker: PhantomData<&'a ()>
+    _marker: PhantomData<&'a ()>,
 }
 
 unsafe impl<'a> Send for Iterator<'a> {}
@@ -33,9 +33,7 @@ impl<'a> fmt::Debug for Iterator<'a> {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         try!(write!(f, "Iterator("));
         if self.is_valid() {
-            write!(f,
-                   "key={:?})",
-                   String::from_utf8_lossy(self.key()))
+            write!(f, "key={:?})", String::from_utf8_lossy(self.key()))
         } else {
             write!(f, "INVALID)")
         }
@@ -55,7 +53,7 @@ impl<'a> FromRaw<ll::rocks_iterator_t> for Iterator<'a> {
     unsafe fn from_ll(raw: *mut ll::rocks_iterator_t) -> Self {
         Iterator {
             raw: raw,
-            _marker: PhantomData
+            _marker: PhantomData,
         }
     }
 }
@@ -175,11 +173,13 @@ impl<'a> Iterator<'a> {
         unsafe {
             let mut ret = String::new();
             let mut status = mem::zeroed();
-            ll::rocks_iter_get_property(self.raw,
-                                        property.as_bytes().as_ptr() as *const _,
-                                        property.len(),
-                                        &mut ret as *mut String as *mut c_void,
-                                        &mut status);
+            ll::rocks_iter_get_property(
+                self.raw,
+                property.as_bytes().as_ptr() as *const _,
+                property.len(),
+                &mut ret as *mut String as *mut c_void,
+                &mut status,
+            );
             // FIXME: rocksdb return error string in get_property
             Status::from_ll(status).map(|_| ret)
         }
@@ -192,12 +192,8 @@ impl<'a> Iterator<'a> {
         if !self.is_valid() {
             self.seek_to_first();
         }
-        assert_eq!(self.get_property("rocksdb.iterator.is-key-pinned"),
-                   Ok("1".to_owned()),
-                   "key is not pinned!");
-        IntoIter {
-            inner: self,
-        }
+        assert_eq!(self.get_property("rocksdb.iterator.is-key-pinned"), Ok("1".to_owned()), "key is not pinned!");
+        IntoIter { inner: self }
     }
 
     /// consume and make a reversed rust style iterator
@@ -205,12 +201,8 @@ impl<'a> Iterator<'a> {
         if !self.is_valid() {
             self.seek_to_last();
         }
-        assert_eq!(self.get_property("rocksdb.iterator.is-key-pinned"),
-                   Ok("1".to_owned()),
-                   "key is not pinned!");
-        IntoRevIter {
-            inner: self,
-        }
+        assert_eq!(self.get_property("rocksdb.iterator.is-key-pinned"), Ok("1".to_owned()), "key is not pinned!");
+        IntoRevIter { inner: self }
     }
 }
 
@@ -299,12 +291,9 @@ mod tests {
         let tmp_dir = TempDir::new_in(".", "rocks").unwrap();
         let opt = Options::default()
             .map_db_options(|db| db.create_if_missing(true))
-            .map_cf_options(|cf| {
-                cf.table_factory_block_based(
-                    BlockBasedTableOptions::default()
-                        .use_delta_encoding(false)
-                )
-            });
+            .map_cf_options(
+                |cf| cf.table_factory_block_based(BlockBasedTableOptions::default().use_delta_encoding(false)),
+            );
         let db = DB::open(opt, tmp_dir.path()).unwrap();
         let mut batch = WriteBatch::new();
 
@@ -330,7 +319,9 @@ mod tests {
         assert!(db.compact_range(&Default::default(), ..).is_ok());
 
         {
-            for (k, v) in db.new_iterator(&ReadOptions::default().pin_data(true)).into_iter() {
+            for (k, v) in db.new_iterator(&ReadOptions::default().pin_data(true))
+                .into_iter()
+            {
                 println!("> {:?} => {:?}", String::from_utf8_lossy(k), String::from_utf8_lossy(v));
             }
         }
@@ -356,9 +347,11 @@ mod tests {
         it.seek_to_first();
         assert_eq!(it.get_property("rocksdb.iterator.is-key-pinned"), Ok("1".to_string()));
 
-        println!("got => {:?}",
-                 it.get_property("rocksdb.iterator.super-version-number")
-                 .unwrap());
+        println!(
+            "got => {:?}",
+            it.get_property("rocksdb.iterator.super-version-number")
+                .unwrap()
+        );
 
         assert_eq!(it.is_valid(), true);
         println!("it => {:?}", it);
@@ -374,8 +367,7 @@ mod tests {
     fn reversed_iterator() {
         use tempdir::TempDir;
         let tmp_dir = TempDir::new_in(".", "rocks").unwrap();
-        let opt = Options::default()
-            .map_db_options(|db| db.create_if_missing(true));
+        let opt = Options::default().map_db_options(|db| db.create_if_missing(true));
         let db = DB::open(opt, tmp_dir.path()).unwrap();
 
         let mut batch = WriteBatch::new();
@@ -394,7 +386,7 @@ mod tests {
 
         let keys: Vec<_> = db.new_iterator(&ReadOptions::default().pin_data(true))
             .into_rev_iter()
-            .map(|(k,_)| String::from_utf8_lossy(k).to_owned().to_string())
+            .map(|(k, _)| String::from_utf8_lossy(k).to_owned().to_string())
             .collect();
         assert_eq!(keys, vec!["k9", "k8", "k6", "k5", "k4", "k3", "k2", "k1"]);
     }

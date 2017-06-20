@@ -15,7 +15,7 @@ pub fn get_supported_compressions() -> Vec<CompressionType> {
         let ptr = ll::rocks_get_supported_compressions(&mut n);
         let mut ret = Vec::with_capacity(n);
 
-        for i in 0 .. n {
+        for i in 0..n {
             ret.push(mem::transmute(*ptr.offset(i as isize)));
         }
         ll::rocks_get_supported_compressions_destroy(ptr);

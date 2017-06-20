@@ -20,7 +20,7 @@ use to_raw::{ToRaw, FromRaw};
 #[repr(C)]
 #[derive(Debug, Copy, Clone, PartialEq, Eq, Hash)]
 pub enum Code {
-    _Ok = 0,                    // will never be available
+    _Ok = 0, // will never be available
     NotFound = 1,
     Corruption = 2,
     NotSupported = 3,
@@ -65,9 +65,7 @@ impl FromRaw<ll::rocks_status_t> for Result<(), Status> {
         if raw.is_null() || ll::rocks_status_code(raw) == 0 {
             Ok(())
         } else {
-            Err(Status {
-                raw: raw,
-            })
+            Err(Status { raw: raw })
         }
     }
 }
@@ -85,22 +83,20 @@ impl Status {
     }
 
     pub fn code(&self) -> Code {
-        unsafe {
-            mem::transmute(ll::rocks_status_code(self.raw))
-        }
+        unsafe { mem::transmute(ll::rocks_status_code(self.raw)) }
     }
 
     pub fn subcode(&self) -> SubCode {
-        unsafe {
-            mem::transmute(ll::rocks_status_subcode(self.raw))
-        }
+        unsafe { mem::transmute(ll::rocks_status_subcode(self.raw)) }
     }
 
     /// string indicating the message of the Status
     pub fn state(&self) -> &str {
         unsafe {
             let ptr = ll::rocks_status_get_state(self.raw);
-            ptr.as_ref().and_then(|s| CStr::from_ptr(s).to_str().ok()).unwrap_or("")
+            ptr.as_ref()
+                .and_then(|s| CStr::from_ptr(s).to_str().ok())
+                .unwrap_or("")
         }
     }
 
@@ -108,9 +104,7 @@ impl Status {
         if raw.is_null() || unsafe { ll::rocks_status_code(raw) } == 0 {
             Ok(())
         } else {
-            Err(Status {
-                raw: raw,
-            })
+            Err(Status { raw: raw })
         }
     }
 }
@@ -126,4 +120,3 @@ impl fmt::Debug for Status {
         write!(f, "{:?}({:?}, {:?})", self.code(), self.subcode(), self.state())
     }
 }
-

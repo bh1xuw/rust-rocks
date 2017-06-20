@@ -23,11 +23,13 @@ pub struct ColumnFamilyMetaData {
 
 impl fmt::Debug for ColumnFamilyMetaData {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        try!(f.debug_struct("ColumnFamily")
-             .field("name", &self.name)
-             .field("file_count", &self.file_count)
-             .field("size", &self.size)
-             .finish());
+        try!(
+            f.debug_struct("ColumnFamily")
+                .field("name", &self.name)
+                .field("file_count", &self.file_count)
+                .field("size", &self.size)
+                .finish()
+        );
         try!(write!(f, "\n"));
         for level in &self.levels {
             try!(write!(f, "  > {:?}\n", level));
@@ -81,9 +83,7 @@ pub struct SstFileMetaData {
 
 impl fmt::Debug for SstFileMetaData {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        f.debug_struct("SstFile")
-            .field("name", &self.name)
-            .finish()
+        f.debug_struct("SstFile").field("name", &self.name).finish()
     }
 }
 
@@ -119,4 +119,3 @@ impl fmt::Debug for LiveFileMetaData {
             .finish()
     }
 }
-
