@@ -114,7 +114,7 @@ impl<'a> Iterator for TablePropertiesCollectionIter<'a> {
 /// The value of the user-collected properties are encoded as raw bytes --
 /// users have to interprete these values by themselves.
 ///
-/// Rust: wraps, and exposes as a `{String => Vec<u8>}` map
+/// Rust: wraps raw c pointer, and exposes as a `{String => Vec<u8>}` map
 #[repr(C)]
 pub struct UserCollectedProperties {
     // *std::map<std::string, std::string>
@@ -467,6 +467,7 @@ pub trait TablePropertiesCollector {
         "RustTablePropertiesCollector\0"
     }
 
+    // fn get_readable_properties() -> UserCollectedProperties
     // fn need_compact(&self) -> bool
 }
 
@@ -476,11 +477,13 @@ pub struct Context {
     pub column_family_id: u32,
 }
 
-// Constructs TablePropertiesCollector. Internals create a new
-// TablePropertiesCollector for each new table
+/// Constructs TablePropertiesCollector. Internals create a new
+/// TablePropertiesCollector for each new table
 pub trait TablePropertiesCollectorFactory {
+    /// has to be thread-safe
     fn new_collector(&mut self, context: Context) -> Box<TablePropertiesCollector>;
 
+    /// The name of the properties collector can be used for debugging purpose.
     fn name(&self) -> &str {
         "RustTablePropertiesCollectorFactory\0"
     }
