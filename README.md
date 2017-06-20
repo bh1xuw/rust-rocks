@@ -135,7 +135,7 @@ big picture(TODOs):
 - [x] ``rocksdb/table.h``
   - [x] plain / block based / cuckoo options
   - [ ] customized
-- [ ] ``rocksdb/table_properties.h``
+- [x] ``rocksdb/table_properties.h``
 - [ ] ``rocksdb/thread_status.h``
 - [ ] ``rocksdb/threadpool.h``
 - [x] ``rocksdb/transaction_log.h``

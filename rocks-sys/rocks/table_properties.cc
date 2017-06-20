@@ -165,6 +165,19 @@ size_t rocks_user_collected_props_size(rocks_user_collected_props_t* prop) {
   return user_prop->size();
 }
 
+const char* rocks_user_collected_props_at(rocks_user_collected_props_t* prop,
+                                          const char* key_ptr, size_t key_len,
+                                          size_t* value_len) {  // value: Vec<u8
+  auto user_prop = reinterpret_cast<UserCollectedProperties*>(prop);
+  auto key = std::string(key_ptr, key_len);
+  auto search = user_prop->find(key);
+  if (search != user_prop->end()) {
+    *value_len = search->second.size();
+    return search->second.data();
+  }
+  return nullptr;
+}
+
 rocks_user_collected_props_iter_t* rocks_user_collected_props_iter_create(
     rocks_user_collected_props_t* prop) {
   auto user_prop = reinterpret_cast<UserCollectedProperties*>(prop);

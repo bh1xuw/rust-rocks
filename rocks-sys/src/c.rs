@@ -1643,6 +1643,23 @@ extern "C" {
      -> *mut rocks_table_props_collection_t;
 }
 extern "C" {
+    pub fn rocks_db_get_properties_of_tables_in_range(db: *mut rocks_db_t,
+                                                      cf:
+                                                          *mut rocks_column_family_handle_t,
+                                                      num_ranges: usize,
+                                                      start_keys:
+                                                          *const *const ::std::os::raw::c_char,
+                                                      start_key_lens:
+                                                          *const usize,
+                                                      limit_keys:
+                                                          *const *const ::std::os::raw::c_char,
+                                                      limit_key_lens:
+                                                          *const usize,
+                                                      status:
+                                                          *mut *mut rocks_status_t)
+     -> *mut rocks_table_props_collection_t;
+}
+extern "C" {
     pub fn rocks_destroy_db(options: *const rocks_options_t,
                             name: *const ::std::os::raw::c_char,
                             status: *mut *mut rocks_status_t);
@@ -3039,6 +3056,15 @@ extern "C" {
     pub fn rocks_user_collected_props_size(prop:
                                                *mut rocks_user_collected_props_t)
      -> usize;
+}
+extern "C" {
+    pub fn rocks_user_collected_props_at(prop:
+                                             *mut rocks_user_collected_props_t,
+                                         key_ptr:
+                                             *const ::std::os::raw::c_char,
+                                         key_len: usize,
+                                         value_len: *mut usize)
+     -> *const ::std::os::raw::c_char;
 }
 extern "C" {
     pub fn rocks_user_collected_props_iter_create(prop:

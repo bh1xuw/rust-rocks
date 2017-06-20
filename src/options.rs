@@ -1212,9 +1212,7 @@ impl ColumnFamilyOptions {
     pub fn table_properties_collector_factory(self, val: Box<TablePropertiesCollectorFactory>) -> Self {
         unsafe {
             let raw_ptr = Box::into_raw(Box::new(val));
-            println!("raw_ptr => {:?}", raw_ptr);
             ll::rocks_cfoptions_add_table_properties_collector_factories_by_trait(self.raw, raw_ptr as *mut _);
-
         }
         self
     }

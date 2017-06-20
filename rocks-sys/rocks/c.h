@@ -993,6 +993,12 @@ void rocks_db_get_db_identity(rocks_db_t* db,
 rocks_table_props_collection_t* rocks_db_get_properties_of_all_tables(
     rocks_db_t* db, rocks_column_family_handle_t* cf, rocks_status_t** status);
 
+rocks_table_props_collection_t* rocks_db_get_properties_of_tables_in_range(
+    rocks_db_t* db, rocks_column_family_handle_t* cf, size_t num_ranges,
+    const char* const* start_keys, const size_t* start_key_lens,
+    const char* const* limit_keys, const size_t* limit_key_lens,
+    rocks_status_t** status);
+
 /*    pub fn */
 void rocks_destroy_db(const rocks_options_t* options, const char* name,
                       rocks_status_t** status);
@@ -1668,6 +1674,10 @@ void rocks_user_collected_props_insert(rocks_user_collected_props_t* prop,
                                        const char* val_ptr, size_t val_len);
 
 size_t rocks_user_collected_props_size(rocks_user_collected_props_t* prop);
+
+const char* rocks_user_collected_props_at(rocks_user_collected_props_t* prop,
+                                          const char* key_ptr, size_t key_len,
+                                          size_t* value_len);
 
 rocks_user_collected_props_iter_t* rocks_user_collected_props_iter_create(
     rocks_user_collected_props_t* prop);

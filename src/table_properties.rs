@@ -1,13 +1,14 @@
 //! TableProperties contains a bunch of read-only properties of its associated
 //! table.
 
-use std::os::raw::c_void;
 use std::u32;
 use std::slice;
 use std::str;
 use std::fmt;
 use std::mem;
 use std::marker::PhantomData;
+use std::ops;
+use std::os::raw::{c_void, c_char};
 
 use rocks_sys as ll;
 
@@ -22,6 +23,12 @@ pub const UNKNOWN_COLUMN_FAMILY_ID: u32 = u32::MAX;
 pub struct TablePropertiesCollection {
     // std::unordered_map<std::string, std::shared_ptr<const TableProperties>>
     raw: *mut ll::rocks_table_props_collection_t,
+}
+
+impl fmt::Debug for TablePropertiesCollection {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        write!(f, "TablePropertiesCollection[{} items]", self.len())
+    }
 }
 
 impl FromRaw<ll::rocks_table_props_collection_t> for TablePropertiesCollection {
@@ -107,12 +114,17 @@ impl<'a> Iterator for TablePropertiesCollectionIter<'a> {
 /// The value of the user-collected properties are encoded as raw bytes --
 /// users have to interprete these values by themselves.
 ///
-/// Rust: wraps, and exposes a `{String => Vec<u8>}` map
+/// Rust: wraps, and exposes as a `{String => Vec<u8>}` map
 #[repr(C)]
-#[derive(Debug)]
 pub struct UserCollectedProperties {
     // *std::map<std::string, std::string>
     raw: *mut c_void,
+}
+
+impl fmt::Debug for UserCollectedProperties {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        write!(f, "UserCollectedProperties[{} items]", self.len())
+    }
 }
 
 impl ToRaw<ll::rocks_user_collected_props_t> for UserCollectedProperties {
@@ -126,7 +138,6 @@ impl ToRaw<ll::rocks_user_collected_props_t> for UserCollectedProperties {
 impl UserCollectedProperties {
     pub fn insert(&mut self, key: &str, value: &[u8]) {
         unsafe {
-            println!("invert {:?}, {:?}", key, value);
             ll::rocks_user_collected_props_insert(self.raw(),
                                                   key.as_ptr() as *const _,
                                                   key.len(),
@@ -151,6 +162,23 @@ impl UserCollectedProperties {
             size: self.len(),
             at_end: self.is_empty(),
             _marker: PhantomData,
+        }
+    }
+}
+
+impl<'a> ops::Index<&'a str> for UserCollectedProperties {
+    type Output = [u8];
+    fn index(&self, index: &'a str) -> &[u8] {
+        let mut size = 0;
+        unsafe {
+            let val_ptr = ll::rocks_user_collected_props_at(self.raw(),
+                                              index.as_bytes().as_ptr() as *const c_char,
+                                              index.len(),
+                                              &mut size);
+            if val_ptr.is_null() {
+                panic!("key not found {:?}", index);
+            }
+            slice::from_raw_parts(val_ptr as *const u8, size)
         }
     }
 }
@@ -508,7 +536,6 @@ pub mod c {
 
     #[no_mangle]
     pub unsafe extern "C" fn rust_table_props_collector_factory_new_collector(f: *mut (), cf_id: u32) -> *mut Box<TablePropertiesCollector> {
-        println!("debug f=> {:?}", f);
         assert!(!f.is_null());
         let factory = f as *mut Box<TablePropertiesCollectorFactory>;
         let collector = (*factory).new_collector(Context { column_family_id: cf_id });
@@ -547,18 +574,10 @@ mod tests {
         fn add_user_key(&mut self, key: &[u8],  value: &[u8],
                         type_: EntryType, seq: SequenceNumber,
                         file_size: u64) {
-            println!("now add_user_key {:?} {:?}", type_, seq);
-            println!("key => {:?}", key);
-            println!("value => {:?}", value.len());
         }
 
-        /// Finish() will be called when a table has already been built and is ready
-        /// for writing the properties block.
-        ///
-        /// @params properties  User will add their collected statistics to
-        /// `properties`.
         fn finish(&mut self, props: &mut UserCollectedProperties) {
-            props.insert("hello", b"World");
+            props.insert("hello", b"world");
         }
     }
 
@@ -566,7 +585,6 @@ mod tests {
 
     impl TablePropertiesCollectorFactory for MyTblPropsCollectorFactory {
         fn new_collector(&mut self, context: Context) -> Box<TablePropertiesCollector> {
-            println!("now create new collector");
             Box::new(MyTblPropsCollector{
                 data: HashMap::default(),
             })
@@ -590,15 +608,25 @@ mod tests {
             let val = format!("v{}", i * i);
             let value: String = iter::repeat(val).take(i*i).collect::<Vec<_>>().concat();
 
-
-            db.delete(&WriteOptions::default(), b"k4");
-            db.single_delete(&WriteOptions::default(), b"k5");
+            db.single_delete(&WriteOptions::default(), b"k5").unwrap();
             db.put(&WriteOptions::default(), key.as_bytes(), value.as_bytes())
                 .unwrap();
-
-            if i % 6 == 0 {
-                assert!(db.flush(&FlushOptions::default().wait(true)).is_ok());
-            }
         }
+        assert!(db.flush(&FlushOptions::default().wait(true)).is_ok());
+
+        let props = db.get_properties_of_tables_in_range(&db.default_column_family(),
+                                                         vec![b"k4".as_ref()..b"k40".as_ref()]);
+        assert!(props.is_ok());
+        let props = props.unwrap();
+
+        assert!(props.len() > 0);
+        for (file, prop) in props.iter() {
+            assert!(file.ends_with(".sst"));
+            assert!(prop.property_collectors_names().contains("RustTablePropertiesCollectorFactory"));
+
+            let user_prop = prop.user_collected_properties();
+            assert_eq!(&user_prop["hello"], b"world");
+        }
+
     }
 }

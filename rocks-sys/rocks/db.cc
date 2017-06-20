@@ -779,6 +779,26 @@ rocks_table_props_collection_t* rocks_db_get_properties_of_all_tables(
   return nullptr;
 }
 
+rocks_table_props_collection_t* rocks_db_get_properties_of_tables_in_range(
+    rocks_db_t* db, rocks_column_family_handle_t* cf, size_t num_ranges,
+    const char* const* start_keys, const size_t* start_key_lens,
+    const char* const* limit_keys, const size_t* limit_key_lens,
+    rocks_status_t** status) {
+  auto coll = new rocks_table_props_collection_t;
+  auto ranges = std::vector<Range>{};
+  for (auto i = 0; i < num_ranges; i++) {
+    ranges.push_back(Range(Slice(start_keys[i], start_key_lens[i]),
+                           Slice(limit_keys[i], limit_key_lens[i])));
+  }
+  auto st = db->rep->GetPropertiesOfTablesInRange(cf->rep, ranges.data(),
+                                                  ranges.size(), &coll->rep);
+  if (!SaveError(status, std::move(st))) {
+    return coll;
+  }
+  delete coll;
+  return nullptr;
+}
+
 // public functions
 void rocks_destroy_db(const rocks_options_t* options, const char* name,
                       rocks_status_t** status) {

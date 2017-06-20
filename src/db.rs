@@ -2030,14 +2030,38 @@ impl<'a> DB<'a> {
         let mut status = ptr::null_mut();
         unsafe {
             let props_ptr = ll::rocks_db_get_properties_of_all_tables(self.raw(), column_family.raw, &mut status);
-            println!("props => {:?}", props_ptr);
             Status::from_ll(status).map(|()| {
                 TablePropertiesCollection::from_ll(props_ptr)
             })
         }
     }
-    // TODO:
-    // GetPropertiesOfTablesInRange
+
+    pub fn get_properties_of_tables_in_range(&self, column_family: &ColumnFamilyHandle, ranges: Vec<ops::Range<&[u8]>>)
+                                             -> Result<TablePropertiesCollection> {
+        let mut status = ptr::null_mut();
+        let num_ranges = ranges.len();
+        let mut start_keys = Vec::with_capacity(num_ranges);
+        let mut start_key_lens = Vec::with_capacity(num_ranges);
+        let mut limit_keys = Vec::with_capacity(num_ranges);
+        let mut limit_key_lens = Vec::with_capacity(num_ranges);
+        for r in &ranges {
+            start_keys.push(r.start.as_ptr() as *const c_char);
+            start_key_lens.push(r.start.len());
+            limit_keys.push(r.end.as_ptr() as *const c_char);
+            limit_key_lens.push(r.end.len());
+        }
+        unsafe {
+            let props_ptr = ll::rocks_db_get_properties_of_tables_in_range(
+                self.raw(), column_family.raw,
+                num_ranges,
+                start_keys.as_ptr(), start_key_lens.as_ptr(),
+                limit_keys.as_ptr(), limit_key_lens.as_ptr(),
+                &mut status);
+            Status::from_ll(status).map(|()| {
+                TablePropertiesCollection::from_ll(props_ptr)
+            })
+        }
+    }
 }
 
 // ==================================================
