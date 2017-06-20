@@ -417,7 +417,7 @@ mod tests {
             .put(b"name", b"BH1XUW")
             .put(b"site", b"github");
 
-        assert!(db.write(WriteOptions::default(), batch).is_ok());
+        assert!(db.write(&WriteOptions::default(), batch).is_ok());
 
         assert_eq!(db.get(&ReadOptions::default(), b"name").unwrap().as_ref(), b"BH1XUW");
         assert_eq!(db.get(&ReadOptions::default(), b"site").unwrap().as_ref(), b"github");

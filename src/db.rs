@@ -15,15 +15,13 @@ use std::marker::PhantomData;
 use std::path::Path;
 use std::collections::hash_map::HashMap;
 
-use table_properties::TablePropertiesCollection;
-
 use rocks_sys as ll;
 
 use error::Status;
 use comparator::Comparator;
 use options::{Options, DBOptions, ColumnFamilyOptions, ReadOptions, WriteOptions, CompactRangeOptions,
               IngestExternalFileOptions, FlushOptions, CompactionOptions};
-use table_properties::TableProperties;
+use table_properties::{TablePropertiesCollection, TableProperties};
 use snapshot::Snapshot;
 use write_batch::WriteBatch;
 use iterator::Iterator;
@@ -193,7 +191,7 @@ impl<'a, 'b: 'a> ColumnFamilyHandle<'a, 'b> {
         unsafe {
             ll::rocks_db_delete_cf(
                 self.db.raw,
-                options.as_ref().raw(),
+                options.raw(),
                 self.raw(),
                 key.as_ptr() as *const _,
                 key.len(),
@@ -208,7 +206,7 @@ impl<'a, 'b: 'a> ColumnFamilyHandle<'a, 'b> {
         unsafe {
             ll::rocks_db_single_delete_cf(
                 self.db.raw,
-                options.as_ref().raw(),
+                options.raw(),
                 self.raw(),
                 key.as_ptr() as *const _,
                 key.len(),
@@ -223,7 +221,7 @@ impl<'a, 'b: 'a> ColumnFamilyHandle<'a, 'b> {
         unsafe {
             ll::rocks_db_delete_range_cf(
                 self.db.raw,
-                options.as_ref().raw(),
+                options.raw(),
                 self.raw(),
                 begin_key.as_ptr() as *const _,
                 begin_key.len(),
@@ -240,7 +238,7 @@ impl<'a, 'b: 'a> ColumnFamilyHandle<'a, 'b> {
         unsafe {
             ll::rocks_db_merge_cf(
                 self.db.raw,
-                options.as_ref().raw(),
+                options.raw(),
                 self.raw(),
                 key.as_ptr() as *const _,
                 key.len(),
@@ -680,13 +678,18 @@ impl<'a> DB<'a> {
     /// If everything is OK, handles will on return be the same size
     /// as `column_families` --- `handles[i]` will be a handle that you
     /// will use to operate on column family `column_family[i]`.
-    pub fn open_with_column_families<'b: 'c, 'c, CF: Into<ColumnFamilyDescriptor>>(
-        options: &Options, // FIXME: this should be DBOptions
-        name: &str,
+    ///
+    // FIXME: this should be DBOptions
+    pub fn open_with_column_families<'b: 'c, 'c, CF: Into<ColumnFamilyDescriptor>, P: AsRef<Path>>(
+        options: &Options,
+        name: P,
         column_families: Vec<CF>,
     ) -> Result<(DB<'b>, Vec<ColumnFamilyHandle<'c, 'b>>)> {
         let opt = options.raw();
-        let dbname = CString::new(name).unwrap();
+        let dbname = name.as_ref()
+            .to_str()
+            .and_then(|s| CString::new(s).ok())
+            .unwrap();
 
         let cfs = column_families
             .into_iter()
@@ -770,8 +773,11 @@ impl<'a> DB<'a> {
     /// and return the list of all column nfamilies in that DB
     /// through `column_families` argument. The ordering of
     /// column families in column_families is unspecified.
-    pub fn list_column_families(options: &Options, name: &str) -> Result<Vec<String>> {
-        let dbname = CString::new(name).unwrap();
+    pub fn list_column_families<P: AsRef<Path>>(options: &Options, name: P) -> Result<Vec<String>> {
+        let dbname = name.as_ref()
+            .to_str()
+            .and_then(|s| CString::new(s).ok())
+            .unwrap();
         let mut status = ptr::null_mut::<ll::rocks_status_t>();
         let mut lencfs = 0;
         unsafe {
@@ -865,25 +871,20 @@ impl<'a> DB<'a> {
     /// did not exist in the database.
     ///
     /// Note: consider setting `options.sync = true`.
-    pub fn delete<W: AsRef<WriteOptions>>(&self, options: W, key: &[u8]) -> Result<()> {
+    pub fn delete(&self, options: &WriteOptions, key: &[u8]) -> Result<()> {
         let mut status = ptr::null_mut::<ll::rocks_status_t>();
         unsafe {
-            ll::rocks_db_delete(self.raw(), options.as_ref().raw(), key.as_ptr() as *const _, key.len(), &mut status);
+            ll::rocks_db_delete(self.raw(), options.raw(), key.as_ptr() as *const _, key.len(), &mut status);
             Status::from_ll(status)
         }
     }
 
-    pub fn delete_cf<W: AsRef<WriteOptions>>(
-        &self,
-        options: W,
-        column_family: &ColumnFamilyHandle,
-        key: &[u8],
-    ) -> Result<()> {
+    pub fn delete_cf(&self, options: &WriteOptions, column_family: &ColumnFamilyHandle, key: &[u8]) -> Result<()> {
         let mut status = ptr::null_mut::<ll::rocks_status_t>();
         unsafe {
             ll::rocks_db_delete_cf(
                 self.raw(),
-                options.as_ref().raw(),
+                options.raw(),
                 column_family.raw(),
                 key.as_ptr() as *const _,
                 key.len(),
@@ -909,16 +910,10 @@ impl<'a> DB<'a> {
     /// Merges can result in undefined behavior.
     ///
     /// Note: consider setting `options.sync = true`.
-    pub fn single_delete<W: AsRef<WriteOptions>>(&self, options: W, key: &[u8]) -> Result<()> {
+    pub fn single_delete(&self, options: &WriteOptions, key: &[u8]) -> Result<()> {
         let mut status = ptr::null_mut::<ll::rocks_status_t>();
         unsafe {
-            ll::rocks_db_single_delete(
-                self.raw(),
-                options.as_ref().raw(),
-                key.as_ptr() as *const _,
-                key.len(),
-                &mut status,
-            );
+            ll::rocks_db_single_delete(self.raw(), options.raw(), key.as_ptr() as *const _, key.len(), &mut status);
             Status::from_ll(status)
         }
     }
@@ -933,7 +928,7 @@ impl<'a> DB<'a> {
         unsafe {
             ll::rocks_db_single_delete_cf(
                 self.raw(),
-                options.as_ref().raw(),
+                options.raw(),
                 column_family.raw(),
                 key.as_ptr() as *const _,
                 key.len(),
@@ -958,9 +953,9 @@ impl<'a> DB<'a> {
     ///
     /// Consider setting `ReadOptions::ignore_range_deletions = true` to speed
     /// up reads for key(s) that are known to be unaffected by range deletions.
-    pub fn delete_range_cf<W: AsRef<WriteOptions>>(
+    pub fn delete_range_cf(
         &self,
-        options: W,
+        options: &WriteOptions,
         column_family: &ColumnFamilyHandle,
         begin_key: &[u8],
         end_key: &[u8],
@@ -969,7 +964,7 @@ impl<'a> DB<'a> {
         unsafe {
             ll::rocks_db_delete_range_cf(
                 self.raw(),
-                options.as_ref().raw(),
+                options.raw(),
                 column_family.raw(),
                 begin_key.as_ptr() as *const _,
                 begin_key.len(),
@@ -986,12 +981,12 @@ impl<'a> DB<'a> {
     /// determined by the user provided merge_operator when opening DB.
     ///
     /// Note: consider setting `options.sync = true`.
-    pub fn merge<W: AsRef<WriteOptions>>(&self, options: W, key: &[u8], val: &[u8]) -> Result<()> {
+    pub fn merge(&self, options: &WriteOptions, key: &[u8], val: &[u8]) -> Result<()> {
         let mut status = ptr::null_mut::<ll::rocks_status_t>();
         unsafe {
             ll::rocks_db_merge(
                 self.raw(),
-                options.as_ref().raw(),
+                options.raw(),
                 key.as_ptr() as *const _,
                 key.len(),
                 val.as_ptr() as *const _,
@@ -1002,9 +997,9 @@ impl<'a> DB<'a> {
         }
     }
 
-    pub fn merge_cf<W: AsRef<WriteOptions>>(
+    pub fn merge_cf(
         &self,
-        options: W,
+        options: &WriteOptions,
         column_family: &ColumnFamilyHandle,
         key: &[u8],
         val: &[u8],
@@ -1013,7 +1008,7 @@ impl<'a> DB<'a> {
         unsafe {
             ll::rocks_db_merge_cf(
                 self.raw(),
-                options.as_ref().raw(),
+                options.raw(),
                 column_family.raw(),
                 key.as_ptr() as *const _,
                 key.len(),
@@ -1033,10 +1028,10 @@ impl<'a> DB<'a> {
     /// Returns OK on success, non-OK on failure.
     ///
     /// Note: consider setting `options.sync = true`.
-    pub fn write<W: AsRef<WriteOptions>>(&self, options: W, updates: WriteBatch) -> Result<()> {
+    pub fn write(&self, options: &WriteOptions, updates: WriteBatch) -> Result<()> {
         let mut status = ptr::null_mut::<ll::rocks_status_t>();
         unsafe {
-            ll::rocks_db_write(self.raw(), options.as_ref().raw(), updates.raw(), &mut status);
+            ll::rocks_db_write(self.raw(), options.raw(), updates.raw(), &mut status);
             Status::from_ll(status)
         }
     }
@@ -2125,7 +2120,7 @@ impl<'a> DB<'a> {
     pub fn get_properties_of_tables_in_range(
         &self,
         column_family: &ColumnFamilyHandle,
-        ranges: Vec<ops::Range<&[u8]>>,
+        ranges: &[ops::Range<&[u8]>],
     ) -> Result<TablePropertiesCollection> {
         let mut status = ptr::null_mut();
         let num_ranges = ranges.len();
@@ -2133,7 +2128,7 @@ impl<'a> DB<'a> {
         let mut start_key_lens = Vec::with_capacity(num_ranges);
         let mut limit_keys = Vec::with_capacity(num_ranges);
         let mut limit_key_lens = Vec::with_capacity(num_ranges);
-        for r in &ranges {
+        for r in ranges {
             start_keys.push(r.start.as_ptr() as *const c_char);
             start_key_lens.push(r.start.len());
             limit_keys.push(r.end.as_ptr() as *const c_char);

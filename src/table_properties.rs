@@ -1,4 +1,4 @@
-//! TableProperties contains a bunch of read-only properties of its associated
+//! contains a bunch of read-only properties of its associated
 //! table.
 
 use std::u32;
@@ -64,6 +64,7 @@ impl TablePropertiesCollection {
     }
 }
 
+#[doc(hidden)]
 pub struct TablePropertiesCollectionIter<'a> {
     raw: *mut ll::rocks_table_props_collection_iter_t,
     size: usize,
@@ -110,6 +111,14 @@ impl<'a> Iterator for TablePropertiesCollectionIter<'a> {
 /// users have to interprete these values by themselves.
 ///
 /// Rust: wraps raw c pointer, and exposes as a `{String => Vec<u8>}` map
+///
+/// Common properties:
+///
+/// * `rocksdb.block.based.table.index.type`
+/// * `rocksdb.block.based.table.prefix.filtering`
+/// * `rocksdb.block.based.table.whole.key.filtering`
+/// * `rocksdb.deleted.keys`
+/// * `rocksdb.merge.operands`
 #[repr(C)]
 pub struct UserCollectedProperties {
     // *std::map<std::string, std::string>
@@ -178,6 +187,7 @@ impl<'a> ops::Index<&'a str> for UserCollectedProperties {
     }
 }
 
+#[doc(hidden)]
 pub struct UserCollectedPropertiesIter<'a> {
     raw: *mut ll::rocks_user_collected_props_iter_t,
     size: usize,
@@ -217,7 +227,7 @@ impl<'a> Iterator for UserCollectedPropertiesIter<'a> {
     }
 }
 
-/// TableProperties contains a bunch of read-only properties of its associated
+/// `TableProperties` contains a bunch of read-only properties of its associated
 /// table.
 #[repr(C)]
 pub struct TableProperties<'a> {
@@ -403,6 +413,7 @@ impl<'a> TableProperties<'a> {
     }
 }
 
+/// Different kinds of entry type of a table
 #[derive(Debug, Copy, Clone, PartialEq, Eq, Hash)]
 #[repr(C)]
 pub enum EntryType {
@@ -416,20 +427,21 @@ pub enum EntryType {
 /// `TablePropertiesCollector` provides the mechanism for users to collect
 /// their own properties that they are interested in. This class is essentially
 /// a collection of callback functions that will be invoked during table
-/// building. It is construced with TablePropertiesCollectorFactory. The methods
+/// building. It is construced with `TablePropertiesCollectorFactory`. The methods
 /// don't need to be thread-safe, as we will create exactly one
-/// TablePropertiesCollector object per table and then call it sequentially
+/// `TablePropertiesCollector` object per table and then call it sequentially
 pub trait TablePropertiesCollector {
     /// AddUserKey() will be called when a new key/value pair is inserted into the
     /// table.
     ///
-    /// @params key    the user key that is inserted into the table.
-    /// @params value  the value that is inserted into the table.
+    /// @params `key`    the user key that is inserted into the table.
+    /// @params `value`  the value that is inserted into the table.
     fn add_user_key(&mut self, key: &[u8], value: &[u8], type_: EntryType, seq: SequenceNumber, file_size: u64);
 
     /// Finish() will be called when a table has already been built and is ready
     /// for writing the properties block.
-    /// @params properties  User will add their collected statistics to
+    ///
+    /// @params `properties`  User will add their collected statistics to
     /// `properties`.
     fn finish(&mut self, properties: &mut UserCollectedProperties);
 
@@ -442,6 +454,7 @@ pub trait TablePropertiesCollector {
     // fn need_compact(&self) -> bool
 }
 
+/// Context of a table properties collector
 #[derive(Debug, Copy, Clone, PartialEq, Eq, Hash)]
 #[repr(C)]
 pub struct Context {
@@ -584,7 +597,7 @@ mod tests {
         assert!(db.flush(&FlushOptions::default().wait(true)).is_ok());
 
         let props =
-            db.get_properties_of_tables_in_range(&db.default_column_family(), vec![b"k4".as_ref()..b"k40".as_ref()]);
+            db.get_properties_of_tables_in_range(&db.default_column_family(), &[b"k4".as_ref()..b"k40".as_ref()]);
         assert!(props.is_ok());
         let props = props.unwrap();
 
@@ -598,6 +611,5 @@ mod tests {
             let user_prop = prop.user_collected_properties();
             assert_eq!(&user_prop["hello"], b"world");
         }
-
     }
 }
