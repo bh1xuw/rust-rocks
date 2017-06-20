@@ -1,6 +1,6 @@
 [package]
 name = "rocks-sys"
-version = "0.0.7"
+version = "0.0.8"
 authors = ["BH1XUW <bh1xuw@gmail.com>"]
 description = "Raw RocksDB bindings for Rust, used internally in rust-rocks"
 repository = "https://github.com/bh1xuw/rust-rocks"
@@ -9,18 +9,6 @@ categories = ["external-ffi-bindings", "database"]
 license = "Apache-2.0"
 
 build = "build.rs"
-
-include = [
-    "**/*.rs",
-    "**/*.h",
-    "**/c.cc",
-    "**/*.cc",
-    "**/*.hpp",
-    "sources.txt",
-    "sources_win32.txt",
-    "sources_posix.txt",
-    "Cargo.toml",
-]
 
 [dependencies]
 
