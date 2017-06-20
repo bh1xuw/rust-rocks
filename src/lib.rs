@@ -10,6 +10,8 @@
 // doc_markdown)]
 //
 
+#![feature(drop_types_in_const)]
+
 #![allow(unused_variables, unused_imports, dead_code)]
 
 extern crate rocks_sys;

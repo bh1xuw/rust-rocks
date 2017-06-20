@@ -2419,6 +2419,19 @@ impl ToRaw<ll::rocks_readoptions_t> for ReadOptions {
 }
 
 impl ReadOptions {
+    /// default `ReadOptions` optimization
+    pub fn default_instance() -> &'static ReadOptions {
+        use std::sync::{Once, ONCE_INIT};
+
+        static START: Once = ONCE_INIT;
+        static mut INSTANCE: ReadOptions = ReadOptions { raw: 0 as _ };
+
+        START.call_once(|| unsafe {
+            INSTANCE = ReadOptions::default();
+        });
+        unsafe { &INSTANCE }
+    }
+
     /// If true, all data read from underlying storage will be
     /// verified against corresponding checksums.
     ///
@@ -2637,6 +2650,17 @@ impl ToRaw<ll::rocks_writeoptions_t> for WriteOptions {
 }
 
 impl WriteOptions {
+    /// default `WriteOptions` optimization
+    pub fn default_instance() -> &'static WriteOptions {
+        use std::sync::{Once, ONCE_INIT};
+
+        static START: Once = ONCE_INIT;
+        static mut INSTANCE: WriteOptions = WriteOptions { raw: 0 as _ };
+
+        START.call_once(|| unsafe { INSTANCE = WriteOptions { raw: ll::rocks_writeoptions_create() } });
+        unsafe { &INSTANCE }
+    }
+
     /// If true, the write will be flushed from the operating system
     /// buffer cache (by calling WritableFile::Sync()) before the write
     /// is considered complete.  If this flag is true, writes will be
@@ -2961,6 +2985,20 @@ mod tests {
         let val = db.get(&ReadOptions::default().read_tier(ReadTier::BlockCacheTier), b"long-key");
         assert!(val.is_ok());
     }
+
+    #[test]
+    fn default_instance() {
+        let w1 = WriteOptions::default_instance();
+        let w2 = WriteOptions::default_instance();
+
+        assert_eq!(w1.raw, w2.raw);
+
+        let w1 = ReadOptions::default_instance();
+        let w2 = ReadOptions::default_instance();
+
+        assert_eq!(w1.raw, w2.raw);
+    }
+
 
     #[test]
     fn compact_range_options() {

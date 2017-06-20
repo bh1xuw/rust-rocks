@@ -3034,7 +3034,7 @@ mod tests {
             let val = format!("v{}", i * i);
             let value: String = iter::repeat(val).take(i * i).collect::<Vec<_>>().concat();
 
-            db.put(&WriteOptions::default(), key.as_bytes(), value.as_bytes())
+            db.put(WriteOptions::default_instance(), key.as_bytes(), value.as_bytes())
                 .unwrap();
 
             if i % 6 == 0 {

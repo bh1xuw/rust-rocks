@@ -69,79 +69,67 @@ pub mod c {
     use super::*;
 
     #[no_mangle]
-    pub extern "C" fn rust_comparator_compare(cp: *mut (), a: *const &[u8], b: *const &[u8]) -> c_int {
-        unsafe {
-            let comparator = cp as *mut Box<Comparator>;
-            // FIXME: 8 byte Ordering
-            mem::transmute::<_, i8>((*comparator).compare(*a, *b)) as c_int
-        }
+    pub unsafe extern "C" fn rust_comparator_compare(cp: *mut (), a: *const &[u8], b: *const &[u8]) -> c_int {
+        let comparator = cp as *mut Box<Comparator>;
+        // FIXME: 8 byte Ordering
+        mem::transmute::<_, i8>((*comparator).compare(*a, *b)) as c_int
     }
 
 
     #[no_mangle]
-    pub extern "C" fn rust_comparator_equal(cp: *mut (), a: *const &[u8], b: *const &[u8]) -> c_char {
-        unsafe {
-            let comparator = cp as *mut Box<Comparator>;
-            ((*comparator).equal(*a, *b)) as c_char
-        }
+    pub unsafe extern "C" fn rust_comparator_equal(cp: *mut (), a: *const &[u8], b: *const &[u8]) -> c_char {
+        let comparator = cp as *mut Box<Comparator>;
+        ((*comparator).equal(*a, *b)) as c_char
     }
 
 
     #[no_mangle]
-    pub extern "C" fn rust_comparator_name(cp: *mut ()) -> *const c_char {
-        unsafe {
-            let comparator = cp as *mut Box<Comparator>;
-            (*comparator).name().as_ptr() as *const _
-        }
+    pub unsafe extern "C" fn rust_comparator_name(cp: *mut ()) -> *const c_char {
+        let comparator = cp as *mut Box<Comparator>;
+        (*comparator).name().as_ptr() as *const _
     }
 
     #[no_mangle]
-    pub extern "C" fn rust_comparator_find_shortest_separator(
+    pub unsafe extern "C" fn rust_comparator_find_shortest_separator(
         cp: *mut (),
         start: *mut (), // std::string*
         limit: *const &[u8],
     ) {
         // Slice&
-        unsafe {
-            let comparator = cp as *mut Box<Comparator>;
+        let comparator = cp as *mut Box<Comparator>;
 
-            let start_ptr = ll::cxx_string_data(start as *const _);
-            let start_len = ll::cxx_string_size(start as *const _);
+        let start_ptr = ll::cxx_string_data(start as *const _);
+        let start_len = ll::cxx_string_size(start as *const _);
 
-            let ret =
-                (*comparator).find_shortest_separator(slice::from_raw_parts(start_ptr as *const _, start_len), *limit);
-            if let Some(new_start) = ret {
-                ll::cxx_string_assign(start as *mut _, new_start.as_ptr() as *const _, new_start.len())
-            }
+        let ret =
+            (*comparator).find_shortest_separator(slice::from_raw_parts(start_ptr as *const _, start_len), *limit);
+        if let Some(new_start) = ret {
+            ll::cxx_string_assign(start as *mut _, new_start.as_ptr() as *const _, new_start.len())
         }
     }
 
 
 
     #[no_mangle]
-    pub extern "C" fn rust_comparator_find_short_successor(cp: *mut (), key: *mut ()) {
+    pub unsafe extern "C" fn rust_comparator_find_short_successor(cp: *mut (), key: *mut ()) {
         // std::string*
-        unsafe {
-            let comparator = cp as *mut Box<Comparator>;
+        let comparator = cp as *mut Box<Comparator>;
 
-            let key_ptr = ll::cxx_string_data(key as *const _);
-            let key_len = ll::cxx_string_size(key as *const _);
+        let key_ptr = ll::cxx_string_data(key as *const _);
+        let key_len = ll::cxx_string_size(key as *const _);
 
-            let ret = (*comparator).find_short_successor(slice::from_raw_parts(key_ptr as *const _, key_len));
-            if let Some(new_key) = ret {
-                ll::cxx_string_assign(key as *mut _, new_key.as_ptr() as *const _, new_key.len());
-            }
+        let ret = (*comparator).find_short_successor(slice::from_raw_parts(key_ptr as *const _, key_len));
+        if let Some(new_key) = ret {
+            ll::cxx_string_assign(key as *mut _, new_key.as_ptr() as *const _, new_key.len());
         }
     }
 
 
     #[no_mangle]
-    pub extern "C" fn rust_comparator_drop(op: *mut ()) {
+    pub unsafe extern "C" fn rust_comparator_drop(op: *mut ()) {
         assert!(!op.is_null());
-        unsafe {
-            let operator = op as *mut Box<Comparator>;
-            Box::from_raw(operator);
-        }
+        let operator = op as *mut Box<Comparator>;
+        Box::from_raw(operator);
     }
 }
 

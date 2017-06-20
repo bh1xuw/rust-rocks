@@ -54,7 +54,7 @@ impl TablePropertiesCollection {
         self.len() == 0
     }
 
-    pub fn iter<'a>(&'a self) -> TablePropertiesCollectionIter<'a> {
+    pub fn iter(&self) -> TablePropertiesCollectionIter {
         TablePropertiesCollectionIter {
             raw: unsafe { ll::rocks_table_props_collection_iter_create(self.raw) },
             size: self.len(),
@@ -158,7 +158,7 @@ impl UserCollectedProperties {
         self.len() == 0
     }
 
-    pub fn iter<'a>(&'a self) -> UserCollectedPropertiesIter<'a> {
+    pub fn iter(&self) -> UserCollectedPropertiesIter {
         UserCollectedPropertiesIter {
             raw: unsafe { ll::rocks_user_collected_props_iter_create(self.raw()) },
             size: self.len(),
@@ -401,14 +401,14 @@ impl<'a> TableProperties<'a> {
     pub fn user_collected_properties(&self) -> &UserCollectedProperties {
         unsafe {
             let raw_ptr = ll::rocks_table_props_get_user_collected_properties(self.raw);
-            mem::transmute(raw_ptr)
+            &*(raw_ptr as *const UserCollectedProperties)
         }
     }
 
     pub fn readable_properties(&self) -> &UserCollectedProperties {
         unsafe {
             let raw_ptr = ll::rocks_table_props_get_readable_properties(self.raw);
-            mem::transmute(raw_ptr)
+            &*(raw_ptr as *const UserCollectedProperties)
         }
     }
 }
