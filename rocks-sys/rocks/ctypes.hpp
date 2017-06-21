@@ -382,6 +382,10 @@ struct rocks_table_props_collector_t : public TablePropertiesCollector {
   UserCollectedProperties GetReadableProperties() const override {
     return UserCollectedProperties{};
   }
+
+  bool NeedCompact() const override {
+    return rust_table_props_collector_need_compact(this->obj);
+  }
 };
 
 struct rocks_table_props_collector_factory_t

@@ -450,8 +450,18 @@ pub trait TablePropertiesCollector {
         "RustTablePropertiesCollector\0"
     }
 
-    // fn get_readable_properties() -> UserCollectedProperties
-    // fn need_compact(&self) -> bool
+    /// Return the human-readable properties, where the key is property name and
+    /// the value is the human-readable form of value.
+    ///
+    /// TODO:
+    fn readable_properties(&self) -> Vec<(String, String)> {
+        vec![]
+    }
+
+    /// Return whether the output file should be further compacted
+    fn need_compact(&self) -> bool {
+        false
+    }
 }
 
 /// Context of a table properties collector
@@ -476,7 +486,7 @@ pub trait TablePropertiesCollectorFactory {
 #[doc(hidden)]
 pub mod c {
     use std::mem;
-    use std::os::raw::{c_int, c_char};
+    use std::os::raw::{c_int, c_char, c_uchar};
 
     use super::*;
 
@@ -506,6 +516,13 @@ pub mod c {
         assert!(!c.is_null());
         let collector = c as *mut Box<TablePropertiesCollector>;
         (*collector).name().as_ptr() as *const _
+    }
+
+    #[no_mangle]
+    pub unsafe extern "C" fn rust_table_props_collector_need_compact(c: *mut ()) -> c_uchar {
+        assert!(!c.is_null());
+        let collector = c as *mut Box<TablePropertiesCollector>;
+        (*collector).need_compact() as c_uchar
     }
 
     // yes, will be called :)

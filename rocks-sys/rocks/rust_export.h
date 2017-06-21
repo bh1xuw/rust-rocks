@@ -95,6 +95,8 @@ extern void rust_table_props_collector_finish(void* c,
 
 extern const char* rust_table_props_collector_name(void* c);
 
+extern unsigned char rust_table_props_collector_need_compact(void* c);
+
 extern void rust_table_props_collector_drop(void* c);
 
 // *mut TablePropertiesCollector
