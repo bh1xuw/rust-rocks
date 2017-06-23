@@ -10,12 +10,11 @@
 // doc_markdown)]
 //
 
-#![feature(drop_types_in_const)]
-
 #![allow(unused_variables, unused_imports, dead_code)]
 
+#[macro_use]
+extern crate lazy_static;
 extern crate rocks_sys;
-
 #[cfg(test)]
 extern crate tempdir;
 
@@ -25,7 +24,6 @@ pub use error::Status;
 
 /// The result type returned by RocksDB, wraps Status
 pub type Result<T> = result::Result<T, Status>;
-
 
 pub mod advanced_options;
 pub mod cache;

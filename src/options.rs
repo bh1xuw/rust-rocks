@@ -30,6 +30,16 @@ use table_properties::TablePropertiesCollectorFactory;
 
 use to_raw::ToRaw;
 
+lazy_static! {
+    static ref READ_OPTIONS: ReadOptions = {
+        ReadOptions::default()
+    };
+    static ref WRITE_OPTIONS: WriteOptions = {
+        WriteOptions::default()
+    };
+}
+
+
 /// DB contents are stored in a set of blocks, each of which holds a
 /// sequence of key,value pairs.  Each block may be compressed before
 /// being stored in a file.  The following enum describes which
@@ -2421,15 +2431,7 @@ impl ToRaw<ll::rocks_readoptions_t> for ReadOptions {
 impl ReadOptions {
     /// default `ReadOptions` optimization
     pub fn default_instance() -> &'static ReadOptions {
-        use std::sync::{Once, ONCE_INIT};
-
-        static START: Once = ONCE_INIT;
-        static mut INSTANCE: ReadOptions = ReadOptions { raw: 0 as _ };
-
-        START.call_once(|| unsafe {
-            INSTANCE = ReadOptions::default();
-        });
-        unsafe { &INSTANCE }
+        &*READ_OPTIONS
     }
 
     /// If true, all data read from underlying storage will be
@@ -2618,6 +2620,8 @@ impl Default for ReadOptions {
     }
 }
 
+unsafe impl Sync for ReadOptions {}
+
 /// Options that control write operations
 pub struct WriteOptions {
     raw: *mut ll::rocks_writeoptions_t,
@@ -2652,13 +2656,7 @@ impl ToRaw<ll::rocks_writeoptions_t> for WriteOptions {
 impl WriteOptions {
     /// default `WriteOptions` optimization
     pub fn default_instance() -> &'static WriteOptions {
-        use std::sync::{Once, ONCE_INIT};
-
-        static START: Once = ONCE_INIT;
-        static mut INSTANCE: WriteOptions = WriteOptions { raw: 0 as _ };
-
-        START.call_once(|| unsafe { INSTANCE = WriteOptions { raw: ll::rocks_writeoptions_create() } });
-        unsafe { &INSTANCE }
+        &*WRITE_OPTIONS
     }
 
     /// If true, the write will be flushed from the operating system
@@ -2714,6 +2712,8 @@ impl WriteOptions {
         self
     }
 }
+
+unsafe impl Sync for WriteOptions {}
 
 /// Options that control flush operations
 #[repr(C)]
