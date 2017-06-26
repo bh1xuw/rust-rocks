@@ -652,10 +652,9 @@ void rocks_db_compact_range_cf_opt(rocks_db_t* db,
   SaveError(status, std::move(st));
 }
 
-const char* rocks_db_get_name(rocks_db_t* db, size_t* len) {
+void rocks_db_get_name(rocks_db_t* db, void* s) {
   auto name = db->rep->GetName();
-  *len = name.size();
-  return name.data();
+  rust_string_assign(s, name.data(), name.size());
 }
 
 void rocks_db_flush(rocks_db_t* db, rocks_flushoptions_t* options,

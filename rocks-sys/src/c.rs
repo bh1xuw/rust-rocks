@@ -1547,8 +1547,8 @@ extern "C" {
                                                       size: *mut u64);
 }
 extern "C" {
-    pub fn rocks_db_get_name(db: *mut rocks_db_t, len: *mut usize)
-     -> *const ::std::os::raw::c_char;
+    pub fn rocks_db_get_name(db: *mut rocks_db_t,
+                             s: *mut ::std::os::raw::c_void);
 }
 extern "C" {
     pub fn rocks_db_flush(db: *mut rocks_db_t,

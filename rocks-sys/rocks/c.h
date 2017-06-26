@@ -940,7 +940,7 @@ void rocks_db_get_approximate_memtable_stats_cf(
     const char* range_limit_ptr, size_t range_limit_len, uint64_t* count,
     uint64_t* size);
 
-const char* rocks_db_get_name(rocks_db_t* db, size_t* len);
+void rocks_db_get_name(rocks_db_t* db, void* s);
 
 void rocks_db_flush(rocks_db_t* db, rocks_flushoptions_t* options,
                     rocks_status_t** status);

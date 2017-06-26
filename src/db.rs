@@ -1719,12 +1719,12 @@ impl<'a> DB<'a> {
 
     /// Get DB name -- the exact same name that was provided as an argument to
     /// `DB::Open()`
-    pub fn name(&self) -> &str {
-        let mut len = 0;
+    pub fn name(&self) -> String {
+        let mut name = String::new();
         unsafe {
-            let ptr = ll::rocks_db_get_name(self.raw(), &mut len);
-            str::from_utf8_unchecked(slice::from_raw_parts(ptr as *const _, len))
+            ll::rocks_db_get_name(self.raw(), &mut name as *mut String as *mut c_void);
         }
+        name
     }
 
     // TODO:
