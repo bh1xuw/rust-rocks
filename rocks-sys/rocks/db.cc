@@ -343,37 +343,36 @@ void rocks_db_multi_get_cf(
 unsigned char rocks_db_key_may_exist(rocks_db_t* db,
                                      const rocks_readoptions_t* options,
                                      const char* key, size_t key_len,
-                                     char** value, size_t* value_len,
+                                     void* value,  // *mut Vec<u8>
                                      unsigned char* value_found) {
   bool found;
   std::string val;
-  bool ret =
+  bool has_value =
       db->rep->KeyMayExist(options->rep, Slice(key, key_len), &val, &found);
-  if (ret && value != nullptr) {
-    *value_len = val.size();
-    *value = CopyString(val);
+  if (has_value && value != nullptr) {
+    rust_vec_u8_assign(value, val.data(), val.size());
   }
   if (value_found != nullptr) {
     *value_found = found;
   }
-  return ret;
+  return has_value;
 }
 
 unsigned char rocks_db_key_may_exist_cf(
     rocks_db_t* db, const rocks_readoptions_t* options,
     const rocks_column_family_handle_t* column_family, const char* key,
-    size_t key_len, char** value, size_t* value_len,
+    size_t key_len,
+    void* value,  // *mut Vec<u8>
     unsigned char* value_found) {
   if (value_found != nullptr) {
     std::string val;
-    bool ret =
+    bool has_value =
         db->rep->KeyMayExist(options->rep, column_family->rep,
                              Slice(key, key_len), &val, (bool*)value_found);
-    if (ret) {
-      *value_len = val.size();
-      *value = CopyString(val);
+    if (has_value && value_found != nullptr) {
+      rust_vec_u8_assign(value, val.data(), val.size());
     }
-    return ret;
+    return has_value;
   } else {
     return db->rep->KeyMayExist(options->rep, column_family->rep,
                                 Slice(key, key_len), nullptr);

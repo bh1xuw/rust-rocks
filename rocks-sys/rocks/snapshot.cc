@@ -14,8 +14,11 @@ const rocks_snapshot_t* rocks_create_snapshot(rocks_db_t* db) {
   return result;
 }
 
-void rocks_release_snapshot(rocks_db_t* db, const rocks_snapshot_t* snapshot) {
+void rocks_snapshot_destroy(rocks_snapshot_t* snapshot) { delete snapshot; }
+
+void rocks_release_snapshot(rocks_db_t* db, rocks_snapshot_t* snapshot) {
   db->rep->ReleaseSnapshot(snapshot->rep);
+  snapshot->rep = nullptr;
   delete snapshot;
 }
 

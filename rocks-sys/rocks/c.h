@@ -824,14 +824,12 @@ void rocks_db_multi_get_cf(
 unsigned char rocks_db_key_may_exist(rocks_db_t* db,
                                      const rocks_readoptions_t* options,
                                      const char* key, size_t key_len,
-                                     char** value, size_t* value_len,
-                                     unsigned char* value_found);
+                                     void* value, unsigned char* value_found);
 
 unsigned char rocks_db_key_may_exist_cf(
     rocks_db_t* db, const rocks_readoptions_t* options,
     const rocks_column_family_handle_t* column_family, const char* key,
-    size_t key_len, char** value, size_t* value_len,
-    unsigned char* value_found);
+    size_t key_len, void* value, unsigned char* value_found);
 
 rocks_iterator_t* rocks_db_create_iterator(rocks_db_t* db,
                                            const rocks_readoptions_t* options);
@@ -1070,6 +1068,8 @@ int rocks_logger_get_log_level(rocks_logger_t* logger);
 /* snapshot.h */
 
 const rocks_snapshot_t* rocks_create_snapshot(rocks_db_t* db);
+
+void rocks_snapshot_destroy(rocks_snapshot_t* snapshot);
 
 void rocks_release_snapshot(rocks_db_t* db, const rocks_snapshot_t* snapshot);
 

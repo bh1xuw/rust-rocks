@@ -31,10 +31,10 @@ use table_properties::TablePropertiesCollectorFactory;
 use to_raw::ToRaw;
 
 lazy_static! {
-    static ref READ_OPTIONS: ReadOptions = {
+    static ref DEFAULT_READ_OPTIONS: ReadOptions = {
         ReadOptions::default()
     };
-    static ref WRITE_OPTIONS: WriteOptions = {
+    static ref DEFAULT_WRITE_OPTIONS: WriteOptions = {
         WriteOptions::default()
     };
 }
@@ -225,6 +225,7 @@ impl ColumnFamilyOptions {
     /// comparator provided to previous open calls on the same DB.
     pub fn comparator(self, val: Box<Comparator>) -> Self {
         unsafe {
+            // FIXME: mem leaks
             let raw_ptr = Box::into_raw(Box::new(val)); // Box<Box<Comparator>>
             ll::rocks_cfoptions_set_comparator_by_trait(self.raw, raw_ptr as *mut _);
         }
@@ -286,6 +287,7 @@ impl ColumnFamilyOptions {
     /// Default: nullptr
     pub fn compaction_filter(self, filter: Box<CompactionFilter + Sync>) -> Self {
         unsafe {
+            // FIXME: mem leaks
             let raw_ptr = Box::into_raw(Box::new(filter)); // Box<Box<CompactionFilter>>
             ll::rocks_cfoptions_set_compaction_filter_by_trait(self.raw, raw_ptr as *mut _);
         }
@@ -2431,7 +2433,7 @@ impl ToRaw<ll::rocks_readoptions_t> for ReadOptions {
 impl ReadOptions {
     /// default `ReadOptions` optimization
     pub fn default_instance() -> &'static ReadOptions {
-        &*READ_OPTIONS
+        &*DEFAULT_READ_OPTIONS
     }
 
     /// If true, all data read from underlying storage will be
@@ -2656,11 +2658,11 @@ impl ToRaw<ll::rocks_writeoptions_t> for WriteOptions {
 impl WriteOptions {
     /// default `WriteOptions` optimization
     pub fn default_instance() -> &'static WriteOptions {
-        &*WRITE_OPTIONS
+        &*DEFAULT_WRITE_OPTIONS
     }
 
     /// If true, the write will be flushed from the operating system
-    /// buffer cache (by calling WritableFile::Sync()) before the write
+    /// buffer cache (by calling `WritableFile::Sync()`) before the write
     /// is considered complete.  If this flag is true, writes will be
     /// slower.
     ///
@@ -2670,9 +2672,9 @@ impl WriteOptions {
     /// lost even if sync==false.
     ///
     /// In other words, a DB write with sync==false has similar
-    /// crash semantics as the "write()" system call.  A DB write
-    /// with sync==true has similar crash semantics to a "write()"
-    /// system call followed by "fdatasync()".
+    /// crash semantics as the "`write()`" system call.  A DB write
+    /// with `sync==true` has similar crash semantics to a "`write()`"
+    /// system call followed by "`fdatasync()`".
     ///
     /// Default: false
     pub fn sync(self, val: bool) -> Self {

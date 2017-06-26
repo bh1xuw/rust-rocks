@@ -315,15 +315,13 @@ impl<'a, 'b: 'a> ColumnFamilyHandle<'a, 'b> {
                 key.len(),
                 ptr::null_mut(),
                 ptr::null_mut(),
-                ptr::null_mut(),
             ) != 0
         }
     }
 
-    pub fn key_may_get(&self, options: &ReadOptions, key: &[u8]) -> (bool, Option<CVec<u8>>) {
+    pub fn key_may_get(&self, options: &ReadOptions, key: &[u8]) -> (bool, Option<Vec<u8>>) {
         let mut found = 0;
-        let mut value: *mut c_char = ptr::null_mut();
-        let mut value_len: usize = 0;
+        let mut value: Vec<u8> = vec![];
         unsafe {
             let ret = ll::rocks_db_key_may_exist_cf(
                 self.db.raw,
@@ -331,8 +329,7 @@ impl<'a, 'b: 'a> ColumnFamilyHandle<'a, 'b> {
                 self.raw(),
                 key.as_ptr() as *const _,
                 key.len(),
-                &mut value,
-                &mut value_len,
+                &mut value as *mut Vec<u8> as *mut c_void,
                 &mut found,
             );
             if ret == 0 {
@@ -340,7 +337,7 @@ impl<'a, 'b: 'a> ColumnFamilyHandle<'a, 'b> {
             } else if found == 0 {
                 (true, None)
             } else {
-                (true, Some(CVec::from_raw_parts(value as *mut _, value_len)))
+                (true, Some(value))
             }
         }
 
@@ -1190,23 +1187,20 @@ impl<'a> DB<'a> {
                 key.len(),
                 ptr::null_mut(),
                 ptr::null_mut(),
-                ptr::null_mut(),
             ) != 0
         }
     }
 
-    pub fn key_may_get(&self, options: &ReadOptions, key: &[u8]) -> (bool, Option<CVec<u8>>) {
+    pub fn key_may_get(&self, options: &ReadOptions, key: &[u8]) -> (bool, Option<Vec<u8>>) {
         let mut found = 0;
-        let mut value: *mut c_char = ptr::null_mut();
-        let mut value_len: usize = 0;
+        let mut value: Vec<u8> = vec![];
         unsafe {
             let ret = ll::rocks_db_key_may_exist(
                 self.raw(),
                 options.raw(),
                 key.as_ptr() as *const _,
                 key.len(),
-                &mut value,
-                &mut value_len,
+                &mut value as *mut Vec<u8> as *mut c_void,
                 &mut found,
             );
             if ret == 0 {
@@ -1214,7 +1208,7 @@ impl<'a> DB<'a> {
             } else if found == 0 {
                 (true, None)
             } else {
-                (true, Some(CVec::from_raw_parts(value as *mut _, value_len)))
+                (true, Some(value))
             }
         }
     }
@@ -1229,7 +1223,6 @@ impl<'a> DB<'a> {
                 key.len(),
                 ptr::null_mut(),
                 ptr::null_mut(),
-                ptr::null_mut(),
             ) != 0
         }
     }
@@ -1239,10 +1232,9 @@ impl<'a> DB<'a> {
         options: &ReadOptions,
         column_family: &ColumnFamilyHandle,
         key: &[u8],
-    ) -> (bool, Option<CVec<u8>>) {
+    ) -> (bool, Option<Vec<u8>>) {
         let mut found = 0;
-        let mut value: *mut c_char = ptr::null_mut();
-        let mut value_len: usize = 0;
+        let mut value: Vec<u8> = vec![];
         unsafe {
             let ret = ll::rocks_db_key_may_exist_cf(
                 self.raw(),
@@ -1250,8 +1242,7 @@ impl<'a> DB<'a> {
                 column_family.raw(),
                 key.as_ptr() as *const _,
                 key.len(),
-                &mut value,
-                &mut value_len,
+                &mut value as *mut Vec<u8> as *mut c_void,
                 &mut found,
             );
             if ret == 0 {
@@ -1259,7 +1250,7 @@ impl<'a> DB<'a> {
             } else if found == 0 {
                 (true, None)
             } else {
-                (true, Some(CVec::from_raw_parts(value as *mut _, value_len)))
+                (true, Some(value))
             }
         }
     }
@@ -2610,6 +2601,7 @@ mod tests {
             if i == 50 {
                 let s = db.get_snapshot();
                 assert!(s.is_some());
+                db.release_snapshot(s.unwrap());
             }
 
             db.put(&WriteOptions::default(), key.as_bytes(), value.as_bytes())
@@ -2690,6 +2682,9 @@ mod tests {
             db.get_aggregated_int_property("rocksdb.size-all-mem-tables")
                 .unwrap() > 2 * 1024 * 1024
         );
+
+        db.release_snapshot(snap.unwrap());
+
     }
 
     #[test]

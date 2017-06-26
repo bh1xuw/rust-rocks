@@ -1322,8 +1322,7 @@ extern "C" {
                                   options: *const rocks_readoptions_t,
                                   key: *const ::std::os::raw::c_char,
                                   key_len: usize,
-                                  value: *mut *mut ::std::os::raw::c_char,
-                                  value_len: *mut usize,
+                                  value: *mut ::std::os::raw::c_void,
                                   value_found: *mut ::std::os::raw::c_uchar)
      -> ::std::os::raw::c_uchar;
 }
@@ -1334,8 +1333,7 @@ extern "C" {
                                          *const rocks_column_family_handle_t,
                                      key: *const ::std::os::raw::c_char,
                                      key_len: usize,
-                                     value: *mut *mut ::std::os::raw::c_char,
-                                     value_len: *mut usize,
+                                     value: *mut ::std::os::raw::c_void,
                                      value_found:
                                          *mut ::std::os::raw::c_uchar)
      -> ::std::os::raw::c_uchar;
@@ -1792,6 +1790,9 @@ extern "C" {
 extern "C" {
     pub fn rocks_create_snapshot(db: *mut rocks_db_t)
      -> *const rocks_snapshot_t;
+}
+extern "C" {
+    pub fn rocks_snapshot_destroy(snapshot: *mut rocks_snapshot_t);
 }
 extern "C" {
     pub fn rocks_release_snapshot(db: *mut rocks_db_t,

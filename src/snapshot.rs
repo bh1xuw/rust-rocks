@@ -2,6 +2,7 @@
 
 use std::fmt;
 use std::mem;
+use std::ptr;
 use std::ops;
 use std::marker::PhantomData;
 
@@ -58,8 +59,6 @@ impl<'a> Snapshot<'a> {
         unsafe { ll::rocks_snapshot_get_sequence_number(self.raw).into() }
     }
 }
-
-
 
 /// Simple RAII wrapper class for Snapshot.
 /// Constructing this object will create a snapshot.  Destructing will

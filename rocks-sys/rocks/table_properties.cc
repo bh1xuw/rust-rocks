@@ -157,7 +157,8 @@ void rocks_user_collected_props_insert(rocks_user_collected_props_t* prop,
                                        const char* key_ptr, size_t key_len,
                                        const char* val_ptr, size_t val_len) {
   auto user_prop = reinterpret_cast<UserCollectedProperties*>(prop);
-  user_prop->emplace(std::make_pair(std::string(key_ptr, key_len), std::string(val_ptr, val_len)));
+  user_prop->emplace(std::make_pair(std::string(key_ptr, key_len),
+                                    std::string(val_ptr, val_len)));
 }
 
 size_t rocks_user_collected_props_size(rocks_user_collected_props_t* prop) {

@@ -59,6 +59,15 @@ impl ToRaw<ll::rocks_block_based_table_options_t> for BlockBasedTableOptions {
     }
 }
 
+impl Drop for BlockBasedTableOptions {
+    /// since underlying C++ use shared_ptr, ok to have rust free one.
+    fn drop(&mut self) {
+        unsafe {
+            ll::rocks_block_based_table_options_destroy(self.raw);
+        }
+    }
+}
+
 impl BlockBasedTableOptions {
     // `flush_block_policy_factory` creates the instances of flush block policy.
     // which provides a configurable way to determine when to flush a block in

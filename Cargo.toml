@@ -28,3 +28,9 @@ tempdir = "0.3"
 [features]
 default = []
 static-link = ["rocks-sys/static-link"]
+
+[profile.dev]
+opt-level = 1
+
+[profile.test]
+opt-level = 1
