@@ -1440,9 +1440,6 @@ impl DBOptions {
         unsafe {
             if let Some(limiter) = val {
                 ll::rocks_dboptions_set_ratelimiter(self.raw, limiter.raw());
-                mem::forget(limiter); // FIXME: leaks? or not
-            // since the inner RateLimiter will be freed by DBImpl::~DBImpl()
-            // outer rocks_ratelimiter_t leaks.
             } else {
                 ll::rocks_dboptions_set_ratelimiter(self.raw, ptr::null_mut());
             }
