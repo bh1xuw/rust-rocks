@@ -152,6 +152,8 @@ struct rocks_comparator_t : public Comparator {
 
   rocks_comparator_t(void* trait_obj) : obj(trait_obj) {}
 
+  // FIXME: since Options->comparator is a raw pointer
+  //  this may not be called
   ~rocks_comparator_t() { rust_comparator_drop(this->obj); }
 
   int Compare(const Slice& a, const Slice& b) const override {
@@ -176,7 +178,7 @@ struct rocks_comparator_t : public Comparator {
 
 /* rate_limiter */
 struct rocks_ratelimiter_t {
-  RateLimiter* rep;
+  shared_ptr<RateLimiter> rep;
 };
 
 /* env */

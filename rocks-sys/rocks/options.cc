@@ -462,7 +462,7 @@ void rocks_dboptions_set_env(rocks_dboptions_t* opt, rocks_env_t* env) {
 void rocks_dboptions_set_ratelimiter(rocks_dboptions_t* opt,
                                      rocks_ratelimiter_t* limiter) {
   if (limiter != nullptr) {
-    opt->rep.rate_limiter.reset(limiter->rep);
+    opt->rep.rate_limiter.swap(limiter->rep);
   } else {
     opt->rep.rate_limiter.reset((RateLimiter*)nullptr);
   }

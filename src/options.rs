@@ -225,7 +225,8 @@ impl ColumnFamilyOptions {
     /// comparator provided to previous open calls on the same DB.
     pub fn comparator(self, val: Box<Comparator>) -> Self {
         unsafe {
-            // FIXME: mem leaks
+            // FIXME: mem leaks, CFOptions.comparator is a raw pointer,
+            // not a shared_ptr
             let raw_ptr = Box::into_raw(Box::new(val)); // Box<Box<Comparator>>
             ll::rocks_cfoptions_set_comparator_by_trait(self.raw, raw_ptr as *mut _);
         }
@@ -288,6 +289,7 @@ impl ColumnFamilyOptions {
     pub fn compaction_filter(self, filter: Box<CompactionFilter + Sync>) -> Self {
         unsafe {
             // FIXME: mem leaks
+            // CFOptions.compaction_filter is a raw pointer
             let raw_ptr = Box::into_raw(Box::new(filter)); // Box<Box<CompactionFilter>>
             ll::rocks_cfoptions_set_compaction_filter_by_trait(self.raw, raw_ptr as *mut _);
         }
