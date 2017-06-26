@@ -164,24 +164,61 @@ impl CacheBuilder {
     }
 }
 
+#[cfg(test)]
+mod tests {
+    use std::iter;
 
-#[test]
-fn test_cache_lru() {
-    let mut lru_cache = CacheBuilder::new_lru(1024)
-        .high_pri_pool_ratio(0.3)
-        .build()
-        .unwrap();
-    assert_eq!(lru_cache.name(), "LRUCache");
-    assert_eq!(lru_cache.get_capacity(), 1024);
-    lru_cache.set_capacity(512);
-    assert_eq!(lru_cache.get_capacity(), 512);
-    assert!(lru_cache.get_usage() == 0);
-}
+    use super::*;
+    use super::super::rocksdb::*;
 
+    #[test]
+    fn cache_lru() {
+        let mut lru_cache = CacheBuilder::new_lru(1024)
+            .high_pri_pool_ratio(0.3)
+            .build()
+            .unwrap();
+        assert_eq!(lru_cache.name(), "LRUCache");
+        assert_eq!(lru_cache.get_capacity(), 1024);
+        lru_cache.set_capacity(512);
+        assert_eq!(lru_cache.get_capacity(), 512);
+        assert!(lru_cache.get_usage() == 0);
+    }
 
-#[test]
-fn test_cache_clock() {
-    let clk_cache = CacheBuilder::new_clock(1024).build();
-    // not supported yet?
-    assert!(clk_cache.is_none());
+    #[test]
+    fn lru_cache_db() {
+        let tmp_dir = ::tempdir::TempDir::new_in("", "rocks").unwrap();
+        let db = {
+            let lru_cache = CacheBuilder::new_lru(1024)
+                .high_pri_pool_ratio(0.3)
+                .build()
+                .unwrap();
+            DB::open(
+                Options::default()
+                    .map_db_options(|db| db.create_if_missing(true).row_cache(Some(lru_cache)))
+                    .map_cf_options(|cf| cf.disable_auto_compactions(true)), // disable
+                &tmp_dir,
+            ).unwrap()
+        };
+
+        for i in 0..100 {
+            let key = format!("k{}", i);
+            let val = format!("v{}", i * i);
+            let value: String = iter::repeat(val).take(i * i).collect::<Vec<_>>().concat();
+
+            db.put(WriteOptions::default_instance(), key.as_bytes(), value.as_bytes())
+                .unwrap();
+
+            if i % 6 == 0 {
+                assert!(db.flush(&FlushOptions::default().wait(true)).is_ok());
+            }
+        }
+
+        for i in 0..100 {
+            let key = format!("k{}", i);
+            assert!(
+                db.get(ReadOptions::default_instance(), key.as_bytes())
+                    .is_ok()
+            );
+        }
+    }
 }

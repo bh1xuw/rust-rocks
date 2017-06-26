@@ -2217,6 +2217,8 @@ impl DBOptions {
     /// Default: nullptr (disabled)
     ///
     /// Not supported in ROCKSDB_LITE mode!
+    ///
+    /// Rust: will move in and use share_ptr
     pub fn row_cache(self, val: Option<Cache>) -> Self {
         unsafe {
             if let Some(cache) = val {
@@ -2432,6 +2434,7 @@ impl ToRaw<ll::rocks_readoptions_t> for ReadOptions {
 
 impl ReadOptions {
     /// default `ReadOptions` optimization
+    #[inline]
     pub fn default_instance() -> &'static ReadOptions {
         &*DEFAULT_READ_OPTIONS
     }
@@ -2657,6 +2660,7 @@ impl ToRaw<ll::rocks_writeoptions_t> for WriteOptions {
 
 impl WriteOptions {
     /// default `WriteOptions` optimization
+    #[inline]
     pub fn default_instance() -> &'static WriteOptions {
         &*DEFAULT_WRITE_OPTIONS
     }
