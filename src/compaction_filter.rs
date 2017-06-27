@@ -1,21 +1,9 @@
 //! `CompactionFilter` allows an application to modify/delete a key-value at
 //! the time of compaction.
 
-use std::os::raw::{c_int, c_char};
+use std::os::raw::{c_int, c_char, c_uchar};
 
 use rocks_sys as ll;
-
-/// Context information of a compaction run
-#[repr(C)]
-pub struct Context {
-    /// Does this compaction run include all data files
-    pub is_full_compaction: bool,
-    /// Is this compaction requested by the client (true),
-    /// or is it occurring as an automatic compaction process
-    pub is_manual_compaction: bool,
-    /// Which column family this compaction is for.
-    pub column_family_id: u32,
-}
 
 #[repr(C)]
 #[derive(Debug, PartialEq, PartialOrd, Eq, Ord, Copy, Clone)]
@@ -175,6 +163,28 @@ pub trait CompactionFilter {
     }
 }
 
+/// Each compaction will create a new `CompactionFilter` allowing the
+/// application to know about different compactions
+pub trait CompactionFilterFactory {
+    fn create_compaction_filter(&self, context: &Context) -> Box<CompactionFilter>;
+
+    /// Returns a name that identifies this compaction filter factory.
+    fn name(&self) -> &str {
+        "RustCompactionFilterFactory\0"
+    }
+}
+
+/// Context information of a compaction run
+#[repr(C)]
+pub struct Context {
+    /// Does this compaction run include all data files
+    pub is_full_compaction: bool,
+    /// Is this compaction requested by the client (true),
+    /// or is it occurring as an automatic compaction process
+    pub is_manual_compaction: bool,
+    /// Which column family this compaction is for.
+    pub column_family_id: u32,
+}
 
 // call rust fn in C
 #[doc(hidden)]
@@ -223,28 +233,12 @@ pub mod c {
     }
 
     #[no_mangle]
-    pub unsafe extern "C" fn rust_compaction_filter_ignore_snapshots(f: *mut ()) -> c_char {
+    pub unsafe extern "C" fn rust_compaction_filter_ignore_snapshots(f: *mut ()) -> c_uchar {
         assert!(!f.is_null());
         let filter = f as *mut Box<CompactionFilter>;
-        (*filter).ignore_snapshots() as c_char
+        (*filter).ignore_snapshots() as c_uchar
     }
 }
-
-/// Each compaction will create a new `CompactionFilter` allowing the
-/// application to know about different compactions
-pub struct CompactionFilterFactory;
-
-impl CompactionFilterFactory {
-    pub fn create_compaction_filter(&self, context: &Context) -> Box<CompactionFilter> {
-        unimplemented!()
-    }
-
-    /// Returns a name that identifies this compaction filter factory.
-    pub fn name(&self) -> &str {
-        "RustCompactionFilterFactory\0"
-    }
-}
-
 
 
 #[cfg(test)]

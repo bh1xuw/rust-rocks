@@ -302,7 +302,7 @@ impl ColumnFamilyOptions {
     /// from a single thread and so does not need to be thread-safe.
     ///
     /// Default: nullptr
-    pub fn compaction_filter_factory(self, factory: Option<CompactionFilterFactory>) -> Self {
+    pub fn compaction_filter_factory(self, factory: Box<CompactionFilterFactory>) -> Self {
         // unsafe {
         // ll::rocks_cfoptions_set_compaction_filter_factory(self.raw, )
         // }
