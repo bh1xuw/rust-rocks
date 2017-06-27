@@ -282,7 +282,6 @@ impl<'a> iter::Iterator for IntoRevIter<'a> {
 
 #[cfg(test)]
 mod tests {
-    use super::*;
     use super::super::rocksdb::*;
 
     #[test]

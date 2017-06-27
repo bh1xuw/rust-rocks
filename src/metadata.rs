@@ -3,9 +3,6 @@
 use std::fmt;
 use std::ops::Deref;
 
-use rocks_sys as ll;
-
-use error::Status;
 use types::SequenceNumber;
 
 /// The metadata that describes a column family.

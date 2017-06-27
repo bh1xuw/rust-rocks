@@ -4,10 +4,9 @@ use std::mem;
 use std::ffi::{CStr, CString};
 use std::os::raw::{c_int, c_char, c_void};
 use std::ptr;
-use std::iter;
 use std::str;
 use std::slice;
-use std::rc::{Rc, Weak};
+use std::sync::Arc;
 use std::ops;
 use std::fmt;
 use std::iter::IntoIterator;
@@ -18,15 +17,12 @@ use std::collections::hash_map::HashMap;
 use rocks_sys as ll;
 
 use error::Status;
-use comparator::Comparator;
 use options::{Options, DBOptions, ColumnFamilyOptions, ReadOptions, WriteOptions, CompactRangeOptions,
               IngestExternalFileOptions, FlushOptions, CompactionOptions};
-use table_properties::{TablePropertiesCollection, TableProperties};
+use table_properties::TablePropertiesCollection;
 use snapshot::Snapshot;
 use write_batch::WriteBatch;
 use iterator::Iterator;
-use merge_operator::{MergeOperator, AssociativeMergeOperator};
-use env::Logger;
 use types::SequenceNumber;
 use to_raw::{ToRaw, FromRaw};
 use metadata::{LiveFileMetaData, SstFileMetaData, LevelMetaData, ColumnFamilyMetaData};
@@ -87,12 +83,10 @@ impl<'a> From<(&'a str, ColumnFamilyOptions)> for ColumnFamilyDescriptor {
     }
 }
 
-
-
 /// Handle for a opened column family
 pub struct ColumnFamilyHandle<'a, 'b: 'a> {
     raw: *mut ll::rocks_column_family_handle_t,
-    db: Rc<DBContext<'b>>, // 'b out lives 'a
+    db: Arc<DBContext<'b>>, // 'b out lives 'a
     owned: bool,
     _marker: PhantomData<&'a ()>,
 }
@@ -619,7 +613,14 @@ impl<'a> Drop for DBContext<'a> {
 /// assert_eq!(val, b"my-value");
 /// ```
 pub struct DB<'a> {
-    context: Rc<DBContext<'a>>,
+    context: Arc<DBContext<'a>>,
+}
+
+impl<'a> Clone for DB<'a> {
+    /// for convenience, shares between threads
+    fn clone(&self) -> DB<'a> {
+        DB { context: self.context.clone() }
+    }
 }
 
 impl<'a> fmt::Debug for DB<'a> {
@@ -629,6 +630,7 @@ impl<'a> fmt::Debug for DB<'a> {
 }
 
 unsafe impl<'a> Sync for DB<'a> {}
+unsafe impl<'a> Send for DB<'a> {}
 
 impl<'a> ToRaw<ll::rocks_db_t> for DB<'a> {
     fn raw(&self) -> *mut ll::rocks_db_t {
@@ -642,7 +644,7 @@ impl<'a> DB<'a> {
             raw: raw,
             _marker: PhantomData,
         };
-        DB { context: Rc::new(context) }
+        DB { context: Arc::new(context) }
     }
 
     /// Open the database with the specified `name`.
@@ -2392,40 +2394,6 @@ fn test_cf_lifetime() {
 
 }
 
-#[test]
-fn test_compact_range() {
-    let s = b"123123123";
-    let e = b"asdfasfasfasf";
-
-    let _: ::std::ops::Range<&[u8]> = s.as_ref()..e.as_ref();
-
-    let tmp_db_dir = ::tempdir::TempDir::new_in(".", "rocks").unwrap();
-
-    let opt = Options::default().map_db_options(|dbopt| dbopt.create_if_missing(true));
-
-    let db = DB::open(opt, &tmp_db_dir).unwrap();
-
-    let _ = db.put(&WriteOptions::default(), b"name", b"BH1XUW")
-        .unwrap();
-    for i in 0..100 {
-        let key = format!("test2-key-{}", i);
-        let val = format!("rocksdb-value-{}", i * 10);
-        let value: String = iter::repeat(val).take(1000).collect::<Vec<_>>().concat();
-
-        db.put(&WriteOptions::default(), key.as_bytes(), value.as_bytes())
-            .unwrap();
-    }
-
-    // will be shown in LOG file
-    let ret = db.compact_range(&CompactRangeOptions::default(), b"test2-key-5".as_ref()..b"test2-key-9".as_ref());
-    assert!(ret.is_ok());
-
-    let ret = db.compact_range(&CompactRangeOptions::default(), ..);
-    assert!(ret.is_ok());
-
-    drop(tmp_db_dir);
-}
-
 
 #[test]
 fn test_key_may_exist() {
@@ -2484,8 +2452,43 @@ fn test_ingest_sst_file() {
 
 #[cfg(test)]
 mod tests {
+    use std::iter;
     use super::*;
     use super::super::rocksdb::*;
+
+    #[test]
+    fn compact_range() {
+        let s = b"123123123";
+        let e = b"asdfasfasfasf";
+
+        let _: ::std::ops::Range<&[u8]> = s.as_ref()..e.as_ref();
+
+        let tmp_db_dir = ::tempdir::TempDir::new_in(".", "rocks").unwrap();
+
+        let opt = Options::default().map_db_options(|dbopt| dbopt.create_if_missing(true));
+
+        let db = DB::open(opt, &tmp_db_dir).unwrap();
+
+        let _ = db.put(&WriteOptions::default(), b"name", b"BH1XUW")
+            .unwrap();
+        for i in 0..100 {
+            let key = format!("test2-key-{}", i);
+            let val = format!("rocksdb-value-{}", i * 10);
+            let value: String = iter::repeat(val).take(1000).collect::<Vec<_>>().concat();
+
+            db.put(&WriteOptions::default(), key.as_bytes(), value.as_bytes())
+                .unwrap();
+        }
+
+        // will be shown in LOG file
+        let ret = db.compact_range(&CompactRangeOptions::default(), b"test2-key-5".as_ref()..b"test2-key-9".as_ref());
+        assert!(ret.is_ok());
+
+        let ret = db.compact_range(&CompactRangeOptions::default(), ..);
+        assert!(ret.is_ok());
+
+        drop(tmp_db_dir);
+    }
 
     #[test]
     fn multi_get() {

@@ -10,7 +10,7 @@
 // doc_markdown)]
 //
 
-#![allow(unused_variables, unused_imports, dead_code)]
+#![allow(unused_variables, dead_code)]
 
 #[macro_use]
 extern crate lazy_static;
@@ -68,7 +68,6 @@ mod to_raw;
 #[doc(hidden)]
 pub mod c {
     use std::ptr;
-    use std::slice;
 
     #[no_mangle]
     pub extern "C" fn rust_hello_world() {

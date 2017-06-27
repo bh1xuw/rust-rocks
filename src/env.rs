@@ -14,10 +14,8 @@ use std::path::Path;
 use rocks_sys as ll;
 
 use error::Status;
-use super::Result;
-use rate_limiter::RateLimiter;
 use to_raw::ToRaw;
-
+use super::Result;
 
 pub const DEFAULT_PAGE_SIZE: usize = 4 * 1024;
 

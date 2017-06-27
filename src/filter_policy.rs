@@ -9,13 +9,9 @@
 //! Most people will want to use the builtin bloom filter support (see
 //! `NewBloomFilterPolicy()` below).
 
-
-use std::os::raw::c_void;
-
 use rocks_sys as ll;
 
 use to_raw::ToRaw;
-
 
 pub struct FilterPolicy {
     raw: *mut ll::rocks_raw_filterpolicy_t,

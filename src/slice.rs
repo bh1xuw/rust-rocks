@@ -4,7 +4,6 @@ use std::fmt;
 use std::slice;
 use std::ops;
 use std::str;
-use std::os::raw::c_char;
 
 use rocks_sys as ll;
 

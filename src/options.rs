@@ -2,8 +2,6 @@
 
 use std::u64;
 use std::path::{Path, PathBuf};
-use std::ops::Deref;
-use std::ffi::CString;
 use std::mem;
 use std::ptr;
 use std::os::raw::c_int;
@@ -2757,6 +2755,7 @@ impl FlushOptions {
     }
 }
 
+unsafe impl Sync for FlushOptions {}
 
 /// `CompactionOptions` are used in `CompactFiles()` call.
 #[repr(C)]
@@ -2810,6 +2809,7 @@ impl CompactionOptions {
     }
 }
 
+unsafe impl Sync for CompactionOptions {}
 
 /// For level based compaction, we can configure if we want to skip/force
 /// bottommost level compaction.
@@ -2897,6 +2897,7 @@ impl CompactRangeOptions {
     }
 }
 
+unsafe impl Sync for CompactRangeOptions {}
 
 /// `IngestExternalFileOptions` is used by `ingest_external_file()`
 #[repr(C)]
@@ -2960,6 +2961,7 @@ impl IngestExternalFileOptions {
     }
 }
 
+unsafe impl Sync for IngestExternalFileOptions {}
 
 #[cfg(test)]
 mod tests {

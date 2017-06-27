@@ -4,8 +4,6 @@ Another RocksDB binding for Rust.
 
 Make RocksDB really rocks!
 
-working in progress.
-
 ## compile
 
 link against: RocksDB 5.4.6.
@@ -33,14 +31,15 @@ big picture(TODOs):
   - [ ] wraps Status as a Error variant?
 - [ ] Proof of usablility
 - [ ] bench across C++/Java/other-rust binding
-- [ ] CI
+- [x] CI
   - [x] travis-ci integration
   - [ ] appveyor integration for windows
-  - [ ] memory leaks proof via valgrind
+  - [x] memory leaks check via valgrind/sanitizer
+    - [ ] comparator leaks
+    - [ ] compaction_filter leaks
 - [x] Zero-Copy
   - [x] pinnable slice support
   - [x] exports String/Vec<u8> to C++ via `assign`-style API
-  - [ ] wraps std::string in Rust, use `std::move`, replace `malloc/free`
 - [ ] Full documentation with code examples
   - [x] good enough by copying C++ comments
   - [ ] rename C++ function names to rust name in doc comments

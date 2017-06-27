@@ -13,6 +13,9 @@ pub use table::*;
 pub use slice::{CVec, PinnableSlice};
 pub use types::SequenceNumber;
 pub use transaction_log::LogFile;
+pub use merge_operator::{MergeOperator, AssociativeMergeOperator};
+pub use table_properties::{TablePropertiesCollection, TableProperties};
+pub use comparator::Comparator;
 
 pub use super::Result;
 

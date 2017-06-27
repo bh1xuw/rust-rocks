@@ -1,6 +1,6 @@
 //! Universal style of compaction.
 
-use std::os::raw::{c_int, c_uint};
+use std::os::raw::c_uint;
 use std::mem;
 
 use rocks_sys as ll;

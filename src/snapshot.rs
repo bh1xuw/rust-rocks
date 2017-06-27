@@ -1,8 +1,6 @@
 //! Abstract handle to particular state of a DB.
 
 use std::fmt;
-use std::mem;
-use std::ptr;
 use std::ops;
 use std::marker::PhantomData;
 

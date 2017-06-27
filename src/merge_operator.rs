@@ -28,7 +28,6 @@
 //! [`AssociativeMergeOperator`]: ../../rocks/merge_operator/trait.AssociativeMergeOperator.html
 //! [`MergeOperator`]: ../../rocks/merge_operator/trait.MergeOperator.html
 
-use std::ptr;
 use std::mem;
 use std::marker::PhantomData;
 use std::slice;

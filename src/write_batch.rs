@@ -14,17 +14,14 @@
 //! non-const method, all threads accessing the same WriteBatch must use
 //! external synchronization.
 
-use std::mem;
 use std::fmt;
 use std::slice;
 use std::ptr;
 
 use rocks_sys as ll;
 
-use error::Status;
 use db::ColumnFamilyHandle;
 use to_raw::{ToRaw, FromRaw};
-
 use super::Result;
 
 /// `WriteBatch` holds a collection of updates to apply atomically to a DB.
