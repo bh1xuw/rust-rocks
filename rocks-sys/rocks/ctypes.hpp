@@ -211,6 +211,72 @@ struct rocks_writebatch_t {
 };
 typedef struct rocks_raw_writebatch_t rocks_raw_writebatch_t;
 
+struct rocks_writebatch_handler_t : public WriteBatch::Handler {
+  void* obj;  // rust Box<trait obj>
+
+  rocks_writebatch_handler_t(void* trait_obj) : obj(trait_obj) {}
+
+  ~rocks_writebatch_handler_t() { rust_write_batch_handler_drop(this->obj); }
+
+  Status PutCF(uint32_t column_family_id, const Slice& key,
+               const Slice& value) override {
+    rust_write_batch_handler_put_cf(this->obj, column_family_id, &key, &value);
+    return Status::OK();
+  }
+
+  Status DeleteCF(uint32_t column_family_id, const Slice& key) override {
+    rust_write_batch_handler_delete_cf(this->obj, column_family_id, &key);
+    return Status::OK();
+  }
+
+  Status SingleDeleteCF(uint32_t column_family_id, const Slice& key) override {
+    rust_write_batch_handler_single_delete_cf(this->obj, column_family_id,
+                                              &key);
+    return Status::OK();
+  }
+
+  Status DeleteRangeCF(uint32_t column_family_id, const Slice& begin_key,
+                       const Slice& end_key) override {
+    rust_write_batch_handler_delete_range_cf(this->obj, column_family_id,
+                                             &begin_key, &end_key);
+    return Status::OK();
+  }
+  Status MergeCF(uint32_t column_family_id, const Slice& key,
+                 const Slice& value) override {
+    rust_write_batch_handler_merge_cf(this->obj, column_family_id, &key,
+                                      &value);
+    return Status::OK();
+  }
+
+  void LogData(const Slice& blob) override {
+    rust_write_batch_handler_log_data(this->obj, &blob);
+  }
+
+  Status MarkBeginPrepare() override {
+    rust_write_batch_handler_mark_begin_prepare(this->obj);
+    return Status::OK();
+  }
+
+  Status MarkEndPrepare(const Slice& xid) override {
+    rust_write_batch_handler_mark_end_prepare(this->obj, &xid);
+    return Status::OK();
+  }
+
+  Status MarkRollback(const Slice& xid) override {
+    rust_write_batch_handler_mark_rollback(this->obj, &xid);
+    return Status::OK();
+  }
+
+  Status MarkCommit(const Slice& xid) override {
+    rust_write_batch_handler_mark_commit(this->obj, &xid);
+    return Status::OK();
+  }
+
+  bool Continue() override {
+    return rust_write_batch_handler_will_continue(this->obj);
+  }
+};
+
 /* table */
 struct rocks_block_based_table_options_t {
   BlockBasedTableOptions rep;

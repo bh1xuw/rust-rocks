@@ -215,28 +215,12 @@ void rocks_writebatch_put_log_data(rocks_writebatch_t* b, const char* blob,
   b->rep.PutLogData(Slice(blob, len));
 }
 
-void rocks_writebatch_iterate(rocks_writebatch_t* b, void* state,
-                              void (*put)(void*, const char* k, size_t klen,
-                                          const char* v, size_t vlen),
-                              void (*deleted)(void*, const char* k,
-                                              size_t klen)) {
-  class H : public WriteBatch::Handler {
-   public:
-    void* state_;
-    void (*put_)(void*, const char* k, size_t klen, const char* v, size_t vlen);
-    void (*deleted_)(void*, const char* k, size_t klen);
-    virtual void Put(const Slice& key, const Slice& value) override {
-      (*put_)(state_, key.data(), key.size(), value.data(), value.size());
-    }
-    virtual void Delete(const Slice& key) override {
-      (*deleted_)(state_, key.data(), key.size());
-    }
-  };
-  H handler;
-  handler.state_ = state;
-  handler.put_ = put;
-  handler.deleted_ = deleted;
-  b->rep.Iterate(&handler);
+void rocks_writebatch_iterate(rocks_writebatch_t* b, void* trait_obj,
+                              rocks_status_t** status) {
+  auto handler = new rocks_writebatch_handler_t(trait_obj);
+  auto st = b->rep.Iterate(handler);
+  delete handler;
+  SaveError(status, std::move(st));
 }
 
 const char* rocks_writebatch_data(rocks_writebatch_t* b, size_t* size) {

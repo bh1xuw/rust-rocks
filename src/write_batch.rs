@@ -17,6 +17,7 @@
 use std::fmt;
 use std::slice;
 use std::ptr;
+use std::os::raw::{c_uchar, c_void};
 
 use rocks_sys as ll;
 
@@ -270,22 +271,27 @@ impl WriteBatch {
     /// will be returned.
     /// Otherwise returns Status::OK().
     pub fn rollback_to_save_point(&mut self) -> Result<()> {
+        let mut status = ptr::null_mut();
         unsafe {
-            let mut status = ptr::null_mut();
             ll::rocks_writebatch_rollback_to_save_point(self.raw, &mut status);
             FromRaw::from_ll(status)
         }
     }
 
     /// Support for iterating over the contents of a batch.
-    pub fn iterate<I: Handler>(&self, handler: I) -> Result<()> {
-        unimplemented!()
+    pub fn iterate<H: WriteBatchHandler>(&self, handler: &mut H) -> Result<()> {
+        let mut status = ptr::null_mut();
+        unsafe {
+            let raw_ptr = Box::into_raw(Box::new(handler as &mut WriteBatchHandler)) as *mut c_void; // Box<&mut WriteBatchHandler>
+            ll::rocks_writebatch_iterate(self.raw, raw_ptr, &mut status);
+            FromRaw::from_ll(status)
+        }
     }
 
     /// Retrieve the serialized version of this batch.
     pub fn get_data(&self) -> &[u8] {
+        let mut size = 0;
         unsafe {
-            let mut size = 0;
             let ptr = ll::rocks_writebatch_data(self.raw, &mut size);
             slice::from_raw_parts(ptr as *const _, size)
         }
@@ -343,39 +349,223 @@ impl WriteBatch {
 }
 
 /// Support for iterating over the contents of a batch.
-pub trait Handler {
-    // All handler functions in this class provide default implementations so
-    // we won't break existing clients of Handler on a source code level when
-    // adding a new member function.
-
-    // default implementation will just call Put without column family for
-    // backwards compatibility. If the column family is not default,
-    // the function is noop
+///
+/// All handler functions in this class provide default implementations so
+/// we won't break existing clients of Handler on a source code level when
+/// adding a new member function.
+pub trait WriteBatchHandler {
     fn put_cf(&mut self, column_family_id: u32, key: &[u8], value: &[u8]) {}
-
     fn delete_cf(&mut self, column_family_id: u32, key: &[u8]) {}
-
     fn single_delete_cf(&mut self, column_family_id: u32, key: &[u8]) {}
-
     fn delete_range_cf(&mut self, column_family_id: u32, begin_key: &[u8], end_key: &[u8]) {}
-
     fn merge_cf(&mut self, column_family_id: u32, key: &[u8], value: &[u8]) {}
-
     fn log_data(&mut self, blob: &[u8]) {}
-
     fn mark_begin_prepare(&mut self) {}
-
     fn mark_end_prepare(&mut self, xid: &[u8]) {}
-
     fn mark_rollback(&mut self, xid: &[u8]) {}
-
     fn mark_commit(&mut self, xid: &[u8]) {}
-
     /// Continue is called by WriteBatch::Iterate. If it returns false,
     /// iteration is halted. Otherwise, it continues iterating. The default
     /// implementation always returns true.
     fn will_continue(&mut self) -> bool {
         true
+    }
+}
+
+/// Rust style WriteBatch decompose
+#[derive(Debug, PartialEq, Eq, Hash)]
+pub enum WriteBatchEntry {
+    Put {
+        column_family_id: u32,
+        key: Vec<u8>,
+        value: Vec<u8>,
+    },
+    Delete {
+        column_family_id: u32,
+        key: Vec<u8>,
+    },
+    SingleDelete {
+        column_family_id: u32,
+        key: Vec<u8>,
+    },
+    DeleteRange {
+        column_family_id: u32,
+        begin_key: Vec<u8>,
+        end_key: Vec<u8>,
+    },
+    Merge {
+        column_family_id: u32,
+        key: Vec<u8>,
+        value: Vec<u8>,
+    },
+    LogData {
+        blob: Vec<u8>,
+    },
+    BeginPrepareMark,
+    EndPrepareMark {
+        xid: Vec<u8>,
+    },
+    RollbackMark {
+        xid: Vec<u8>,
+    },
+    CommitMark {
+        xid: Vec<u8>,
+    }
+}
+
+
+#[derive(Default, Debug)]
+pub struct WriteBatchIteratorHandler {
+    pub entries: Vec<WriteBatchEntry>
+}
+
+impl WriteBatchHandler for WriteBatchIteratorHandler {
+    fn put_cf(&mut self, column_family_id: u32, key: &[u8], value: &[u8]) {
+        self.entries.push(WriteBatchEntry::Put {
+            column_family_id,
+            key: key.to_owned(),
+            value: value.to_owned(),
+        });
+    }
+    fn delete_cf(&mut self, column_family_id: u32, key: &[u8]) {
+        self.entries.push(WriteBatchEntry::Delete {
+            column_family_id,
+            key: key.to_owned(),
+        });
+    }
+    fn single_delete_cf(&mut self, column_family_id: u32, key: &[u8]) {
+        self.entries.push(WriteBatchEntry::SingleDelete {
+            column_family_id,
+            key: key.to_owned(),
+        });
+    }
+    fn delete_range_cf(&mut self, column_family_id: u32, begin_key: &[u8], end_key: &[u8]) {
+        self.entries.push(WriteBatchEntry::DeleteRange {
+            column_family_id,
+            begin_key: begin_key.to_owned(),
+            end_key: end_key.to_owned(),
+        });
+    }
+    fn merge_cf(&mut self, column_family_id: u32, key: &[u8], value: &[u8]) {
+        self.entries.push(WriteBatchEntry::Merge {
+            column_family_id,
+            key: key.to_owned(),
+            value: value.to_owned(),
+        });
+    }
+    fn log_data(&mut self, blob: &[u8]) {
+        self.entries.push(WriteBatchEntry::LogData {
+            blob: blob.to_owned(),
+        });
+    }
+    fn mark_begin_prepare(&mut self) {
+        self.entries.push(WriteBatchEntry::BeginPrepareMark);
+    }
+    fn mark_end_prepare(&mut self, xid: &[u8]) {
+        self.entries.push(WriteBatchEntry::EndPrepareMark {
+            xid: xid.to_owned(),
+        });
+    }
+    fn mark_rollback(&mut self, xid: &[u8]) {
+        self.entries.push(WriteBatchEntry::RollbackMark {
+            xid: xid.to_owned(),
+        });
+    }
+    fn mark_commit(&mut self, xid: &[u8]) {
+        self.entries.push(WriteBatchEntry::CommitMark {
+            xid: xid.to_owned(),
+        });
+    }
+}
+
+// call rust fn in C
+#[doc(hidden)]
+pub mod c {
+    use super::*;
+
+    #[no_mangle]
+    pub unsafe extern "C" fn rust_write_batch_handler_put_cf(h: *mut (), column_family_id: u32, key: &&[u8], value: &&[u8]) {
+        assert!(!h.is_null());
+        let handler = h as *mut &mut WriteBatchHandler;
+        (*handler).put_cf(column_family_id, key, value);
+    }
+
+    #[no_mangle]
+    pub unsafe extern "C" fn rust_write_batch_handler_delete_cf(h: *mut (), column_family_id: u32, key: &&[u8]) {
+        assert!(!h.is_null());
+        let handler = h as *mut &mut WriteBatchHandler;
+        (*handler).delete_cf(column_family_id, key);
+    }
+
+    #[no_mangle]
+    pub unsafe extern "C" fn rust_write_batch_handler_single_delete_cf(h: *mut (), column_family_id: u32, key: &&[u8]) {
+        assert!(!h.is_null());
+        let handler = h as *mut &mut WriteBatchHandler;
+        (*handler).single_delete_cf(column_family_id, key);
+    }
+
+    #[no_mangle]
+    pub unsafe extern "C" fn rust_write_batch_handler_delete_range_cf(h: *mut (), column_family_id: u32,
+                                                                      begin_key: &&[u8], end_key: &&[u8]) {
+        assert!(!h.is_null());
+        let handler = h as *mut &mut WriteBatchHandler;
+        (*handler).delete_range_cf(column_family_id, begin_key, end_key);
+    }
+
+    #[no_mangle]
+    pub unsafe extern "C" fn rust_write_batch_handler_merge_cf(h: *mut (), column_family_id: u32, key: &&[u8], value: &&[u8]) {
+        assert!(!h.is_null());
+        let handler = h as *mut &mut WriteBatchHandler;
+        (*handler).merge_cf(column_family_id, key, value);
+    }
+
+    #[no_mangle]
+    pub unsafe extern "C" fn rust_write_batch_handler_log_data(h: *mut (), blob: &&[u8]) {
+        assert!(!h.is_null());
+        let handler = h as *mut &mut WriteBatchHandler;
+        (*handler).log_data(blob);
+    }
+
+    #[no_mangle]
+    pub unsafe extern "C" fn rust_write_batch_handler_mark_begin_prepare(h: *mut ()) {
+        assert!(!h.is_null());
+        let handler = h as *mut &mut WriteBatchHandler;
+        (*handler).mark_begin_prepare();
+    }
+
+    #[no_mangle]
+    pub unsafe extern "C" fn rust_write_batch_handler_mark_end_prepare(h: *mut (), xid: &&[u8]) {
+        assert!(!h.is_null());
+        let handler = h as *mut &mut WriteBatchHandler;
+        (*handler).mark_end_prepare(xid);
+    }
+
+    #[no_mangle]
+    pub unsafe extern "C" fn rust_write_batch_handler_mark_rollback(h: *mut (), xid: &&[u8]) {
+        assert!(!h.is_null());
+        let handler = h as *mut &mut WriteBatchHandler;
+        (*handler).mark_rollback(xid);
+    }
+
+    #[no_mangle]
+    pub unsafe extern "C" fn rust_write_batch_handler_mark_commit(h: *mut (), xid: &&[u8]) {
+        assert!(!h.is_null());
+        let handler = h as *mut &mut WriteBatchHandler;
+        (*handler).mark_commit(xid);
+    }
+
+    #[no_mangle]
+    pub unsafe extern "C" fn rust_write_batch_handler_will_continue(h: *mut ()) -> c_uchar {
+        assert!(!h.is_null());
+        let handler = h as *mut &mut WriteBatchHandler;
+        (*handler).will_continue() as c_uchar
+    }
+
+    #[no_mangle]
+    pub unsafe extern "C" fn rust_write_batch_handler_drop(h: *mut ()) {
+        assert!(!h.is_null());
+        let handler = h as *mut &mut WriteBatchHandler;
+        Box::from_raw(handler);
     }
 }
 
@@ -397,6 +587,12 @@ mod tests {
         assert!(batch.has_put());
         assert!(batch.has_delete());
         assert!(!batch.has_commit());
+        batch.put_log_data(b"Hello World!");
+
+        let mut handler = WriteBatchIteratorHandler::default();
+        let ret = batch.iterate(&mut handler);
+        assert!(ret.is_ok(), "error: {:?}", ret);
+        assert_eq!(handler.entries.len(), 3);
     }
 
     #[test]

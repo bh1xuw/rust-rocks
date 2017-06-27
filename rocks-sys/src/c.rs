@@ -74,6 +74,9 @@ pub struct rocks_writebatch_t([u8; 0]);
 pub struct rocks_raw_writebatch_t([u8; 0]);
 #[repr(C)]
 #[derive(Debug, Copy, Clone)]
+pub struct rocks_writebatch_handler_t([u8; 0]);
+#[repr(C)]
+#[derive(Debug, Copy, Clone)]
 pub struct rocks_block_based_table_options_t([u8; 0]);
 #[repr(C)]
 #[derive(Debug, Copy, Clone)]
@@ -1991,25 +1994,8 @@ extern "C" {
 }
 extern "C" {
     pub fn rocks_writebatch_iterate(b: *mut rocks_writebatch_t,
-                                    state: *mut ::std::os::raw::c_void,
-                                    put:
-                                        ::std::option::Option<unsafe extern "C" fn(arg1:
-                                                                                       *mut ::std::os::raw::c_void,
-                                                                                   k:
-                                                                                       *const ::std::os::raw::c_char,
-                                                                                   klen:
-                                                                                       usize,
-                                                                                   v:
-                                                                                       *const ::std::os::raw::c_char,
-                                                                                   vlen:
-                                                                                       usize)>,
-                                    deleted:
-                                        ::std::option::Option<unsafe extern "C" fn(arg1:
-                                                                                       *mut ::std::os::raw::c_void,
-                                                                                   k:
-                                                                                       *const ::std::os::raw::c_char,
-                                                                                   klen:
-                                                                                       usize)>);
+                                    trait_obj: *mut ::std::os::raw::c_void,
+                                    status: *mut *mut rocks_status_t);
 }
 extern "C" {
     pub fn rocks_writebatch_data(b: *mut rocks_writebatch_t, size: *mut usize)

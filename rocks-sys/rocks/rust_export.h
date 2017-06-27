@@ -107,6 +107,44 @@ extern const char* rust_table_props_collector_factory_name(void* f);
 
 extern void rust_table_props_collector_factory_drop(void* f);
 
+// write_batch
+extern void rust_write_batch_handler_put_cf(void* h, uint32_t column_family_id,
+                                            const Slice* key,
+                                            const Slice* value);
+
+extern void rust_write_batch_handler_delete_cf(void* h,
+                                               uint32_t column_family_id,
+                                               const Slice* key);
+
+extern void rust_write_batch_handler_single_delete_cf(void* h,
+                                                      uint32_t column_family_id,
+                                                      const Slice* key);
+
+extern void rust_write_batch_handler_delete_range_cf(void* h,
+                                                     uint32_t column_family_id,
+                                                     const Slice* begin_key,
+                                                     const Slice* end_key);
+
+extern void rust_write_batch_handler_merge_cf(void* h,
+                                              uint32_t column_family_id,
+                                              const Slice* key,
+                                              const Slice* value);
+
+extern void rust_write_batch_handler_log_data(void* h, const Slice* blob);
+
+extern void rust_write_batch_handler_mark_begin_prepare(void* h);
+
+extern void rust_write_batch_handler_mark_end_prepare(void* h,
+                                                      const Slice* xid);
+
+extern void rust_write_batch_handler_mark_rollback(void* h, const Slice* xid);
+
+extern void rust_write_batch_handler_mark_commit(void* h, const Slice* xid);
+
+extern unsigned char rust_write_batch_handler_will_continue(void* h);
+
+extern void rust_write_batch_handler_drop(void* h);
+
 #ifdef __cplusplus
 }
 #endif

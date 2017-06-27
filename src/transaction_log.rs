@@ -3,6 +3,8 @@
 use std::fmt;
 
 use types::SequenceNumber;
+use write_batch::WriteBatch;
+use Result;
 
 /// Is WAL file archived or alive
 #[derive(Debug, Copy, Clone, PartialEq, Eq, Hash)]
@@ -45,5 +47,47 @@ impl fmt::Debug for LogFile {
             self.log_number,
             self.size_in_bytes
         )
+    }
+}
+
+
+pub struct BatchResult {
+    pub sequence: SequenceNumber,
+    pub write_batch: WriteBatch,
+}
+
+// A TransactionLogIterator is used to iterate over the transactions in a db.
+// One run of the iterator is continuous, i.e. the iterator will stop at the
+// beginning of any gap in sequences
+pub struct TransactionLogIterator {
+
+}
+
+impl TransactionLogIterator {
+    // An iterator is either positioned at a WriteBatch or not valid.
+    // This method returns true if the iterator is valid.
+    // Can read data from a valid iterator.
+    pub fn is_valid(&self) -> bool {
+        false
+    }
+
+    // Moves the iterator to the next WriteBatch.
+    //
+    // REQUIRES: Valid() to be true.
+    pub fn next(&mut self) {
+    }
+
+    // Returns ok if the iterator is valid.
+    // Returns the Error when something has gone wrong.
+    pub fn status(&self) -> Result<()> {
+        unimplemented!()
+    }
+
+    // If valid return's the current write_batch and the sequence number of the
+    // earliest transaction contained in the batch.
+    //
+    // ONLY use if Valid() is true and status() is OK.
+    pub fn get_batch(&self) -> BatchResult {
+        unimplemented!()
     }
 }

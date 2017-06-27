@@ -151,7 +151,7 @@ big picture(TODOs):
   - [x] batch cf ops
   - [x] inspect functions ``has_*``
   - [ ] putv/deletev
-  - [ ] handler/iterate
+  - [x] handler/iterate
 - [ ] ~~``rocksdb/write_batch_base.h``~~
 - [ ] ``rocksdb/write_buffer_manager.h``
 - [x] ``rocksdb/universal_compaction.h``

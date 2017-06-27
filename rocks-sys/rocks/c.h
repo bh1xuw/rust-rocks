@@ -54,6 +54,7 @@ typedef struct rocks_iterator_t rocks_iterator_t;
 /* write_batch */
 typedef struct rocks_writebatch_t rocks_writebatch_t;
 typedef struct rocks_raw_writebatch_t rocks_raw_writebatch_t;
+typedef struct rocks_writebatch_handler_t rocks_writebatch_handler_t;
 
 /* table */
 typedef struct rocks_block_based_table_options_t
@@ -1176,11 +1177,9 @@ void rocks_writebatch_delete_rangev_cf(
 
 void rocks_writebatch_put_log_data(rocks_writebatch_t* b, const char* blob,
                                    size_t len);
-void rocks_writebatch_iterate(rocks_writebatch_t* b, void* state,
-                              void (*put)(void*, const char* k, size_t klen,
-                                          const char* v, size_t vlen),
-                              void (*deleted)(void*, const char* k,
-                                              size_t klen));
+
+void rocks_writebatch_iterate(rocks_writebatch_t* b, void* trait_obj,
+                              rocks_status_t** status);
 
 const char* rocks_writebatch_data(rocks_writebatch_t* b, size_t* size);
 
