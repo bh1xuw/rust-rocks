@@ -106,6 +106,8 @@ typedef struct rocks_universal_compaction_options_t
 
 /* transaction_log */
 typedef struct rocks_logfiles_t rocks_logfiles_t;
+typedef struct rocks_transaction_log_iterator_t
+    rocks_transaction_log_iterator_t;
 
 /* table_properties */
 typedef struct rocks_table_props_collection_t rocks_table_props_collection_t;
@@ -966,6 +968,9 @@ cxx_string_vector_t* rocks_db_get_live_files(rocks_db_t* db,
 rocks_logfiles_t* rocks_db_get_sorted_wal_files(rocks_db_t* db,
                                                 rocks_status_t** status);
 
+rocks_transaction_log_iterator_t* rocks_db_get_update_since(
+    rocks_db_t* db, uint64_t seq_no, rocks_status_t** status);
+
 void rocks_db_delete_file(rocks_db_t* db, const char* name, size_t name_len,
                           rocks_status_t** status);
 
@@ -1188,8 +1193,6 @@ void rocks_writebatch_set_save_point(rocks_writebatch_t* b);
 void rocks_writebatch_rollback_to_save_point(rocks_writebatch_t* b,
                                              rocks_status_t** status);
 
-rocks_writebatch_t* rocks_writebatch_copy(rocks_writebatch_t* b);
-
 unsigned char rocks_writebatch_has_put(rocks_writebatch_t* b);
 unsigned char rocks_writebatch_has_delete(rocks_writebatch_t* b);
 unsigned char rocks_writebatch_has_single_delete(rocks_writebatch_t* b);
@@ -1199,6 +1202,8 @@ unsigned char rocks_writebatch_has_begin_prepare(rocks_writebatch_t* b);
 unsigned char rocks_writebatch_has_end_prepare(rocks_writebatch_t* b);
 unsigned char rocks_writebatch_has_commit(rocks_writebatch_t* b);
 unsigned char rocks_writebatch_has_rollback(rocks_writebatch_t* b);
+
+rocks_writebatch_t* rocks_writebatch_copy(rocks_writebatch_t* b);
 rocks_raw_writebatch_t* rocks_writebatch_get_writebatch(rocks_writebatch_t* b);
 
 /* table */
@@ -1602,6 +1607,16 @@ uint64_t rocks_logfiles_nth_log_number(rocks_logfiles_t* files, size_t nth);
 int rocks_logfiles_nth_type(rocks_logfiles_t* files, size_t nth);
 uint64_t rocks_logfiles_nth_start_sequence(rocks_logfiles_t* files, size_t nth);
 uint64_t rocks_logfiles_nth_file_size(rocks_logfiles_t* files, size_t nth);
+
+void rocks_transaction_log_iterator_destory(
+    rocks_transaction_log_iterator_t* it);
+unsigned char rocks_transaction_log_iterator_valid(
+    rocks_transaction_log_iterator_t* it);
+void rocks_transaction_log_iterator_next(rocks_transaction_log_iterator_t* it);
+void rocks_transaction_log_iterator_status(rocks_transaction_log_iterator_t* it,
+                                           rocks_status_t** status);
+rocks_writebatch_t* rocks_transaction_log_iterator_get_batch(
+    rocks_transaction_log_iterator_t* it, uint64_t* seq_no);
 
 /* convenience */
 int* rocks_get_supported_compressions(size_t* len);

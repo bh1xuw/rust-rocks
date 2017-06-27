@@ -31,4 +31,33 @@ uint64_t rocks_logfiles_nth_start_sequence(rocks_logfiles_t* files,
 uint64_t rocks_logfiles_nth_file_size(rocks_logfiles_t* files, size_t nth) {
   return files->rep[nth]->SizeFileBytes();
 }
+
+// rocks_transaction_log_iterator_t
+void rocks_transaction_log_iterator_destory(
+    rocks_transaction_log_iterator_t* it) {
+  delete it;
+}
+
+unsigned char rocks_transaction_log_iterator_valid(
+    rocks_transaction_log_iterator_t* it) {
+  return it->rep->Valid();
+}
+
+void rocks_transaction_log_iterator_next(rocks_transaction_log_iterator_t* it) {
+  it->rep->Next();
+}
+
+void rocks_transaction_log_iterator_status(rocks_transaction_log_iterator_t* it,
+                                           rocks_status_t** status) {
+  SaveError(status, it->rep->status());
+}
+
+rocks_writebatch_t* rocks_transaction_log_iterator_get_batch(
+    rocks_transaction_log_iterator_t* it, uint64_t* seq_no) {
+  auto batch = it->rep->GetBatch();
+  *seq_no = batch.sequence;
+  auto writebatch = new rocks_writebatch_t;
+  batch.writeBatchPtr.swap(writebatch->rep);
+  return writebatch;
+}
 }

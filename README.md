@@ -82,7 +82,7 @@ big picture(TODOs):
   - [ ] get options: no plan
   - [x] get approximate sizes
   - [x] get sorted wal files
-  - [ ] get update since
+  - [x] get update since
 - [ ] ~~``rocksdb/db_bench_tool.h``~~
 - [x] ``rocksdb/db_dump_tool.h``
 - [x] ``rocksdb/env.h``
@@ -139,7 +139,7 @@ big picture(TODOs):
 - [ ] ``rocksdb/threadpool.h``
 - [x] ``rocksdb/transaction_log.h``
   - [x] LogFile
-  - [ ] log iterator (DB::GetUpdatesSince)
+  - [x] log iterator (DB::GetUpdatesSince)
 - [x] ``rocksdb/types.h``
   - [x] a sequence number type, wrapped in Snapshot
 - [x] ``rocksdb/version.h``

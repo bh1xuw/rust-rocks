@@ -712,6 +712,17 @@ rocks_logfiles_t* rocks_db_get_sorted_wal_files(rocks_db_t* db,
   return files;
 }
 
+rocks_transaction_log_iterator_t* rocks_db_get_update_since(
+    rocks_db_t* db, uint64_t seq_no, rocks_status_t** status) {
+  auto iter = new rocks_transaction_log_iterator_t;
+  auto st = db->rep->GetUpdatesSince(seq_no, &iter->rep);
+  if (SaveError(status, std::move(st))) {
+    delete iter;
+    return nullptr;
+  }
+  return iter;
+}
+
 void rocks_db_delete_file(rocks_db_t* db, const char* name, size_t name_len,
                           rocks_status_t** status) {
   SaveError(status, db->rep->DeleteFile(std::string(name, name_len)));

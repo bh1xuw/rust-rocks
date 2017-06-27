@@ -56,6 +56,12 @@ impl ToRaw<ll::rocks_raw_writebatch_t> for WriteBatch {
     }
 }
 
+impl FromRaw<ll::rocks_writebatch_t> for WriteBatch {
+    unsafe fn from_ll(raw: *mut ll::rocks_writebatch_t) -> WriteBatch {
+        WriteBatch { raw: raw }
+    }
+}
+
 impl Default for WriteBatch {
     fn default() -> Self {
         WriteBatch::new()
@@ -282,7 +288,8 @@ impl WriteBatch {
     pub fn iterate<H: WriteBatchHandler>(&self, handler: &mut H) -> Result<()> {
         let mut status = ptr::null_mut();
         unsafe {
-            let raw_ptr = Box::into_raw(Box::new(handler as &mut WriteBatchHandler)) as *mut c_void; // Box<&mut WriteBatchHandler>
+            // Box<&mut WriteBatchHandler>
+            let raw_ptr = Box::into_raw(Box::new(handler as &mut WriteBatchHandler)) as *mut c_void;
             ll::rocks_writebatch_iterate(self.raw, raw_ptr, &mut status);
             FromRaw::from_ll(status)
         }
@@ -380,14 +387,8 @@ pub enum WriteBatchEntry {
         key: Vec<u8>,
         value: Vec<u8>,
     },
-    Delete {
-        column_family_id: u32,
-        key: Vec<u8>,
-    },
-    SingleDelete {
-        column_family_id: u32,
-        key: Vec<u8>,
-    },
+    Delete { column_family_id: u32, key: Vec<u8> },
+    SingleDelete { column_family_id: u32, key: Vec<u8> },
     DeleteRange {
         column_family_id: u32,
         begin_key: Vec<u8>,
@@ -398,25 +399,17 @@ pub enum WriteBatchEntry {
         key: Vec<u8>,
         value: Vec<u8>,
     },
-    LogData {
-        blob: Vec<u8>,
-    },
+    LogData { blob: Vec<u8> },
     BeginPrepareMark,
-    EndPrepareMark {
-        xid: Vec<u8>,
-    },
-    RollbackMark {
-        xid: Vec<u8>,
-    },
-    CommitMark {
-        xid: Vec<u8>,
-    }
+    EndPrepareMark { xid: Vec<u8> },
+    RollbackMark { xid: Vec<u8> },
+    CommitMark { xid: Vec<u8> },
 }
 
 
 #[derive(Default, Debug)]
 pub struct WriteBatchIteratorHandler {
-    pub entries: Vec<WriteBatchEntry>
+    pub entries: Vec<WriteBatchEntry>,
 }
 
 impl WriteBatchHandler for WriteBatchIteratorHandler {
@@ -484,7 +477,12 @@ pub mod c {
     use super::*;
 
     #[no_mangle]
-    pub unsafe extern "C" fn rust_write_batch_handler_put_cf(h: *mut (), column_family_id: u32, key: &&[u8], value: &&[u8]) {
+    pub unsafe extern "C" fn rust_write_batch_handler_put_cf(
+        h: *mut (),
+        column_family_id: u32,
+        key: &&[u8],
+        value: &&[u8],
+    ) {
         assert!(!h.is_null());
         let handler = h as *mut &mut WriteBatchHandler;
         (*handler).put_cf(column_family_id, key, value);
@@ -505,15 +503,24 @@ pub mod c {
     }
 
     #[no_mangle]
-    pub unsafe extern "C" fn rust_write_batch_handler_delete_range_cf(h: *mut (), column_family_id: u32,
-                                                                      begin_key: &&[u8], end_key: &&[u8]) {
+    pub unsafe extern "C" fn rust_write_batch_handler_delete_range_cf(
+        h: *mut (),
+        column_family_id: u32,
+        begin_key: &&[u8],
+        end_key: &&[u8],
+    ) {
         assert!(!h.is_null());
         let handler = h as *mut &mut WriteBatchHandler;
         (*handler).delete_range_cf(column_family_id, begin_key, end_key);
     }
 
     #[no_mangle]
-    pub unsafe extern "C" fn rust_write_batch_handler_merge_cf(h: *mut (), column_family_id: u32, key: &&[u8], value: &&[u8]) {
+    pub unsafe extern "C" fn rust_write_batch_handler_merge_cf(
+        h: *mut (),
+        column_family_id: u32,
+        key: &&[u8],
+        value: &&[u8],
+    ) {
         assert!(!h.is_null());
         let handler = h as *mut &mut WriteBatchHandler;
         (*handler).merge_cf(column_family_id, key, value);

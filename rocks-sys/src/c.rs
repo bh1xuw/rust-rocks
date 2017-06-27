@@ -140,6 +140,9 @@ pub struct rocks_universal_compaction_options_t([u8; 0]);
 pub struct rocks_logfiles_t([u8; 0]);
 #[repr(C)]
 #[derive(Debug, Copy, Clone)]
+pub struct rocks_transaction_log_iterator_t([u8; 0]);
+#[repr(C)]
+#[derive(Debug, Copy, Clone)]
 pub struct rocks_table_props_collection_t([u8; 0]);
 #[repr(C)]
 #[derive(Debug, Copy, Clone)]
@@ -1593,6 +1596,11 @@ extern "C" {
      -> *mut rocks_logfiles_t;
 }
 extern "C" {
+    pub fn rocks_db_get_update_since(db: *mut rocks_db_t, seq_no: u64,
+                                     status: *mut *mut rocks_status_t)
+     -> *mut rocks_transaction_log_iterator_t;
+}
+extern "C" {
     pub fn rocks_db_delete_file(db: *mut rocks_db_t,
                                 name: *const ::std::os::raw::c_char,
                                 name_len: usize,
@@ -2010,10 +2018,6 @@ extern "C" {
                                                        *mut *mut rocks_status_t);
 }
 extern "C" {
-    pub fn rocks_writebatch_copy(b: *mut rocks_writebatch_t)
-     -> *mut rocks_writebatch_t;
-}
-extern "C" {
     pub fn rocks_writebatch_has_put(b: *mut rocks_writebatch_t)
      -> ::std::os::raw::c_uchar;
 }
@@ -2048,6 +2052,10 @@ extern "C" {
 extern "C" {
     pub fn rocks_writebatch_has_rollback(b: *mut rocks_writebatch_t)
      -> ::std::os::raw::c_uchar;
+}
+extern "C" {
+    pub fn rocks_writebatch_copy(b: *mut rocks_writebatch_t)
+     -> *mut rocks_writebatch_t;
 }
 extern "C" {
     pub fn rocks_writebatch_get_writebatch(b: *mut rocks_writebatch_t)
@@ -2870,6 +2878,31 @@ extern "C" {
 extern "C" {
     pub fn rocks_logfiles_nth_file_size(files: *mut rocks_logfiles_t,
                                         nth: usize) -> u64;
+}
+extern "C" {
+    pub fn rocks_transaction_log_iterator_destory(it:
+                                                      *mut rocks_transaction_log_iterator_t);
+}
+extern "C" {
+    pub fn rocks_transaction_log_iterator_valid(it:
+                                                    *mut rocks_transaction_log_iterator_t)
+     -> ::std::os::raw::c_uchar;
+}
+extern "C" {
+    pub fn rocks_transaction_log_iterator_next(it:
+                                                   *mut rocks_transaction_log_iterator_t);
+}
+extern "C" {
+    pub fn rocks_transaction_log_iterator_status(it:
+                                                     *mut rocks_transaction_log_iterator_t,
+                                                 status:
+                                                     *mut *mut rocks_status_t);
+}
+extern "C" {
+    pub fn rocks_transaction_log_iterator_get_batch(it:
+                                                        *mut rocks_transaction_log_iterator_t,
+                                                    seq_no: *mut u64)
+     -> *mut rocks_writebatch_t;
 }
 extern "C" {
     pub fn rocks_get_supported_compressions(len: *mut usize)

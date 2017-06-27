@@ -26,7 +26,7 @@ use iterator::Iterator;
 use types::SequenceNumber;
 use to_raw::{ToRaw, FromRaw};
 use metadata::{LiveFileMetaData, SstFileMetaData, LevelMetaData, ColumnFamilyMetaData};
-use transaction_log::LogFile;
+use transaction_log::{LogFile, TransactionLogIterator};
 
 use super::Result;
 use super::slice::{CVec, PinnableSlice};
@@ -1858,9 +1858,23 @@ impl<'a> DB<'a> {
     }
 
 
-    // TODO:
-    //
-    // get_updates_since
+    /// Sets iter to an iterator that is positioned at a write-batch containing
+    /// seq_number. If the sequence number is non existent, it returns an iterator
+    /// at the first available seq_no after the requested seq_no
+    ///
+    /// Returns Status::OK if iterator is valid
+    ///
+    /// Must set WAL_ttl_seconds or WAL_size_limit_MB to large values to
+    /// use this api, else the WAL files will get
+    /// cleared aggressively and the iterator might keep getting invalid before
+    /// an update is read.
+    pub fn get_updates_since(&self, seq_number: SequenceNumber) -> Result<TransactionLogIterator> {
+        let mut status = ptr::null_mut::<ll::rocks_status_t>();
+        unsafe {
+            let iter_raw_ptr = ll::rocks_db_get_update_since(self.raw(), seq_number.0, &mut status);
+            Status::from_ll(status).map(|_| TransactionLogIterator::from_ll(iter_raw_ptr))
+        }
+    }
 
     /// Delete the file name from the db directory and update the internal state to
     /// reflect that. Supports deletion of sst and log files only. 'name' must be
@@ -3023,7 +3037,7 @@ mod tests {
         let db = DB::open(
             Options::default()
                 .map_db_options(|db| db.create_if_missing(true))
-                .map_cf_options(|cf| cf.disable_auto_compactions(true)), // disable
+                .map_cf_options(|cf| cf.disable_auto_compactions(true)),
             &tmp_dir,
         ).unwrap();
 

@@ -205,9 +205,8 @@ struct rocks_iterator_t {
 };
 
 /* write_batch */
-// FIXME: this is a class type, should be wrapped into pointer
 struct rocks_writebatch_t {
-  WriteBatch rep;
+  std::unique_ptr<WriteBatch> rep;
 };
 typedef struct rocks_raw_writebatch_t rocks_raw_writebatch_t;
 
@@ -395,6 +394,10 @@ struct rocks_universal_compaction_options_t {
 /* transaction_log */
 struct rocks_logfiles_t {
   VectorLogPtr rep;
+};
+
+struct rocks_transaction_log_iterator_t {
+  std::unique_ptr<TransactionLogIterator> rep;
 };
 
 /* table_properties */
