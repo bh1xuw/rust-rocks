@@ -1,6 +1,6 @@
 # RustRocks [![Build Status][trav-ci-img]][trav-ci] [![crates.io badge][crates-io-badge]][crates-io-url]
 
-Another RocksDB binding for Rust.
+Another RocksDB binding for Rust. [Documentation](https://docs.rs/rocks/)
 
 Make RocksDB really rocks!
 
