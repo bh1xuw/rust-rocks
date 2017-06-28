@@ -895,6 +895,11 @@ extern "C" {
     pub fn rocks_readoptions_create() -> *mut rocks_readoptions_t;
 }
 extern "C" {
+    pub fn rocks_readoptions_new(cksum: ::std::os::raw::c_uchar,
+                                 cache: ::std::os::raw::c_uchar)
+     -> *mut rocks_readoptions_t;
+}
+extern "C" {
     pub fn rocks_readoptions_destroy(opt: *mut rocks_readoptions_t);
 }
 extern "C" {

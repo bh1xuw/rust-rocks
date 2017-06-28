@@ -5,11 +5,11 @@ use std::path::{Path, PathBuf};
 use std::mem;
 use std::ptr;
 use std::os::raw::c_int;
+use std::marker::PhantomData;
 
 use rocks_sys as ll;
 
-use env::InfoLogLevel;
-use env::Logger;
+use env::{InfoLogLevel,Logger,Env};
 use listener::EventListener;
 use write_buffer_manager::WriteBufferManager;
 use rate_limiter::RateLimiter;
@@ -33,7 +33,7 @@ lazy_static! {
     static ref DEFAULT_OPTIONS: Options = {
         Options::default().map_db_options(|db| db.create_if_missing(true))
     };
-    static ref DEFAULT_READ_OPTIONS: ReadOptions = {
+    static ref DEFAULT_READ_OPTIONS: ReadOptions<'static> = {
         ReadOptions::default()
     };
     static ref DEFAULT_WRITE_OPTIONS: WriteOptions = {
@@ -1068,14 +1068,6 @@ impl ColumnFamilyOptions {
         self
     }
 
-    /// This is a factory that provides MemTableRep objects.
-    ///
-    /// Default: a factory that provides a skip-list-based implementation of
-    /// MemTableRep.
-    pub fn memtable_factory(self, val: ()) -> Self {
-        unimplemented!()
-    }
-
     /// This creates MemTableReps that are backed by an std::vector. On iteration,
     /// the vector is sorted. This is useful for workloads where iteration is very
     /// rare and writes are generally not issued after reads begin.
@@ -1428,8 +1420,7 @@ impl DBOptions {
     /// e.g. to read/write files, schedule background work, etc.
     ///
     /// Default: Env::Default()
-    // env: Env,
-    pub fn env(self, e: ()) -> Self {
+    pub fn env(self, env: Env) -> Self {
         unimplemented!()
     }
 
@@ -2419,19 +2410,20 @@ pub enum ReadTier {
 ///     .managed(true)
 ///     .read_tier(ReadTier::PersistedTier);
 /// ```
-pub struct ReadOptions {
+pub struct ReadOptions<'a> {
     raw: *mut ll::rocks_readoptions_t,
+    _marker: PhantomData<&'a ()>,
 }
 
-unsafe impl Sync for ReadOptions {}
+unsafe impl<'a> Sync for ReadOptions<'a> {}
 
-impl AsRef<ReadOptions> for ReadOptions {
-    fn as_ref(&self) -> &ReadOptions {
+impl<'a> AsRef<ReadOptions<'a>> for ReadOptions<'a> {
+    fn as_ref(&self) -> &ReadOptions<'a> {
         self
     }
 }
 
-impl Drop for ReadOptions {
+impl<'a> Drop for ReadOptions<'a> {
     fn drop(&mut self) {
         unsafe {
             ll::rocks_readoptions_destroy(self.raw);
@@ -2439,17 +2431,33 @@ impl Drop for ReadOptions {
     }
 }
 
-impl ToRaw<ll::rocks_readoptions_t> for ReadOptions {
+impl<'a> ToRaw<ll::rocks_readoptions_t> for ReadOptions<'a> {
     fn raw(&self) -> *mut ll::rocks_readoptions_t {
         self.raw
     }
 }
 
-impl ReadOptions {
+impl<'a> Default for ReadOptions<'a> {
+    fn default() -> Self {
+        ReadOptions {
+            raw: unsafe { ll::rocks_readoptions_create() },
+            _marker: PhantomData,
+        }
+    }
+}
+
+impl<'a> ReadOptions<'a> {
     /// default `ReadOptions` optimization
     #[inline]
-    pub fn default_instance() -> &'static ReadOptions {
+    pub fn default_instance() -> &'static ReadOptions<'static> {
         &*DEFAULT_READ_OPTIONS
+    }
+
+    pub fn new<'b>(cksum: bool, cache: bool) -> ReadOptions<'b> {
+        ReadOptions {
+            raw: unsafe { ll::rocks_readoptions_new(cksum as u8, cache as u8) },
+            _marker: PhantomData,
+        }
     }
 
     /// If true, all data read from underlying storage will be
@@ -2483,7 +2491,7 @@ impl ReadOptions {
     ///
     /// Default: nullptr
     // FIXME: lifetime, val should be longer than self
-    pub fn snapshot<'a, T: AsRef<Snapshot<'a>>>(self, val: Option<T>) -> Self {
+    pub fn snapshot<'s: 'a, 'b: 'a, T: AsRef<Snapshot<'s>> + 'b>(self, val: Option<T>) -> Self {
         unsafe {
             ll::rocks_readoptions_set_snapshot(self.raw, val.map(|v| v.as_ref().raw()).unwrap_or(ptr::null_mut()));
         }
@@ -2493,19 +2501,18 @@ impl ReadOptions {
     /// "iterate_upper_bound" defines the extent upto which the forward iterator
     /// can returns entries. Once the bound is reached, Valid() will be false.
     /// "iterate_upper_bound" is exclusive ie the bound value is
-    /// not a valid entry.  If iterator_extractor is not null, the Seek target
-    /// and iterator_upper_bound need to have the same prefix.
+    /// not a valid entry.  If `iterator_extractor` is not null, the Seek target
+    /// and `iterator_upper_bound` need to have the same prefix.
     /// This is because ordering is not guaranteed outside of prefix domain.
     /// There is no lower bound on the iterator. If needed, that can be easily
     /// implemented
     ///
     /// Default: nullptr
-    pub fn iterate_upper_bound(self, val: Option<Vec<u8>>) -> Self {
-        // unsafe {
-        //     ll::rocks_readoptions_set_iterate_upper_bound(self.raw, val);
-        // }
-        // self
-        unimplemented!()
+    pub fn iterate_upper_bound<'b: 'a>(self, val: &'b [u8]) -> Self {
+        unsafe {
+            ll::rocks_readoptions_set_iterate_upper_bound(self.raw, val.as_ptr() as *const _, val.len())
+        }
+        self
     }
 
     /// Specify if this read request should process data that ALREADY
@@ -2526,8 +2533,6 @@ impl ReadOptions {
     /// that were inserted into the database after the creation of the iterator.
     ///
     /// Default: false
-    ///
-    /// Not supported in ROCKSDB_LITE mode!
     pub fn tailing(self, val: bool) -> Self {
         unsafe {
             ll::rocks_readoptions_set_tailing(self.raw, val as u8);
@@ -2625,16 +2630,6 @@ impl ReadOptions {
             ll::rocks_readoptions_set_ignore_range_deletions(self.raw, val as u8);
         }
         self
-    }
-
-    pub fn new(cksum: bool, cache: bool) -> ReadOptions {
-        unimplemented!()
-    }
-}
-
-impl Default for ReadOptions {
-    fn default() -> Self {
-        ReadOptions { raw: unsafe { ll::rocks_readoptions_create() } }
     }
 }
 

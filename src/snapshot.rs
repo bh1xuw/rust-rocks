@@ -120,17 +120,20 @@ mod tests {
         assert!(db.put(&WriteOptions::default(), b"k2", b"v6").is_ok());
         assert!(db.put(&WriteOptions::default(), b"k3", b"v3").is_ok());
 
-        let ropts = ReadOptions::default().snapshot(snap.as_ref());
+        // live time of ropts, borrows snapshot
+        {
+            let ropts = ReadOptions::default().snapshot(snap.as_ref());
 
-        assert_eq!(db.get(&ropts, b"k1").expect("db[k1]"), b"v1");
-        assert_eq!(db.get(&ropts, b"k2").expect("db[k2]"), b"v2");
-        assert!(db.get(&ropts, b"k3").expect_err("db[k3]").is_not_found());
+            assert_eq!(db.get(&ropts, b"k1").expect("db[k1]"), b"v1");
+            assert_eq!(db.get(&ropts, b"k2").expect("db[k2]"), b"v2");
+            assert!(db.get(&ropts, b"k3").expect_err("db[k3]").is_not_found());
 
-        assert_eq!(db.get(&ReadOptions::default(), b"k2").expect("db[k2]"), b"v6");
-        assert_eq!(db.get(&ReadOptions::default(), b"k3").expect("db[k3]"), b"v3");
+            assert_eq!(db.get(&ReadOptions::default(), b"k2").expect("db[k2]"), b"v6");
+            assert_eq!(db.get(&ReadOptions::default(), b"k3").expect("db[k3]"), b"v3");
 
-        // should release
-        assert_eq!(db.get_int_property("rocksdb.num-snapshots"), Some(1));
+            // should release
+            assert_eq!(db.get_int_property("rocksdb.num-snapshots"), Some(1));
+        }
         db.release_snapshot(snap.unwrap());
         assert_eq!(db.get_int_property("rocksdb.num-snapshots"), Some(0));
     }
