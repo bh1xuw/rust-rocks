@@ -36,7 +36,7 @@ impl fmt::Debug for ExternalSstFileInfo {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         write!(
             f,
-            "ExternalSstFileInfo#{:?} <path: {}, key: {:?}...{:?}, entries: {}>",
+            "ExternalSstFileInfo {{#{} path: {:?}, key: {:?}...{:?}, entries: {}}}",
             self.sequence_number().0,
             self.file_path(),
             String::from_utf8_lossy(self.smallest_key()),

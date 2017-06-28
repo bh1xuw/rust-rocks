@@ -2,6 +2,7 @@
 
 use std::ptr;
 use std::fmt;
+use std::iter::Iterator;
 
 use rocks_sys as ll;
 
@@ -55,6 +56,7 @@ impl fmt::Debug for LogFile {
     }
 }
 
+/// Single write batch result returned by TransactionLogIterator
 #[derive(Debug)]
 pub struct BatchResult {
     pub sequence: SequenceNumber,
@@ -100,7 +102,9 @@ impl TransactionLogIterator {
     /// Moves the iterator to the next WriteBatch.
     ///
     /// REQUIRES: Valid() to be true.
-    pub fn next(&mut self) {
+    ///
+    /// Rust: avoid name collision with `Iterator::next`
+    pub fn move_next(&mut self) {
         unsafe {
             ll::rocks_transaction_log_iterator_next(self.raw);
         }
@@ -132,6 +136,19 @@ impl TransactionLogIterator {
     }
 }
 
+impl Iterator for TransactionLogIterator {
+    type Item = BatchResult;
+
+    fn next(&mut self) -> Option<Self::Item> {
+        if self.is_valid() && self.status().is_ok() {
+            let batch = self.get_batch();
+            self.move_next();
+            Some(batch)
+        } else {
+            None
+        }
+    }
+}
 
 #[cfg(test)]
 mod tests {
@@ -179,14 +196,20 @@ mod tests {
         let mut it = it.unwrap();
         assert!(it.is_valid());
         assert!(it.status().is_ok());
-        it.next();
+        assert!(it.next().is_some());
         let batch = it.get_batch();
-        // println!("batch => {:?}", batch);
-        assert!(batch.sequence.0 > 20);
+        println!("batch => {:?}", batch);
+        assert!(batch.sequence.0 >= 20);
+        assert_eq!(batch.write_batch.count(), 3);
 
         let mut handler = WriteBatchIteratorHandler::default();
         let ret = batch.write_batch.iterate(&mut handler);
         assert!(ret.is_ok(), "error: {:?}", ret);
         assert_eq!(handler.entries.len(), 3);
+
+        for batch in db.get_updates_since(20.into()).unwrap() {
+            // first batch will contains current since seq_no, so jump backwards
+            assert!(batch.sequence.0 > 20 - 3);
+        }
     }
 }

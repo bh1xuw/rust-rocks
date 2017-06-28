@@ -44,7 +44,7 @@ impl Clone for WriteBatch {
 
 impl fmt::Debug for WriteBatch {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        write!(f, "WriteBatch {{{:?}}}", String::from_utf8_lossy(self.get_data()))
+        write!(f, "WriteBatch {{{} items}}", self.count())
     }
 }
 
@@ -589,7 +589,6 @@ mod tests {
         assert!(batch.count() == 1);
         batch.delete(b"name");
         assert_eq!(batch.count(), 2);
-        assert!(format!("{:?}", batch).len() > 20);
 
         assert!(batch.has_put());
         assert!(batch.has_delete());

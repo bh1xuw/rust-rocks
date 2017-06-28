@@ -27,7 +27,7 @@ pub struct TablePropertiesCollection {
 
 impl fmt::Debug for TablePropertiesCollection {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        write!(f, "TablePropertiesCollection[{} items]", self.len())
+        write!(f, "TablePropertiesCollection {{{} items}}", self.len())
     }
 }
 
@@ -127,7 +127,7 @@ pub struct UserCollectedProperties {
 
 impl fmt::Debug for UserCollectedProperties {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        write!(f, "UserCollectedProperties[{} items]", self.len())
+        write!(f, "UserCollectedProperties {{{} items}}", self.len())
     }
 }
 
@@ -187,7 +187,7 @@ impl<'a> ops::Index<&'a str> for UserCollectedProperties {
     }
 }
 
-#[doc(hidden)]
+/// Rust Iterator interface for `UserCollectedProperties`
 pub struct UserCollectedPropertiesIter<'a> {
     raw: *mut ll::rocks_user_collected_props_iter_t,
     size: usize,
@@ -264,7 +264,7 @@ impl<'a> fmt::Display for TableProperties<'a> {
 
 impl<'a> fmt::Debug for TableProperties<'a> {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        write!(f, "TableProperties({:?})", self.to_string())
+        write!(f, "TableProperties {{{:?}}}", self.to_string())
     }
 }
 
