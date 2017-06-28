@@ -814,7 +814,8 @@ rocks_readoptions_t* rocks_readoptions_create() {
   return new rocks_readoptions_t;
 }
 
-rocks_readoptions_t* rocks_readoptions_new(unsigned char cksum, unsigned char cache) {
+rocks_readoptions_t* rocks_readoptions_new(unsigned char cksum,
+                                           unsigned char cache) {
   return new rocks_readoptions_t{ReadOptions(cksum, cache)};
 }
 

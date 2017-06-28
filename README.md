@@ -29,6 +29,13 @@ big picture(TODOs):
 - [x] Rust style error handling
   - [x] wraps Status into a Rust style ``Result<T>``
   - [ ] wraps Status as a Error variant?
+- [ ] Lifetime safely guarantee
+  - [x] `ReadOptions` + `snapshot`
+  - [x] `ReadOptions` + `iterate_upper_bound`
+  - [x] `DB` + `ColumnFamilyHandle`
+  - [ ] ~~`DBOptions` + `wal_filter`~~
+  - [ ] `ColumnFamilyOptions` + `compaction_filter`
+  - [ ] `ColumnFamilyOptions` + customized `comparator`
 - [ ] Proof of usablility
 - [ ] bench across C++/Java/other-rust binding
 - [x] CI

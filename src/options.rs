@@ -2490,7 +2490,6 @@ impl<'a> ReadOptions<'a> {
     /// snapshot of the state at the beginning of this read operation.
     ///
     /// Default: nullptr
-    // FIXME: lifetime, val should be longer than self
     pub fn snapshot<'s: 'a, 'b: 'a, T: AsRef<Snapshot<'s>> + 'b>(self, val: Option<T>) -> Self {
         unsafe {
             ll::rocks_readoptions_set_snapshot(self.raw, val.map(|v| v.as_ref().raw()).unwrap_or(ptr::null_mut()));

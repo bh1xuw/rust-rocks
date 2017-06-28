@@ -574,7 +574,8 @@ void rocks_options_optimize_for_small_db(rocks_options_t* opt);
 /* readoptions */
 rocks_readoptions_t* rocks_readoptions_create();
 
-rocks_readoptions_t* rocks_readoptions_new(unsigned char cksum, unsigned char cache);
+rocks_readoptions_t* rocks_readoptions_new(unsigned char cksum,
+                                           unsigned char cache);
 
 void rocks_readoptions_destroy(rocks_readoptions_t* opt);
 
