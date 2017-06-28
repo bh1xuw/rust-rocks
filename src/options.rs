@@ -26,9 +26,13 @@ use slice_transform::SliceTransform;
 use snapshot::Snapshot;
 use table_properties::TablePropertiesCollectorFactory;
 
-use to_raw::ToRaw;
+use to_raw::{ToRaw, FromRaw};
 
 lazy_static! {
+    // since all Options field are guaranteed to be thread safe
+    static ref DEFAULT_OPTIONS: Options = {
+        Options::default().map_db_options(|db| db.create_if_missing(true))
+    };
     static ref DEFAULT_READ_OPTIONS: ReadOptions = {
         ReadOptions::default()
     };
@@ -2300,6 +2304,8 @@ pub struct Options {
     raw: *mut ll::rocks_options_t,
 }
 
+unsafe impl Sync for Options {}
+
 impl AsRef<Options> for Options {
     fn as_ref(&self) -> &Options {
         self
@@ -2326,9 +2332,17 @@ impl ToRaw<ll::rocks_options_t> for Options {
     }
 }
 
-impl Options {
+impl FromRaw<ll::rocks_options_t> for Options {
     unsafe fn from_ll(raw: *mut ll::rocks_options_t) -> Options {
         Options { raw: raw }
+    }
+}
+
+impl Options {
+    /// default `Options` with `create_if_missing=true``
+    #[inline]
+    pub fn default_instance() -> &'static Options {
+        &*DEFAULT_OPTIONS
     }
 
     pub fn new(dbopt: Option<DBOptions>, cfopt: Option<ColumnFamilyOptions>) -> Options {
@@ -2408,6 +2422,8 @@ pub enum ReadTier {
 pub struct ReadOptions {
     raw: *mut ll::rocks_readoptions_t,
 }
+
+unsafe impl Sync for ReadOptions {}
 
 impl AsRef<ReadOptions> for ReadOptions {
     fn as_ref(&self) -> &ReadOptions {
@@ -2622,12 +2638,12 @@ impl Default for ReadOptions {
     }
 }
 
-unsafe impl Sync for ReadOptions {}
-
 /// Options that control write operations
 pub struct WriteOptions {
     raw: *mut ll::rocks_writeoptions_t,
 }
+
+unsafe impl Sync for WriteOptions {}
 
 impl AsRef<WriteOptions> for WriteOptions {
     fn as_ref(&self) -> &WriteOptions {
@@ -2715,8 +2731,6 @@ impl WriteOptions {
         self
     }
 }
-
-unsafe impl Sync for WriteOptions {}
 
 /// Options that control flush operations
 #[repr(C)]
