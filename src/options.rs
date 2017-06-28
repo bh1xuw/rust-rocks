@@ -644,17 +644,17 @@ impl ColumnFamilyOptions {
     /// delta_value). So the transaction log (if enabled) will still contain (key,
     /// delta_value). The 'merged_value' is not stored in the transaction log.
     /// Hence the inplace_callback function should be consistent across db reopens.
-
+    ///
     /// Default: nullptr
     pub fn inplace_callback(self, val: Option<()>) -> Self {
+        //     unsafe {
+        //          ll::rocks_cfoptions_set_inplace_callback(self.raw, val);
+        //     }
+        //     self
         unimplemented!()
-        // unsafe {
-        //     ll::rocks_cfoptions_set_inplace_callback(self.raw, val);
-        // }
-        // self
     }
 
-    //  UpdateStatus (*inplace_callback)(char* existing_value,
+    // UpdateStatus (*inplace_callback)(char* existing_value,
     // uint32_t* existing_value_size,
     // Slice delta_value,
     // std::string* merged_value) = nullptr;
@@ -2088,7 +2088,7 @@ impl DBOptions {
 
     /// A vector of EventListeners which call-back functions will be called
     /// when specific RocksDB event happens.
-    pub fn listeners(self, val: Vec<EventListener>) -> Self {
+    pub fn add_listener(self, val: Box<EventListener>) -> Self {
         // unsafe {
         //     ll::rocks_dboptions_set_listeners(self.raw, val);
         // }

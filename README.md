@@ -101,6 +101,7 @@ big picture(TODOs):
   - [x] reverse iterator
 - [ ] ~~``rocksdb/ldb_tool.h``~~
 - [ ] ``rocksdb/listener.h``
+  - [ ] need refactor DB/CFHandle to allow borrowed
 - [x] ``rocksdb/memtablerep.h``
   - [x] via options surffix
 - [x] ``rocksdb/merge_operator.h``
@@ -128,12 +129,10 @@ big picture(TODOs):
 - [ ] ``rocksdb/sst_file_manager.h``
 - [x] ``rocksdb/sst_file_writer.h``
 - [x] ``rocksdb/statistics.h``
-  - [ ] customized statistics class via rust trait?
 - [x] ``rocksdb/status.h``
   - [x] Rust style Error? (i.e. remove Status::OK)
 - [x] ``rocksdb/table.h``
   - [x] plain / block based / cuckoo options
-  - [ ] customized
 - [x] ``rocksdb/table_properties.h``
 - [ ] ``rocksdb/thread_status.h``
 - [ ] ``rocksdb/threadpool.h``

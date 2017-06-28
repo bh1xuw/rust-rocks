@@ -72,6 +72,7 @@ pub mod wal_filter;
 pub mod filter_policy;
 pub mod convenience;
 pub mod transaction_log;
+pub mod compaction_job_stats;
 
 // the prelude
 pub mod rocksdb;
