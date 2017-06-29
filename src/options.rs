@@ -9,7 +9,7 @@ use std::marker::PhantomData;
 
 use rocks_sys as ll;
 
-use env::{InfoLogLevel,Logger,Env};
+use env::{InfoLogLevel, Logger, Env};
 use listener::EventListener;
 use write_buffer_manager::WriteBufferManager;
 use rate_limiter::RateLimiter;
@@ -2508,9 +2508,7 @@ impl<'a> ReadOptions<'a> {
     ///
     /// Default: nullptr
     pub fn iterate_upper_bound<'b: 'a>(self, val: &'b [u8]) -> Self {
-        unsafe {
-            ll::rocks_readoptions_set_iterate_upper_bound(self.raw, val.as_ptr() as *const _, val.len())
-        }
+        unsafe { ll::rocks_readoptions_set_iterate_upper_bound(self.raw, val.as_ptr() as *const _, val.len()) }
         self
     }
 

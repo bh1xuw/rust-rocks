@@ -155,7 +155,9 @@ mod tests {
             assert!(db.put(&WriteOptions::default(), b"k2", b"v6").is_ok());
             assert!(db.put(&WriteOptions::default(), b"k3", b"v3").is_ok());
 
-            let ropts = ReadOptions::default().snapshot(Some(&snap));
+            let ropts = ReadOptions::default()
+                .snapshot(Some(&snap))
+                .verify_checksums(false);
 
             assert_eq!(db.get(&ropts, b"k1").expect("db[k1]"), b"v1");
             assert_eq!(db.get(&ropts, b"k2").expect("db[k2]"), b"v2");

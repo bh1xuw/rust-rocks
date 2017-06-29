@@ -2958,8 +2958,7 @@ extern "C" {
 extern "C" {
     pub fn rocks_table_props_collection_iter_key(it:
                                                      *mut rocks_table_props_collection_iter_t,
-                                                 s:
-                                                     *mut ::std::os::raw::c_void)
+                                                 len: *mut usize)
      -> *const ::std::os::raw::c_char;
 }
 extern "C" {
@@ -3104,14 +3103,14 @@ extern "C" {
 extern "C" {
     pub fn rocks_user_collected_props_iter_key(it:
                                                    *mut rocks_user_collected_props_iter_t,
-                                               s:
-                                                   *mut ::std::os::raw::c_void);
+                                               len: *mut usize)
+     -> *const ::std::os::raw::c_char;
 }
 extern "C" {
     pub fn rocks_user_collected_props_iter_value(it:
                                                      *mut rocks_user_collected_props_iter_t,
-                                                 v:
-                                                     *mut ::std::os::raw::c_void);
+                                                 len: *mut usize)
+     -> *const ::std::os::raw::c_char;
 }
 extern "C" {
     pub fn free(p: *mut ::std::os::raw::c_void);

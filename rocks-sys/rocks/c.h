@@ -1648,7 +1648,7 @@ unsigned char rocks_table_props_collection_iter_next(
     rocks_table_props_collection_iter_t* it);
 
 const char* rocks_table_props_collection_iter_key(
-    rocks_table_props_collection_iter_t* it, void* s);
+    rocks_table_props_collection_iter_t* it, size_t* len);
 
 rocks_table_props_t* rocks_table_props_collection_iter_value(
     rocks_table_props_collection_iter_t* it);
@@ -1702,11 +1702,11 @@ rocks_user_collected_props_iter_t* rocks_user_collected_props_iter_create(
 unsigned char rocks_user_collected_props_iter_next(
     rocks_user_collected_props_iter_t* it);
 
-void rocks_user_collected_props_iter_key(rocks_user_collected_props_iter_t* it,
-                                         void* s);
+const char* rocks_user_collected_props_iter_key(
+    rocks_user_collected_props_iter_t* it, size_t* len);
 
-void rocks_user_collected_props_iter_value(
-    rocks_user_collected_props_iter_t* it, void* v);
+const char* rocks_user_collected_props_iter_value(
+    rocks_user_collected_props_iter_t* it, size_t* len);
 
 /* aux */
 void free(void* p);

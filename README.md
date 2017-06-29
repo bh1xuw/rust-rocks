@@ -26,8 +26,9 @@ big picture(TODOs):
 
 - [x] git submodule, static-link, compression as feature gate
 - [x] information hiding (DO NOT EXPORT raw pointers)
-- [x] Rust style error handling
+- [x] Rust style
   - [x] wraps Status into a Rust style ``Result<T>``
+  - [x] ``*Options`` via builder pattern
   - [ ] wraps Status as a Error variant?
 - [ ] Lifetime safely guarantee
   - [x] `ReadOptions` + `snapshot`
@@ -50,6 +51,9 @@ big picture(TODOs):
 - [ ] Full documentation with code examples
   - [x] good enough by copying C++ comments
   - [ ] rename C++ function names to rust name in doc comments
+  - [ ] more examples in doc comment
+
+## per-file status
 
 > checkbox means DONE, or NEEDLESS TO BE DONE.
 

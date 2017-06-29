@@ -81,18 +81,18 @@ impl<'a> Drop for TablePropertiesCollectionIter<'a> {
 }
 
 impl<'a> Iterator for TablePropertiesCollectionIter<'a> {
-    type Item = (String, TableProperties<'a>);
+    type Item = (&'a str, TableProperties<'a>);
 
-    fn next(&mut self) -> Option<(String, TableProperties<'a>)> {
+    fn next(&mut self) -> Option<(&'a str, TableProperties<'a>)> {
         if self.raw.is_null() || self.at_end {
             None
         } else {
-            let mut key = String::new();
+            let mut key_len = 0;
             unsafe {
-                ll::rocks_table_props_collection_iter_key(self.raw, &mut key as *mut String as *mut c_void);
+                let key_ptr = ll::rocks_table_props_collection_iter_key(self.raw, &mut key_len);
                 let prop = TableProperties::from_ll(ll::rocks_table_props_collection_iter_value(self.raw));
                 self.at_end = ll::rocks_table_props_collection_iter_next(self.raw) == 0;
-                // FIXME: can't use &str here, since each time iterator->first will be reused
+                let key = str::from_utf8_unchecked(slice::from_raw_parts(key_ptr as *const u8, key_len));
                 Some((key, prop))
             }
         }
@@ -204,21 +204,22 @@ impl<'a> Drop for UserCollectedPropertiesIter<'a> {
 }
 
 impl<'a> Iterator for UserCollectedPropertiesIter<'a> {
-    // FIXME: is {String => Vec<u8>} right?
-    type Item = (String, Vec<u8>);
+    type Item = (&'a str, &'a [u8]);
 
-    fn next(&mut self) -> Option<(String, Vec<u8>)> {
+    fn next(&mut self) -> Option<(&'a str, &'a [u8])> {
         if self.raw.is_null() || self.at_end {
             None
         } else {
-            let mut key = String::new();
-            let mut value = Vec::new();
+            let mut key_len = 0;
+            let mut value_len = 0;
             unsafe {
-                ll::rocks_user_collected_props_iter_key(self.raw, &mut key as *mut String as *mut c_void);
-                ll::rocks_user_collected_props_iter_value(self.raw, &mut value as *mut Vec<u8> as *mut c_void);
+                let key_ptr = ll::rocks_user_collected_props_iter_key(self.raw, &mut key_len);
+                let value_ptr = ll::rocks_user_collected_props_iter_value(self.raw, &mut value_len);
                 self.at_end = ll::rocks_user_collected_props_iter_next(self.raw) == 0;
+                let key = str::from_utf8_unchecked(slice::from_raw_parts(key_ptr as *const u8, key_len));
+                let value = slice::from_raw_parts(value_ptr as *const u8, value_len);
+                Some((key, value))
             }
-            Some((key, value))
         }
     }
 
@@ -563,20 +564,25 @@ pub mod c {
 #[cfg(test)]
 mod tests {
     use std::iter;
-    use std::collections::HashMap;
+    use std::time;
 
     use super::*;
     use super::super::rocksdb::*;
 
+    #[derive(Default)]
     pub struct MyTblPropsCollector {
-        data: HashMap<String, String>,
+        counter: u32,
     }
 
     impl TablePropertiesCollector for MyTblPropsCollector {
-        fn add_user_key(&mut self, key: &[u8], value: &[u8], type_: EntryType, seq: SequenceNumber, file_size: u64) {}
+        fn add_user_key(&mut self, key: &[u8], value: &[u8], type_: EntryType, seq: SequenceNumber, file_size: u64) {
+            // self.counter += 1;
+        }
 
         fn finish(&mut self, props: &mut UserCollectedProperties) {
             props.insert("hello", b"world");
+            props.insert("sample_key", b"sample_value");
+            props.insert("test.counter", format!("{}", self.counter).as_bytes());
         }
     }
 
@@ -584,7 +590,12 @@ mod tests {
 
     impl TablePropertiesCollectorFactory for MyTblPropsCollectorFactory {
         fn new_collector(&mut self, context: Context) -> Box<TablePropertiesCollector> {
-            Box::new(MyTblPropsCollector { data: HashMap::default() })
+            Box::new(MyTblPropsCollector {
+                counter: time::SystemTime::now()
+                    .duration_since(time::UNIX_EPOCH)
+                    .unwrap()
+                    .subsec_nanos(),
+            })
         }
     }
 
@@ -610,11 +621,14 @@ mod tests {
             db.single_delete(&WriteOptions::default(), b"k5").unwrap();
             db.put(&WriteOptions::default(), key.as_bytes(), value.as_bytes())
                 .unwrap();
+
+            // make as many sst as possible
+            assert!(db.flush(&FlushOptions::default().wait(true)).is_ok());
         }
-        assert!(db.flush(&FlushOptions::default().wait(true)).is_ok());
 
         let props =
-            db.get_properties_of_tables_in_range(&db.default_column_family(), &[b"k4".as_ref()..b"k40".as_ref()]);
+            db.get_properties_of_tables_in_range(&db.default_column_family(), &[b"k0".as_ref()..b"k9".as_ref()]);
+
         assert!(props.is_ok());
         let props = props.unwrap();
 
@@ -626,7 +640,24 @@ mod tests {
             ));
 
             let user_prop = prop.user_collected_properties();
+            let diff_vals = user_prop.iter().collect::<Vec<_>>();
             assert_eq!(&user_prop["hello"], b"world");
+            for (k, v) in user_prop.iter() {
+                assert!(k.len() > 0); // has key
+                assert!(v.len() > 0);
+            }
         }
+
+        let mut files = props.iter().map(|(file, _)| file).collect::<Vec<_>>();
+        files.sort();
+        files.dedup(); // assure files returned are all unique
+        assert_eq!(files.len(), 100);
+        let mut counters = props
+            .iter()
+            .map(|(_, props)| props.user_collected_properties()["test.counter"].to_vec())
+            .collect::<Vec<_>>();
+        counters.sort();
+        counters.dedup(); // assure files returned are all unique
+        assert_eq!(counters.len(), 100);
     }
 }

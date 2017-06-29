@@ -56,10 +56,10 @@ unsigned char rocks_table_props_collection_iter_next(
   return it->rep != it->cend;
 }
 
-void rocks_table_props_collection_iter_key(
-    rocks_table_props_collection_iter_t* it, void* s) {
-  auto key = it->rep->first;
-  rust_string_assign(s, key.data(), key.size());
+const char* rocks_table_props_collection_iter_key(
+    rocks_table_props_collection_iter_t* it, size_t* len) {
+  *len = it->rep->first.size();
+  return it->rep->first.data();
 }
 
 rocks_table_props_t* rocks_table_props_collection_iter_value(
@@ -195,16 +195,15 @@ unsigned char rocks_user_collected_props_iter_next(
   return it->rep != it->cend;
 }
 
-void rocks_user_collected_props_iter_key(rocks_user_collected_props_iter_t* it,
-                                         void* s) {  // String
-  auto key = it->rep->first;
-  rust_string_assign(s, key.data(), key.size());
+const char* rocks_user_collected_props_iter_key(
+    rocks_user_collected_props_iter_t* it, size_t* len) {
+  *len = it->rep->first.size();
+  return it->rep->first.data();
 }
 
-void rocks_user_collected_props_iter_value(
-    rocks_user_collected_props_iter_t* it,
-    void* v) {  // Vec<u8>
-  auto value = it->rep->second;
-  rust_vec_u8_assign(v, value.data(), value.size());
+const char* rocks_user_collected_props_iter_value(
+    rocks_user_collected_props_iter_t* it, size_t* len) {
+  *len = it->rep->second.size();
+  return it->rep->second.data();
 }
 }
