@@ -2402,8 +2402,12 @@ pub enum ReadTier {
 
 /// Options that control read operations.
 ///
+/// # Examples
+///
+/// Construct `ReadOptions` using builder pattern.
+///
 /// ```
-/// use rocks::options::{ReadOptions, ReadTier};
+/// use rocks::options::{ReadOptions, ReadTier, DB};
 ///
 /// let _ropt = ReadOptions::default()
 ///     .fill_cache(true)
@@ -2484,22 +2488,22 @@ impl<'a> ReadOptions<'a> {
         self
     }
 
-    /// If "snapshot" is non-nullptr, read as of the supplied snapshot
+    /// If `snapshot` is non-nullptr, read as of the supplied snapshot
     /// (which must belong to the DB that is being read and which must
-    /// not have been released).  If "snapshot" is nullptr, use an implicit
+    /// not have been released).  If `snapshot` is nullptr, use an implicit
     /// snapshot of the state at the beginning of this read operation.
     ///
     /// Default: nullptr
-    pub fn snapshot<'s: 'a, 'b: 'a, T: AsRef<Snapshot<'s>> + 'b>(self, val: Option<T>) -> Self {
+    pub fn snapshot<'s, 'b: 'a, T: AsRef<Snapshot<'s>> + 'b>(self, val: Option<T>) -> Self {
         unsafe {
             ll::rocks_readoptions_set_snapshot(self.raw, val.map(|v| v.as_ref().raw()).unwrap_or(ptr::null_mut()));
         }
         self
     }
 
-    /// "iterate_upper_bound" defines the extent upto which the forward iterator
-    /// can returns entries. Once the bound is reached, Valid() will be false.
-    /// "iterate_upper_bound" is exclusive ie the bound value is
+    /// `iterate_upper_bound` defines the extent upto which the forward iterator
+    /// can returns entries. Once the bound is reached, `is_valid()` will be false.
+    /// `iterate_upper_bound` is exclusive ie the bound value is
     /// not a valid entry.  If `iterator_extractor` is not null, the Seek target
     /// and `iterator_upper_bound` need to have the same prefix.
     /// This is because ordering is not guaranteed outside of prefix domain.
@@ -2514,7 +2518,7 @@ impl<'a> ReadOptions<'a> {
 
     /// Specify if this read request should process data that ALREADY
     /// resides on a particular cache. If the required data is not
-    /// found at the specified cache, then Status::Incomplete is returned.
+    /// found at the specified cache, then `Status::Incomplete` is returned.
     ///
     /// Default: kReadAllTier
     pub fn read_tier(self, val: ReadTier) -> Self {
@@ -2542,8 +2546,6 @@ impl<'a> ReadOptions<'a> {
     /// resources on request.
     ///
     /// Default: false
-    ///
-    /// Not supported in ROCKSDB_LITE mode!
     pub fn managed(self, val: bool) -> Self {
         unsafe {
             ll::rocks_readoptions_set_managed(self.raw, val as u8);
@@ -2555,7 +2557,7 @@ impl<'a> ReadOptions<'a> {
     /// used in the table. Some table format (e.g. plain table) may not support
     /// this option.
     ///
-    /// If true when calling Get(), we also skip prefix bloom when reading from
+    /// If true when calling `get()`, we also skip prefix bloom when reading from
     /// block based table. It provides a way to read existing data after
     /// changing implementation of prefix extractor.
     pub fn total_order_seek(self, val: bool) -> Self {
@@ -2566,9 +2568,9 @@ impl<'a> ReadOptions<'a> {
     }
 
     /// Enforce that the iterator only iterates over the same prefix as the seek.
-    /// This option is effective only for prefix seeks, i.e. prefix_extractor is
-    /// non-null for the column family and total_order_seek is false.  Unlike
-    /// iterate_upper_bound, prefix_same_as_start only works within a prefix
+    /// This option is effective only for prefix seeks, i.e. `prefix_extractor` is
+    /// non-null for the column family and `total_order_seek` is false.  Unlike
+    /// `iterate_upper_bound`, `prefix_same_as_start` only works within a prefix
     /// but in both directions.
     ///
     /// Default: false
@@ -2581,8 +2583,8 @@ impl<'a> ReadOptions<'a> {
 
     /// Keep the blocks loaded by the iterator pinned in memory as long as the
     /// iterator is not deleted, If used when reading from tables created with
-    /// BlockBasedTableOptions::use_delta_encoding = false,
-    /// Iterator's property "rocksdb.iterator.is-key-pinned" is guaranteed to
+    /// `BlockBasedTableOptions::use_delta_encoding = false`,
+    /// Iterator's property `"rocksdb.iterator.is-key-pinned"` is guaranteed to
     /// return 1.
     ///
     /// Default: false
@@ -2593,7 +2595,7 @@ impl<'a> ReadOptions<'a> {
         self
     }
 
-    /// If true, when PurgeObsoleteFile is called in CleanupIteratorState, we
+    /// If true, when `PurgeObsoleteFile` is called in `CleanupIteratorState`, we
     /// schedule a background job in the flush job queue and delete obsolete files
     /// in background.
     ///
@@ -2617,7 +2619,7 @@ impl<'a> ReadOptions<'a> {
         self
     }
 
-    /// If true, keys deleted using the DeleteRange() API will be visible to
+    /// If true, keys deleted using the `delete_range()` API will be visible to
     /// readers until they are naturally deleted during compaction. This improves
     /// read performance in DBs with many range deletions.
     ///
