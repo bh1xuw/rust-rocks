@@ -20,6 +20,7 @@
 #include "rocksdb/table.h"
 #include "rocksdb/table_properties.h"
 #include "rocksdb/transaction_log.h"
+#include "rocksdb/write_buffer_manager.h"
 
 #include "rust_export.h"
 
@@ -479,6 +480,11 @@ struct rocks_table_props_collector_factory_t
         this->obj, context.column_family_id);
     return new rocks_table_props_collector_t(collector);
   }
+};
+
+/* write_buffer_manager */
+struct rocks_write_buffer_manager_t {
+  std::shared_ptr<WriteBufferManager> rep;
 };
 
 /* aux */

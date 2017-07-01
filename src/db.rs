@@ -86,7 +86,7 @@ impl<'a> From<(&'a str, ColumnFamilyOptions)> for ColumnFamilyDescriptor {
 /// Handle for a opened column family
 pub struct ColumnFamilyHandle<'a, 'b: 'a> {
     raw: *mut ll::rocks_column_family_handle_t,
-    db: Arc<DBContext<'b>>, // 'b out lives 'a
+    db: Arc<DBRef<'b>>, // 'b out lives 'a
     owned: bool,
     _marker: PhantomData<&'a ()>,
 }
@@ -576,12 +576,12 @@ impl<'a, 'b: 'a> ColumnFamilyHandle<'a, 'b> {
     // ================================================================================
 }
 
-struct DBContext<'a> {
+struct DBRef<'a> {
     raw: *mut ll::rocks_db_t,
     _marker: PhantomData<&'a ()>,
 }
 
-impl<'a> Drop for DBContext<'a> {
+impl<'a> Drop for DBRef<'a> {
     #[inline]
     fn drop(&mut self) {
         unsafe {
@@ -613,7 +613,7 @@ impl<'a> Drop for DBContext<'a> {
 /// assert_eq!(val, b"my-value");
 /// ```
 pub struct DB<'a> {
-    context: Arc<DBContext<'a>>,
+    context: Arc<DBRef<'a>>,
 }
 
 impl<'a> Clone for DB<'a> {
@@ -640,7 +640,7 @@ impl<'a> ToRaw<ll::rocks_db_t> for DB<'a> {
 
 impl<'a> DB<'a> {
     unsafe fn from_ll<'b>(raw: *mut ll::rocks_db_t) -> DB<'b> {
-        let context = DBContext {
+        let context = DBRef {
             raw: raw,
             _marker: PhantomData,
         };

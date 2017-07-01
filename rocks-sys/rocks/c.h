@@ -127,6 +127,9 @@ typedef struct rocks_table_props_collector_t rocks_table_props_collector_t;
 typedef struct rocks_table_props_collector_factory_t
     rocks_table_props_collector_factory_t;
 
+/* write_buffer_manager */
+typedef struct rocks_write_buffer_manager_t rocks_write_buffer_manager_t;
+
 /* aux */
 typedef struct cxx_string_vector_t cxx_string_vector_t;
 
@@ -482,11 +485,8 @@ void rocks_dboptions_set_advise_random_on_open(rocks_dboptions_t* opt,
 
 void rocks_dboptions_set_db_write_buffer_size(rocks_dboptions_t* opt, size_t s);
 
-/*
-void rocks_dboptions_set_write_buffer_manager(rocks_dboptions_t* opt,
-                                            rocks_write_buffer_manager_t*
-manager);
-*/
+void rocks_dboptions_set_write_buffer_manager(
+    rocks_dboptions_t* opt, rocks_write_buffer_manager_t* manager);
 
 void rocks_dboptions_set_access_hint_on_compaction_start(rocks_dboptions_t* opt,
                                                          int v);
@@ -1707,6 +1707,19 @@ const char* rocks_user_collected_props_iter_key(
 
 const char* rocks_user_collected_props_iter_value(
     rocks_user_collected_props_iter_t* it, size_t* len);
+
+/* write_buffer_manager */
+rocks_write_buffer_manager_t* rocks_write_buffer_manager_create(
+    size_t buffer_size);
+
+void rocks_write_buffer_manager_destroy(rocks_write_buffer_manager_t* manager);
+
+unsigned char rocks_write_buffer_manager_enabled(
+    rocks_write_buffer_manager_t* manager);
+size_t rocks_write_buffer_manager_memory_usage(
+    rocks_write_buffer_manager_t* manager);
+size_t rocks_write_buffer_manager_buffer_size(
+    rocks_write_buffer_manager_t* manager);
 
 /* aux */
 void free(void* p);

@@ -24,6 +24,7 @@ use cache::Cache;
 use to_raw::ToRaw;
 use filter_policy::FilterPolicy;
 
+#[derive(Debug, Copy, Clone, PartialEq, Eq, Hash)]
 #[repr(C)]
 pub enum IndexType {
     /// A space efficient index block that is optimized for

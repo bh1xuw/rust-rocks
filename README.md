@@ -29,6 +29,7 @@ big picture(TODOs):
 - [x] Rust style
   - [x] wraps Status into a Rust style ``Result<T>``
   - [x] ``*Options`` via builder pattern
+  - [ ] handle DB/CFHandle lifetime, Ref safety
   - [ ] wraps Status as a Error variant?
 - [ ] Lifetime safely guarantee
   - [x] `ReadOptions` + `snapshot`
@@ -163,7 +164,7 @@ big picture(TODOs):
   - [ ] putv/deletev
   - [x] handler/iterate
 - [ ] ~~``rocksdb/write_batch_base.h``~~
-- [ ] ``rocksdb/write_buffer_manager.h``
+- [x] ``rocksdb/write_buffer_manager.h``
 - [x] ``rocksdb/universal_compaction.h``
 - [ ] ``rocksdb/utilities/backupable_db.h``
 - [ ] ``rocksdb/utilities/checkpoint.h``

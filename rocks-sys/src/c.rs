@@ -164,6 +164,9 @@ pub struct rocks_table_props_collector_t([u8; 0]);
 pub struct rocks_table_props_collector_factory_t([u8; 0]);
 #[repr(C)]
 #[derive(Debug, Copy, Clone)]
+pub struct rocks_write_buffer_manager_t([u8; 0]);
+#[repr(C)]
+#[derive(Debug, Copy, Clone)]
 pub struct cxx_string_vector_t([u8; 0]);
 extern "C" {
     pub fn rocks_status_create() -> *mut *mut rocks_status_t;
@@ -773,6 +776,12 @@ extern "C" {
     pub fn rocks_dboptions_set_db_write_buffer_size(opt:
                                                         *mut rocks_dboptions_t,
                                                     s: usize);
+}
+extern "C" {
+    pub fn rocks_dboptions_set_write_buffer_manager(opt:
+                                                        *mut rocks_dboptions_t,
+                                                    manager:
+                                                        *mut rocks_write_buffer_manager_t);
 }
 extern "C" {
     pub fn rocks_dboptions_set_access_hint_on_compaction_start(opt:
@@ -3111,6 +3120,29 @@ extern "C" {
                                                      *mut rocks_user_collected_props_iter_t,
                                                  len: *mut usize)
      -> *const ::std::os::raw::c_char;
+}
+extern "C" {
+    pub fn rocks_write_buffer_manager_create(buffer_size: usize)
+     -> *mut rocks_write_buffer_manager_t;
+}
+extern "C" {
+    pub fn rocks_write_buffer_manager_destroy(manager:
+                                                  *mut rocks_write_buffer_manager_t);
+}
+extern "C" {
+    pub fn rocks_write_buffer_manager_enabled(manager:
+                                                  *mut rocks_write_buffer_manager_t)
+     -> ::std::os::raw::c_uchar;
+}
+extern "C" {
+    pub fn rocks_write_buffer_manager_memory_usage(manager:
+                                                       *mut rocks_write_buffer_manager_t)
+     -> usize;
+}
+extern "C" {
+    pub fn rocks_write_buffer_manager_buffer_size(manager:
+                                                      *mut rocks_write_buffer_manager_t)
+     -> usize;
 }
 extern "C" {
     pub fn free(p: *mut ::std::os::raw::c_void);

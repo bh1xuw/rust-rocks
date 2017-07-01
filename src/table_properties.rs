@@ -456,7 +456,7 @@ pub trait TablePropertiesCollector {
     ///
     /// TODO:
     fn readable_properties(&self) -> Vec<(String, String)> {
-        vec![]
+        unimplemented!()
     }
 
     /// Return whether the output file should be further compacted
@@ -577,6 +577,7 @@ mod tests {
     impl TablePropertiesCollector for MyTblPropsCollector {
         fn add_user_key(&mut self, key: &[u8], value: &[u8], type_: EntryType, seq: SequenceNumber, file_size: u64) {
             // self.counter += 1;
+            // println!("{:?} {:?} {:?} => {:?}", type_, seq, key, value);
         }
 
         fn finish(&mut self, props: &mut UserCollectedProperties) {
@@ -625,6 +626,11 @@ mod tests {
             // make as many sst as possible
             assert!(db.flush(&FlushOptions::default().wait(true)).is_ok());
         }
+
+        // Will be an Other add_user_key callback
+        // assert!(db.delete_range_cf(WriteOptions::default_instance(), &db.default_column_family(),
+        //                          b"k2", b"k6").is_ok());
+        // assert!(db.flush(&FlushOptions::default().wait(true)).is_ok());
 
         let props =
             db.get_properties_of_tables_in_range(&db.default_column_family(), &[b"k0".as_ref()..b"k9".as_ref()]);

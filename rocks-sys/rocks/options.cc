@@ -645,13 +645,10 @@ void rocks_dboptions_set_db_write_buffer_size(rocks_dboptions_t* opt,
   opt->rep.db_write_buffer_size = s;
 }
 
-// write_buffer_manager
-/*
-void rocks_dboptions_set_write_buffer_manager(rocks_dboptions_t* opt,
-                                            rocks_write_buffer_manager_t*
-manager) { opt->rep.write_buffer_manager = manager->rep;
+void rocks_dboptions_set_write_buffer_manager(
+    rocks_dboptions_t* opt, rocks_write_buffer_manager_t* manager) {
+  opt->rep.write_buffer_manager = manager->rep;
 }
-*/
 
 void rocks_dboptions_set_access_hint_on_compaction_start(rocks_dboptions_t* opt,
                                                          int v) {

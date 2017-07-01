@@ -1948,12 +1948,11 @@ impl DBOptions {
     /// to enable it.
     ///
     /// Default: null
-    pub fn write_buffer_manager(self, val: Option<WriteBufferManager>) -> Self {
-        // unsafe {
-        //     ll::rocks_dboptions_set_write_buffer_manager(self.raw, val);
-        // }
-        // self
-        unimplemented!()
+    pub fn write_buffer_manager(self, val: &WriteBufferManager) -> Self {
+        unsafe {
+            ll::rocks_dboptions_set_write_buffer_manager(self.raw, val.raw());
+        }
+        self
     }
 
     /// Specify the file access pattern once a compaction is started.
