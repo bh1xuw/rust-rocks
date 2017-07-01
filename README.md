@@ -119,7 +119,6 @@ big picture(TODOs):
 - [x] ``rocksdb/merge_operator.h``
   - [x] associative merge operator
   - [x] merge operator - full merge v2
-  - [ ] merge operator - full merge - ``assign_existing_operand``
   - [ ] merge operator - partial merge
 - [x] ``rocksdb/metadata.h``
   - [x] LiveFilesMetaData

@@ -92,10 +92,10 @@ impl<'a> MergeOperationOutput<'a> {
     /// If the merge result is one of the existing operands (or existing_value),
     /// client can set this field to the operand (or existing_value) instead of
     /// using new_value.
-    // FIXME: not works
-    pub fn assign_existing_operand(&mut self, old_value: &&[u8]) {
-        // :( transmute for disable lifetime checker
-        self.existing_operand = old_value as *const &[u8] as *mut &'a [u8];
+    pub fn assign_existing_operand(&mut self, old_value: &[u8]) {
+        unsafe {
+            *self.existing_operand = mem::transmute(old_value);
+        }
     }
 }
 
@@ -406,9 +406,8 @@ mod tests {
                 let mut set = false;
                 for op in merge_in.operands() {
                     if op.starts_with(b"I-am-the-test") {
-                        // FIXME: following not works
-                        // merge_out.assign_existing_operand(op);
-                        merge_out.assign(op);
+                        merge_out.assign_existing_operand(op);
+                        // merge_out.assign(op);
                         set = true;
                         break;
                     }
