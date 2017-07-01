@@ -115,11 +115,11 @@ big picture(TODOs):
 - [ ] ``rocksdb/listener.h``
   - [ ] need refactor DB/CFHandle to allow borrowed
 - [x] ``rocksdb/memtablerep.h``
-  - [x] via options surffix
+  - [x] via options surfix
 - [x] ``rocksdb/merge_operator.h``
   - [x] associative merge operator
   - [x] merge operator - full merge v2
-  - [ ] merge operator - partial merge
+  - [ ] merge operator - partial merge, is it needed?
 - [x] ``rocksdb/metadata.h``
   - [x] LiveFilesMetaData
   - [x] ColumnFamilyMetaData

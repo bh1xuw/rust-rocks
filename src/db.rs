@@ -679,10 +679,16 @@ impl<'a> DB<'a> {
     /// will use to operate on column family `column_family[i]`.
     ///
     // FIXME: this should be DBOptions
-    pub fn open_with_column_families<'b: 'c, 'c, CF: Into<ColumnFamilyDescriptor>, P: AsRef<Path>>(
+    pub fn open_with_column_families<
+        'b: 'c,
+        'c,
+        CF: Into<ColumnFamilyDescriptor>,
+        P: AsRef<Path>,
+        I: IntoIterator<Item = CF>,
+    >(
         options: &Options,
         name: P,
-        column_families: Vec<CF>,
+        column_families: I,
     ) -> Result<(DB<'b>, Vec<ColumnFamilyHandle<'c, 'b>>)> {
         let opt = options.raw();
         let dbname = name.as_ref()
@@ -1623,35 +1629,35 @@ impl<'a> DB<'a> {
     /// compacts them to the specified level. Note that the behavior is different
     /// from CompactRange() in that CompactFiles() performs the compaction job
     /// using the CURRENT thread.
-    pub fn compact_files(
+    pub fn compact_files<P: AsRef<Path>, I: IntoIterator<Item = P>>(
         &self,
         compact_options: &CompactionOptions,
-        input_file_names: &[&str],
+        input_file_names: I,
         output_level: i32,
     ) -> Result<()> {
         self.compact_files_to(compact_options, input_file_names, output_level, -1)
     }
 
-    pub fn compact_files_to(
+    pub fn compact_files_to<P: AsRef<Path>, I: IntoIterator<Item = P>>(
         &self,
         compact_options: &CompactionOptions,
-        input_file_names: &[&str],
+        input_file_names: I,
         output_level: i32,
         output_path_id: i32,
     ) -> Result<()> {
-        let num_files = input_file_names.len();
-        let mut c_file_names = Vec::with_capacity(num_files);
-        let mut c_file_name_sizes = Vec::with_capacity(num_files);
-        for file_name in input_file_names {
-            c_file_names.push(file_name.as_bytes().as_ptr() as *const _);
-            c_file_name_sizes.push(file_name.len());
+        let mut c_file_names = Vec::new();
+        let mut c_file_name_sizes = Vec::new();
+        for file_name in input_file_names.into_iter() {
+            let file_path = file_name.as_ref().to_str().unwrap();
+            c_file_names.push(file_path.as_bytes().as_ptr() as *const _);
+            c_file_name_sizes.push(file_path.len());
         }
         let mut status = ptr::null_mut();
         unsafe {
             ll::rocks_db_compact_files(
                 self.raw(),
                 compact_options.raw(),
-                num_files,
+                c_file_names.len(),
                 c_file_names.as_ptr(),
                 c_file_name_sizes.as_ptr(),
                 output_level as c_int,
@@ -3022,7 +3028,7 @@ mod tests {
 
         let st = db.compact_files(
             &CompactionOptions::default().compression(CompressionType::BZip2Compression),
-            sst_files.as_ref(),
+            &sst_files,
             4,
         ); // output to level 4
 

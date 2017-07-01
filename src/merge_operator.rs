@@ -94,6 +94,7 @@ impl<'a> MergeOperationOutput<'a> {
     /// using new_value.
     pub fn assign_existing_operand(&mut self, old_value: &[u8]) {
         unsafe {
+            // mem::transmute() for lifetime complexity
             *self.existing_operand = mem::transmute(old_value);
         }
     }
@@ -134,8 +135,6 @@ pub trait MergeOperator {
     fn full_merge(&self, merge_in: &MergeOperationInput, merge_out: &mut MergeOperationOutput) -> bool {
         false
     }
-
-    // TODO: PartialMerge
 
     /// The name of the MergeOperator. Used to check for MergeOperator
     /// mismatches (i.e., a DB created with one MergeOperator is
