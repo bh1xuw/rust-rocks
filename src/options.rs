@@ -2405,8 +2405,8 @@ pub enum ReadTier {
 ///
 /// Construct `ReadOptions` using builder pattern.
 ///
-/// ```
-/// use rocks::options::{ReadOptions, ReadTier, DB};
+/// ```no_run
+/// use rocks::rocksdb::{ReadOptions, ReadTier};
 ///
 /// let _ropt = ReadOptions::default()
 ///     .fill_cache(true)
