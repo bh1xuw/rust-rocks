@@ -3,7 +3,6 @@
 use std::ptr;
 use std::path::Path;
 use std::slice;
-use std::mem;
 use std::fmt;
 use std::str;
 
@@ -130,20 +129,21 @@ impl SstFileWriter {
 
     /// Prepare SstFileWriter to write into file located at "file_path".
     pub fn open<P: AsRef<Path>>(&self, file_path: P) -> Result<()> {
+        let mut status = ptr::null_mut();
         unsafe {
-            let mut status = mem::zeroed();
             let path = file_path.as_ref().to_str().expect("file path");
             ll::rocks_sst_file_writer_open(self.raw, path.as_ptr() as *const _, path.len(), &mut status);
             Status::from_ll(status)
         }
     }
 
-    /// Add key, value to currently opened file
+    /// Add a Put key with value to currently opened file
+    ///
     /// REQUIRES: key is after any previously added key according to comparator.
-    pub fn add(&self, key: &[u8], value: &[u8]) -> Result<()> {
+    pub fn put(&self, key: &[u8], value: &[u8]) -> Result<()> {
+        let mut status = ptr::null_mut();
         unsafe {
-            let mut status = mem::zeroed();
-            ll::rocks_sst_file_writer_add(
+            ll::rocks_sst_file_writer_put(
                 self.raw,
                 key.as_ptr() as *const _,
                 key.len(),
@@ -155,13 +155,42 @@ impl SstFileWriter {
         }
     }
 
+    /// Add a Merge key with value to currently opened file
+    ///
+    /// REQUIRES: key is after any previously added key according to comparator.
+    pub fn merge(&self, key: &[u8], value: &[u8]) -> Result<()> {
+        let mut status = ptr::null_mut();
+        unsafe {
+            ll::rocks_sst_file_writer_merge(
+                self.raw,
+                key.as_ptr() as *const _,
+                key.len(),
+                value.as_ptr() as *const _,
+                value.len(),
+                &mut status,
+            );
+            Status::from_ll(status)
+        }
+    }
+
+    /// Add a deletion key to currently opened file
+    ///
+    /// REQUIRES: key is after any previously added key according to comparator.
+    pub fn delete(&self, key: &[u8]) -> Result<()> {
+        let mut status = ptr::null_mut();
+        unsafe {
+            ll::rocks_sst_file_writer_delete(self.raw, key.as_ptr() as *const _, key.len(), &mut status);
+            Status::from_ll(status)
+        }
+    }
+
     /// Finalize writing to sst file and close file.
     ///
     /// An optional ExternalSstFileInfo pointer can be passed to the function
     /// which will be populated with information about the created sst file
     pub fn finish(&self) -> Result<ExternalSstFileInfo> {
+        let mut status = ptr::null_mut();
         unsafe {
-            let mut status = ptr::null_mut();
             let info = ExternalSstFileInfo::new();
             ll::rocks_sst_file_writer_finish(self.raw, info.raw, &mut status);
             Status::from_ll(status).map(|_| info)
@@ -237,7 +266,7 @@ mod tests {
         for i in 0..999 {
             let key = format!("B{:010}", i);
             let value = format!("ABCDEFGH{:x}IJKLMN", i);
-            writer.add(key.as_bytes(), value.as_bytes()).unwrap();
+            writer.put(key.as_bytes(), value.as_bytes()).unwrap();
         }
         let info = writer.finish().unwrap();
         println!("info => {:?}", info);
@@ -251,8 +280,8 @@ mod tests {
 
         let writer = SstFileWriter::builder().build();
         writer.open(sst_dir.path().join("./23333.sst")).unwrap();
-        assert!(writer.add(b"0000001", b"hello world").is_ok());
-        let ret = writer.add(b"0000000", b"hello rust");
+        assert!(writer.put(b"0000001", b"hello world").is_ok());
+        let ret = writer.put(b"0000000", b"hello rust");
         assert!(ret.is_err()); // "Keys must be added in order"
     }
 }

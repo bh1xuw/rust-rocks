@@ -2440,7 +2440,7 @@ fn test_ingest_sst_file() {
     for i in 0..999 {
         let key = format!("B{:05}", i);
         let value = format!("ABCDEFGH{:03}IJKLMN", i);
-        writer.add(key.as_bytes(), value.as_bytes()).unwrap();
+        writer.put(key.as_bytes(), value.as_bytes()).unwrap();
     }
     let info = writer.finish().unwrap();
     assert_eq!(info.num_entries(), 999);

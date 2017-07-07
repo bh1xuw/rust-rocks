@@ -48,6 +48,7 @@ impl WriteBufferManager {
 
 #[cfg(test)]
 mod tests {
+    use std::iter;
     use super::*;
     use super::super::rocksdb::*;
 
@@ -76,19 +77,26 @@ mod tests {
         let mem2 = manager.memory_usage();
         assert!(mem2 > mem1);
 
+        for i in 0..100 {
+            let key = format!("k{}", i);
+            let val = format!("v{}", i * i);
+            let value: String = iter::repeat(val).take(i * i).collect::<Vec<_>>().concat();
 
-        assert!(
-            db1.put(WriteOptions::default_instance(), b"k1", b"v100")
-                .is_ok()
-        );
+            db1.put(WriteOptions::default_instance(), key.as_bytes(), value.as_bytes())
+                .unwrap();
+        }
 
         let mem3 = manager.memory_usage();
         assert!(mem3 > mem2);
 
-        assert!(
-            db2.put(WriteOptions::default_instance(), b"k100", b"v100")
-                .is_ok()
-        );
+        for i in 0..100 {
+            let key = format!("k{}", i);
+            let val = format!("v{}", i * i);
+            let value: String = iter::repeat(val).take(i * i).collect::<Vec<_>>().concat();
+
+            db2.put(WriteOptions::default_instance(), key.as_bytes(), value.as_bytes())
+                .unwrap();
+        }
 
         let mem4 = manager.memory_usage();
         assert!(mem4 > mem3);

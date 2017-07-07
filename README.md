@@ -6,7 +6,7 @@ Make RocksDB really rocks!
 
 ## compile
 
-link against: RocksDB 5.4.6.
+link against: RocksDB 5.5.1.
 
 for macOS(with rocksdb installed by brew):
 

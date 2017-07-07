@@ -1400,9 +1400,18 @@ void rocks_sst_file_writer_open(rocks_sst_file_writer_t* writer,
                                 const size_t file_path_len,
                                 rocks_status_t** status);
 
-void rocks_sst_file_writer_add(rocks_sst_file_writer_t* writer, const char* key,
+void rocks_sst_file_writer_put(rocks_sst_file_writer_t* writer, const char* key,
                                const size_t key_len, const char* value,
                                const size_t value_len, rocks_status_t** status);
+
+void rocks_sst_file_writer_merge(rocks_sst_file_writer_t* writer,
+                                 const char* key, const size_t key_len,
+                                 const char* value, const size_t value_len,
+                                 rocks_status_t** status);
+
+void rocks_sst_file_writer_delete(rocks_sst_file_writer_t* writer,
+                                  const char* key, const size_t key_len,
+                                  rocks_status_t** status);
 
 void rocks_sst_file_writer_finish(rocks_sst_file_writer_t* writer,
                                   rocks_external_sst_file_info_t* info,

@@ -97,11 +97,26 @@ void rocks_sst_file_writer_open(rocks_sst_file_writer_t* writer,
   SaveError(status, std::move(writer->rep->Open(path)));
 }
 
-void rocks_sst_file_writer_add(rocks_sst_file_writer_t* writer, const char* key,
+void rocks_sst_file_writer_put(rocks_sst_file_writer_t* writer, const char* key,
                                const size_t key_len, const char* value,
                                const size_t value_len,
                                rocks_status_t** status) {
-  auto st = writer->rep->Add(Slice(key, key_len), Slice(value, value_len));
+  auto st = writer->rep->Put(Slice(key, key_len), Slice(value, value_len));
+  SaveError(status, std::move(st));
+}
+
+void rocks_sst_file_writer_merge(rocks_sst_file_writer_t* writer,
+                                 const char* key, const size_t key_len,
+                                 const char* value, const size_t value_len,
+                                 rocks_status_t** status) {
+  auto st = writer->rep->Merge(Slice(key, key_len), Slice(value, value_len));
+  SaveError(status, std::move(st));
+}
+
+void rocks_sst_file_writer_delete(rocks_sst_file_writer_t* writer,
+                                  const char* key, const size_t key_len,
+                                  rocks_status_t** status) {
+  auto st = writer->rep->Delete(Slice(key, key_len));
   SaveError(status, std::move(st));
 }
 
