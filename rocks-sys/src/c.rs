@@ -167,6 +167,12 @@ pub struct rocks_table_props_collector_factory_t([u8; 0]);
 pub struct rocks_write_buffer_manager_t([u8; 0]);
 #[repr(C)]
 #[derive(Debug, Copy, Clone)]
+pub struct rocks_key_version_t([u8; 0]);
+#[repr(C)]
+#[derive(Debug, Copy, Clone)]
+pub struct rocks_key_version_collection_t([u8; 0]);
+#[repr(C)]
+#[derive(Debug, Copy, Clone)]
 pub struct cxx_string_vector_t([u8; 0]);
 extern "C" {
     pub fn rocks_status_create() -> *mut *mut rocks_status_t;
@@ -3157,6 +3163,50 @@ extern "C" {
     pub fn rocks_write_buffer_manager_buffer_size(manager:
                                                       *mut rocks_write_buffer_manager_t)
      -> usize;
+}
+extern "C" {
+    pub fn rocks_db_get_all_key_versions(db: *mut rocks_db_t,
+                                         begin_key:
+                                             *const ::std::os::raw::c_char,
+                                         begin_keylen: usize,
+                                         end_key:
+                                             *const ::std::os::raw::c_char,
+                                         end_keylen: usize,
+                                         status: *mut *mut rocks_status_t)
+     -> *mut rocks_key_version_collection_t;
+}
+extern "C" {
+    pub fn rocks_key_version_collection_destroy(coll:
+                                                    *mut rocks_key_version_collection_t);
+}
+extern "C" {
+    pub fn rocks_key_version_collection_size(coll:
+                                                 *mut rocks_key_version_collection_t)
+     -> usize;
+}
+extern "C" {
+    pub fn rocks_key_version_collection_nth(coll:
+                                                *mut rocks_key_version_collection_t,
+                                            index: usize)
+     -> *mut rocks_key_version_t;
+}
+extern "C" {
+    pub fn rocks_key_version_user_key(ver: *const rocks_key_version_t,
+                                      len: *mut usize)
+     -> *const ::std::os::raw::c_char;
+}
+extern "C" {
+    pub fn rocks_key_version_value(ver: *const rocks_key_version_t,
+                                   len: *mut usize)
+     -> *const ::std::os::raw::c_char;
+}
+extern "C" {
+    pub fn rocks_key_version_sequence_numer(ver: *const rocks_key_version_t)
+     -> u64;
+}
+extern "C" {
+    pub fn rocks_key_version_type(ver: *const rocks_key_version_t)
+     -> ::std::os::raw::c_int;
 }
 extern "C" {
     pub fn free(p: *mut ::std::os::raw::c_void);

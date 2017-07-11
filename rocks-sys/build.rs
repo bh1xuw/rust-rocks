@@ -370,6 +370,7 @@ fn main() {
         .file("rocks/util.cc")
         .file("rocks/write_batch.cc")
         .file("rocks/write_buffer_manager.cc")
+        .file("rocks/debug.cc")
         .flag("-fPIC")
         .flag("-O2")
         .flag("-g")

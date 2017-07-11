@@ -27,6 +27,7 @@ use types::SequenceNumber;
 use to_raw::{ToRaw, FromRaw};
 use metadata::{LiveFileMetaData, SstFileMetaData, LevelMetaData, ColumnFamilyMetaData};
 use transaction_log::{LogFile, TransactionLogIterator};
+use debug::KeyVersionVec;
 
 use super::Result;
 use super::slice::{CVec, PinnableSlice};
@@ -219,8 +220,8 @@ impl<'a, 'b: 'a> ColumnFamilyHandle<'a, 'b> {
                 self.raw(),
                 begin_key.as_ptr() as *const _,
                 begin_key.len(),
-                begin_key.as_ptr() as *const _,
-                begin_key.len(),
+                end_key.as_ptr() as *const _,
+                end_key.len(),
                 &mut status,
             );
             Status::from_ll(status)
@@ -973,8 +974,8 @@ impl<'a> DB<'a> {
                 column_family.raw(),
                 begin_key.as_ptr() as *const _,
                 begin_key.len(),
-                begin_key.as_ptr() as *const _,
-                begin_key.len(),
+                end_key.as_ptr() as *const _,
+                end_key.len(),
                 &mut status,
             );
             Status::from_ll(status)
@@ -2159,6 +2160,25 @@ impl<'a> DB<'a> {
                 &mut status,
             );
             Status::from_ll(status).map(|()| TablePropertiesCollection::from_ll(props_ptr))
+        }
+    }
+
+    // debug
+    /// Returns listing of all versions of keys in the provided user key range.
+    /// The range is inclusive-inclusive, i.e., [`begin_key`, `end_key`].
+    /// The result is inserted into the provided vector, `key_versions`.
+    pub fn get_all_key_versions(&self, begin_key: &[u8], end_key: &[u8]) -> Result<KeyVersionVec> {
+        let mut status = ptr::null_mut();
+        unsafe {
+            let coll_ptr = ll::rocks_db_get_all_key_versions(
+                self.raw(),
+                begin_key.as_ptr() as *const _,
+                begin_key.len(),
+                end_key.as_ptr() as *const _,
+                end_key.len(),
+                &mut status,
+            );
+            Status::from_ll(status).map(|()| KeyVersionVec::from_ll(coll_ptr))
         }
     }
 }

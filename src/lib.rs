@@ -74,6 +74,7 @@ pub mod convenience;
 pub mod transaction_log;
 pub mod compaction_job_stats;
 pub mod flush_block_policy;
+pub mod debug;
 
 // the prelude
 pub mod rocksdb;

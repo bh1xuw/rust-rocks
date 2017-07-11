@@ -130,6 +130,12 @@ typedef struct rocks_table_props_collector_factory_t
 /* write_buffer_manager */
 typedef struct rocks_write_buffer_manager_t rocks_write_buffer_manager_t;
 
+/* debug */
+
+typedef struct rocks_key_version_t rocks_key_version_t;
+
+typedef struct rocks_key_version_collection_t rocks_key_version_collection_t;
+
 /* aux */
 typedef struct cxx_string_vector_t cxx_string_vector_t;
 
@@ -1729,6 +1735,23 @@ size_t rocks_write_buffer_manager_memory_usage(
     rocks_write_buffer_manager_t* manager);
 size_t rocks_write_buffer_manager_buffer_size(
     rocks_write_buffer_manager_t* manager);
+
+/* debug */
+rocks_key_version_collection_t* rocks_db_get_all_key_versions(
+    rocks_db_t* db, const char* begin_key, size_t begin_keylen,
+    const char* end_key, size_t end_keylen, rocks_status_t** status);
+
+void rocks_key_version_collection_destroy(rocks_key_version_collection_t* coll);
+size_t rocks_key_version_collection_size(rocks_key_version_collection_t* coll);
+rocks_key_version_t* rocks_key_version_collection_nth(
+    rocks_key_version_collection_t* coll, size_t index);
+
+const char* rocks_key_version_user_key(const rocks_key_version_t* ver,
+                                       size_t* len);
+const char* rocks_key_version_value(const rocks_key_version_t* ver,
+                                    size_t* len);
+uint64_t rocks_key_version_sequence_numer(const rocks_key_version_t* ver);
+int rocks_key_version_type(const rocks_key_version_t* ver);
 
 /* aux */
 void free(void* p);

@@ -20,6 +20,7 @@
 #include "rocksdb/table.h"
 #include "rocksdb/table_properties.h"
 #include "rocksdb/transaction_log.h"
+#include "rocksdb/utilities/debug.h"
 #include "rocksdb/write_buffer_manager.h"
 
 #include "rust_export.h"
@@ -485,6 +486,13 @@ struct rocks_table_props_collector_factory_t
 /* write_buffer_manager */
 struct rocks_write_buffer_manager_t {
   std::shared_ptr<WriteBufferManager> rep;
+};
+
+/* debug */
+typedef struct rocks_key_version_t rocks_key_version_t;
+
+struct rocks_key_version_collection_t {
+  std::vector<KeyVersion> rep;
 };
 
 /* aux */
