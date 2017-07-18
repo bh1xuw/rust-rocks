@@ -6,11 +6,11 @@ Make RocksDB really rocks!
 
 ## compile
 
-link against: RocksDB 5.5.1.
+link against: RocksDB 5.5.2.
 
 test under:
 
-- macOS
+- macOS 10.12
 - Linux amd64
 - Linux aarch64
 
