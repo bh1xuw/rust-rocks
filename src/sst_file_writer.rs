@@ -140,10 +140,10 @@ impl SstFileWriter {
     /// Add a Put key with value to currently opened file
     ///
     /// REQUIRES: key is after any previously added key according to comparator.
-    pub fn put(&self, key: &[u8], value: &[u8]) -> Result<()> {
+    pub fn add(&self, key: &[u8], value: &[u8]) -> Result<()> {
         let mut status = ptr::null_mut();
         unsafe {
-            ll::rocks_sst_file_writer_put(
+            ll::rocks_sst_file_writer_add(
                 self.raw,
                 key.as_ptr() as *const _,
                 key.len(),
@@ -155,6 +155,12 @@ impl SstFileWriter {
         }
     }
 
+    // FIXME: quick fix for rocksdb future version update
+    pub fn put(&self, key: &[u8], value: &[u8]) -> Result<()> {
+        self.add(key, value)
+    }
+
+    /*
     /// Add a Merge key with value to currently opened file
     ///
     /// REQUIRES: key is after any previously added key according to comparator.
@@ -183,7 +189,7 @@ impl SstFileWriter {
             Status::from_ll(status)
         }
     }
-
+*/
     /// Finalize writing to sst file and close file.
     ///
     /// An optional ExternalSstFileInfo pointer can be passed to the function

@@ -8,6 +8,12 @@ Make RocksDB really rocks!
 
 link against: RocksDB 5.5.1.
 
+test under:
+
+- macOS
+- Linux amd64
+- Linux aarch64
+
 for macOS(with rocksdb installed by brew):
 
     LIBRARY_PATH=/usr/local/lib CXXFLAGS=-I/usr/local/include cargo test -- --nocapture

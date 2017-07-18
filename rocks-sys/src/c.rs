@@ -2467,26 +2467,12 @@ extern "C" {
                                       status: *mut *mut rocks_status_t);
 }
 extern "C" {
-    pub fn rocks_sst_file_writer_put(writer: *mut rocks_sst_file_writer_t,
+    pub fn rocks_sst_file_writer_add(writer: *mut rocks_sst_file_writer_t,
                                      key: *const ::std::os::raw::c_char,
                                      key_len: usize,
                                      value: *const ::std::os::raw::c_char,
                                      value_len: usize,
                                      status: *mut *mut rocks_status_t);
-}
-extern "C" {
-    pub fn rocks_sst_file_writer_merge(writer: *mut rocks_sst_file_writer_t,
-                                       key: *const ::std::os::raw::c_char,
-                                       key_len: usize,
-                                       value: *const ::std::os::raw::c_char,
-                                       value_len: usize,
-                                       status: *mut *mut rocks_status_t);
-}
-extern "C" {
-    pub fn rocks_sst_file_writer_delete(writer: *mut rocks_sst_file_writer_t,
-                                        key: *const ::std::os::raw::c_char,
-                                        key_len: usize,
-                                        status: *mut *mut rocks_status_t);
 }
 extern "C" {
     pub fn rocks_sst_file_writer_finish(writer: *mut rocks_sst_file_writer_t,
