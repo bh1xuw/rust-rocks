@@ -2,6 +2,7 @@
 //! be called when specific RocksDB event happens such as flush.
 
 use error::Status;
+use db::DBRef;
 use types::SequenceNumber;
 use table_properties::{TableProperties, TablePropertiesCollection};
 use options::CompressionType;
@@ -231,7 +232,7 @@ pub trait EventListener {
     /// Note that the this function must be implemented in a way such that
     /// it should not run for an extended period of time before the function
     /// returns.  Otherwise, RocksDB may be blocked.
-    fn on_flush_completed(&mut self, db: *mut (), flush_job_info: &FlushJobInfo) {}
+    fn on_flush_completed(&mut self, db: &DBRef, flush_job_info: &FlushJobInfo) {}
 
     /// A call-back function to RocksDB which will be called before a
     /// RocksDB starts to flush memtables.  The default implementation is
@@ -240,7 +241,7 @@ pub trait EventListener {
     /// Note that the this function must be implemented in a way such that
     /// it should not run for an extended period of time before the function
     /// returns.  Otherwise, RocksDB may be blocked.
-    fn on_flush_begin(&mut self, db: *mut (), flush_job_info: &FlushJobInfo) {}
+    fn on_flush_begin(&mut self, db: &DBRef, flush_job_info: &FlushJobInfo) {}
 
     /// A call-back function for RocksDB which will be called whenever
     /// a SST file is deleted.  Different from OnCompactionCompleted and
@@ -268,7 +269,7 @@ pub trait EventListener {
     /// @param ci a reference to a CompactionJobInfo struct. 'ci' is released
     ///  after this function is returned, and must be copied if it is needed
     ///  outside of this function.
-    fn on_compaction_completed(&mut self, db: *mut (), ci: &CompactionJobInfo) {}
+    fn on_compaction_completed(&mut self, db: &DBRef, ci: &CompactionJobInfo) {}
 
     /// A call-back function for RocksDB which will be called whenever
     /// a SST file is created.  Different from OnCompactionCompleted and
@@ -324,7 +325,7 @@ pub trait EventListener {
     /// Note that the this function will run on the same thread as
     /// IngestExternalFile(), if this function is blocked, IngestExternalFile()
     /// will be blocked from finishing.
-    fn on_external_file_ingested(&mut self, db: *mut (), info: &ExternalFileIngestionInfo) {}
+    fn on_external_file_ingested(&mut self, db: &DBRef, info: &ExternalFileIngestionInfo) {}
 
     /// Factory method to return CompactionEventListener. If multiple listeners
     /// provides CompactionEventListner, only the first one will be used.
