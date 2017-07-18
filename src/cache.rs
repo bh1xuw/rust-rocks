@@ -200,7 +200,9 @@ mod tests {
             ).unwrap()
         };
 
-        for i in 0..100 {
+        const N: usize = 10;
+
+        for i in 0..N {
             let key = format!("k{}", i);
             let val = format!("v{}", i * i);
             let value: String = iter::repeat(val).take(i * i).collect::<Vec<_>>().concat();
@@ -213,7 +215,7 @@ mod tests {
             }
         }
 
-        for i in 0..100 {
+        for i in 0..N {
             let key = format!("k{}", i);
             assert!(
                 db.get(ReadOptions::default_instance(), key.as_bytes())

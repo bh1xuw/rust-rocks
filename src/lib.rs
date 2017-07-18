@@ -4,7 +4,7 @@
 //!
 //! # Examples
 //!
-//! ```
+//! ```no_run
 //! use rocks::rocksdb::*;
 //! // RAII DB instance
 //! let db = DB::open(&Options::default(), "./data").unwrap();
