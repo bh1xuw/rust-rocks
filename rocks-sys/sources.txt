@@ -33,6 +33,7 @@ db/forward_iterator.cc
 db/internal_stats.cc
 db/log_reader.cc
 db/log_writer.cc
+db/malloc_stats.cc
 db/managed_iterator.cc
 db/memtable.cc
 db/memtable_list.cc
@@ -55,13 +56,14 @@ db/write_thread.cc
 env/env.cc
 env/env_chroot.cc
 env/env_hdfs.cc
-env/memenv.cc
+env/mock_env.cc
+memtable/alloc_tracker.cc
 memtable/hash_cuckoo_rep.cc
 memtable/hash_linklist_rep.cc
 memtable/hash_skiplist_rep.cc
-memtable/memtable_allocator.cc
 memtable/skiplistrep.cc
 memtable/vectorrep.cc
+memtable/write_buffer_manager.cc
 monitoring/histogram.cc
 monitoring/histogram_windowing.cc
 monitoring/instrumented_mutex.cc
@@ -150,6 +152,7 @@ utilities/backupable/backupable_db.cc
 utilities/blob_db/blob_db.cc
 utilities/blob_db/blob_db_impl.cc
 utilities/blob_db/blob_db_options_impl.cc
+utilities/blob_db/blob_dump_tool.cc
 utilities/blob_db/blob_file.cc
 utilities/blob_db/blob_log_reader.cc
 utilities/blob_db/blob_log_writer.cc
@@ -172,6 +175,8 @@ utilities/lua/rocks_lua_compaction_filter.cc
 utilities/memory/memory_util.cc
 utilities/merge_operators/max.cc
 utilities/merge_operators/put.cc
+utilities/merge_operators/cassandra/format.cc
+utilities/merge_operators/cassandra/merge_operator.cc
 utilities/merge_operators/string_append/stringappend.cc
 utilities/merge_operators/string_append/stringappend2.cc
 utilities/merge_operators/uint64add.cc
