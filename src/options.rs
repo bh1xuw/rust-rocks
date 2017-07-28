@@ -128,14 +128,14 @@ impl<T: Into<PathBuf>> From<T> for DbPath {
     }
 }
 
-// impl<P: Into<PathBuf>, S: Into<u64>> From<(P, S)> for DbPath {
-//     fn from((path, size): (P, S)) -> DbPath {
-//         DbPath {
-//             path: path.into(),
-//             target_size: size.into(),
-//         }
-//     }
-// }
+/* impl<P: Into<PathBuf>, S: Into<u64>> From<(P, S)> for DbPath {
+    fn from((path, size): (P, S)) -> DbPath {
+        DbPath {
+            path: path.into(),
+            target_size: size.into(),
+        }
+    }
+} */
 
 
 pub struct ColumnFamilyOptions {

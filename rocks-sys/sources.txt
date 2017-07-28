@@ -175,8 +175,6 @@ utilities/lua/rocks_lua_compaction_filter.cc
 utilities/memory/memory_util.cc
 utilities/merge_operators/max.cc
 utilities/merge_operators/put.cc
-utilities/merge_operators/cassandra/format.cc
-utilities/merge_operators/cassandra/merge_operator.cc
 utilities/merge_operators/string_append/stringappend.cc
 utilities/merge_operators/string_append/stringappend2.cc
 utilities/merge_operators/uint64add.cc
