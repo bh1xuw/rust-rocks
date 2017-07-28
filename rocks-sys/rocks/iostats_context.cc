@@ -8,7 +8,7 @@ using namespace rocksdb;
 
 extern "C" {
 rocks_iostats_context_t* rocks_get_iostats_context() {
-  return reinterpret_cast<rocks_iostats_context_t*>(&iostats_context);
+  return reinterpret_cast<rocks_iostats_context_t*>(get_iostats_context());
 }
 
 void rocks_iostats_context_reset(rocks_iostats_context_t* ctx) {

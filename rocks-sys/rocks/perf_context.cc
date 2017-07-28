@@ -8,7 +8,7 @@ using namespace rocksdb;
 
 extern "C" {
 rocks_perf_context_t* rocks_get_perf_context() {
-  return reinterpret_cast<rocks_perf_context_t*>(&perf_context);
+  return reinterpret_cast<rocks_perf_context_t*>(get_perf_context());
 }
 
 void rocks_perf_context_reset(rocks_perf_context_t* ctx) {

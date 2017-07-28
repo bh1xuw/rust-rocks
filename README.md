@@ -6,7 +6,7 @@ Make RocksDB really rocks!
 
 ## compile
 
-link against: RocksDB 5.5.2.
+link against: RocksDB 5.6.1.
 
 test under:
 
@@ -84,7 +84,7 @@ big picture(TODOs):
   - [x] MultiGet
   - [x] write
   - [x] merge
-  - [x] KeyMayExist - bool return 
+  - [x] KeyMayExist - bool return
   - [x] KeyMayExist - get return
   - [x] properties
     - [x] string/int properties
