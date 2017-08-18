@@ -1,7 +1,0 @@
-port/win/io_win.cc
-port/win/env_win.cc
-port/win/env_default.cc
-port/win/port_win.cc
-port/win/win_logger.cc
-port/win/win_thread.cc
-port/win/xpress_win.cc

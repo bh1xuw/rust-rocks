@@ -13,15 +13,15 @@ build = "build.rs"
 [dependencies]
 
 [features]
-default = ["jemalloc"]
+default = []
 static-link = []
 snappy = []
 zlib = []
 bzip2 = []
 lz4 = []
 zstd = []
-jemalloc = []
 
 [build-dependencies]
 gcc = "0.3"
 pkg-config = "0.3"
+cmake = "0.1"

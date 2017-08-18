@@ -1,4 +1,5 @@
 extern crate gcc;
+extern crate cmake;
 
 #[cfg(not(feature = "static-link"))]
 extern crate pkg_config;
@@ -26,20 +27,16 @@ mod imp {
 
     #[cfg(feature = "snappy")]
     fn snappy() {
-        pkg_config::Config::new()
-            .probe("snappy")
-            .or_else(|_| {
-                println!("cargo:rustc-link-lib=dylib=snappy");
-            });
+        pkg_config::Config::new().probe("snappy").or_else(|_| {
+            println!("cargo:rustc-link-lib=dylib=snappy");
+        });
     }
 
     #[cfg(feature = "zlib")]
     fn zlib() {
-        pkg_config::Config::new()
-            .probe("zlib")
-            .or_else(|_| {
-                println!("cargo:rustc-link-lib=dylib=z");
-            });
+        pkg_config::Config::new().probe("zlib").or_else(|_| {
+            println!("cargo:rustc-link-lib=dylib=z");
+        });
     }
 
     #[cfg(feature = "bzip2")]
@@ -49,20 +46,16 @@ mod imp {
 
     #[cfg(feature = "lz4")]
     fn lz4() {
-        pkg_config::Config::new()
-            .probe("liblz4")
-            .or_else(|_| {
-                println!("cargo:rustc-link-lib=dylib=lz4");
-            });
+        pkg_config::Config::new().probe("liblz4").or_else(|_| {
+            println!("cargo:rustc-link-lib=dylib=lz4");
+        });
     }
 
     #[cfg(feature = "zstd")]
     fn zstd() {
-        pkg_config::Config::new()
-            .probe("libzstd")
-            .or_else(|_| {
-                println!("cargo:rustc-link-lib=dylib=zstd");
-            });
+        pkg_config::Config::new().probe("libzstd").or_else(|_| {
+            println!("cargo:rustc-link-lib=dylib=zstd");
+        });
     }
 
     fn rocksdb() {
@@ -73,10 +66,9 @@ mod imp {
 #[cfg(feature = "static-link")]
 mod imp {
     use std::process::Command;
-    use std::io::prelude::*;
-    use std::fs::File;
     use std::path::Path;
 
+    use cmake;
     use gcc;
 
     pub fn build() {
@@ -101,7 +93,8 @@ mod imp {
     #[cfg(feature = "snappy")]
     fn snappy() {
         if !Path::new("snappy/.git").exists() {
-            let _ = Command::new("git").args(&["submodule", "update", "--init", "snappy"])
+            let _ = Command::new("git")
+                .args(&["submodule", "update", "--init", "snappy"])
                 .status();
         }
 
@@ -132,7 +125,8 @@ mod imp {
     #[cfg(feature = "zlib")]
     fn zlib() {
         if !Path::new("zlib/.git").exists() {
-            let _ = Command::new("git").args(&["submodule", "update", "--init", "zlib"])
+            let _ = Command::new("git")
+                .args(&["submodule", "update", "--init", "zlib"])
                 .status();
         }
 
@@ -165,7 +159,8 @@ mod imp {
     #[cfg(feature = "bzip2")]
     fn bzip2() {
         if !Path::new("bzip2/.git").exists() {
-            let _ = Command::new("git").args(&["submodule", "update", "--init", "bzip2"])
+            let _ = Command::new("git")
+                .args(&["submodule", "update", "--init", "bzip2"])
                 .status();
         }
 
@@ -194,7 +189,8 @@ mod imp {
     #[cfg(feature = "lz4")]
     fn lz4() {
         if !Path::new("lz4/.git").exists() {
-            let _ = Command::new("git").args(&["submodule", "update", "--init", "lz4"])
+            let _ = Command::new("git")
+                .args(&["submodule", "update", "--init", "lz4"])
                 .status();
         }
 
@@ -211,7 +207,8 @@ mod imp {
     #[cfg(feature = "zstd")]
     fn zstd() {
         if !Path::new("zstd/.git").exists() {
-            let _ = Command::new("git").args(&["submodule", "update", "--init", "zstd"])
+            let _ = Command::new("git")
+                .args(&["submodule", "update", "--init", "zstd"])
                 .status();
         }
 
@@ -230,105 +227,42 @@ mod imp {
 
     fn rocksdb() {
         if !Path::new("rocksdb/.git").exists() {
-            let _ = Command::new("git").args(&["submodule", "update", "--init", "rocksdb"])
+            let _ = Command::new("git")
+                .args(&["submodule", "update", "--init", "rocksdb"])
                 .status();
         }
 
-        let mut cfg = gcc::Config::new();
-
-        cfg.include("rocksdb/include");
-        cfg.include("rocksdb");
-
-        cfg.define("NDEBUG", Some("1"));
+        let mut cfg = cmake::Config::new("rocksdb");
 
         #[cfg(feature = "snappy")]
         {
-            cfg.define("SNAPPY", Some("1"));
-            cfg.include("snappy");
+            cfg.define("SNAPPY", "1");
+            cfg.define("SNAPPY_INCLUDE_DIR", "snappy");
         }
 
         #[cfg(feature = "zlib")]
         {
-            cfg.define("ZLIB", Some("1"));
-            cfg.include("zlib");
+            cfg.define("ZLIB", "1");
+            cfg.define("ZLIB_INCLUDE_DIR", "zlib");
         }
 
         #[cfg(feature = "lz4")]
         {
-            cfg.define("LZ4", Some("1"));
-            cfg.include("lz4/lib");
+            cfg.define("LZ4", "1");
+            cfg.define("LZ4_INCLUDE_DIR", "lz4/lib");
         }
 
         #[cfg(feature = "zstd")]
         {
-            cfg.define("ZSTD", Some("1"));
-            cfg.include("zstd/lib");
-            cfg.include("zstd/lib/legacy");
+            cfg.define("ZSTD", "1");
+            cfg.define("ZSTD_INCLUDE_DIR", "zstd/lib");
         }
 
-        #[cfg(feature = "jemalloc")]
-        {
-            cfg.define("JEMALLOC", Some("1"));
-        }
+        cfg.build_target("rocksdb");
+        let dst = cfg.build();
 
-        for s in include_str!("sources.txt").lines() {
-            let f = s.trim();
-            if !f.is_empty() {
-                cfg.file(format!("rocksdb/{}", f));
-            }
-        }
-
-        // Borrowed from rust-rocksdb
-        if cfg!(target_os = "macos") {
-            cfg.define("OS_MACOSX", Some("1"));
-            cfg.define("ROCKSDB_PLATFORM_POSIX", Some("1"));
-            cfg.define("ROCKSDB_LIB_IO_POSIX", Some("1"));
-
-        }
-        if cfg!(target_os = "linux") {
-            cfg.define("OS_LINUX", Some("1"));
-            cfg.define("ROCKSDB_PLATFORM_POSIX", Some("1"));
-            cfg.define("ROCKSDB_LIB_IO_POSIX", Some("1"));
-            // COMMON_FLAGS="$COMMON_FLAGS -fno-builtin-memcmp"
-        }
-        if cfg!(target_os = "freebsd") {
-            cfg.define("OS_FREEBSD", Some("1"));
-            cfg.define("ROCKSDB_PLATFORM_POSIX", Some("1"));
-            cfg.define("ROCKSDB_LIB_IO_POSIX", Some("1"));
-        }
-
-        if cfg!(windows) {
-            for s in include_str!("sources_win32.txt").lines() {
-                let f = s.trim();
-                if !f.is_empty() {
-                    cfg.file(format!("rocksdb/{}", f));
-                }
-            }
-        } else {
-            cfg.flag("-std=c++11");
-            // POSIX systems
-            for s in include_str!("sources_posix.txt").lines() {
-                let f = s.trim();
-                if !f.is_empty() {
-                    cfg.file(format!("rocksdb/{}", f));
-                }
-            }
-        }
-
-        let git_sha = "88724cc719784c78df0c0ff87cca7cafd7abbe37";
-        let compile_date = "2017-02-29";
-        File::create("./build_version.cc")
-            .and_then(|mut f| {
-                write!(&mut f,
-                       "const char* rocksdb_build_git_sha = \"{}\";\n\
-                        const char* rocksdb_build_compile_date = \"{}\";\n",
-                       git_sha, compile_date)
-            })
-            .unwrap();
-        cfg.file("build_version.cc");
-
-        cfg.cpp(true);
-        cfg.compile("librocksdb.a");
+        println!("cargo:rustc-link-search=native={}/build/", dst.display());
+        println!("cargo:rustc-link-lib=static=rocksdb");
     }
 }
 

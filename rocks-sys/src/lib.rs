@@ -16,12 +16,7 @@ pub use c::*;
 
 
 pub fn version() -> String {
-    unsafe {
-        format!("{}.{}.{}",
-                rocks_version_major(),
-                rocks_version_minor(),
-                rocks_version_patch())
-    }
+    unsafe { format!("{}.{}.{}", rocks_version_major(), rocks_version_minor(), rocks_version_patch()) }
 }
 
 #[test]
@@ -41,7 +36,12 @@ fn test_db_list_cf_names() {
         println!("len => {:?}", lencfs);
         let mut cfnames: Vec<String> = vec![];
         for i in 0..lencfs {
-            cfnames.push(CStr::from_ptr(*cnames.offset(i as isize)).to_str().unwrap().to_owned());
+            cfnames.push(
+                CStr::from_ptr(*cnames.offset(i as isize))
+                    .to_str()
+                    .unwrap()
+                    .to_owned(),
+            );
         }
         println!("cf => {:?}", cfnames);
         assert!(cfnames.contains(&"default".to_owned()));
@@ -60,8 +60,8 @@ fn test_smoke() {
         let cfopt = c::rocks_cfoptions_create();
         let dbopt = c::rocks_dboptions_create();
 
-        c::rocks_cfoptions_optimize_for_point_lookup(cfopt, 512); 
-        // 
+        c::rocks_cfoptions_optimize_for_point_lookup(cfopt, 512);
+        //
         let mut status = mem::uninitialized::<c::rocks_status_t>();
         let dbname = CString::new("./data.test.default").unwrap();
 
@@ -85,15 +85,17 @@ fn test_smoke() {
 
         for i in 0..1000 {
             let key = format!("test3-key-{}", i);
-            let val = format!("rocksdb-value-{}", i*10);
-            let value: String = iter::repeat(val)
-                .take(100)
-                .collect::<Vec<_>>()
-                .concat();
-            c::rocks_db_put(db, wopt,
-                            key.as_bytes().as_ptr() as _, key.len(),
-                            value.as_bytes().as_ptr() as _, value.len(),
-                            &mut status);
+            let val = format!("rocksdb-value-{}", i * 10);
+            let value: String = iter::repeat(val).take(100).collect::<Vec<_>>().concat();
+            c::rocks_db_put(
+                db,
+                wopt,
+                key.as_bytes().as_ptr() as _,
+                key.len(),
+                value.as_bytes().as_ptr() as _,
+                value.len(),
+                &mut status,
+            );
             if status.code != 0 {
                 println!("status => {:?}", CStr::from_ptr(status.state));
             }
@@ -104,4 +106,3 @@ fn test_smoke() {
         c::rocks_options_destroy(opt);
     }
 }
-
