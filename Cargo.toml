@@ -20,11 +20,11 @@ travis-ci = { repository = "bh1xuw/rust-rocks", branch = "master" }
 [dependencies]
 lazy_static = "0.2"
 rocks-sys = { path = "rocks-sys", version = "0.1.0" }
-# clippy = "*"
 
 [dev-dependencies]
 tempdir = "0.3"
-test = { path = "../jtest", version = "0.1" }
+clippy = "*"
+# test = { path = "../jtest", version = "0.1" }
 
 [features]
 default = []

@@ -6,7 +6,7 @@ Make RocksDB really rocks!
 
 ## compile
 
-link against: RocksDB 5.6.1.
+link against: RocksDB 5.7.2.
 
 test under:
 
