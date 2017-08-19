@@ -1,6 +1,8 @@
 //! `EventListener` class contains a set of call-back functions that will
 //! be called when specific RocksDB event happens such as flush.
 
+use rocks_sys as ll;
+
 use error::Status;
 use db::DBRef;
 use types::SequenceNumber;
@@ -62,6 +64,14 @@ pub enum CompactionReason {
     FilesMarkedForCompaction,
 }
 
+#[repr(C)]
+#[derive(Debug, Copy, Clone, PartialEq, Eq, Hash)]
+pub enum BackgroundErrorReason {
+    Flush,
+    Compaction,
+    WriteCallback,
+    MemTable,
+}
 
 pub struct TableFileDeletionInfo<'a> {
     /// The name of the database where the file was deleted.
@@ -74,7 +84,7 @@ pub struct TableFileDeletionInfo<'a> {
     pub status: Status,
 }
 
-
+#[derive(Debug)]
 pub struct FlushJobInfo<'a> {
     /// the name of the column family
     pub cf_name: &'a str,
@@ -327,9 +337,110 @@ pub trait EventListener {
     /// will be blocked from finishing.
     fn on_external_file_ingested(&mut self, db: &DBRef, info: &ExternalFileIngestionInfo) {}
 
+    /// A call-back function for RocksDB which will be called before setting the
+    /// background error status to a non-OK value. The new background error status
+    /// is provided in `bg_error` and can be modified by the callback. E.g., a
+    /// callback can suppress errors by resetting it to Status::OK(), thus
+    /// preventing the database from entering read-only mode. We do not provide any
+    /// guarantee when failed flushes/compactions will be rescheduled if the user
+    /// suppresses an error.
+    ///
+    /// Note that this function can run on the same threads as flush, compaction,
+    /// and user writes. So, it is extremely important not to perform heavy
+    /// computations or blocking calls in this function.
+    fn on_background_error(&mut self, reason: BackgroundErrorReason, bg_error: Status) {}
+
     /// Factory method to return CompactionEventListener. If multiple listeners
     /// provides CompactionEventListner, only the first one will be used.
     fn get_compaction_event_listener(&mut self) -> Option<Box<CompactionEventListener>> {
         None
+    }
+}
+
+
+#[doc(hidden)]
+pub mod c {
+    use std::str;
+    use std::slice;
+    use std::mem;
+    use super::*;
+    use db::DBRef;
+    use to_raw::FromRaw;
+
+    #[no_mangle]
+    pub unsafe extern "C" fn rust_event_listener_on_flush_completed(
+        l: *mut (),
+        db: *mut (), // DB**
+        info: *mut ll::rocks_flush_job_info_t,
+    ) {
+        let listener = l as *mut Box<EventListener>;
+        let db_ref = mem::transmute::<_, DBRef>(db);
+        let flush_job_info = FlushJobInfo {
+            cf_name: {
+                let mut len = 0;
+                let ptr = ll::rocks_flush_job_info_get_cf_name(info, &mut len);
+                str::from_utf8_unchecked(slice::from_raw_parts(ptr as *const u8, len))
+            },
+            file_path: {
+                let mut len = 0;
+                let ptr = ll::rocks_flush_job_info_get_file_path(info, &mut len);
+                str::from_utf8_unchecked(slice::from_raw_parts(ptr as *const u8, len))
+            },
+            thread_id: ll::rocks_flush_job_info_get_thread_id(info),
+            job_id: ll::rocks_flush_job_info_get_job_id(info) as i32,
+            triggered_writes_slowdown: ll::rocks_flush_job_info_get_triggered_writes_slowdown(info) != 0,
+            triggered_writes_stop: ll::rocks_flush_job_info_get_triggered_writes_stop(info) != 0,
+            smallest_seqno: SequenceNumber(ll::rocks_flush_job_info_get_smallest_seqno(info)),
+            largest_seqno: SequenceNumber(ll::rocks_flush_job_info_get_largest_seqno(info)),
+            table_properties: TableProperties::from_ll(ll::rocks_flush_job_info_get_table_properties(info)),
+        };
+
+        (*listener).on_flush_completed(&db_ref, &flush_job_info);
+        println!("got => {:?}", flush_job_info);
+
+    }
+
+    #[no_mangle]
+    pub unsafe extern "C" fn rust_event_listener_drop(l: *mut ()) {
+        let listener = l as *mut Box<EventListener>;
+        Box::from_raw(listener);
+    }
+
+}
+
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use super::super::rocksdb::*;
+
+    struct MyEventListener;
+
+    impl EventListener for MyEventListener {
+        fn on_flush_completed(&mut self, db: &DBRef, flush_job_info: &FlushJobInfo) {
+            println!("info => {:?}", flush_job_info);
+
+            println!("db => {:?}", db.name());
+        }
+    }
+
+
+    #[test]
+    fn event_listener_works() {
+        let tmp_dir = ::tempdir::TempDir::new_in(".", "rocks").unwrap();
+        let db = DB::open(
+            Options::default().map_db_options(|db| {
+                db.create_if_missing(true).add_listener(
+                    Box::new(MyEventListener),
+                )
+            }),
+            &tmp_dir,
+        ).unwrap();
+
+        assert!(db.put(&WriteOptions::default(), b"key-0", b"23333").is_ok());
+        assert!(db.put(&WriteOptions::default(), b"key-1", b"23333").is_ok());
+        assert!(db.put(&WriteOptions::default(), b"key-2", b"23333").is_ok());
+
+        assert!(db.flush(&Default::default()).is_ok());
     }
 }

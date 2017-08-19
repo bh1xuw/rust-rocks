@@ -1,17 +1,15 @@
 
 #include "rocksdb/compaction_filter.h"
+#include "rocksdb/db.h"
 #include "rocksdb/env.h"
+#include "rocksdb/listener.h"
 #include "rocksdb/slice.h"
 #include "rocksdb/table_properties.h"
 
 #include <cstdint>
 #include <string>
 
-using rocksdb::Slice;
-using rocksdb::Logger;
-using rocksdb::CompactionFilter;
-using rocksdb::UserCollectedProperties;
-using rocksdb::TablePropertiesCollectorFactory;
+using namespace rocksdb;
 
 #ifdef __cplusplus
 extern "C" {
@@ -144,6 +142,14 @@ extern void rust_write_batch_handler_mark_commit(void* h, const Slice* xid);
 extern unsigned char rust_write_batch_handler_will_continue(void* h);
 
 extern void rust_write_batch_handler_drop(void* h);
+
+// listener
+
+extern void rust_event_listener_drop(void* l);
+
+// DB** is the same as DBRef
+extern void rust_event_listener_on_flush_completed(void* l, DB**,
+                                                   const FlushJobInfo*);
 
 #ifdef __cplusplus
 }

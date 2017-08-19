@@ -15,7 +15,6 @@
 //! }
 //! let _ = db.delete(&WriteOptions::default(), b"my key").unwrap();
 //! ```
-
 // #![cfg_attr(feature = "dev", feature(plugin))]
 // #![cfg_attr(feature = "dev", plugin(clippy))]
 // #![cfg_attr(not(feature = "dev"), allow(unknown_lints))]
@@ -23,7 +22,6 @@
 // wrong_self_convention,
 // doc_markdown)]
 //
-
 #![allow(unused_variables, dead_code)]
 
 #[macro_use]

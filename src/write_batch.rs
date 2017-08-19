@@ -22,7 +22,7 @@ use std::os::raw::{c_uchar, c_void};
 use rocks_sys as ll;
 
 use db::ColumnFamilyHandle;
-use to_raw::{ToRaw, FromRaw};
+use to_raw::{FromRaw, ToRaw};
 use super::Result;
 
 /// `WriteBatch` holds a collection of updates to apply atomically to a DB.
@@ -379,7 +379,7 @@ pub trait WriteBatchHandler {
     }
 }
 
-/// Rust style WriteBatch decompose
+/// Rust style `WriteBatch` decompose
 #[derive(Debug, PartialEq, Eq, Hash)]
 pub enum WriteBatchEntry {
     Put {

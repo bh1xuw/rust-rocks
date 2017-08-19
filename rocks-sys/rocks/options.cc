@@ -702,12 +702,11 @@ void rocks_dboptions_set_wal_bytes_per_sync(rocks_dboptions_t* opt,
   opt->rep.wal_bytes_per_sync = v;
 }
 
-/*
-void rocks_dboptions_set_listeners(rocks_dboptions_t* opt,
-rocks_event_listener_t* listeners, size_t n) {
-  //    opt->listerns =
+void rocks_dboptions_add_listener(rocks_dboptions_t* opt,
+                                  void* listener_trait_obj) {
+  opt->rep.listeners.push_back(std::shared_ptr<EventListener>(
+      new rocks_event_listener_t{listener_trait_obj}));
 }
-*/
 
 void rocks_dboptions_set_enable_thread_tracking(rocks_dboptions_t* opt,
                                                 unsigned char v) {

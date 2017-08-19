@@ -15,7 +15,7 @@ use std::str;
 
 use rocks_sys as ll;
 
-use to_raw::{ToRaw, FromRaw};
+use to_raw::{FromRaw, ToRaw};
 
 #[repr(C)]
 #[derive(Debug, Copy, Clone, PartialEq, Eq, Hash)]

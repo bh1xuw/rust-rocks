@@ -8,7 +8,7 @@ use rocks_sys as ll;
 
 use db::DB;
 use types::SequenceNumber;
-use to_raw::{ToRaw, FromRaw};
+use to_raw::{FromRaw, ToRaw};
 
 /// Abstract handle to particular state of a DB.
 /// A Snapshot is an immutable object and can therefore be safely

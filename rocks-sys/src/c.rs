@@ -173,6 +173,12 @@ pub struct rocks_key_version_t([u8; 0]);
 pub struct rocks_key_version_collection_t([u8; 0]);
 #[repr(C)]
 #[derive(Debug, Copy, Clone)]
+pub struct rocks_event_listener_t([u8; 0]);
+#[repr(C)]
+#[derive(Debug, Copy, Clone)]
+pub struct rocks_flush_job_info_t([u8; 0]);
+#[repr(C)]
+#[derive(Debug, Copy, Clone)]
 pub struct cxx_string_vector_t([u8; 0]);
 extern "C" {
     pub fn rocks_status_create() -> *mut *mut rocks_status_t;
@@ -827,6 +833,11 @@ extern "C" {
 extern "C" {
     pub fn rocks_dboptions_set_wal_bytes_per_sync(opt: *mut rocks_dboptions_t,
                                                   v: u64);
+}
+extern "C" {
+    pub fn rocks_dboptions_add_listener(opt: *mut rocks_dboptions_t,
+                                        listener_trait_obj:
+                                            *mut ::std::os::raw::c_void);
 }
 extern "C" {
     pub fn rocks_dboptions_set_enable_thread_tracking(opt:
@@ -3207,6 +3218,53 @@ extern "C" {
 extern "C" {
     pub fn rocks_key_version_type(ver: *const rocks_key_version_t)
      -> ::std::os::raw::c_int;
+}
+extern "C" {
+    pub fn rocks_flush_job_info_get_cf_name(info:
+                                                *const rocks_flush_job_info_t,
+                                            len: *mut usize)
+     -> *const ::std::os::raw::c_char;
+}
+extern "C" {
+    pub fn rocks_flush_job_info_get_file_path(info:
+                                                  *const rocks_flush_job_info_t,
+                                              len: *mut usize)
+     -> *const ::std::os::raw::c_char;
+}
+extern "C" {
+    pub fn rocks_flush_job_info_get_thread_id(info:
+                                                  *const rocks_flush_job_info_t)
+     -> u64;
+}
+extern "C" {
+    pub fn rocks_flush_job_info_get_job_id(info:
+                                               *const rocks_flush_job_info_t)
+     -> u64;
+}
+extern "C" {
+    pub fn rocks_flush_job_info_get_triggered_writes_slowdown(info:
+                                                                  *const rocks_flush_job_info_t)
+     -> ::std::os::raw::c_uchar;
+}
+extern "C" {
+    pub fn rocks_flush_job_info_get_triggered_writes_stop(info:
+                                                              *const rocks_flush_job_info_t)
+     -> ::std::os::raw::c_uchar;
+}
+extern "C" {
+    pub fn rocks_flush_job_info_get_smallest_seqno(info:
+                                                       *const rocks_flush_job_info_t)
+     -> u64;
+}
+extern "C" {
+    pub fn rocks_flush_job_info_get_largest_seqno(info:
+                                                      *const rocks_flush_job_info_t)
+     -> u64;
+}
+extern "C" {
+    pub fn rocks_flush_job_info_get_table_properties(info:
+                                                         *const rocks_flush_job_info_t)
+     -> *mut rocks_table_props_t;
 }
 extern "C" {
     pub fn free(p: *mut ::std::os::raw::c_void);

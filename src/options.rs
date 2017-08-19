@@ -9,24 +9,24 @@ use std::marker::PhantomData;
 
 use rocks_sys as ll;
 
-use env::{InfoLogLevel, Logger, Env};
+use env::{Env, InfoLogLevel, Logger};
 use listener::EventListener;
 use write_buffer_manager::WriteBufferManager;
 use rate_limiter::RateLimiter;
 use sst_file_manager::SstFileManager;
 use statistics::Statistics;
 use cache::Cache;
-use advanced_options::{CompactionStyle, CompactionPri, CompactionOptionsFIFO, CompressionOptions};
+use advanced_options::{CompactionOptionsFIFO, CompactionPri, CompactionStyle, CompressionOptions};
 use universal_compaction::CompactionOptionsUniversal;
 use compaction_filter::{CompactionFilter, CompactionFilterFactory};
-use merge_operator::{MergeOperator, AssociativeMergeOperator};
-use table::{PlainTableOptions, BlockBasedTableOptions, CuckooTableOptions};
+use merge_operator::{AssociativeMergeOperator, MergeOperator};
+use table::{BlockBasedTableOptions, CuckooTableOptions, PlainTableOptions};
 use comparator::Comparator;
 use slice_transform::SliceTransform;
 use snapshot::Snapshot;
 use table_properties::TablePropertiesCollectorFactory;
 
-use to_raw::{ToRaw, FromRaw};
+use to_raw::{FromRaw, ToRaw};
 
 lazy_static! {
     // since all Options field are guaranteed to be thread safe
@@ -2079,11 +2079,10 @@ impl DBOptions {
     /// A vector of EventListeners which call-back functions will be called
     /// when specific RocksDB event happens.
     pub fn add_listener(self, val: Box<EventListener>) -> Self {
-        // unsafe {
-        //     ll::rocks_dboptions_set_listeners(self.raw, val);
-        // }
-        // self
-        unimplemented!()
+        unsafe {
+            ll::rocks_dboptions_add_listener(self.raw, Box::into_raw(Box::new(val)) as *mut _);
+        }
+        self
     }
 
     /// If true, then the status of the threads involved in this DB will

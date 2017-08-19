@@ -136,6 +136,11 @@ typedef struct rocks_key_version_t rocks_key_version_t;
 
 typedef struct rocks_key_version_collection_t rocks_key_version_collection_t;
 
+/* listener */
+typedef struct rocks_event_listener_t rocks_event_listener_t;
+
+typedef struct rocks_flush_job_info_t rocks_flush_job_info_t;
+
 /* aux */
 typedef struct cxx_string_vector_t cxx_string_vector_t;
 
@@ -509,10 +514,9 @@ void rocks_dboptions_set_use_adaptive_mutex(rocks_dboptions_t* opt,
                                             unsigned char v);
 void rocks_dboptions_set_bytes_per_sync(rocks_dboptions_t* opt, uint64_t v);
 void rocks_dboptions_set_wal_bytes_per_sync(rocks_dboptions_t* opt, uint64_t v);
-/*
-void rocks_dboptions_set_listeners(rocks_dboptions_t* opt,
-rocks_event_listener_t* listeners, size_t n);
-*/
+
+void rocks_dboptions_add_listener(rocks_dboptions_t* opt,
+                                  void* listener_trait_obj);
 
 void rocks_dboptions_set_enable_thread_tracking(rocks_dboptions_t* opt,
                                                 unsigned char v);
@@ -1752,6 +1756,33 @@ const char* rocks_key_version_value(const rocks_key_version_t* ver,
                                     size_t* len);
 uint64_t rocks_key_version_sequence_numer(const rocks_key_version_t* ver);
 int rocks_key_version_type(const rocks_key_version_t* ver);
+
+/* listener */
+/* change pointer type */
+const char* rocks_flush_job_info_get_cf_name(const rocks_flush_job_info_t* info,
+                                             size_t* len);
+
+const char* rocks_flush_job_info_get_file_path(
+    const rocks_flush_job_info_t* info, size_t* len);
+
+uint64_t rocks_flush_job_info_get_thread_id(const rocks_flush_job_info_t* info);
+
+uint64_t rocks_flush_job_info_get_job_id(const rocks_flush_job_info_t* info);
+
+unsigned char rocks_flush_job_info_get_triggered_writes_slowdown(
+    const rocks_flush_job_info_t* info);
+
+unsigned char rocks_flush_job_info_get_triggered_writes_stop(
+    const rocks_flush_job_info_t* info);
+
+uint64_t rocks_flush_job_info_get_smallest_seqno(
+    const rocks_flush_job_info_t* info);
+
+uint64_t rocks_flush_job_info_get_largest_seqno(
+    const rocks_flush_job_info_t* info);
+
+rocks_table_props_t* rocks_flush_job_info_get_table_properties(
+    const rocks_flush_job_info_t* info);
 
 /* aux */
 void free(void* p);

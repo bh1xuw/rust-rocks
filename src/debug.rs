@@ -8,7 +8,7 @@ use std::marker::PhantomData;
 
 use rocks_sys as ll;
 
-use to_raw::{ToRaw, FromRaw};
+use to_raw::{FromRaw, ToRaw};
 use types::SequenceNumber;
 
 
@@ -53,7 +53,7 @@ impl fmt::Debug for KeyVersion {
 
 impl ToRaw<ll::rocks_key_version_t> for KeyVersion {
     fn raw(&self) -> *mut ll::rocks_key_version_t {
-        unsafe { mem::transmute(self) }
+        self as *const KeyVersion as *mut ll::rocks_key_version_t
     }
 }
 
@@ -126,7 +126,7 @@ impl<'a> KeyVersionVec<'a> {
         self.len() == 0
     }
 
-    pub fn iter<'b>(&'b self) -> KeyVersionVecIter<'b> {
+    pub fn iter(&self) -> KeyVersionVecIter {
         KeyVersionVecIter {
             vec: self,
             idx: 0,

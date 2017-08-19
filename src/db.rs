@@ -2,7 +2,7 @@
 
 use std::mem;
 use std::ffi::{CStr, CString};
-use std::os::raw::{c_int, c_char, c_void};
+use std::os::raw::{c_char, c_int, c_void};
 use std::ptr;
 use std::str;
 use std::slice;
@@ -17,15 +17,15 @@ use std::borrow::Borrow;
 use rocks_sys as ll;
 
 use error::Status;
-use options::{Options, DBOptions, ColumnFamilyOptions, ReadOptions, WriteOptions, CompactRangeOptions,
-              IngestExternalFileOptions, FlushOptions, CompactionOptions};
+use options::{ColumnFamilyOptions, CompactRangeOptions, CompactionOptions, DBOptions, FlushOptions,
+              IngestExternalFileOptions, Options, ReadOptions, WriteOptions};
 use table_properties::TablePropertiesCollection;
 use snapshot::Snapshot;
 use write_batch::WriteBatch;
 use iterator::Iterator;
 use types::SequenceNumber;
-use to_raw::{ToRaw, FromRaw};
-use metadata::{LiveFileMetaData, SstFileMetaData, LevelMetaData, ColumnFamilyMetaData};
+use to_raw::{FromRaw, ToRaw};
+use metadata::{ColumnFamilyMetaData, LevelMetaData, LiveFileMetaData, SstFileMetaData};
 use transaction_log::{LogFile, TransactionLogIterator};
 use debug::KeyVersionVec;
 
@@ -1667,7 +1667,7 @@ impl<'a> DBRef<'a> {
     ) -> Result<()> {
         let mut c_file_names = Vec::new();
         let mut c_file_name_sizes = Vec::new();
-        for file_name in input_file_names.into_iter() {
+        for file_name in input_file_names {
             let file_path = file_name.as_ref().to_str().unwrap();
             c_file_names.push(file_path.as_bytes().as_ptr() as *const _);
             c_file_name_sizes.push(file_path.len());

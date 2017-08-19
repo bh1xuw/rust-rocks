@@ -8,7 +8,7 @@ use rocks_sys as ll;
 
 use types::SequenceNumber;
 use write_batch::WriteBatch;
-use to_raw::{ToRaw, FromRaw};
+use to_raw::{FromRaw, ToRaw};
 use error::Status;
 use Result;
 
@@ -56,14 +56,14 @@ impl fmt::Debug for LogFile {
     }
 }
 
-/// Single write batch result returned by TransactionLogIterator
+/// Single write batch result returned by `TransactionLogIterator`
 #[derive(Debug)]
 pub struct BatchResult {
     pub sequence: SequenceNumber,
     pub write_batch: WriteBatch,
 }
 
-/// A TransactionLogIterator is used to iterate over the transactions in a db.
+/// A `TransactionLogIterator` is used to iterate over the transactions in a db.
 /// One run of the iterator is continuous, i.e. the iterator will stop at the
 /// beginning of any gap in sequences
 #[derive(Debug)]

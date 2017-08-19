@@ -1,3 +1,4 @@
+
 //! `WriteBufferManager` is for managing memory allocation for one or more
 //! MemTables.
 
@@ -54,8 +55,8 @@ mod tests {
 
     #[test]
     fn write_buffer_manager_of_2db() {
-        let tmp_dir1 = ::tempdir::TempDir::new_in("", "rocks1").unwrap();
-        let tmp_dir2 = ::tempdir::TempDir::new_in("", "rocks2").unwrap();
+        let tmp_dir1 = ::tempdir::TempDir::new_in("", "rocks").unwrap();
+        let tmp_dir2 = ::tempdir::TempDir::new_in("", "rocks").unwrap();
         let manager = WriteBufferManager::new(2 << 20);
 
         assert_eq!(manager.memory_usage(), 0);

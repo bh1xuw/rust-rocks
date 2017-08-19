@@ -3,7 +3,7 @@
 
 use std::mem;
 use std::slice;
-use std::os::raw::{c_int, c_char};
+use std::os::raw::{c_char, c_int};
 use std::cmp::Ordering;
 use std::str;
 

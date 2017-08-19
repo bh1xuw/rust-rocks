@@ -8,12 +8,12 @@ use std::fmt;
 use std::mem;
 use std::marker::PhantomData;
 use std::ops;
-use std::os::raw::{c_void, c_char};
+use std::os::raw::{c_char, c_void};
 
 use rocks_sys as ll;
 
 use types::SequenceNumber;
-use to_raw::{ToRaw, FromRaw};
+use to_raw::{FromRaw, ToRaw};
 
 pub const UNKNOWN_COLUMN_FAMILY_ID: u32 = u32::MAX;
 
@@ -487,7 +487,7 @@ pub trait TablePropertiesCollectorFactory {
 #[doc(hidden)]
 pub mod c {
     use std::mem;
-    use std::os::raw::{c_int, c_char, c_uchar};
+    use std::os::raw::{c_char, c_int, c_uchar};
 
     use super::*;
 

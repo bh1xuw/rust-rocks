@@ -10,6 +10,7 @@
 #include "rocksdb/env.h"
 #include "rocksdb/filter_policy.h"
 #include "rocksdb/iterator.h"
+#include "rocksdb/listener.h"
 #include "rocksdb/merge_operator.h"
 #include "rocksdb/metadata.h"
 #include "rocksdb/options.h"
@@ -493,6 +494,19 @@ typedef struct rocks_key_version_t rocks_key_version_t;
 
 struct rocks_key_version_collection_t {
   std::vector<KeyVersion> rep;
+};
+
+/* listener */
+struct rocks_event_listener_t : public EventListener {
+  void* obj;  // rust Box<trait obj>
+
+  rocks_event_listener_t(void* trait_obj) : obj(trait_obj) {}
+
+  ~rocks_event_listener_t() { rust_event_listener_drop(this->obj); }
+
+  void OnFlushCompleted(DB* db, const FlushJobInfo& flush_job_info) override {
+    rust_event_listener_on_flush_completed(this->obj, &db, &flush_job_info);
+  }
 };
 
 /* aux */

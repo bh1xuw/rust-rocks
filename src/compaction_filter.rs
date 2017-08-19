@@ -1,7 +1,7 @@
 //! `CompactionFilter` allows an application to modify/delete a key-value at
 //! the time of compaction.
 
-use std::os::raw::{c_int, c_char, c_uchar};
+use std::os::raw::{c_char, c_int, c_uchar};
 
 use rocks_sys as ll;
 
