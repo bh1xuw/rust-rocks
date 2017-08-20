@@ -276,7 +276,7 @@ pub enum CompactionListenerValueType {
 
 // A call-back function to RocksDB which will be called when the compaction
 // iterator is compacting values. It is mean to be returned from
-// EventListner::GetCompactionEventListner() at the beginning of compaction
+// `EventListner::GetCompactionEventListner()` at the beginning of compaction
 // job.
 pub trait CompactionEventListener {
     fn on_compaction(
@@ -561,7 +561,6 @@ pub mod c {
 
 #[cfg(test)]
 mod tests {
-    use std::iter;
     use super::*;
     use super::super::rocksdb::*;
 
@@ -573,29 +572,37 @@ mod tests {
         compaction_completed_called: usize,
     }
 
+    impl Drop for MyEventListener {
+        fn drop(&mut self) {
+            assert!(
+                self.flush_begin_called * self.flush_completed_called * self.table_file_deleted_called *
+                    self.compaction_completed_called > 0
+            );
+
+            // assert!(false);
+            // FIXME: must assert drop is called
+        }
+    }
+
     impl EventListener for MyEventListener {
         fn on_flush_completed(&mut self, db: &DBRef, flush_job_info: &FlushJobInfo) {
-            println!("completed => {:?}", flush_job_info);
             assert!(db.name().len() > 0, "DB name is accessable");
             self.flush_completed_called += 1;
         }
 
         fn on_flush_begin(&mut self, db: &DBRef, flush_job_info: &FlushJobInfo) {
-            println!("begin => {:?}", flush_job_info);
             self.flush_begin_called += 1;
         }
 
         fn on_table_file_deleted(&mut self, info: &TableFileDeletionInfo) {
-            println!("deleted => {:?}", info.file_path);
+            assert!(info.status.is_ok());
             self.table_file_deleted_called += 1;
         }
 
         fn on_compaction_completed(&mut self, db: &DBRef, ci: &CompactionJobInfo) {
-            println!("compation => {:?}: {:?}", ci.cf_name(), ci.input_files());
-            println!("  {:?}", ci.output_files());
-            println!("  {:?}", ci.table_properties());
-            println!("   {:?}", ci);
-            println!("    stat => {:?}", ci.stats());
+            // println!("compation => {:?}: {:?}", ci.cf_name(), ci.input_files());
+            assert!(ci.status().is_ok());
+            assert!(ci.stats().num_input_files() > 0);
             self.compaction_completed_called += 1;
         }
     }
@@ -606,9 +613,9 @@ mod tests {
         let tmp_dir = ::tempdir::TempDir::new_in(".", "rocks").unwrap();
         let db = DB::open(
             Options::default().map_db_options(|db| {
-                db.create_if_missing(true).add_listener(Box::new(
+                db.create_if_missing(true).add_listener(
                     MyEventListener::default(),
-                ))
+                )
             }),
             &tmp_dir,
         ).unwrap();
@@ -616,9 +623,8 @@ mod tests {
         for i in 0..100 {
             let key = format!("test2-key-{}", i);
             let val = format!("rocksdb-value-{}", i * 10);
-            let value: String = iter::repeat(val).take(10).collect::<Vec<_>>().concat();
 
-            db.put(&WriteOptions::default(), key.as_bytes(), value.as_bytes())
+            db.put(&WriteOptions::default(), key.as_bytes(), val.as_bytes())
                 .unwrap();
 
             if i % 6 == 0 {

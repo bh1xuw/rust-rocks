@@ -2078,9 +2078,12 @@ impl DBOptions {
 
     /// A vector of EventListeners which call-back functions will be called
     /// when specific RocksDB event happens.
-    pub fn add_listener(self, val: Box<EventListener>) -> Self {
+    pub fn add_listener<T: EventListener>(self, val: T) -> Self {
         unsafe {
-            ll::rocks_dboptions_add_listener(self.raw, Box::into_raw(Box::new(val)) as *mut _);
+            ll::rocks_dboptions_add_listener(
+                self.raw,
+                Box::into_raw(Box::new(Box::new(val) as Box<EventListener>)) as *mut _,
+            );
         }
         self
     }
