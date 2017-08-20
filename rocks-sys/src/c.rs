@@ -188,6 +188,12 @@ pub struct rocks_compaction_job_info_t([u8; 0]);
 pub struct rocks_compaction_job_stats_t([u8; 0]);
 #[repr(C)]
 #[derive(Debug, Copy, Clone)]
+pub struct rocks_table_file_creation_info_t([u8; 0]);
+#[repr(C)]
+#[derive(Debug, Copy, Clone)]
+pub struct rocks_table_file_creation_brief_info_t([u8; 0]);
+#[repr(C)]
+#[derive(Debug, Copy, Clone)]
 pub struct cxx_string_vector_t([u8; 0]);
 extern "C" {
     pub fn rocks_status_create() -> *mut *mut rocks_status_t;
@@ -3492,6 +3498,55 @@ extern "C" {
     pub fn rocks_compaction_job_stats_get_num_single_del_mismatch(stats:
                                                                       *const rocks_compaction_job_stats_t)
      -> u64;
+}
+extern "C" {
+    pub fn rocks_table_file_creation_info_get_file_size(info:
+                                                            *const rocks_table_file_creation_info_t)
+     -> u64;
+}
+extern "C" {
+    pub fn rocks_table_file_creation_info_get_table_properties(info:
+                                                                   *const rocks_table_file_creation_info_t)
+     -> *mut rocks_table_props_t;
+}
+extern "C" {
+    pub fn rocks_table_file_creation_info_get_status(info:
+                                                         *const rocks_table_file_creation_info_t,
+                                                     status:
+                                                         *mut *mut rocks_status_t);
+}
+extern "C" {
+    pub fn rocks_table_file_creation_info_get_brief_info(info:
+                                                             *const rocks_table_file_creation_info_t)
+     -> *const rocks_table_file_creation_brief_info_t;
+}
+extern "C" {
+    pub fn rocks_table_file_creation_brief_info_get_db_name(info:
+                                                                *const rocks_table_file_creation_brief_info_t,
+                                                            len: *mut usize)
+     -> *const ::std::os::raw::c_char;
+}
+extern "C" {
+    pub fn rocks_table_file_creation_brief_info_get_cf_name(info:
+                                                                *const rocks_table_file_creation_brief_info_t,
+                                                            len: *mut usize)
+     -> *const ::std::os::raw::c_char;
+}
+extern "C" {
+    pub fn rocks_table_file_creation_brief_info_get_file_path(info:
+                                                                  *const rocks_table_file_creation_brief_info_t,
+                                                              len: *mut usize)
+     -> *const ::std::os::raw::c_char;
+}
+extern "C" {
+    pub fn rocks_table_file_creation_brief_info_get_job_id(info:
+                                                               *const rocks_table_file_creation_brief_info_t)
+     -> ::std::os::raw::c_int;
+}
+extern "C" {
+    pub fn rocks_table_file_creation_brief_info_get_reason(info:
+                                                               *const rocks_table_file_creation_brief_info_t)
+     -> ::std::os::raw::c_int;
 }
 extern "C" {
     pub fn free(p: *mut ::std::os::raw::c_void);

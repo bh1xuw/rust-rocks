@@ -109,4 +109,55 @@ int rocks_compaction_job_info_get_compression(const CompactionJobInfo* info) {
 }
 
 const CompactionJobStats* rocks_compaction_job_info_get_stats(const CompactionJobInfo* info) { return &info->stats; }
+
+// TableFileCreationInfo
+
+typedef TableFileCreationInfo rocks_table_file_creation_info_t;
+typedef TableFileCreationBriefInfo rocks_table_file_creation_brief_info_t;
+
+uint64_t rocks_table_file_creation_info_get_file_size(const rocks_table_file_creation_info_t* info) {
+  return info->file_size;
+}
+
+rocks_table_props_t* rocks_table_file_creation_info_get_table_properties(const rocks_table_file_creation_info_t* info) {
+  return new rocks_table_props_t{
+      std::shared_ptr<TableProperties>(const_cast<TableProperties*>(&info->table_properties), [](TableProperties*) {})};
+}
+
+void rocks_table_file_creation_info_get_status(const rocks_table_file_creation_info_t* info, rocks_status_t** status) {
+  SaveError(status, Status(info->status));
+}
+
+// ** for ops::Deref + mem::transmute
+const rocks_table_file_creation_brief_info_t* rocks_table_file_creation_info_get_brief_info(
+    const rocks_table_file_creation_info_t* info) {
+  return info;
+}
+
+// TableFileCreationBriefInfo
+const char* rocks_table_file_creation_brief_info_get_db_name(const rocks_table_file_creation_brief_info_t* info,
+                                                             size_t* len) {
+  *len = info->db_name.size();
+  return info->db_name.data();
+}
+
+const char* rocks_table_file_creation_brief_info_get_cf_name(const rocks_table_file_creation_brief_info_t* info,
+                                                             size_t* len) {
+  *len = info->cf_name.size();
+  return info->cf_name.data();
+}
+
+const char* rocks_table_file_creation_brief_info_get_file_path(const rocks_table_file_creation_brief_info_t* info,
+                                                               size_t* len) {
+  *len = info->file_path.size();
+  return info->file_path.data();
+}
+
+int rocks_table_file_creation_brief_info_get_job_id(const rocks_table_file_creation_brief_info_t* info) {
+  return info->job_id;
+}
+
+int rocks_table_file_creation_brief_info_get_reason(const rocks_table_file_creation_brief_info_t* info) {
+  return static_cast<int>(info->reason);
+}
 }

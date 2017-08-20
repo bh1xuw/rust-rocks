@@ -135,6 +135,10 @@ extern void rust_event_listener_on_table_file_deleted(void* l, const TableFileDe
 
 extern void rust_event_listener_on_compaction_completed(void* l, DB**, const CompactionJobInfo*);
 
+extern void rust_event_listener_on_table_file_created(void* l, const TableFileCreationInfo*);
+
+extern void rust_event_listener_on_table_file_creation_started(void* l, const TableFileCreationBriefInfo*);
+
 #ifdef __cplusplus
 }
 #endif

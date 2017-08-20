@@ -466,6 +466,24 @@ struct rocks_event_listener_t : public EventListener {
   void OnCompactionCompleted(DB* db, const CompactionJobInfo& ci) override {
     rust_event_listener_on_compaction_completed(this->obj, &db, &ci);
   }
+
+  void OnTableFileCreated(const TableFileCreationInfo& info) override {
+    rust_event_listener_on_table_file_created(this->obj, &info);
+  }
+
+  void OnTableFileCreationStarted(const TableFileCreationBriefInfo& info) override {
+    rust_event_listener_on_table_file_creation_started(this->obj, &info);
+  }
+
+  void OnMemTableSealed(const MemTableInfo& info) override {}
+
+  void OnColumnFamilyHandleDeletionStarted(ColumnFamilyHandle* handle) override {}
+
+  void OnExternalFileIngested(DB* db, const ExternalFileIngestionInfo& info) override {}
+
+  void OnBackgroundError(BackgroundErrorReason reason, Status* bg_error) override {}
+
+  CompactionEventListener* GetCompactionEventListener() override { return nullptr; }
 };
 
 /* aux */

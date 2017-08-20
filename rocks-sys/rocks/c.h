@@ -133,6 +133,8 @@ typedef struct rocks_flush_job_info_t rocks_flush_job_info_t;
 typedef struct rocks_table_file_deletion_info_t rocks_table_file_deletion_info_t;
 typedef struct rocks_compaction_job_info_t rocks_compaction_job_info_t;
 typedef struct rocks_compaction_job_stats_t rocks_compaction_job_stats_t;
+typedef struct rocks_table_file_creation_info_t rocks_table_file_creation_info_t;
+typedef struct rocks_table_file_creation_brief_info_t rocks_table_file_creation_brief_info_t;
 
 /* aux */
 typedef struct cxx_string_vector_t cxx_string_vector_t;
@@ -1458,6 +1460,21 @@ const char* rocks_compaction_job_stats_get_largest_output_key_prefix(const rocks
                                                                      size_t* len);
 uint64_t rocks_compaction_job_stats_get_num_single_del_fallthru(const rocks_compaction_job_stats_t* stats);
 uint64_t rocks_compaction_job_stats_get_num_single_del_mismatch(const rocks_compaction_job_stats_t* stats);
+
+uint64_t rocks_table_file_creation_info_get_file_size(const rocks_table_file_creation_info_t* info);
+rocks_table_props_t* rocks_table_file_creation_info_get_table_properties(const rocks_table_file_creation_info_t* info);
+void rocks_table_file_creation_info_get_status(const rocks_table_file_creation_info_t* info, rocks_status_t** status);
+const rocks_table_file_creation_brief_info_t* rocks_table_file_creation_info_get_brief_info(
+    const rocks_table_file_creation_info_t* info);
+
+const char* rocks_table_file_creation_brief_info_get_db_name(const rocks_table_file_creation_brief_info_t* info,
+                                                             size_t* len);
+const char* rocks_table_file_creation_brief_info_get_cf_name(const rocks_table_file_creation_brief_info_t* info,
+                                                             size_t* len);
+const char* rocks_table_file_creation_brief_info_get_file_path(const rocks_table_file_creation_brief_info_t* info,
+                                                               size_t* len);
+int rocks_table_file_creation_brief_info_get_job_id(const rocks_table_file_creation_brief_info_t* info);
+int rocks_table_file_creation_brief_info_get_reason(const rocks_table_file_creation_brief_info_t* info);
 
 /* aux */
 void free(void* p);

@@ -119,7 +119,8 @@ big picture(TODOs):
   - [x] reverse iterator
 - [ ] ~~``rocksdb/ldb_tool.h``~~
 - [ ] ``rocksdb/listener.h``
-  - [ ] need refactor DB/CFHandle to allow borrowed
+  - [x] on_flush_begin, on_table_file_deleted, on_compaction_completed, on_flush_completed
+  - [ ] other
 - [x] ``rocksdb/memtablerep.h``
   - [x] via options surfix
 - [x] ``rocksdb/merge_operator.h``

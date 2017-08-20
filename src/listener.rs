@@ -9,7 +9,6 @@ use std::str;
 use std::slice;
 use std::mem;
 use std::fmt;
-
 use error::Status;
 use db::DBRef;
 use types::SequenceNumber;
@@ -28,30 +27,138 @@ pub enum TableFileCreationReason {
     Recovery,
 }
 
-#[derive(Debug)]
-pub struct TableFileCreationBriefInfo<'a> {
-    /// the name of the database where the file was created
-    pub db_name: &'a str,
-    /// the name of the column family where the file was created.
-    pub cf_name: &'a str,
-    /// the path to the created file.
-    pub file_path: &'a str,
-    /// the id of the job (which could be flush or compaction) that
-    /// created the file.
-    pub job_id: i32,
-    /// reason of creating the table.
-    pub reason: TableFileCreationReason,
+pub struct TableFileCreationBriefInfo {
+    raw: *const ll::rocks_table_file_creation_brief_info_t,
 }
 
-#[derive(Debug)]
-pub struct TableFileCreationInfo<'a> {
-    brief_info: TableFileCreationBriefInfo<'a>,
+impl fmt::Debug for TableFileCreationBriefInfo {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        f.debug_struct("TableFileCreationBriefInfo")
+            .field("job_id", &self.job_id())
+            .field("reason", &self.reason())
+            .field("cf", &self.cf_name())
+            .field("file_path", &self.file_path())
+            .finish()
+    }
+}
+
+
+impl TableFileCreationBriefInfo {
+    /// the name of the database where the file was created
+    pub fn db_name(&self) -> &str {
+        let mut len = 0;
+        unsafe {
+            let ptr = ll::rocks_table_file_creation_brief_info_get_db_name(self.raw, &mut len);
+            str::from_utf8_unchecked(slice::from_raw_parts(ptr as *const u8, len))
+        }
+    }
+
+    /// the name of the column family where the file was created.
+    pub fn cf_name(&self) -> &str {
+        let mut len = 0;
+        unsafe {
+            let ptr = ll::rocks_table_file_creation_brief_info_get_cf_name(self.raw, &mut len);
+            str::from_utf8_unchecked(slice::from_raw_parts(ptr as *const u8, len))
+        }
+    }
+
+    /// the path to the created file.
+    pub fn file_path(&self) -> &str {
+        let mut len = 0;
+        unsafe {
+            let ptr = ll::rocks_table_file_creation_brief_info_get_file_path(self.raw, &mut len);
+            str::from_utf8_unchecked(slice::from_raw_parts(ptr as *const u8, len))
+        }
+    }
+
+    /// the id of the job (which could be flush or compaction) that
+    /// created the file.
+    pub fn job_id(&self) -> i32 {
+        unsafe { ll::rocks_table_file_creation_brief_info_get_job_id(self.raw) as i32 }
+    }
+
+    /// reason of creating the table.
+    pub fn reason(&self) -> TableFileCreationReason {
+        unsafe { mem::transmute(ll::rocks_table_file_creation_brief_info_get_reason(self.raw)) }
+    }
+}
+
+pub struct TableFileCreationInfo {
+    raw: *const ll::rocks_table_file_creation_info_t,
+}
+
+impl fmt::Debug for TableFileCreationInfo {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        f.debug_struct("TableFileCreationInfo")
+            .field("job_id", &self.job_id())
+            .field("reason", &self.reason())
+            .field("cf", &self.cf_name())
+            .field("file_path", &self.file_path())
+            .field("status", &self.status())
+            .finish()
+    }
+}
+
+impl TableFileCreationInfo {
     /// the size of the file.
-    pub file_size: u64,
+    pub fn file_size(&self) -> u64 {
+        unsafe { ll::rocks_table_file_creation_info_get_file_size(self.raw) }
+    }
+
     /// Detailed properties of the created file.
-    pub table_properties: TableProperties<'a>,
+    pub fn table_properties<'a>(&'a self) -> TableProperties<'a> {
+        unsafe { TableProperties::from_ll(ll::rocks_table_file_creation_info_get_table_properties(self.raw)) }
+    }
     /// The status indicating whether the creation was successful or not.
-    pub status: Result<()>,
+    pub fn status(&self) -> Result<()> {
+        let mut status = ptr::null_mut::<ll::rocks_status_t>();
+        unsafe {
+            ll::rocks_table_file_creation_info_get_status(self.raw, &mut status);
+            Result::from_ll(status)
+        }
+    }
+
+    unsafe fn brief_info(&self) -> *const ll::rocks_table_file_creation_brief_info_t {
+        ll::rocks_table_file_creation_info_get_brief_info(self.raw)
+    }
+
+    /// the name of the database where the file was created
+    pub fn db_name(&self) -> &str {
+        let mut len = 0;
+        unsafe {
+            let ptr = ll::rocks_table_file_creation_brief_info_get_db_name(self.brief_info(), &mut len);
+            str::from_utf8_unchecked(slice::from_raw_parts(ptr as *const u8, len))
+        }
+    }
+
+    /// the name of the column family where the file was created.
+    pub fn cf_name(&self) -> &str {
+        let mut len = 0;
+        unsafe {
+            let ptr = ll::rocks_table_file_creation_brief_info_get_cf_name(self.brief_info(), &mut len);
+            str::from_utf8_unchecked(slice::from_raw_parts(ptr as *const u8, len))
+        }
+    }
+
+    /// the path to the created file.
+    pub fn file_path(&self) -> &str {
+        let mut len = 0;
+        unsafe {
+            let ptr = ll::rocks_table_file_creation_brief_info_get_file_path(self.brief_info(), &mut len);
+            str::from_utf8_unchecked(slice::from_raw_parts(ptr as *const u8, len))
+        }
+    }
+
+    /// the id of the job (which could be flush or compaction) that
+    /// created the file.
+    pub fn job_id(&self) -> i32 {
+        unsafe { ll::rocks_table_file_creation_brief_info_get_job_id(self.brief_info()) as i32 }
+    }
+
+    /// reason of creating the table.
+    pub fn reason(&self) -> TableFileCreationReason {
+        unsafe { mem::transmute(ll::rocks_table_file_creation_brief_info_get_reason(self.brief_info())) }
+    }
 }
 
 #[repr(C)]
@@ -548,7 +655,25 @@ pub mod c {
         (*listener).on_compaction_completed(&db_ref, &info);
     }
 
+    #[no_mangle]
+    pub unsafe extern "C" fn rust_event_listener_on_table_file_created(
+        l: *mut (),
+        info: *mut ll::rocks_table_file_creation_info_t,
+    ) {
+        let listener = l as *mut Box<EventListener>;
+        let info = TableFileCreationInfo { raw: info };
+        (*listener).on_table_file_created(&info);
+    }
 
+    #[no_mangle]
+    pub unsafe extern "C" fn rust_event_listener_on_table_file_creation_started(
+        l: *mut (),
+        info: *mut ll::rocks_table_file_creation_brief_info_t,
+    ) {
+        let listener = l as *mut Box<EventListener>;
+        let info = TableFileCreationBriefInfo { raw: info };
+        (*listener).on_table_file_creation_started(&info);
+    }
 
     #[no_mangle]
     pub unsafe extern "C" fn rust_event_listener_drop(l: *mut ()) {
@@ -570,13 +695,16 @@ mod tests {
         flush_begin_called: usize,
         table_file_deleted_called: usize,
         compaction_completed_called: usize,
+        table_file_created_called: usize,
+        table_file_creation_started_called: usize,
     }
 
     impl Drop for MyEventListener {
         fn drop(&mut self) {
             assert!(
                 self.flush_begin_called * self.flush_completed_called * self.table_file_deleted_called *
-                    self.compaction_completed_called > 0
+                    self.compaction_completed_called * self.table_file_created_called *
+                    self.table_file_creation_started_called > 0
             );
 
             // assert!(false);
@@ -586,7 +714,7 @@ mod tests {
 
     impl EventListener for MyEventListener {
         fn on_flush_completed(&mut self, db: &DBRef, flush_job_info: &FlushJobInfo) {
-            assert!(db.name().len() > 0, "DB name is accessable");
+            assert!(db.name().len() > 0, "DB name is accessible");
             self.flush_completed_called += 1;
         }
 
@@ -605,8 +733,20 @@ mod tests {
             assert!(ci.stats().num_input_files() > 0);
             self.compaction_completed_called += 1;
         }
-    }
 
+        fn on_table_file_created(&mut self, info: &TableFileCreationInfo) {
+            assert!(info.status().is_ok());
+            assert!(info.file_size() > 0);
+            assert!(info.table_properties().num_entries() > 0);
+            assert!(info.reason() != TableFileCreationReason::Recovery);
+            self.table_file_created_called += 1;
+        }
+
+        fn on_table_file_creation_started(&mut self, info: &TableFileCreationBriefInfo) {
+            assert!(info.reason() != TableFileCreationReason::Recovery);
+            self.table_file_creation_started_called += 1;
+        }
+    }
 
     #[test]
     fn event_listener_works() {
