@@ -151,6 +151,15 @@ extern void rust_event_listener_drop(void* l);
 extern void rust_event_listener_on_flush_completed(void* l, DB**,
                                                    const FlushJobInfo*);
 
+extern void rust_event_listener_on_flush_begin(void* l, DB**,
+                                               const FlushJobInfo*);
+
+extern void rust_event_listener_on_table_file_deleted(
+    void* l, const TableFileDeletionInfo*);
+
+extern void rust_event_listener_on_compaction_completed(
+    void* l, DB**, const CompactionJobInfo*);
+
 #ifdef __cplusplus
 }
 #endif

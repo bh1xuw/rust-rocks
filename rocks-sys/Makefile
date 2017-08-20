@@ -21,5 +21,5 @@ all: src/c.rs
 
 
 format:
-	find rocks/ -iname '*.h' -o -iname '*.cc' -o -iname '*.hpp' | xargs clang-format -style=Google -i
+	find rocks/ -iname '*.h' -o -iname '*.cc' -o -iname '*.hpp' | xargs clang-format -style=file -i
 

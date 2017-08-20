@@ -140,6 +140,10 @@ typedef struct rocks_key_version_collection_t rocks_key_version_collection_t;
 typedef struct rocks_event_listener_t rocks_event_listener_t;
 
 typedef struct rocks_flush_job_info_t rocks_flush_job_info_t;
+typedef struct rocks_table_file_deletion_info_t
+    rocks_table_file_deletion_info_t;
+typedef struct rocks_compaction_job_info_t rocks_compaction_job_info_t;
+typedef struct rocks_compaction_job_stats_t rocks_compaction_job_stats_t;
 
 /* aux */
 typedef struct cxx_string_vector_t cxx_string_vector_t;
@@ -1783,6 +1787,100 @@ uint64_t rocks_flush_job_info_get_largest_seqno(
 
 rocks_table_props_t* rocks_flush_job_info_get_table_properties(
     const rocks_flush_job_info_t* info);
+
+const char* rocks_table_file_deletion_info_get_db_name(
+    const rocks_table_file_deletion_info_t* info, size_t* len);
+
+const char* rocks_table_file_deletion_info_get_file_path(
+    const rocks_table_file_deletion_info_t* info, size_t* len);
+
+uint64_t rocks_table_file_deletion_info_get_job_id(
+    const rocks_table_file_deletion_info_t* info);
+
+void rocks_table_file_deletion_info_get_status(
+    const rocks_table_file_deletion_info_t* info, rocks_status_t** status);
+
+const char* rocks_compaction_job_info_get_cf_name(
+    const rocks_compaction_job_info_t* info, size_t* len);
+void rocks_compaction_job_info_get_status(
+    const rocks_compaction_job_info_t* info, rocks_status_t** status);
+uint64_t rocks_compaction_job_info_get_thread_id(
+    const rocks_compaction_job_info_t* info);
+int rocks_compaction_job_info_get_job_id(
+    const rocks_compaction_job_info_t* info);
+int rocks_compaction_job_info_get_base_input_level(
+    const rocks_compaction_job_info_t* info);
+int rocks_compaction_job_info_get_output_level(
+    const rocks_compaction_job_info_t* info);
+
+size_t rocks_compaction_job_info_get_input_files_num(
+    const rocks_compaction_job_info_t* info);
+// requires: files, sizes buf allocated with size acquired via above method
+void rocks_compaction_job_info_get_input_files(
+    const rocks_compaction_job_info_t* info, const char** files, size_t* sizes);
+
+size_t rocks_compaction_job_info_get_output_files_num(
+    const rocks_compaction_job_info_t* info);
+// requires: files, sizes buf allocated with size acquired via above method
+void rocks_compaction_job_info_get_output_files(
+    const rocks_compaction_job_info_t* info, const char** files, size_t* sizes);
+
+rocks_table_props_collection_t* rocks_compaction_job_info_get_table_properties(
+    const rocks_compaction_job_info_t* info);
+int rocks_compaction_job_info_get_compaction_reason(
+    const rocks_compaction_job_info_t* info);
+int rocks_compaction_job_info_get_compression(
+    const rocks_compaction_job_info_t* info);
+rocks_compaction_job_stats_t* rocks_compaction_job_info_get_stats(
+    const rocks_compaction_job_info_t* info);
+
+/* compaction_job_stats */
+uint64_t rocks_compaction_job_stats_get_elapsed_micros(
+    const rocks_compaction_job_stats_t* stats);
+uint64_t rocks_compaction_job_stats_get_num_input_records(
+    const rocks_compaction_job_stats_t* stats);
+size_t rocks_compaction_job_stats_get_num_input_files(
+    const rocks_compaction_job_stats_t* stats);
+size_t rocks_compaction_job_stats_get_num_input_files_at_output_level(
+    const rocks_compaction_job_stats_t* stats);
+uint64_t rocks_compaction_job_stats_get_num_output_records(
+    const rocks_compaction_job_stats_t* stats);
+size_t rocks_compaction_job_stats_get_num_output_files(
+    const rocks_compaction_job_stats_t* stats);
+unsigned char rocks_compaction_job_stats_get_is_manual_compaction(
+    const rocks_compaction_job_stats_t* stats);
+uint64_t rocks_compaction_job_stats_get_total_input_bytes(
+    const rocks_compaction_job_stats_t* stats);
+uint64_t rocks_compaction_job_stats_get_total_output_bytes(
+    const rocks_compaction_job_stats_t* stats);
+uint64_t rocks_compaction_job_stats_get_num_records_replaced(
+    const rocks_compaction_job_stats_t* stats);
+uint64_t rocks_compaction_job_stats_get_total_input_raw_key_bytes(
+    const rocks_compaction_job_stats_t* stats);
+uint64_t rocks_compaction_job_stats_get_total_input_raw_value_bytes(
+    const rocks_compaction_job_stats_t* stats);
+uint64_t rocks_compaction_job_stats_get_num_input_deletion_records(
+    const rocks_compaction_job_stats_t* stats);
+uint64_t rocks_compaction_job_stats_get_num_expired_deletion_records(
+    const rocks_compaction_job_stats_t* stats);
+uint64_t rocks_compaction_job_stats_get_num_corrupt_keys(
+    const rocks_compaction_job_stats_t* stats);
+uint64_t rocks_compaction_job_stats_get_file_write_nanos(
+    const rocks_compaction_job_stats_t* stats);
+uint64_t rocks_compaction_job_stats_get_file_range_sync_nanos(
+    const rocks_compaction_job_stats_t* stats);
+uint64_t rocks_compaction_job_stats_get_file_fsync_nanos(
+    const rocks_compaction_job_stats_t* stats);
+uint64_t rocks_compaction_job_stats_get_file_prepare_write_nanos(
+    const rocks_compaction_job_stats_t* stats);
+const char* rocks_compaction_job_stats_get_smallest_output_key_prefix(
+    const rocks_compaction_job_stats_t* stats, size_t* len);
+const char* rocks_compaction_job_stats_get_largest_output_key_prefix(
+    const rocks_compaction_job_stats_t* stats, size_t* len);
+uint64_t rocks_compaction_job_stats_get_num_single_del_fallthru(
+    const rocks_compaction_job_stats_t* stats);
+uint64_t rocks_compaction_job_stats_get_num_single_del_mismatch(
+    const rocks_compaction_job_stats_t* stats);
 
 /* aux */
 void free(void* p);

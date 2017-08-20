@@ -3,12 +3,22 @@
 
 use rocks_sys as ll;
 
+use std::marker::PhantomData;
+use std::ptr;
+use std::str;
+use std::slice;
+use std::mem;
+use std::fmt;
+
 use error::Status;
 use db::DBRef;
 use types::SequenceNumber;
 use table_properties::{TableProperties, TablePropertiesCollection};
 use options::CompressionType;
 use compaction_job_stats::CompactionJobStats;
+use to_raw::FromRaw;
+
+use super::Result;
 
 #[repr(C)]
 #[derive(Debug, Copy, Clone, PartialEq, Eq, Hash)]
@@ -18,6 +28,7 @@ pub enum TableFileCreationReason {
     Recovery,
 }
 
+#[derive(Debug)]
 pub struct TableFileCreationBriefInfo<'a> {
     /// the name of the database where the file was created
     pub db_name: &'a str,
@@ -32,6 +43,7 @@ pub struct TableFileCreationBriefInfo<'a> {
     pub reason: TableFileCreationReason,
 }
 
+#[derive(Debug)]
 pub struct TableFileCreationInfo<'a> {
     brief_info: TableFileCreationBriefInfo<'a>,
     /// the size of the file.
@@ -39,7 +51,7 @@ pub struct TableFileCreationInfo<'a> {
     /// Detailed properties of the created file.
     pub table_properties: TableProperties<'a>,
     /// The status indicating whether the creation was successful or not.
-    pub status: Status,
+    pub status: Result<()>,
 }
 
 #[repr(C)]
@@ -73,6 +85,7 @@ pub enum BackgroundErrorReason {
     MemTable,
 }
 
+#[derive(Debug)]
 pub struct TableFileDeletionInfo<'a> {
     /// The name of the database where the file was deleted.
     pub db_name: &'a str,
@@ -81,7 +94,7 @@ pub struct TableFileDeletionInfo<'a> {
     /// The id of the job which deleted the file.
     pub job_id: i32,
     /// The status indicating whether the deletion was successful or not.
-    pub status: Status,
+    pub status: Result<()>,
 }
 
 #[derive(Debug)]
@@ -112,37 +125,111 @@ pub struct FlushJobInfo<'a> {
     pub table_properties: TableProperties<'a>,
 }
 
+// Big struct, avoid expensive building
 pub struct CompactionJobInfo<'a> {
+    raw: *mut ll::rocks_compaction_job_info_t,
+    _marker: PhantomData<&'a ()>,
+}
+
+impl<'a> fmt::Debug for CompactionJobInfo<'a> {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        f.debug_struct("CompactionJobInfo")
+            .field("cf_name", &self.cf_name())
+            .field("status", &self.status())
+            .field("inputs", &self.input_files().len())
+            .field("outputs", &self.output_files().len())
+            .finish()
+    }
+}
+
+impl<'a> CompactionJobInfo<'a> {
     /// the name of the column family where the compaction happened.
-    pub cf_name: &'a str,
+    pub fn cf_name(&self) -> &'a str {
+        let mut len = 0;
+        unsafe {
+            let ptr = ll::rocks_compaction_job_info_get_cf_name(self.raw, &mut len);
+            str::from_utf8_unchecked(slice::from_raw_parts(ptr as *const u8, len))
+        }
+    }
+
     /// the status indicating whether the compaction was successful or not.
-    pub status: Status,
+    pub fn status(&self) -> Result<()> {
+        let mut status = ptr::null_mut::<ll::rocks_status_t>();
+        unsafe {
+            ll::rocks_compaction_job_info_get_status(self.raw, &mut status);
+            Result::from_ll(status)
+        }
+    }
+
     /// the id of the thread that completed this compaction job.
-    pub thread_id: u64,
+    pub fn thread_id(&self) -> u64 {
+        unsafe { ll::rocks_compaction_job_info_get_thread_id(self.raw) }
+    }
+
     /// the job id, which is unique in the same thread.
-    pub job_id: i32,
+    pub fn job_id(&self) -> i32 {
+        unsafe { ll::rocks_compaction_job_info_get_job_id(self.raw) as i32 }
+    }
+
     /// the smallest input level of the compaction.
-    pub base_input_level: i32,
+    pub fn base_input_level(&self) -> i32 {
+        unsafe { ll::rocks_compaction_job_info_get_base_input_level(self.raw) as i32 }
+    }
+
     /// the output level of the compaction.
-    pub output_level: i32,
+    pub fn output_level(&self) -> i32 {
+        unsafe { ll::rocks_compaction_job_info_get_output_level(self.raw) as i32 }
+    }
+
     /// the names of the compaction input files.
-    pub input_files: Vec<&'a str>,
+    pub fn input_files(&self) -> Vec<&'a str> {
+        unsafe {
+            let num = ll::rocks_compaction_job_info_get_input_files_num(self.raw);
+            let mut ptrs = vec![ptr::null(); num];
+            let mut sizes = vec![0_usize; num];
+            ll::rocks_compaction_job_info_get_input_files(self.raw, ptrs.as_mut_ptr(), sizes.as_mut_ptr());
+            ptrs.iter()
+                .zip(sizes.iter())
+                .map(|(&ptr, &len)| str::from_utf8_unchecked(slice::from_raw_parts(ptr as *const u8, len)))
+                .collect()
+        }
+    }
 
     /// the names of the compaction output files.
-    pub output_files: Vec<&'a str>,
+    pub fn output_files(&self) -> Vec<&'a str> {
+        unsafe {
+            let num = ll::rocks_compaction_job_info_get_output_files_num(self.raw);
+            let mut ptrs = vec![ptr::null(); num];
+            let mut sizes = vec![0_usize; num];
+            ll::rocks_compaction_job_info_get_output_files(self.raw, ptrs.as_mut_ptr(), sizes.as_mut_ptr());
+            ptrs.iter()
+                .zip(sizes.iter())
+                .map(|(&ptr, &len)| str::from_utf8_unchecked(slice::from_raw_parts(ptr as *const u8, len)))
+                .collect()
+        }
+    }
+
     /// Table properties for input and output tables.
     /// The map is keyed by values from input_files and output_files.
-    pub table_properties: TablePropertiesCollection,
+    pub fn table_properties(&self) -> TablePropertiesCollection {
+        unsafe { TablePropertiesCollection::from_ll(ll::rocks_compaction_job_info_get_table_properties(self.raw)) }
+    }
 
     /// Reason to run the compaction
-    pub compaction_reason: CompactionReason,
+    pub fn compaction_reason(&self) -> CompactionReason {
+        unsafe { mem::transmute(ll::rocks_compaction_job_info_get_compaction_reason(self.raw)) }
+    }
 
     /// Compression algorithm used for output files
-    pub compression: CompressionType,
+    pub fn compression(&self) -> CompressionType {
+        unsafe { mem::transmute(ll::rocks_compaction_job_info_get_compression(self.raw)) }
+    }
 
     /// If non-null, this variable stores detailed information
     /// about this compaction.
-    pub stats: CompactionJobStats<'a>,
+    pub fn stats(&self) -> CompactionJobStats {
+        unsafe { CompactionJobStats::from_ll(ll::rocks_compaction_job_info_get_stats(self.raw)) }
+    }
 }
 
 
@@ -363,19 +450,14 @@ pub mod c {
     use std::str;
     use std::slice;
     use std::mem;
+    use std::ptr;
     use super::*;
     use db::DBRef;
     use to_raw::FromRaw;
 
-    #[no_mangle]
-    pub unsafe extern "C" fn rust_event_listener_on_flush_completed(
-        l: *mut (),
-        db: *mut (), // DB**
-        info: *mut ll::rocks_flush_job_info_t,
-    ) {
-        let listener = l as *mut Box<EventListener>;
-        let db_ref = mem::transmute::<_, DBRef>(db);
-        let flush_job_info = FlushJobInfo {
+
+    unsafe fn flush_job_info_convert<'a>(info: *mut ll::rocks_flush_job_info_t) -> FlushJobInfo<'a> {
+        FlushJobInfo {
             cf_name: {
                 let mut len = 0;
                 let ptr = ll::rocks_flush_job_info_get_cf_name(info, &mut len);
@@ -393,12 +475,80 @@ pub mod c {
             smallest_seqno: SequenceNumber(ll::rocks_flush_job_info_get_smallest_seqno(info)),
             largest_seqno: SequenceNumber(ll::rocks_flush_job_info_get_largest_seqno(info)),
             table_properties: TableProperties::from_ll(ll::rocks_flush_job_info_get_table_properties(info)),
-        };
+        }
+    }
+
+    #[no_mangle]
+    pub unsafe extern "C" fn rust_event_listener_on_flush_completed(
+        l: *mut (),
+        db: *mut (), // DB**
+        info: *mut ll::rocks_flush_job_info_t,
+    ) {
+        let listener = l as *mut Box<EventListener>;
+        let db_ref = mem::transmute::<_, DBRef>(db);
+        let flush_job_info = flush_job_info_convert(info);
 
         (*listener).on_flush_completed(&db_ref, &flush_job_info);
-        println!("got => {:?}", flush_job_info);
-
     }
+
+    #[no_mangle]
+    pub unsafe extern "C" fn rust_event_listener_on_flush_begin(
+        l: *mut (),
+        db: *mut (), // DB**
+        info: *mut ll::rocks_flush_job_info_t,
+    ) {
+        let listener = l as *mut Box<EventListener>;
+        let db_ref = mem::transmute::<_, DBRef>(db);
+        let flush_job_info = flush_job_info_convert(info);
+
+        (*listener).on_flush_begin(&db_ref, &flush_job_info);
+    }
+
+    #[no_mangle]
+    pub unsafe extern "C" fn rust_event_listener_on_table_file_deleted(
+        l: *mut (),
+        info: *mut ll::rocks_table_file_deletion_info_t,
+    ) {
+        let listener = l as *mut Box<EventListener>;
+        let info = TableFileDeletionInfo {
+            db_name: {
+                let mut len = 0;
+                let ptr = ll::rocks_table_file_deletion_info_get_db_name(info, &mut len);
+                str::from_utf8_unchecked(slice::from_raw_parts(ptr as *const u8, len))
+            },
+            file_path: {
+                let mut len = 0;
+                let ptr = ll::rocks_table_file_deletion_info_get_file_path(info, &mut len);
+                str::from_utf8_unchecked(slice::from_raw_parts(ptr as *const u8, len))
+            },
+            job_id: ll::rocks_table_file_deletion_info_get_job_id(info) as i32,
+            status: {
+                let mut status = ptr::null_mut::<ll::rocks_status_t>();
+                ll::rocks_table_file_deletion_info_get_status(info, &mut status);
+                Result::from_ll(status)
+            },
+        };
+
+        (*listener).on_table_file_deleted(&info);
+    }
+
+    #[no_mangle]
+    pub unsafe extern "C" fn rust_event_listener_on_compaction_completed(
+        l: *mut (),
+        db: *mut (), // DB** <=> DBRef
+        ci: *mut ll::rocks_compaction_job_info_t,
+    ) {
+        let listener = l as *mut Box<EventListener>;
+        let db_ref = mem::transmute::<_, DBRef>(db);
+        let info = CompactionJobInfo {
+            raw: ci,
+            _marker: PhantomData,
+        };
+
+        (*listener).on_compaction_completed(&db_ref, &info);
+    }
+
+
 
     #[no_mangle]
     pub unsafe extern "C" fn rust_event_listener_drop(l: *mut ()) {
@@ -411,16 +561,42 @@ pub mod c {
 
 #[cfg(test)]
 mod tests {
+    use std::iter;
     use super::*;
     use super::super::rocksdb::*;
 
-    struct MyEventListener;
+    #[derive(Default)]
+    struct MyEventListener {
+        flush_completed_called: usize,
+        flush_begin_called: usize,
+        table_file_deleted_called: usize,
+        compaction_completed_called: usize,
+    }
 
     impl EventListener for MyEventListener {
         fn on_flush_completed(&mut self, db: &DBRef, flush_job_info: &FlushJobInfo) {
-            println!("info => {:?}", flush_job_info);
+            println!("completed => {:?}", flush_job_info);
+            assert!(db.name().len() > 0, "DB name is accessable");
+            self.flush_completed_called += 1;
+        }
 
-            println!("db => {:?}", db.name());
+        fn on_flush_begin(&mut self, db: &DBRef, flush_job_info: &FlushJobInfo) {
+            println!("begin => {:?}", flush_job_info);
+            self.flush_begin_called += 1;
+        }
+
+        fn on_table_file_deleted(&mut self, info: &TableFileDeletionInfo) {
+            println!("deleted => {:?}", info.file_path);
+            self.table_file_deleted_called += 1;
+        }
+
+        fn on_compaction_completed(&mut self, db: &DBRef, ci: &CompactionJobInfo) {
+            println!("compation => {:?}: {:?}", ci.cf_name(), ci.input_files());
+            println!("  {:?}", ci.output_files());
+            println!("  {:?}", ci.table_properties());
+            println!("   {:?}", ci);
+            println!("    stat => {:?}", ci.stats());
+            self.compaction_completed_called += 1;
         }
     }
 
@@ -430,16 +606,31 @@ mod tests {
         let tmp_dir = ::tempdir::TempDir::new_in(".", "rocks").unwrap();
         let db = DB::open(
             Options::default().map_db_options(|db| {
-                db.create_if_missing(true).add_listener(
-                    Box::new(MyEventListener),
-                )
+                db.create_if_missing(true).add_listener(Box::new(
+                    MyEventListener::default(),
+                ))
             }),
             &tmp_dir,
         ).unwrap();
 
-        assert!(db.put(&WriteOptions::default(), b"key-0", b"23333").is_ok());
-        assert!(db.put(&WriteOptions::default(), b"key-1", b"23333").is_ok());
-        assert!(db.put(&WriteOptions::default(), b"key-2", b"23333").is_ok());
+        for i in 0..100 {
+            let key = format!("test2-key-{}", i);
+            let val = format!("rocksdb-value-{}", i * 10);
+            let value: String = iter::repeat(val).take(10).collect::<Vec<_>>().concat();
+
+            db.put(&WriteOptions::default(), key.as_bytes(), value.as_bytes())
+                .unwrap();
+
+            if i % 6 == 0 {
+                assert!(db.flush(&FlushOptions::default().wait(true)).is_ok());
+            }
+            if i % 36 == 0 {
+                assert!(
+                    db.compact_range(&CompactRangeOptions::default(), ..)
+                        .is_ok()
+                );
+            }
+        }
 
         assert!(db.flush(&Default::default()).is_ok());
     }

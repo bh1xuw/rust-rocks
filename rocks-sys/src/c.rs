@@ -179,6 +179,15 @@ pub struct rocks_event_listener_t([u8; 0]);
 pub struct rocks_flush_job_info_t([u8; 0]);
 #[repr(C)]
 #[derive(Debug, Copy, Clone)]
+pub struct rocks_table_file_deletion_info_t([u8; 0]);
+#[repr(C)]
+#[derive(Debug, Copy, Clone)]
+pub struct rocks_compaction_job_info_t([u8; 0]);
+#[repr(C)]
+#[derive(Debug, Copy, Clone)]
+pub struct rocks_compaction_job_stats_t([u8; 0]);
+#[repr(C)]
+#[derive(Debug, Copy, Clone)]
 pub struct cxx_string_vector_t([u8; 0]);
 extern "C" {
     pub fn rocks_status_create() -> *mut *mut rocks_status_t;
@@ -3265,6 +3274,224 @@ extern "C" {
     pub fn rocks_flush_job_info_get_table_properties(info:
                                                          *const rocks_flush_job_info_t)
      -> *mut rocks_table_props_t;
+}
+extern "C" {
+    pub fn rocks_table_file_deletion_info_get_db_name(info:
+                                                          *const rocks_table_file_deletion_info_t,
+                                                      len: *mut usize)
+     -> *const ::std::os::raw::c_char;
+}
+extern "C" {
+    pub fn rocks_table_file_deletion_info_get_file_path(info:
+                                                            *const rocks_table_file_deletion_info_t,
+                                                        len: *mut usize)
+     -> *const ::std::os::raw::c_char;
+}
+extern "C" {
+    pub fn rocks_table_file_deletion_info_get_job_id(info:
+                                                         *const rocks_table_file_deletion_info_t)
+     -> u64;
+}
+extern "C" {
+    pub fn rocks_table_file_deletion_info_get_status(info:
+                                                         *const rocks_table_file_deletion_info_t,
+                                                     status:
+                                                         *mut *mut rocks_status_t);
+}
+extern "C" {
+    pub fn rocks_compaction_job_info_get_cf_name(info:
+                                                     *const rocks_compaction_job_info_t,
+                                                 len: *mut usize)
+     -> *const ::std::os::raw::c_char;
+}
+extern "C" {
+    pub fn rocks_compaction_job_info_get_status(info:
+                                                    *const rocks_compaction_job_info_t,
+                                                status:
+                                                    *mut *mut rocks_status_t);
+}
+extern "C" {
+    pub fn rocks_compaction_job_info_get_thread_id(info:
+                                                       *const rocks_compaction_job_info_t)
+     -> u64;
+}
+extern "C" {
+    pub fn rocks_compaction_job_info_get_job_id(info:
+                                                    *const rocks_compaction_job_info_t)
+     -> ::std::os::raw::c_int;
+}
+extern "C" {
+    pub fn rocks_compaction_job_info_get_base_input_level(info:
+                                                              *const rocks_compaction_job_info_t)
+     -> ::std::os::raw::c_int;
+}
+extern "C" {
+    pub fn rocks_compaction_job_info_get_output_level(info:
+                                                          *const rocks_compaction_job_info_t)
+     -> ::std::os::raw::c_int;
+}
+extern "C" {
+    pub fn rocks_compaction_job_info_get_input_files_num(info:
+                                                             *const rocks_compaction_job_info_t)
+     -> usize;
+}
+extern "C" {
+    pub fn rocks_compaction_job_info_get_input_files(info:
+                                                         *const rocks_compaction_job_info_t,
+                                                     files:
+                                                         *mut *const ::std::os::raw::c_char,
+                                                     sizes: *mut usize);
+}
+extern "C" {
+    pub fn rocks_compaction_job_info_get_output_files_num(info:
+                                                              *const rocks_compaction_job_info_t)
+     -> usize;
+}
+extern "C" {
+    pub fn rocks_compaction_job_info_get_output_files(info:
+                                                          *const rocks_compaction_job_info_t,
+                                                      files:
+                                                          *mut *const ::std::os::raw::c_char,
+                                                      sizes: *mut usize);
+}
+extern "C" {
+    pub fn rocks_compaction_job_info_get_table_properties(info:
+                                                              *const rocks_compaction_job_info_t)
+     -> *mut rocks_table_props_collection_t;
+}
+extern "C" {
+    pub fn rocks_compaction_job_info_get_compaction_reason(info:
+                                                               *const rocks_compaction_job_info_t)
+     -> ::std::os::raw::c_int;
+}
+extern "C" {
+    pub fn rocks_compaction_job_info_get_compression(info:
+                                                         *const rocks_compaction_job_info_t)
+     -> ::std::os::raw::c_int;
+}
+extern "C" {
+    pub fn rocks_compaction_job_info_get_stats(info:
+                                                   *const rocks_compaction_job_info_t)
+     -> *mut rocks_compaction_job_stats_t;
+}
+extern "C" {
+    pub fn rocks_compaction_job_stats_get_elapsed_micros(stats:
+                                                             *const rocks_compaction_job_stats_t)
+     -> u64;
+}
+extern "C" {
+    pub fn rocks_compaction_job_stats_get_num_input_records(stats:
+                                                                *const rocks_compaction_job_stats_t)
+     -> u64;
+}
+extern "C" {
+    pub fn rocks_compaction_job_stats_get_num_input_files(stats:
+                                                              *const rocks_compaction_job_stats_t)
+     -> usize;
+}
+extern "C" {
+    pub fn rocks_compaction_job_stats_get_num_input_files_at_output_level(stats:
+                                                                              *const rocks_compaction_job_stats_t)
+     -> usize;
+}
+extern "C" {
+    pub fn rocks_compaction_job_stats_get_num_output_records(stats:
+                                                                 *const rocks_compaction_job_stats_t)
+     -> u64;
+}
+extern "C" {
+    pub fn rocks_compaction_job_stats_get_num_output_files(stats:
+                                                               *const rocks_compaction_job_stats_t)
+     -> usize;
+}
+extern "C" {
+    pub fn rocks_compaction_job_stats_get_is_manual_compaction(stats:
+                                                                   *const rocks_compaction_job_stats_t)
+     -> ::std::os::raw::c_uchar;
+}
+extern "C" {
+    pub fn rocks_compaction_job_stats_get_total_input_bytes(stats:
+                                                                *const rocks_compaction_job_stats_t)
+     -> u64;
+}
+extern "C" {
+    pub fn rocks_compaction_job_stats_get_total_output_bytes(stats:
+                                                                 *const rocks_compaction_job_stats_t)
+     -> u64;
+}
+extern "C" {
+    pub fn rocks_compaction_job_stats_get_num_records_replaced(stats:
+                                                                   *const rocks_compaction_job_stats_t)
+     -> u64;
+}
+extern "C" {
+    pub fn rocks_compaction_job_stats_get_total_input_raw_key_bytes(stats:
+                                                                        *const rocks_compaction_job_stats_t)
+     -> u64;
+}
+extern "C" {
+    pub fn rocks_compaction_job_stats_get_total_input_raw_value_bytes(stats:
+                                                                          *const rocks_compaction_job_stats_t)
+     -> u64;
+}
+extern "C" {
+    pub fn rocks_compaction_job_stats_get_num_input_deletion_records(stats:
+                                                                         *const rocks_compaction_job_stats_t)
+     -> u64;
+}
+extern "C" {
+    pub fn rocks_compaction_job_stats_get_num_expired_deletion_records(stats:
+                                                                           *const rocks_compaction_job_stats_t)
+     -> u64;
+}
+extern "C" {
+    pub fn rocks_compaction_job_stats_get_num_corrupt_keys(stats:
+                                                               *const rocks_compaction_job_stats_t)
+     -> u64;
+}
+extern "C" {
+    pub fn rocks_compaction_job_stats_get_file_write_nanos(stats:
+                                                               *const rocks_compaction_job_stats_t)
+     -> u64;
+}
+extern "C" {
+    pub fn rocks_compaction_job_stats_get_file_range_sync_nanos(stats:
+                                                                    *const rocks_compaction_job_stats_t)
+     -> u64;
+}
+extern "C" {
+    pub fn rocks_compaction_job_stats_get_file_fsync_nanos(stats:
+                                                               *const rocks_compaction_job_stats_t)
+     -> u64;
+}
+extern "C" {
+    pub fn rocks_compaction_job_stats_get_file_prepare_write_nanos(stats:
+                                                                       *const rocks_compaction_job_stats_t)
+     -> u64;
+}
+extern "C" {
+    pub fn rocks_compaction_job_stats_get_smallest_output_key_prefix(stats:
+                                                                         *const rocks_compaction_job_stats_t,
+                                                                     len:
+                                                                         *mut usize)
+     -> *const ::std::os::raw::c_char;
+}
+extern "C" {
+    pub fn rocks_compaction_job_stats_get_largest_output_key_prefix(stats:
+                                                                        *const rocks_compaction_job_stats_t,
+                                                                    len:
+                                                                        *mut usize)
+     -> *const ::std::os::raw::c_char;
+}
+extern "C" {
+    pub fn rocks_compaction_job_stats_get_num_single_del_fallthru(stats:
+                                                                      *const rocks_compaction_job_stats_t)
+     -> u64;
+}
+extern "C" {
+    pub fn rocks_compaction_job_stats_get_num_single_del_mismatch(stats:
+                                                                      *const rocks_compaction_job_stats_t)
+     -> u64;
 }
 extern "C" {
     pub fn free(p: *mut ::std::os::raw::c_void);

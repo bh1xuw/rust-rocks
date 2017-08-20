@@ -507,6 +507,18 @@ struct rocks_event_listener_t : public EventListener {
   void OnFlushCompleted(DB* db, const FlushJobInfo& flush_job_info) override {
     rust_event_listener_on_flush_completed(this->obj, &db, &flush_job_info);
   }
+
+  void OnFlushBegin(DB* db, const FlushJobInfo& flush_job_info) override {
+    rust_event_listener_on_flush_begin(this->obj, &db, &flush_job_info);
+  }
+
+  void OnTableFileDeleted(const TableFileDeletionInfo& info) override {
+    rust_event_listener_on_table_file_deleted(this->obj, &info);
+  }
+
+  void OnCompactionCompleted(DB* db, const CompactionJobInfo& ci) override {
+    rust_event_listener_on_compaction_completed(this->obj, &db, &ci);
+  }
 };
 
 /* aux */
