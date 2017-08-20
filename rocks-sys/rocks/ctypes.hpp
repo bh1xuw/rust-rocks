@@ -105,14 +105,10 @@ struct rocks_mergeoperator_t : public MergeOperator {
 
   ~rocks_mergeoperator_t() { rust_merge_operator_drop(this->obj); }
 
-  const char* Name() const override {
-    return rust_merge_operator_name(this->obj);
-  }
+  const char* Name() const override { return rust_merge_operator_name(this->obj); }
 
-  virtual bool FullMergeV2(const MergeOperationInput& merge_in,
-                           MergeOperationOutput* merge_out) const override {
-    auto ret =
-        rust_merge_operator_call_full_merge_v2(this->obj, &merge_in, merge_out);
+  virtual bool FullMergeV2(const MergeOperationInput& merge_in, MergeOperationOutput* merge_out) const override {
+    auto ret = rust_merge_operator_call_full_merge_v2(this->obj, &merge_in, merge_out);
 
     if (merge_out->existing_operand.data() != nullptr) {
       merge_out->new_value.clear();
@@ -126,20 +122,15 @@ struct rocks_associative_mergeoperator_t : public AssociativeMergeOperator {
 
   rocks_associative_mergeoperator_t(void* trait_obj) : obj(trait_obj) {}
 
-  ~rocks_associative_mergeoperator_t() {
-    rust_associative_merge_operator_drop(this->obj);
-  }
+  ~rocks_associative_mergeoperator_t() { rust_associative_merge_operator_drop(this->obj); }
 
-  const char* Name() const override {
-    return rust_associative_merge_operator_name(this->obj);
-  }
+  const char* Name() const override { return rust_associative_merge_operator_name(this->obj); }
 
-  bool Merge(const Slice& key, const Slice* existing_value, const Slice& value,
-             std::string* new_value, Logger* logger) const override {
+  bool Merge(const Slice& key, const Slice* existing_value, const Slice& value, std::string* new_value,
+             Logger* logger) const override {
     char* nval = nullptr;
     size_t nval_len = 0;
-    auto ret = rust_associative_merge_operator_call(
-        this->obj, &key, existing_value, &value, &nval, &nval_len, logger);
+    auto ret = rust_associative_merge_operator_call(this->obj, &key, existing_value, &value, &nval, &nval_len, logger);
     if (ret) {
       new_value->assign(nval, nval_len);
       // NOTE: this drops Vec<u8>
@@ -159,24 +150,17 @@ struct rocks_comparator_t : public Comparator {
   //  this may not be called
   ~rocks_comparator_t() { rust_comparator_drop(this->obj); }
 
-  int Compare(const Slice& a, const Slice& b) const override {
-    return rust_comparator_compare(this->obj, &a, &b);
-  }
+  int Compare(const Slice& a, const Slice& b) const override { return rust_comparator_compare(this->obj, &a, &b); }
 
-  bool Equal(const Slice& a, const Slice& b) const override {
-    return rust_comparator_equal(this->obj, &a, &b);
-  }
+  bool Equal(const Slice& a, const Slice& b) const override { return rust_comparator_equal(this->obj, &a, &b); }
 
   const char* Name() const override { return rust_comparator_name(this->obj); }
 
-  void FindShortestSeparator(std::string* start,
-                             const Slice& limit) const override {
+  void FindShortestSeparator(std::string* start, const Slice& limit) const override {
     rust_comparator_find_shortest_separator(this->obj, start, &limit);
   }
 
-  void FindShortSuccessor(std::string* key) const override {
-    rust_comparator_find_short_successor(this->obj, key);
-  }
+  void FindShortSuccessor(std::string* key) const override { rust_comparator_find_short_successor(this->obj, key); }
 };
 
 /* rate_limiter */
@@ -220,8 +204,7 @@ struct rocks_writebatch_handler_t : public WriteBatch::Handler {
 
   ~rocks_writebatch_handler_t() { rust_write_batch_handler_drop(this->obj); }
 
-  Status PutCF(uint32_t column_family_id, const Slice& key,
-               const Slice& value) override {
+  Status PutCF(uint32_t column_family_id, const Slice& key, const Slice& value) override {
     rust_write_batch_handler_put_cf(this->obj, column_family_id, &key, &value);
     return Status::OK();
   }
@@ -232,27 +215,20 @@ struct rocks_writebatch_handler_t : public WriteBatch::Handler {
   }
 
   Status SingleDeleteCF(uint32_t column_family_id, const Slice& key) override {
-    rust_write_batch_handler_single_delete_cf(this->obj, column_family_id,
-                                              &key);
+    rust_write_batch_handler_single_delete_cf(this->obj, column_family_id, &key);
     return Status::OK();
   }
 
-  Status DeleteRangeCF(uint32_t column_family_id, const Slice& begin_key,
-                       const Slice& end_key) override {
-    rust_write_batch_handler_delete_range_cf(this->obj, column_family_id,
-                                             &begin_key, &end_key);
+  Status DeleteRangeCF(uint32_t column_family_id, const Slice& begin_key, const Slice& end_key) override {
+    rust_write_batch_handler_delete_range_cf(this->obj, column_family_id, &begin_key, &end_key);
     return Status::OK();
   }
-  Status MergeCF(uint32_t column_family_id, const Slice& key,
-                 const Slice& value) override {
-    rust_write_batch_handler_merge_cf(this->obj, column_family_id, &key,
-                                      &value);
+  Status MergeCF(uint32_t column_family_id, const Slice& key, const Slice& value) override {
+    rust_write_batch_handler_merge_cf(this->obj, column_family_id, &key, &value);
     return Status::OK();
   }
 
-  void LogData(const Slice& blob) override {
-    rust_write_batch_handler_log_data(this->obj, &blob);
-  }
+  void LogData(const Slice& blob) override { rust_write_batch_handler_log_data(this->obj, &blob); }
 
   Status MarkBeginPrepare() override {
     rust_write_batch_handler_mark_begin_prepare(this->obj);
@@ -274,9 +250,7 @@ struct rocks_writebatch_handler_t : public WriteBatch::Handler {
     return Status::OK();
   }
 
-  bool Continue() override {
-    return rust_write_batch_handler_will_continue(this->obj);
-  }
+  bool Continue() override { return rust_write_batch_handler_will_continue(this->obj); }
 };
 
 /* table */
@@ -316,22 +290,15 @@ struct rocks_compaction_filter_t : public CompactionFilter {
 
   ~rocks_compaction_filter_t() { rust_compaction_filter_drop(this->obj); }
 
-  Decision FilterV2(int level, const Slice& key, ValueType value_type,
-                    const Slice& existing_value, std::string* new_value,
-                    std::string* skip_until) const override {
-    auto ret =
-        rust_compaction_filter_call(this->obj, level, &key, value_type,
-                                    &existing_value, new_value, skip_until);
+  Decision FilterV2(int level, const Slice& key, ValueType value_type, const Slice& existing_value,
+                    std::string* new_value, std::string* skip_until) const override {
+    auto ret = rust_compaction_filter_call(this->obj, level, &key, value_type, &existing_value, new_value, skip_until);
     return static_cast<CompactionFilter::Decision>(ret);
   }
 
-  bool IgnoreSnapshots() const override {
-    return rust_compaction_filter_ignore_snapshots(this->obj) != 0;
-  }
+  bool IgnoreSnapshots() const override { return rust_compaction_filter_ignore_snapshots(this->obj) != 0; }
 
-  const char* Name() const override {
-    return rust_compaction_filter_name(this->obj);
-  }
+  const char* Name() const override { return rust_compaction_filter_name(this->obj); }
 };
 
 /* slice_transform */
@@ -342,9 +309,7 @@ struct rocks_slice_transform_t : public SliceTransform {
 
   ~rocks_slice_transform_t() { rust_slice_transform_drop(this->obj); }
 
-  const char* Name() const override {
-    return rust_slice_transform_name(this->obj);
-  }
+  const char* Name() const override { return rust_slice_transform_name(this->obj); }
 
   Slice Transform(const Slice& key) const override {
     char* ret = nullptr;
@@ -353,9 +318,7 @@ struct rocks_slice_transform_t : public SliceTransform {
     return Slice(ret, ret_len);
   }
 
-  bool InDomain(const Slice& key) const override {
-    return rust_slice_transform_in_domain(this->obj, &key) != 0;
-  }
+  bool InDomain(const Slice& key) const override { return rust_slice_transform_in_domain(this->obj, &key) != 0; }
 
   // not used and remains here for backward compatibility.
   bool InRange(const Slice& dst) const override { return false; }
@@ -432,18 +395,13 @@ struct rocks_table_props_collector_t : public TablePropertiesCollector {
 
   rocks_table_props_collector_t(void* trait_obj) : obj(trait_obj) {}
 
-  ~rocks_table_props_collector_t() {
-    rust_table_props_collector_drop(this->obj);
-  }
+  ~rocks_table_props_collector_t() { rust_table_props_collector_drop(this->obj); }
 
-  const char* Name() const override {
-    return rust_table_props_collector_name(this->obj);
-  }
+  const char* Name() const override { return rust_table_props_collector_name(this->obj); }
 
-  Status AddUserKey(const Slice& key, const Slice& value, EntryType type,
-                    SequenceNumber seq, uint64_t file_size) override {
-    rust_table_props_collector_add_user_key(
-        this->obj, &key, &value, static_cast<int>(type), seq, file_size);
+  Status AddUserKey(const Slice& key, const Slice& value, EntryType type, SequenceNumber seq,
+                    uint64_t file_size) override {
+    rust_table_props_collector_add_user_key(this->obj, &key, &value, static_cast<int>(type), seq, file_size);
     return Status::OK();
   }
 
@@ -453,33 +411,22 @@ struct rocks_table_props_collector_t : public TablePropertiesCollector {
   }
 
   // TODO:
-  UserCollectedProperties GetReadableProperties() const override {
-    return UserCollectedProperties{};
-  }
+  UserCollectedProperties GetReadableProperties() const override { return UserCollectedProperties{}; }
 
-  bool NeedCompact() const override {
-    return rust_table_props_collector_need_compact(this->obj);
-  }
+  bool NeedCompact() const override { return rust_table_props_collector_need_compact(this->obj); }
 };
 
-struct rocks_table_props_collector_factory_t
-    : public TablePropertiesCollectorFactory {
+struct rocks_table_props_collector_factory_t : public TablePropertiesCollectorFactory {
   void* obj;  // rust Box<trait obj>
 
   rocks_table_props_collector_factory_t(void* trait_obj) : obj(trait_obj) {}
 
-  ~rocks_table_props_collector_factory_t() {
-    rust_table_props_collector_factory_drop(this->obj);
-  }
+  ~rocks_table_props_collector_factory_t() { rust_table_props_collector_factory_drop(this->obj); }
 
-  const char* Name() const override {
-    return rust_table_props_collector_factory_name(this->obj);
-  }
+  const char* Name() const override { return rust_table_props_collector_factory_name(this->obj); }
 
-  TablePropertiesCollector* CreateTablePropertiesCollector(
-      TablePropertiesCollectorFactory::Context context) override {
-    auto collector = rust_table_props_collector_factory_new_collector(
-        this->obj, context.column_family_id);
+  TablePropertiesCollector* CreateTablePropertiesCollector(TablePropertiesCollectorFactory::Context context) override {
+    auto collector = rust_table_props_collector_factory_new_collector(this->obj, context.column_family_id);
     return new rocks_table_props_collector_t(collector);
   }
 };

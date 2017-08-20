@@ -13,24 +13,15 @@ void rocks_iter_destroy(rocks_iterator_t* iter) {
   delete iter;
 }
 
-unsigned char rocks_iter_valid(const rocks_iterator_t* iter) {
-  return iter->rep->Valid();
-}
+unsigned char rocks_iter_valid(const rocks_iterator_t* iter) { return iter->rep->Valid(); }
 
-void rocks_iter_seek_to_first(rocks_iterator_t* iter) {
-  iter->rep->SeekToFirst();
-}
+void rocks_iter_seek_to_first(rocks_iterator_t* iter) { iter->rep->SeekToFirst(); }
 
-void rocks_iter_seek_to_last(rocks_iterator_t* iter) {
-  iter->rep->SeekToLast();
-}
+void rocks_iter_seek_to_last(rocks_iterator_t* iter) { iter->rep->SeekToLast(); }
 
-void rocks_iter_seek(rocks_iterator_t* iter, const char* k, size_t klen) {
-  iter->rep->Seek(Slice(k, klen));
-}
+void rocks_iter_seek(rocks_iterator_t* iter, const char* k, size_t klen) { iter->rep->Seek(Slice(k, klen)); }
 
-void rocks_iter_seek_for_prev(rocks_iterator_t* iter, const char* k,
-                              size_t klen) {
+void rocks_iter_seek_for_prev(rocks_iterator_t* iter, const char* k, size_t klen) {
   iter->rep->SeekForPrev(Slice(k, klen));
 }
 
@@ -50,13 +41,11 @@ const char* rocks_iter_value(const rocks_iterator_t* iter, size_t* vlen) {
   return s.data();
 }
 
-void rocks_iter_get_status(const rocks_iterator_t* iter,
-                           rocks_status_t** status) {
+void rocks_iter_get_status(const rocks_iterator_t* iter, rocks_status_t** status) {
   SaveError(status, std::move(iter->rep->status()));
 }
 
-void rocks_iter_get_property(const rocks_iterator_t* iter, const char* prop,
-                             size_t prop_len, void* value,
+void rocks_iter_get_property(const rocks_iterator_t* iter, const char* prop, size_t prop_len, void* value,
                              rocks_status_t** status) {
   std::string cval;
   auto st = iter->rep->GetProperty(std::string(prop, prop_len), &cval);

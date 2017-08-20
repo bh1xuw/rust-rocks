@@ -22,7 +22,5 @@ void rocks_release_snapshot(rocks_db_t* db, rocks_snapshot_t* snapshot) {
   delete snapshot;
 }
 
-uint64_t rocks_snapshot_get_sequence_number(rocks_snapshot_t* snapshot) {
-  return snapshot->rep->GetSequenceNumber();
-}
+uint64_t rocks_snapshot_get_sequence_number(rocks_snapshot_t* snapshot) { return snapshot->rep->GetSequenceNumber(); }
 }
