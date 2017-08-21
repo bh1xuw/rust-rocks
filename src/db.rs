@@ -2467,7 +2467,7 @@ fn test_key_may_exist() {
 fn test_ingest_sst_file() {
     use sst_file_writer::SstFileWriter;
 
-    let sst_dir = ::tempdir::TempDir::new_in(".", "sst").unwrap();
+    let sst_dir = ::tempdir::TempDir::new_in(".", "rocks.sst").unwrap();
 
     let writer = SstFileWriter::builder().build();
     writer.open(sst_dir.path().join("2333.sst")).unwrap();

@@ -832,8 +832,7 @@ pub mod c {
         }
     }
 
-    //
-    // pub trait CompactionEventListener
+    // CompactionEventListener
     #[no_mangle]
     pub unsafe extern "C" fn rust_compaction_event_listener_drop(l: *mut ()) {
         let compaction_listener = l as *mut &mut CompactionEventListener;
@@ -939,8 +938,11 @@ mod tests {
         }
 
         fn get_compaction_event_listener(&mut self) -> Option<&mut CompactionEventListener> {
-            static mut FUNC: &'static Fn(CompactionEvent) = &|event: CompactionEvent| {
-                println!("listen compaction event: got => {:?} {:?}", event.sn, event);
+            static mut FUNC: &'static Fn(CompactionEvent) = &|event| {
+                assert!(event.is_new);
+                // print here will suppress rust test's capture
+                // since it'll be called from C++
+                // println!("listen compaction event: got => {:?} {:?}", event.sn, event);
             };
             unsafe { Some(&mut FUNC) }
         }
@@ -980,7 +982,7 @@ mod tests {
 
         // ingest an sst file
         use sst_file_writer::SstFileWriter;
-        let sst_dir = ::tempdir::TempDir::new_in(".", "sst").unwrap();
+        let sst_dir = ::tempdir::TempDir::new_in(".", "rocks.sst").unwrap();
         let writer = SstFileWriter::builder().build();
         writer.open(sst_dir.path().join("2333.sst")).unwrap();
         for i in 0..9 {

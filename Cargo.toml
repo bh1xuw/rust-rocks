@@ -34,3 +34,7 @@ opt-level = 1
 
 [profile.test]
 opt-level = 1
+
+
+[workspace]
+members = ["rocks-sys"]

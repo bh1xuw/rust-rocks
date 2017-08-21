@@ -69,7 +69,6 @@ mod imp {
     use std::path::Path;
 
     use cmake;
-    use gcc;
 
     pub fn build() {
         #[cfg(feature = "snappy")]
@@ -110,15 +109,15 @@ mod imp {
             .output()
             .expect("failed to execute process");
 
-        gcc::Config::new()
+        ::gcc::Build::new()
+            .cpp(true)
+            .flag("-std=c++11")
+            .opt_level(2)
             .include("snappy")
             .file("snappy/snappy.cc")
             .file("snappy/snappy-sinksource.cc")
             .file("snappy/snappy-stubs-internal.cc")
             .file("snappy/snappy-c.cc")
-            .cpp(true)
-            .flag("-std=c++11")
-            .flag("-O2")
             .compile("libsnappy.a");
     }
 
@@ -136,7 +135,7 @@ mod imp {
             .output()
             .expect("failed to execute process");
 
-        let mut cfg = gcc::Config::new();
+        let mut cfg = ::gcc::Build::new();
         cfg.include("zlib");
 
         // TODO: borrow following list form Makefile
@@ -150,8 +149,8 @@ mod imp {
             cfg.file(format!("zlib/{}", file));
         }
 
-        cfg.flag("-fPIC");
-        cfg.flag("-O2");
+        cfg.pic(true);
+        cfg.opt_level(2);
         cfg.compile("libz.a");
     }
 
@@ -164,7 +163,7 @@ mod imp {
                 .status();
         }
 
-        let mut cfg = gcc::Config::new();
+        let mut cfg = ::gcc::Build::new();
 
         if cfg!(windows) {
             cfg.define("_WIN32", None);
@@ -175,6 +174,7 @@ mod imp {
 
         cfg.include("bzip2")
             .define("BZ_NO_STDIO", None)
+            .opt_level(2)
             .file("bzip2/blocksort.c")
             .file("bzip2/huffman.c")
             .file("bzip2/crctable.c")
@@ -182,7 +182,6 @@ mod imp {
             .file("bzip2/compress.c")
             .file("bzip2/decompress.c")
             .file("bzip2/bzlib.c")
-            .flag("-O2")
             .compile("libbz2.a");
     }
 
@@ -194,13 +193,13 @@ mod imp {
                 .status();
         }
 
-        gcc::Config::new()
+        ::gcc::Build::new()
             .include("lz4/lib")
+            .opt_level(3)
             .file("lz4/lib/lz4.c")
             .file("lz4/lib/lz4frame.c")
             .file("lz4/lib/lz4hc.c")
             .file("lz4/lib/xxhash.c")
-            .flag("-O3")
             .compile("liblz4.a");
     }
 
@@ -212,15 +211,15 @@ mod imp {
                 .status();
         }
 
-        gcc::Config::new()
+        ::gcc::Build::new()
             .define("ZSTD_LEGACY_SUPPORT", Some("0"))
             .include("zstd/lib")
+            .opt_level(3)
             .file("zstd/lib/zstd_compress.c")
             .file("zstd/lib/zstd_decompress.c")
             .file("zstd/lib/zstd_buffered.c")
             .file("zstd/lib/fse.c")
             .file("zstd/lib/huff0.c")
-            .flag("-O3")
             .flag("-std=c99")
             .compile("libzstd.a");
     }
@@ -273,8 +272,12 @@ fn main() {
 
     imp::build();
 
-    gcc::Config::new()
+    ::gcc::Build::new()
         .cpp(true)
+        .pic(true)
+        .opt_level(2)
+        .warnings(false)
+        .flag("-std=c++11")
         .include("rocksdb/include")
         .include(".")
         .file("rocks/cache.cc")
@@ -307,9 +310,5 @@ fn main() {
         .file("rocks/debug.cc")
         .file("rocks/listener.cc")
         .file("rocks/compaction_job_stats.cc")
-        .flag("-fPIC")
-        .flag("-O2")
-        .flag("-g")
-        .flag("-std=c++11")
         .compile("librocksdb_wrap.a");
 }
