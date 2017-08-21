@@ -1,6 +1,6 @@
 [package]
 name = "rocks"
-version = "0.1.0"
+version = "0.1.1"
 authors = ["BH1XUW <bh1xuw@gmail.com>"]
 description = "RocksDB bindings for Rust."
 repository = "https://github.com/bh1xuw/rust-rocks"
@@ -10,7 +10,7 @@ license = "Apache-2.0"
 readme = "README.md"
 
 include = [
-    "**/*.rs",
+    "src/*.rs",
     "Cargo.toml",
 ]
 
@@ -19,7 +19,7 @@ travis-ci = { repository = "bh1xuw/rust-rocks", branch = "master" }
 
 [dependencies]
 lazy_static = "0.2"
-rocks-sys = { path = "rocks-sys", version = "0.1.0" }
+rocks-sys = { path = "rocks-sys", version = "0.1.1" }
 
 [dev-dependencies]
 tempdir = "0.3"
@@ -34,7 +34,6 @@ opt-level = 1
 
 [profile.test]
 opt-level = 1
-
 
 [workspace]
 members = ["rocks-sys"]
