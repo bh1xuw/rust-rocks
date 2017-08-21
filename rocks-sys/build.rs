@@ -212,16 +212,32 @@ mod imp {
                 .status();
         }
 
+        let files = [
+            "zstd/lib/common/entropy_common.c",
+            "zstd/lib/common/error_private.c",
+            "zstd/lib/common/fse_decompress.c",
+            "zstd/lib/common/pool.c",
+            "zstd/lib/common/threading.c",
+            "zstd/lib/common/xxhash.c",
+            "zstd/lib/common/zstd_common.c",
+            "zstd/lib/compress/fse_compress.c",
+            "zstd/lib/compress/huf_compress.c",
+            "zstd/lib/compress/zstd_compress.c",
+            "zstd/lib/compress/zstdmt_compress.c",
+            "zstd/lib/decompress/huf_decompress.c",
+            "zstd/lib/decompress/zstd_decompress.c",
+            "zstd/lib/dictBuilder/cover.c",
+            "zstd/lib/dictBuilder/divsufsort.c",
+            "zstd/lib/dictBuilder/zdict.c",
+        ];
+
         ::gcc::Build::new()
             .define("ZSTD_LEGACY_SUPPORT", Some("0"))
             .include("zstd/lib")
+            .include("zstd/lib/common")
             .opt_level(3)
-            .file("zstd/lib/zstd_compress.c")
-            .file("zstd/lib/zstd_decompress.c")
-            .file("zstd/lib/zstd_buffered.c")
-            .file("zstd/lib/fse.c")
-            .file("zstd/lib/huff0.c")
-            .flag("-std=c99")
+            .warnings(false)
+            .files(&files)
             .compile("libzstd.a");
     }
 
