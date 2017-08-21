@@ -45,6 +45,28 @@ struct rocks_status_t {
   rocks_status_t() : rep(Status()) {}
   rocks_status_t(const Status&& st) noexcept : rep(std::move(st)) {}
 };
+
+/* aux */
+struct cxx_string_vector_t {
+  std::vector<std::string> rep;
+};
+
+static bool SaveError(rocks_status_t** status, const Status&& s) {
+  if (s.ok()) {
+    *status = nullptr;
+    return false;
+  } else {
+    *status = new rocks_status_t{std::move(s)};
+    return true;
+  }
+}
+
+static char* CopyString(const std::string& str) {
+  char* result = reinterpret_cast<char*>(malloc(sizeof(char) * str.size()));
+  memcpy(result, str.data(), sizeof(char) * str.size());
+  return result;
+}
+
 /* slice */
 struct rocks_pinnable_slice_t {
   PinnableSlice rep;
@@ -444,8 +466,22 @@ struct rocks_key_version_collection_t {
 };
 
 /* listener */
+struct rocks_compaction_event_listener_t : public CompactionEventListener {
+  void* obj;  // rust *mut &mut TraitObj
+
+  rocks_compaction_event_listener_t(void* trait_obj) : obj(trait_obj) {}
+
+  ~rocks_compaction_event_listener_t() { rust_compaction_event_listener_drop(this->obj); }
+
+  void OnCompaction(int level, const Slice& key, CompactionListenerValueType value_type, const Slice& existing_value,
+                    const SequenceNumber& sn, bool is_new) override {
+    rust_compaction_event_listener_on_compaction(this->obj, level, &key, value_type, &existing_value, sn, is_new);
+  }
+};
+
 struct rocks_event_listener_t : public EventListener {
   void* obj;  // rust Box<trait obj>
+  std::vector<std::unique_ptr<rocks_compaction_event_listener_t>> compaction_listeners;
 
   rocks_event_listener_t(void* trait_obj) : obj(trait_obj) {}
 
@@ -475,37 +511,36 @@ struct rocks_event_listener_t : public EventListener {
     rust_event_listener_on_table_file_creation_started(this->obj, &info);
   }
 
-  void OnMemTableSealed(const MemTableInfo& info) override {}
+  void OnMemTableSealed(const MemTableInfo& info) override { rust_event_listener_on_memtable_sealed(this->obj, &info); }
 
   void OnColumnFamilyHandleDeletionStarted(ColumnFamilyHandle* handle) override {}
 
-  void OnExternalFileIngested(DB* db, const ExternalFileIngestionInfo& info) override {}
-
-  void OnBackgroundError(BackgroundErrorReason reason, Status* bg_error) override {}
-
-  CompactionEventListener* GetCompactionEventListener() override { return nullptr; }
-};
-
-/* aux */
-struct cxx_string_vector_t {
-  std::vector<std::string> rep;
-};
-
-static bool SaveError(rocks_status_t** status, const Status&& s) {
-  if (s.ok()) {
-    *status = nullptr;
-    return false;
-  } else {
-    *status = new rocks_status_t{std::move(s)};
-    return true;
+  void OnExternalFileIngested(DB* db, const ExternalFileIngestionInfo& info) override {
+    rust_event_listener_on_external_file_ingested(this->obj, &db, &info);
   }
-}
 
-static char* CopyString(const std::string& str) {
-  char* result = reinterpret_cast<char*>(malloc(sizeof(char) * str.size()));
-  memcpy(result, str.data(), sizeof(char) * str.size());
-  return result;
-}
+  void OnBackgroundError(BackgroundErrorReason reason, Status* bg_error) override {
+    rocks_status_t* st = nullptr;
+    SaveError(&st, Status(*bg_error));  // must an error here :)
+    auto ret = rust_event_listener_on_background_error(this->obj, reason, st);
+    if (ret == 0) {
+      *bg_error = Status::OK();  // suppress errors
+    }
+    if (st != nullptr) {
+      delete st;
+    }
+  }
+
+  CompactionEventListener* GetCompactionEventListener() override {
+    auto trait_obj = rust_event_listener_get_compaction_event_listener(this->obj);
+    if (trait_obj == nullptr) {
+      return nullptr;
+    }
+    this->compaction_listeners.push_back(
+        std::unique_ptr<rocks_compaction_event_listener_t>(new rocks_compaction_event_listener_t(trait_obj)));
+    return &*this->compaction_listeners.back();
+  }
+};
 
 #ifdef __cplusplus
 }

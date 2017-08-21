@@ -160,4 +160,47 @@ int rocks_table_file_creation_brief_info_get_job_id(const rocks_table_file_creat
 int rocks_table_file_creation_brief_info_get_reason(const rocks_table_file_creation_brief_info_t* info) {
   return static_cast<int>(info->reason);
 }
+
+// MemTableInfo
+typedef MemTableInfo rocks_mem_table_info_t;
+
+const char* rocks_mem_table_info_get_cf_name(const rocks_mem_table_info_t* info, size_t* len) {
+  *len = info->cf_name.size();
+  return info->cf_name.data();
+}
+uint64_t rocks_mem_table_info_get_first_seqno(const rocks_mem_table_info_t* info) { return info->first_seqno; }
+uint64_t rocks_mem_table_info_get_earliest_seqno(const rocks_mem_table_info_t* info) { return info->earliest_seqno; }
+uint64_t rocks_mem_table_info_get_num_entries(const rocks_mem_table_info_t* info) { return info->num_entries; }
+uint64_t rocks_mem_table_info_get_num_deletes(const rocks_mem_table_info_t* info) { return info->num_deletes; }
+
+// ExternalFileIngestionInfo
+typedef ExternalFileIngestionInfo rocks_external_file_ingestion_info_t;
+
+const char* rocks_external_file_ingestion_info_get_cf_name(const rocks_external_file_ingestion_info_t* info,
+                                                           size_t* len) {
+  *len = info->cf_name.size();
+  return info->cf_name.data();
+}
+
+const char* rocks_external_file_ingestion_info_get_external_file_path(const rocks_external_file_ingestion_info_t* info,
+                                                                      size_t* len) {
+  *len = info->external_file_path.size();
+  return info->external_file_path.data();
+}
+
+const char* rocks_external_file_ingestion_info_get_internal_file_path(const rocks_external_file_ingestion_info_t* info,
+                                                                      size_t* len) {
+  *len = info->internal_file_path.size();
+  return info->internal_file_path.data();
+}
+
+uint64_t rocks_external_file_ingestion_info_get_global_seqno(const rocks_external_file_ingestion_info_t* info) {
+  return info->global_seqno;
+}
+
+rocks_table_props_t* rocks_external_file_ingestion_info_get_table_properties(
+    const rocks_external_file_ingestion_info_t* info) {
+  return new rocks_table_props_t{
+      std::shared_ptr<TableProperties>(const_cast<TableProperties*>(&info->table_properties), [](TableProperties*) {})};
+}
 }

@@ -135,6 +135,8 @@ typedef struct rocks_compaction_job_info_t rocks_compaction_job_info_t;
 typedef struct rocks_compaction_job_stats_t rocks_compaction_job_stats_t;
 typedef struct rocks_table_file_creation_info_t rocks_table_file_creation_info_t;
 typedef struct rocks_table_file_creation_brief_info_t rocks_table_file_creation_brief_info_t;
+typedef struct rocks_mem_table_info_t rocks_mem_table_info_t;
+typedef struct rocks_external_file_ingestion_info_t rocks_external_file_ingestion_info_t;
 
 /* aux */
 typedef struct cxx_string_vector_t cxx_string_vector_t;
@@ -1475,6 +1477,22 @@ const char* rocks_table_file_creation_brief_info_get_file_path(const rocks_table
                                                                size_t* len);
 int rocks_table_file_creation_brief_info_get_job_id(const rocks_table_file_creation_brief_info_t* info);
 int rocks_table_file_creation_brief_info_get_reason(const rocks_table_file_creation_brief_info_t* info);
+
+const char* rocks_mem_table_info_get_cf_name(const rocks_mem_table_info_t* info, size_t* len);
+uint64_t rocks_mem_table_info_get_first_seqno(const rocks_mem_table_info_t* info);
+uint64_t rocks_mem_table_info_get_earliest_seqno(const rocks_mem_table_info_t* info);
+uint64_t rocks_mem_table_info_get_num_entries(const rocks_mem_table_info_t* info);
+uint64_t rocks_mem_table_info_get_num_deletes(const rocks_mem_table_info_t* info);
+
+const char* rocks_external_file_ingestion_info_get_cf_name(const rocks_external_file_ingestion_info_t* info,
+                                                           size_t* len);
+const char* rocks_external_file_ingestion_info_get_external_file_path(const rocks_external_file_ingestion_info_t* info,
+                                                                      size_t* len);
+const char* rocks_external_file_ingestion_info_get_internal_file_path(const rocks_external_file_ingestion_info_t* info,
+                                                                      size_t* len);
+uint64_t rocks_external_file_ingestion_info_get_global_seqno(const rocks_external_file_ingestion_info_t* info);
+rocks_table_props_t* rocks_external_file_ingestion_info_get_table_properties(
+    const rocks_external_file_ingestion_info_t* info);
 
 /* aux */
 void free(void* p);

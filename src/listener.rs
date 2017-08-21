@@ -339,38 +339,111 @@ impl<'a> CompactionJobInfo<'a> {
     }
 }
 
+pub struct MemTableInfo {
+    raw: *const ll::rocks_mem_table_info_t,
+}
 
-pub struct MemTableInfo<'a> {
+impl fmt::Debug for MemTableInfo {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        f.debug_struct("MemTableInfo")
+            .field("cf", &self.cf_name())
+            .field("first_seqno", &self.first_seqno())
+            .field("earliest_seqno", &self.earliest_seqno())
+            .field("num_entries", &self.num_entries())
+            .field("num_deletes", &self.num_deletes())
+            .finish()
+    }
+}
+
+impl MemTableInfo {
     /// the name of the column family to which memtable belongs
-    pub cf_name: &'a str,
+    pub fn cf_name(&self) -> &str {
+        let mut len = 0;
+        unsafe {
+            let ptr = ll::rocks_mem_table_info_get_cf_name(self.raw, &mut len);
+            str::from_utf8_unchecked(slice::from_raw_parts(ptr as *const u8, len))
+        }
+    }
+
     /// Sequence number of the first element that was inserted
     /// into the memtable.
-    pub first_seqno: SequenceNumber,
+    pub fn first_seqno(&self) -> SequenceNumber {
+        unsafe { SequenceNumber(ll::rocks_mem_table_info_get_first_seqno(self.raw)) }
+    }
+
     /// Sequence number that is guaranteed to be smaller than or equal
     /// to the sequence number of any key that could be inserted into this
     /// memtable. It can then be assumed that any write with a larger(or equal)
     /// sequence number will be present in this memtable or a later memtable.
-    pub earliest_seqno: SequenceNumber,
+    pub fn earliest_seqno(&self) -> SequenceNumber {
+        unsafe { SequenceNumber(ll::rocks_mem_table_info_get_earliest_seqno(self.raw)) }
+    }
+
     /// Total number of entries in memtable
-    pub num_entries: u64,
+    pub fn num_entries(&self) -> u64 {
+        unsafe { ll::rocks_mem_table_info_get_num_entries(self.raw) }
+    }
     /// Total number of deletes in memtable
-    pub num_deletes: u64,
+    pub fn num_deletes(&self) -> u64 {
+        unsafe { ll::rocks_mem_table_info_get_num_deletes(self.raw) }
+    }
 }
 
-pub struct ExternalFileIngestionInfo<'a> {
+pub struct ExternalFileIngestionInfo {
+    raw: *const ll::rocks_external_file_ingestion_info_t,
+}
+
+impl fmt::Debug for ExternalFileIngestionInfo {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        f.debug_struct("ExternalFileIngestionInfo")
+            .field("cf", &self.cf_name())
+            .field("external_file_path", &self.external_file_path())
+            .field("internal_file_path", &self.internal_file_path())
+            .field("global_seqno", &self.global_seqno())
+            .finish()
+    }
+}
+
+impl ExternalFileIngestionInfo {
     /// the name of the column family
-    pub cf_name: &'a str,
+    pub fn cf_name(&self) -> &str {
+        let mut len = 0;
+        unsafe {
+            let ptr = ll::rocks_external_file_ingestion_info_get_cf_name(self.raw, &mut len);
+            str::from_utf8_unchecked(slice::from_raw_parts(ptr as *const u8, len))
+        }
+    }
+
     /// Path of the file outside the DB
-    pub external_file_path: &'a str,
+    pub fn external_file_path(&self) -> &str {
+        let mut len = 0;
+        unsafe {
+            let ptr = ll::rocks_external_file_ingestion_info_get_external_file_path(self.raw, &mut len);
+            str::from_utf8_unchecked(slice::from_raw_parts(ptr as *const u8, len))
+        }
+    }
+
     /// Path of the file inside the DB
-    pub internal_file_path: &'a str,
+    pub fn internal_file_path(&self) -> &str {
+        let mut len = 0;
+        unsafe {
+            let ptr = ll::rocks_external_file_ingestion_info_get_internal_file_path(self.raw, &mut len);
+            str::from_utf8_unchecked(slice::from_raw_parts(ptr as *const u8, len))
+        }
+    }
+
     /// The global sequence number assigned to keys in this file
-    pub global_seqno: SequenceNumber,
+    pub fn global_seqno(&self) -> SequenceNumber {
+        unsafe { SequenceNumber(ll::rocks_external_file_ingestion_info_get_global_seqno(self.raw)) }
+    }
+
     /// Table properties of the table being flushed
-    pub table_properties: TableProperties<'a>,
+    pub fn table_properties(&self) -> TableProperties {
+        unsafe { TableProperties::from_ll(ll::rocks_external_file_ingestion_info_get_table_properties(self.raw)) }
+    }
 }
 
-
+#[repr(C)]
 #[derive(Debug, Copy, Clone, PartialEq, Eq, Hash)]
 pub enum CompactionListenerValueType {
     Value,
@@ -381,10 +454,10 @@ pub enum CompactionListenerValueType {
     Invalid,
 }
 
-// A call-back function to RocksDB which will be called when the compaction
-// iterator is compacting values. It is mean to be returned from
-// `EventListner::GetCompactionEventListner()` at the beginning of compaction
-// job.
+/// A call-back function to RocksDB which will be called when the compaction
+/// iterator is compacting values. It is mean to be returned from
+/// `EventListner::GetCompactionEventListner()` at the beginning of compaction
+/// job.
 pub trait CompactionEventListener {
     fn on_compaction(
         &mut self,
@@ -396,6 +469,42 @@ pub trait CompactionEventListener {
         is_new: bool,
     );
 }
+
+/// A single compaction event for an easy listener callback.
+#[derive(Debug, Clone)]
+pub struct CompactionEvent<'a> {
+    pub level: i32,
+    pub key: &'a [u8],
+    pub value_type: CompactionListenerValueType,
+    pub existing_value: &'a [u8],
+    pub sn: SequenceNumber,
+    pub is_new: bool,
+}
+
+impl<F> CompactionEventListener for F
+where
+    F: FnMut(CompactionEvent),
+{
+    fn on_compaction(
+        &mut self,
+        level: i32,
+        key: &[u8],
+        value_type: CompactionListenerValueType,
+        existing_value: &[u8],
+        sn: SequenceNumber,
+        is_new: bool,
+    ) {
+        (*self)(CompactionEvent {
+            level: level,
+            key: key,
+            value_type: value_type,
+            existing_value: existing_value,
+            sn: sn,
+            is_new: is_new,
+        });
+    }
+}
+
 
 /// `EventListener` class contains a set of call-back functions that will
 /// be called when specific RocksDB event happens such as flush.  It can
@@ -542,15 +651,18 @@ pub trait EventListener {
     /// Note that this function can run on the same threads as flush, compaction,
     /// and user writes. So, it is extremely important not to perform heavy
     /// computations or blocking calls in this function.
-    fn on_background_error(&mut self, reason: BackgroundErrorReason, bg_error: Status) {}
+    ///
+    /// Rust: use `Ok(())` to suppress errors, use `Err(bg_error)` otherwise.
+    fn on_background_error(&mut self, reason: BackgroundErrorReason, bg_error: Status) -> Result<()> {
+        Err(bg_error)
+    }
 
     /// Factory method to return CompactionEventListener. If multiple listeners
     /// provides CompactionEventListner, only the first one will be used.
-    fn get_compaction_event_listener(&mut self) -> Option<Box<CompactionEventListener>> {
+    fn get_compaction_event_listener(&mut self) -> Option<&mut CompactionEventListener> {
         None
     }
 }
-
 
 #[doc(hidden)]
 pub mod c {
@@ -562,6 +674,11 @@ pub mod c {
     use db::DBRef;
     use to_raw::FromRaw;
 
+    #[no_mangle]
+    pub unsafe extern "C" fn rust_event_listener_drop(l: *mut ()) {
+        let listener = l as *mut Box<EventListener>;
+        Box::from_raw(listener);
+    }
 
     unsafe fn flush_job_info_convert<'a>(info: *mut ll::rocks_flush_job_info_t) -> FlushJobInfo<'a> {
         FlushJobInfo {
@@ -676,11 +793,66 @@ pub mod c {
     }
 
     #[no_mangle]
-    pub unsafe extern "C" fn rust_event_listener_drop(l: *mut ()) {
+    pub unsafe extern "C" fn rust_event_listener_on_memtable_sealed(l: *mut (), info: *mut ll::rocks_mem_table_info_t) {
         let listener = l as *mut Box<EventListener>;
-        Box::from_raw(listener);
+        let info = MemTableInfo { raw: info };
+        (*listener).on_memtable_sealed(&info);
     }
 
+    #[no_mangle]
+    pub unsafe extern "C" fn rust_event_listener_on_external_file_ingested(
+        l: *mut (),
+        db: *mut (), // DB**
+        info: *const ll::rocks_external_file_ingestion_info_t,
+    ) {
+        let listener = l as *mut Box<EventListener>;
+        let db_ref = mem::transmute::<_, DBRef>(db);
+        let info = ExternalFileIngestionInfo { raw: info };
+        (*listener).on_external_file_ingested(&db_ref, &info);
+    }
+
+    #[no_mangle]
+    pub unsafe extern "C" fn rust_event_listener_on_background_error(
+        l: *mut (),
+        reason: BackgroundErrorReason,
+        bg_error: *mut ll::rocks_status_t,
+    ) -> u8 {
+        let listener = l as *mut Box<EventListener>;
+        let result = Result::from_ll(bg_error);
+        let ret = (*listener).on_background_error(reason, result.unwrap_err());
+        if ret.is_ok() { 0 } else { 1 }
+    }
+
+    #[no_mangle]
+    pub unsafe extern "C" fn rust_event_listener_get_compaction_event_listener(l: *mut ()) -> *mut () {
+        let listener = l as *mut Box<EventListener>;
+        match (*listener).get_compaction_event_listener() {
+            Some(mut_ref) => Box::into_raw(Box::new(mut_ref)) as *mut (),
+            None => ptr::null_mut(),
+        }
+    }
+
+    //
+    // pub trait CompactionEventListener
+    #[no_mangle]
+    pub unsafe extern "C" fn rust_compaction_event_listener_drop(l: *mut ()) {
+        let compaction_listener = l as *mut &mut CompactionEventListener;
+        Box::from_raw(compaction_listener);
+    }
+
+    #[no_mangle]
+    pub unsafe extern "C" fn rust_compaction_event_listener_on_compaction(
+        l: *mut (),
+        level: i32,
+        key: &&[u8], // *Slice
+        value_type: CompactionListenerValueType,
+        existing_value: &&[u8],
+        sn: u64,
+        is_new: u8,
+    ) {
+        let compaction_listener = l as *mut &mut CompactionEventListener;
+        (*compaction_listener).on_compaction(level, key, value_type, existing_value, SequenceNumber(sn), is_new != 0)
+    }
 }
 
 
@@ -697,6 +869,8 @@ mod tests {
         compaction_completed_called: usize,
         table_file_created_called: usize,
         table_file_creation_started_called: usize,
+        on_memtable_sealed_called: usize,
+        on_external_file_ingested_called: usize,
     }
 
     impl Drop for MyEventListener {
@@ -704,7 +878,8 @@ mod tests {
             assert!(
                 self.flush_begin_called * self.flush_completed_called * self.table_file_deleted_called *
                     self.compaction_completed_called * self.table_file_created_called *
-                    self.table_file_creation_started_called > 0
+                    self.table_file_creation_started_called * self.on_memtable_sealed_called *
+                    self.on_external_file_ingested_called > 0
             );
 
             // assert!(false);
@@ -728,13 +903,14 @@ mod tests {
         }
 
         fn on_compaction_completed(&mut self, db: &DBRef, ci: &CompactionJobInfo) {
-            // println!("compation => {:?}: {:?}", ci.cf_name(), ci.input_files());
             assert!(ci.status().is_ok());
             assert!(ci.stats().num_input_files() > 0);
             self.compaction_completed_called += 1;
         }
 
         fn on_table_file_created(&mut self, info: &TableFileCreationInfo) {
+            // maybe: Err(ShutdownInProgress(None, "Database shutdown or Column family drop during compaction"))
+            // so `db.pause_background_work()` is needed
             assert!(info.status().is_ok());
             assert!(info.file_size() > 0);
             assert!(info.table_properties().num_entries() > 0);
@@ -745,6 +921,28 @@ mod tests {
         fn on_table_file_creation_started(&mut self, info: &TableFileCreationBriefInfo) {
             assert!(info.reason() != TableFileCreationReason::Recovery);
             self.table_file_creation_started_called += 1;
+        }
+
+        fn on_memtable_sealed(&mut self, info: &MemTableInfo) {
+            assert!(info.num_entries() > 0);
+            self.on_memtable_sealed_called += 1;
+        }
+
+        fn on_external_file_ingested(&mut self, db: &DBRef, info: &ExternalFileIngestionInfo) {
+            assert_eq!(info.table_properties().num_entries(), 9);
+            self.on_external_file_ingested_called += 1;
+        }
+
+        // TODO: how to test this?
+        fn on_background_error(&mut self, reason: BackgroundErrorReason, bg_error: Status) -> Result<()> {
+            Err(bg_error)
+        }
+
+        fn get_compaction_event_listener(&mut self) -> Option<&mut CompactionEventListener> {
+            static mut FUNC: &'static Fn(CompactionEvent) = &|event: CompactionEvent| {
+                println!("listen compaction event: got => {:?} {:?}", event.sn, event);
+            };
+            unsafe { Some(&mut FUNC) }
         }
     }
 
@@ -779,5 +977,34 @@ mod tests {
         }
 
         assert!(db.flush(&Default::default()).is_ok());
+
+        // ingest an sst file
+        use sst_file_writer::SstFileWriter;
+        let sst_dir = ::tempdir::TempDir::new_in(".", "sst").unwrap();
+        let writer = SstFileWriter::builder().build();
+        writer.open(sst_dir.path().join("2333.sst")).unwrap();
+        for i in 0..9 {
+            let key = format!("B{:05}", i);
+            let value = format!("ABCDEFGH{:03}IJKLMN", i);
+            writer.put(key.as_bytes(), value.as_bytes()).unwrap();
+        }
+        let info = writer.finish().unwrap();
+        assert_eq!(info.num_entries(), 9);
+
+        let ret = db.ingest_external_file(
+            &[
+                sst_dir
+                    .path()
+                    .join("2333.sst")
+                    .to_string_lossy()
+                    .into_owned(),
+            ],
+            &IngestExternalFileOptions::default(),
+        );
+        assert!(ret.is_ok(), "ingest external file fails: {:?}", ret);
+
+        // safe shutdown
+        assert!(db.pause_background_work().is_ok());
     }
+
 }

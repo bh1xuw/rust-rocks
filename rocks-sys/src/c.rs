@@ -194,6 +194,12 @@ pub struct rocks_table_file_creation_info_t([u8; 0]);
 pub struct rocks_table_file_creation_brief_info_t([u8; 0]);
 #[repr(C)]
 #[derive(Debug, Copy, Clone)]
+pub struct rocks_mem_table_info_t([u8; 0]);
+#[repr(C)]
+#[derive(Debug, Copy, Clone)]
+pub struct rocks_external_file_ingestion_info_t([u8; 0]);
+#[repr(C)]
+#[derive(Debug, Copy, Clone)]
 pub struct cxx_string_vector_t([u8; 0]);
 extern "C" {
     pub fn rocks_status_create() -> *mut *mut rocks_status_t;
@@ -3547,6 +3553,62 @@ extern "C" {
     pub fn rocks_table_file_creation_brief_info_get_reason(info:
                                                                *const rocks_table_file_creation_brief_info_t)
      -> ::std::os::raw::c_int;
+}
+extern "C" {
+    pub fn rocks_mem_table_info_get_cf_name(info:
+                                                *const rocks_mem_table_info_t,
+                                            len: *mut usize)
+     -> *const ::std::os::raw::c_char;
+}
+extern "C" {
+    pub fn rocks_mem_table_info_get_first_seqno(info:
+                                                    *const rocks_mem_table_info_t)
+     -> u64;
+}
+extern "C" {
+    pub fn rocks_mem_table_info_get_earliest_seqno(info:
+                                                       *const rocks_mem_table_info_t)
+     -> u64;
+}
+extern "C" {
+    pub fn rocks_mem_table_info_get_num_entries(info:
+                                                    *const rocks_mem_table_info_t)
+     -> u64;
+}
+extern "C" {
+    pub fn rocks_mem_table_info_get_num_deletes(info:
+                                                    *const rocks_mem_table_info_t)
+     -> u64;
+}
+extern "C" {
+    pub fn rocks_external_file_ingestion_info_get_cf_name(info:
+                                                              *const rocks_external_file_ingestion_info_t,
+                                                          len: *mut usize)
+     -> *const ::std::os::raw::c_char;
+}
+extern "C" {
+    pub fn rocks_external_file_ingestion_info_get_external_file_path(info:
+                                                                         *const rocks_external_file_ingestion_info_t,
+                                                                     len:
+                                                                         *mut usize)
+     -> *const ::std::os::raw::c_char;
+}
+extern "C" {
+    pub fn rocks_external_file_ingestion_info_get_internal_file_path(info:
+                                                                         *const rocks_external_file_ingestion_info_t,
+                                                                     len:
+                                                                         *mut usize)
+     -> *const ::std::os::raw::c_char;
+}
+extern "C" {
+    pub fn rocks_external_file_ingestion_info_get_global_seqno(info:
+                                                                   *const rocks_external_file_ingestion_info_t)
+     -> u64;
+}
+extern "C" {
+    pub fn rocks_external_file_ingestion_info_get_table_properties(info:
+                                                                       *const rocks_external_file_ingestion_info_t)
+     -> *mut rocks_table_props_t;
 }
 extern "C" {
     pub fn free(p: *mut ::std::os::raw::c_void);

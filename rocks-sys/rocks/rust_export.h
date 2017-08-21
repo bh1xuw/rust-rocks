@@ -139,6 +139,23 @@ extern void rust_event_listener_on_table_file_created(void* l, const TableFileCr
 
 extern void rust_event_listener_on_table_file_creation_started(void* l, const TableFileCreationBriefInfo*);
 
+extern void rust_event_listener_on_memtable_sealed(void* l, const MemTableInfo*);
+
+extern void rust_event_listener_on_external_file_ingested(void* l, DB**, const ExternalFileIngestionInfo*);
+
+struct rocks_status_t;
+
+extern unsigned char rust_event_listener_on_background_error(void* l, BackgroundErrorReason, rocks_status_t*);
+
+extern void rust_compaction_event_listener_drop(void* l);
+
+extern void* rust_event_listener_get_compaction_event_listener(void* l);
+
+// CompactionEventListener
+extern void rust_compaction_event_listener_on_compaction(
+    void* l, int32_t level, const Slice* key, CompactionEventListener::CompactionListenerValueType value_type,
+    const Slice* existing_value, uint64_t sn, unsigned char is_new);
+
 #ifdef __cplusplus
 }
 #endif
