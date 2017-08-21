@@ -113,6 +113,7 @@ mod imp {
             .cpp(true)
             .flag("-std=c++11")
             .opt_level(2)
+            .warnings(false)
             .include("snappy")
             .file("snappy/snappy.cc")
             .file("snappy/snappy-sinksource.cc")
@@ -235,26 +236,33 @@ mod imp {
 
         #[cfg(feature = "snappy")]
         {
-            cfg.define("SNAPPY", "1");
-            cfg.define("SNAPPY_INCLUDE_DIR", "snappy");
+            // FIXME: how to use cmake's define?
+            cfg.cxxflag("-DSNAPPY");
+            cfg.cxxflag("-Isnappy");
         }
 
         #[cfg(feature = "zlib")]
         {
-            cfg.define("ZLIB", "1");
-            cfg.define("ZLIB_INCLUDE_DIR", "zlib");
+            cfg.cxxflag("-DZLIB");
+            cfg.cxxflag("-Izlib");
+        }
+
+        #[cfg(feature = "bzip2")]
+        {
+            cfg.cxxflag("-DBZIP2");
+            cfg.cxxflag("-Ibzip2");
         }
 
         #[cfg(feature = "lz4")]
         {
-            cfg.define("LZ4", "1");
-            cfg.define("LZ4_INCLUDE_DIR", "lz4/lib");
+            cfg.cxxflag("-DLZ4");
+            cfg.cxxflag("-Ilz4/lib");
         }
 
         #[cfg(feature = "zstd")]
         {
-            cfg.define("ZSTD", "1");
-            cfg.define("ZSTD_INCLUDE_DIR", "zstd/lib");
+            cfg.cxxflag("-DZSTD");
+            cfg.cxxflag("-Izstd/lib");
         }
 
         cfg.build_target("rocksdb");

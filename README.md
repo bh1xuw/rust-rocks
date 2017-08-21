@@ -26,6 +26,10 @@ for static build:
 
     refer .travis.yml
 
+list all supported compression types:
+
+    cargo test -- --nocapture compression_types
+
 ## status
 
 big picture(TODOs):

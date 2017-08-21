@@ -3036,15 +3036,14 @@ mod tests {
                 .is_ok()
         );
 
-        for i in 0..100 {
-            let key = format!("test2-key-{}", i);
-            let val = format!("rocksdb-value-{}", i * 10);
-            let value: String = iter::repeat(val).take(10).collect::<Vec<_>>().concat();
+        for i in 0..10 {
+            let key = format!("k{}", i);
+            let val = format!("v{}", i * 10);
 
-            db.put(&WriteOptions::default(), key.as_bytes(), value.as_bytes())
+            db.put(&WriteOptions::default(), key.as_bytes(), val.as_bytes())
                 .unwrap();
 
-            if i % 6 == 0 {
+            if i % 2 == 0 {
                 assert!(db.flush(&FlushOptions::default().wait(true)).is_ok());
             }
         }
