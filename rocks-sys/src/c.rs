@@ -702,26 +702,13 @@ extern "C" {
                                                                    v: u64);
 }
 extern "C" {
-    pub fn rocks_dboptions_set_base_background_compactions(opt:
-                                                               *mut rocks_dboptions_t,
-                                                           n:
-                                                               ::std::os::raw::c_int);
-}
-extern "C" {
-    pub fn rocks_dboptions_set_max_background_compactions(opt:
-                                                              *mut rocks_dboptions_t,
-                                                          n:
-                                                              ::std::os::raw::c_int);
+    pub fn rocks_dboptions_set_max_background_jobs(opt:
+                                                       *mut rocks_dboptions_t,
+                                                   n: ::std::os::raw::c_int);
 }
 extern "C" {
     pub fn rocks_dboptions_set_max_subcompactions(opt: *mut rocks_dboptions_t,
                                                   n: u32);
-}
-extern "C" {
-    pub fn rocks_dboptions_set_max_background_flushes(opt:
-                                                          *mut rocks_dboptions_t,
-                                                      n:
-                                                          ::std::os::raw::c_int);
 }
 extern "C" {
     pub fn rocks_dboptions_set_max_log_file_size(opt: *mut rocks_dboptions_t,
@@ -933,6 +920,20 @@ extern "C" {
                                                                ::std::os::raw::c_uchar);
 }
 extern "C" {
+    pub fn rocks_dboptions_set_allow_ingest_behind(opt:
+                                                       *mut rocks_dboptions_t,
+                                                   v:
+                                                       ::std::os::raw::c_uchar);
+}
+extern "C" {
+    pub fn rocks_dboptions_set_concurrent_prepare(opt: *mut rocks_dboptions_t,
+                                                  v: ::std::os::raw::c_uchar);
+}
+extern "C" {
+    pub fn rocks_dboptions_set_manual_wal_flush(opt: *mut rocks_dboptions_t,
+                                                v: ::std::os::raw::c_uchar);
+}
+extern "C" {
     pub fn rocks_options_prepare_for_bulk_load(opt: *mut rocks_options_t);
 }
 extern "C" {
@@ -986,6 +987,11 @@ extern "C" {
                                                 v: usize);
 }
 extern "C" {
+    pub fn rocks_readoptions_set_max_skippable_internal_keys(opt:
+                                                                 *mut rocks_readoptions_t,
+                                                             v: u64);
+}
+extern "C" {
     pub fn rocks_readoptions_set_pin_data(opt: *mut rocks_readoptions_t,
                                           v: ::std::os::raw::c_uchar);
 }
@@ -1035,6 +1041,10 @@ extern "C" {
 extern "C" {
     pub fn rocks_writeoptions_set_no_slowdown(opt: *mut rocks_writeoptions_t,
                                               v: ::std::os::raw::c_uchar);
+}
+extern "C" {
+    pub fn rocks_writeoptions_set_low_pri(opt: *mut rocks_writeoptions_t,
+                                          v: ::std::os::raw::c_uchar);
 }
 extern "C" {
     pub fn rocks_compactrange_options_create()
@@ -1105,6 +1115,12 @@ extern "C" {
                                                                          ::std::os::raw::c_uchar);
 }
 extern "C" {
+    pub fn rocks_ingestexternalfile_options_set_ingest_behind(opt:
+                                                                  *mut rocks_ingestexternalfile_options_t,
+                                                              v:
+                                                                  ::std::os::raw::c_uchar);
+}
+extern "C" {
     pub fn rocks_flushoptions_create() -> *mut rocks_flushoptions_t;
 }
 extern "C" {
@@ -1129,6 +1145,17 @@ extern "C" {
     pub fn rocks_fifo_compaction_options_set_max_table_files_size(fifo_opts:
                                                                       *mut rocks_fifo_compaction_options_t,
                                                                   size: u64);
+}
+extern "C" {
+    pub fn rocks_fifo_compaction_options_set_ttl(fifo_opts:
+                                                     *mut rocks_fifo_compaction_options_t,
+                                                 val: u64);
+}
+extern "C" {
+    pub fn rocks_fifo_compaction_options_set_allow_compaction(fifo_opts:
+                                                                  *mut rocks_fifo_compaction_options_t,
+                                                              val:
+                                                                  ::std::os::raw::c_uchar);
 }
 extern "C" {
     pub fn rocks_fifo_compaction_options_destroy(fifo_opts:

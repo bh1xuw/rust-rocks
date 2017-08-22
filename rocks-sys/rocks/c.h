@@ -368,13 +368,9 @@ void rocks_dboptions_set_wal_dir(rocks_dboptions_t* opt, const char* v, size_t l
 
 void rocks_dboptions_set_delete_obsolete_files_period_micros(rocks_dboptions_t* opt, uint64_t v);
 
-void rocks_dboptions_set_base_background_compactions(rocks_dboptions_t* opt, int n);
-
-void rocks_dboptions_set_max_background_compactions(rocks_dboptions_t* opt, int n);
+void rocks_dboptions_set_max_background_jobs(rocks_dboptions_t* opt, int n);
 
 void rocks_dboptions_set_max_subcompactions(rocks_dboptions_t* opt, uint32_t n);
-
-void rocks_dboptions_set_max_background_flushes(rocks_dboptions_t* opt, int n);
 
 void rocks_dboptions_set_max_log_file_size(rocks_dboptions_t* opt, size_t v);
 
@@ -460,6 +456,12 @@ void rocks_dboptions_set_avoid_flush_during_recovery(rocks_dboptions_t* opt, uns
 
 void rocks_dboptions_set_avoid_flush_during_shutdown(rocks_dboptions_t* opt, unsigned char v);
 
+void rocks_dboptions_set_allow_ingest_behind(rocks_dboptions_t* opt, unsigned char v);
+
+void rocks_dboptions_set_concurrent_prepare(rocks_dboptions_t* opt, unsigned char v);
+
+void rocks_dboptions_set_manual_wal_flush(rocks_dboptions_t* opt, unsigned char v);
+
 // opt
 
 void rocks_options_prepare_for_bulk_load(rocks_options_t* opt);
@@ -501,6 +503,8 @@ void rocks_readoptions_set_managed(rocks_readoptions_t* opt, unsigned char v);
 
 void rocks_readoptions_set_readahead_size(rocks_readoptions_t* opt, size_t v);
 
+void rocks_readoptions_set_max_skippable_internal_keys(rocks_readoptions_t* opt, uint64_t v);
+
 void rocks_readoptions_set_pin_data(rocks_readoptions_t* opt, unsigned char v);
 
 void rocks_readoptions_set_total_order_seek(rocks_readoptions_t* opt, unsigned char v);
@@ -523,6 +527,8 @@ void rocks_writeoptions_set_disable_wal(rocks_writeoptions_t* opt, unsigned char
 void rocks_writeoptions_set_ignore_missing_column_families(rocks_writeoptions_t* opt, unsigned char v);
 
 void rocks_writeoptions_set_no_slowdown(rocks_writeoptions_t* opt, unsigned char v);
+
+void rocks_writeoptions_set_low_pri(rocks_writeoptions_t* opt, unsigned char v);
 
 /* > compactrange_options */
 rocks_compactrange_options_t* rocks_compactrange_options_create();
@@ -550,6 +556,7 @@ void rocks_ingestexternalfile_options_set_snapshot_consistency(rocks_ingestexter
 void rocks_ingestexternalfile_options_set_allow_global_seqno(rocks_ingestexternalfile_options_t* opt, unsigned char v);
 void rocks_ingestexternalfile_options_set_allow_blocking_flush(rocks_ingestexternalfile_options_t* opt,
                                                                unsigned char v);
+void rocks_ingestexternalfile_options_set_ingest_behind(rocks_ingestexternalfile_options_t* opt, unsigned char v);
 
 /* > flushoptions */
 rocks_flushoptions_t* rocks_flushoptions_create();
@@ -564,6 +571,10 @@ rocks_logger_t* rocks_create_logger_from_options(const char* path, rocks_options
 rocks_fifo_compaction_options_t* rocks_fifo_compaction_options_create();
 
 void rocks_fifo_compaction_options_set_max_table_files_size(rocks_fifo_compaction_options_t* fifo_opts, uint64_t size);
+
+void rocks_fifo_compaction_options_set_ttl(rocks_fifo_compaction_options_t* fifo_opts, uint64_t val);
+
+void rocks_fifo_compaction_options_set_allow_compaction(rocks_fifo_compaction_options_t* fifo_opts, unsigned char val);
 
 void rocks_fifo_compaction_options_destroy(rocks_fifo_compaction_options_t* fifo_opts);
 

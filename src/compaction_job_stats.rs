@@ -1,4 +1,4 @@
-
+//! `CompactionJobStats` used by event listener callback.
 use rocks_sys as ll;
 
 use std::fmt;

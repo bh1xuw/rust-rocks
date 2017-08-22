@@ -466,15 +466,21 @@ impl<'a, 'b: 'a> ColumnFamilyHandle<'a, 'b> {
         (count, size)
     }
 
-    pub fn ingest_external_file(&self, external_files: &[String], options: &IngestExternalFileOptions) -> Result<()> {
-        let mut status = ptr::null_mut::<ll::rocks_status_t>();
-        let num_files = external_files.len();
-        let mut c_files = Vec::with_capacity(num_files);
-        let mut c_files_lens = Vec::with_capacity(num_files);
+    pub fn ingest_external_file<P: AsRef<Path>, T: IntoIterator<Item = P>>(
+        &self,
+        external_files: T,
+        options: &IngestExternalFileOptions,
+    ) -> Result<()> {
+        let mut num_files = 0;
+        let mut c_files = vec![];
+        let mut c_files_lens = vec![];
         for f in external_files {
-            c_files.push(f.as_ptr() as *const _);
-            c_files_lens.push(f.len());
+            let fpath = f.as_ref().to_str().expect("valid utf8 path");
+            c_files.push(fpath.as_ptr() as *const _);
+            c_files_lens.push(fpath.len());
+            num_files += 1;
         }
+        let mut status = ptr::null_mut::<ll::rocks_status_t>();
         unsafe {
             ll::rocks_db_ingest_external_file_cf(
                 self.db.raw,
@@ -2067,13 +2073,19 @@ impl<'a> DBRef<'a> {
     /// - External SST files can be created using SstFileWriter
     /// - We will try to ingest the files to the lowest possible level
     ///   even if the file compression dont match the level compression
-    pub fn ingest_external_file(&self, external_files: &[String], options: &IngestExternalFileOptions) -> Result<()> {
-        let num_files = external_files.len();
-        let mut c_files = Vec::with_capacity(num_files);
-        let mut c_files_lens = Vec::with_capacity(num_files);
+    pub fn ingest_external_file<P: AsRef<Path>, T: IntoIterator<Item = P>>(
+        &self,
+        external_files: T,
+        options: &IngestExternalFileOptions,
+    ) -> Result<()> {
+        let mut num_files = 0;
+        let mut c_files = vec![];
+        let mut c_files_lens = vec![];
         for f in external_files {
-            c_files.push(f.as_ptr() as *const _);
-            c_files_lens.push(f.len());
+            let fpath = f.as_ref().to_str().expect("valid utf8 path");
+            c_files.push(fpath.as_ptr() as *const _);
+            c_files_lens.push(fpath.len());
+            num_files += 1;
         }
         let mut status = ptr::null_mut::<ll::rocks_status_t>();
         unsafe {
@@ -2089,18 +2101,20 @@ impl<'a> DBRef<'a> {
         }
     }
 
-    pub fn ingest_external_file_cf(
+    pub fn ingest_external_file_cf<P: AsRef<Path>, T: IntoIterator<Item = P>>(
         &self,
         column_family: &ColumnFamilyHandle,
-        external_files: &[String],
+        external_files: T,
         options: &IngestExternalFileOptions,
     ) -> Result<()> {
-        let num_files = external_files.len();
-        let mut c_files = Vec::with_capacity(num_files);
-        let mut c_files_lens = Vec::with_capacity(num_files);
+        let mut num_files = 0;
+        let mut c_files = vec![];
+        let mut c_files_lens = vec![];
         for f in external_files {
-            c_files.push(f.as_ptr() as *const _);
-            c_files_lens.push(f.len());
+            let fpath = f.as_ref().to_str().expect("valid utf8 path");
+            c_files.push(fpath.as_ptr() as *const _);
+            c_files_lens.push(fpath.len());
+            num_files += 1;
         }
         let mut status = ptr::null_mut::<ll::rocks_status_t>();
         unsafe {
@@ -2483,16 +2497,7 @@ fn test_ingest_sst_file() {
 
     let db = DB::open(Options::default().map_db_options(|db| db.create_if_missing(true)), &tmp_db_dir).unwrap();
 
-    let ret = db.ingest_external_file(
-        &[
-            sst_dir
-                .path()
-                .join("2333.sst")
-                .to_string_lossy()
-                .into_owned(),
-        ],
-        &IngestExternalFileOptions::default(),
-    );
+    let ret = db.ingest_external_file(&[sst_dir.path().join("2333.sst")], &IngestExternalFileOptions::default());
     assert!(ret.is_ok(), "ingest external file: {:?}", ret);
 
     assert!(db.get(&ReadOptions::default(), b"B00000").is_ok());
@@ -2651,10 +2656,10 @@ mod tests {
         let db = db.unwrap();
         let _ = db.put(&WriteOptions::default(), b"name", b"BH1XUW")
             .unwrap();
-        for i in 0..100 {
+        for i in 0..10 {
             let key = format!("k{}", i);
-            let value = format!("v{:03}", i * 10);
-            if i == 50 {
+            let value = format!("v{:03}", i);
+            if i == 5 {
                 let s = db.get_snapshot();
                 assert!(s.is_some());
                 db.release_snapshot(s.unwrap());
@@ -2852,29 +2857,21 @@ mod tests {
     fn column_family_meta() {
         let tmp_dir = ::tempdir::TempDir::new_in(".", "rocks").unwrap();
         let db = DB::open(Options::default().map_db_options(|db| db.create_if_missing(true)), &tmp_dir).unwrap();
-        assert!(
-            db.put(&Default::default(), b"long-key", vec![b'A'; 1024 * 1024].as_ref())
-                .is_ok()
-        );
-        assert!(db.flush(&FlushOptions::default().wait(true)).is_ok());
-        assert!(
-            db.put(&Default::default(), b"long-key-2", vec![b'A'; 2 * 1024].as_ref())
-                .is_ok()
-        );
 
-        for i in 0..100 {
-            let key = format!("test2-key-{}", i);
-            let val = format!("rocksdb-value-{}", i * 10);
-            let value: String = iter::repeat(val).take(10).collect::<Vec<_>>().concat();
+        for i in 0..10 {
+            let key = format!("k{}", i);
+            let val = format!("v{}", i * 10);
 
-            db.put(&WriteOptions::default(), key.as_bytes(), value.as_bytes())
+            db.put(&WriteOptions::default(), key.as_bytes(), val.as_bytes())
                 .unwrap();
 
-            if i % 6 == 0 {
+            // 2 keys into a sst
+            if i % 2 == 0 {
                 assert!(db.flush(&FlushOptions::default().wait(true)).is_ok());
             }
 
-            if i % 20 == 0 {
+            // leave 6-9 uncompacted
+            if i == 5 {
                 assert!(
                     db.compact_range(&CompactRangeOptions::default(), ..)
                         .is_ok()
@@ -2885,7 +2882,7 @@ mod tests {
         let meta = db.get_column_family_metadata(&db.default_column_family());
         println!("Meta => {:?}", meta);
         assert_eq!(meta.levels.len(), 7, "default level num");
-        assert!(meta.levels[0].files.len() > 1);
+        assert!(meta.levels[0].files.len() + meta.levels[1].files.len() > 1);
         assert!(meta.levels[4].files.len() == 0);
     }
 
@@ -3079,15 +3076,14 @@ mod tests {
             &tmp_dir,
         ).unwrap();
 
-        for i in 0..100 {
+        for i in 0..10 {
             let key = format!("k{}", i);
             let val = format!("v{}", i * i);
-            let value: String = iter::repeat(val).take(i * i).collect::<Vec<_>>().concat();
 
-            db.put(WriteOptions::default_instance(), key.as_bytes(), value.as_bytes())
+            db.put(WriteOptions::default_instance(), key.as_bytes(), val.as_bytes())
                 .unwrap();
 
-            if i % 6 == 0 {
+            if i % 2 == 0 {
                 assert!(db.flush(&FlushOptions::default().wait(true)).is_ok());
             }
         }
@@ -3095,7 +3091,7 @@ mod tests {
         let props = db.get_properties_of_all_tables_cf(&db.default_column_family());
         assert!(props.is_ok());
         let props = props.unwrap();
-        assert!(props.len() > 10, "should be more than 10 sst files");
+        assert!(props.len() > 4, "should be more than 4 sst files");
 
         for (k, prop) in props.iter() {
             println!("key => {:?}", k);
@@ -3108,8 +3104,6 @@ mod tests {
 
             assert_eq!(prop.property_collectors_names(), "[]");
 
-            // assert_eq!(prop.compression_name(), "Snappy");
-
             let user_prop = prop.user_collected_properties();
             println!("len => {:?}", user_prop.len());
             for (k, v) in user_prop.iter() {
@@ -3120,8 +3114,8 @@ mod tests {
         }
 
         let vals = props.iter().map(|(k, _)| k).collect::<Vec<_>>();
-        assert!(vals.len() > 10);
+        assert!(vals.len() > 4);
         let vals = props.iter().map(|(_, v)| v).collect::<Vec<_>>();
-        assert!(vals.len() > 10);
+        assert!(vals.len() > 4);
     }
 }

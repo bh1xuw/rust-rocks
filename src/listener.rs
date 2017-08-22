@@ -161,6 +161,7 @@ impl TableFileCreationInfo {
     }
 }
 
+/// Reason for a compaction job, used in `CompactionJobInfo`
 #[repr(C)]
 #[derive(Debug, Copy, Clone, PartialEq, Eq, Hash)]
 pub enum CompactionReason {
@@ -183,6 +184,7 @@ pub enum CompactionReason {
     FilesMarkedForCompaction,
 }
 
+/// Reason for a background error, used in event listener
 #[repr(C)]
 #[derive(Debug, Copy, Clone, PartialEq, Eq, Hash)]
 pub enum BackgroundErrorReason {
@@ -536,7 +538,7 @@ where
 /// `DB::CompactFiles()` and `DB::Put()` in a thread other than the
 /// EventListener callback thread is considered safe.
 ///
-/// FIXME: how to hold DB ref and CFHandle ref
+/// FIXME: how to hold CFHandle ref
 pub trait EventListener {
     /// A call-back function to RocksDB which will be called whenever a
     /// registered RocksDB flushes a file.  The default implementation is
@@ -577,11 +579,14 @@ pub trait EventListener {
     /// it should not run for an extended period of time before the function
     /// returns. Otherwise, RocksDB may be blocked.
     ///
-    /// @param db a pointer to the rocksdb instance which just compacted
+    /// # Arguments
+    ///
+    /// - db: a pointer to the rocksdb instance which just compacted
     ///   a file.
-    /// @param ci a reference to a CompactionJobInfo struct. 'ci' is released
-    ///  after this function is returned, and must be copied if it is needed
-    ///  outside of this function.
+    ///
+    /// - ci: a reference to a CompactionJobInfo struct. `ci` is released
+    ///   after this function is returned, and must be copied if it is needed
+    ///   outside of this function.
     fn on_compaction_completed(&mut self, db: &DBRef, ci: &CompactionJobInfo) {}
 
     /// A call-back function for RocksDB which will be called whenever
@@ -636,7 +641,7 @@ pub trait EventListener {
     /// file is ingested using IngestExternalFile.
     ///
     /// Note that the this function will run on the same thread as
-    /// IngestExternalFile(), if this function is blocked, IngestExternalFile()
+    /// `IngestExternalFile()`, if this function is blocked, `IngestExternalFile()`
     /// will be blocked from finishing.
     fn on_external_file_ingested(&mut self, db: &DBRef, info: &ExternalFileIngestionInfo) {}
 
@@ -652,7 +657,7 @@ pub trait EventListener {
     /// and user writes. So, it is extremely important not to perform heavy
     /// computations or blocking calls in this function.
     ///
-    /// Rust: use `Ok(())` to suppress errors, use `Err(bg_error)` otherwise.
+    /// Rust: use `Ok(())` to suppress errors, use `Err(bg_error)` otherwise and default impl.
     fn on_background_error(&mut self, reason: BackgroundErrorReason, bg_error: Status) -> Result<()> {
         Err(bg_error)
     }
@@ -993,16 +998,7 @@ mod tests {
         let info = writer.finish().unwrap();
         assert_eq!(info.num_entries(), 9);
 
-        let ret = db.ingest_external_file(
-            &[
-                sst_dir
-                    .path()
-                    .join("2333.sst")
-                    .to_string_lossy()
-                    .into_owned(),
-            ],
-            &IngestExternalFileOptions::default(),
-        );
+        let ret = db.ingest_external_file(&[sst_dir.path().join("2333.sst")], &IngestExternalFileOptions::default());
         assert!(ret.is_ok(), "ingest external file fails: {:?}", ret);
 
         // safe shutdown

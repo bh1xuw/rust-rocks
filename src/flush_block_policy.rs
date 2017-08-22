@@ -1,3 +1,5 @@
+//! Determine when to flush a block. TODO
+
 use table::BlockBasedTableOptions;
 
 // FlushBlockPolicy provides a configurable way to determine when to flush a

@@ -9,12 +9,13 @@ use std::str;
 
 use rocks_sys as ll;
 
-/// A Comparator object provides a total order across slices that are
-/// used as keys in an sstable or a database.  A Comparator implementation
+/// A `Comparator` object provides a total order across slices that are
+/// used as keys in an sstable or a database. A `Comparator` implementation
 /// must be thread-safe since rocksdb may invoke its methods concurrently
 /// from multiple threads.
 pub trait Comparator {
     /// Three-way comparison.  Returns value:
+    ///
     /// - `< 0 iff "a" < "b"`,
     /// - `== 0 iff "a" == "b"`,
     /// - `> 0 iff "a" > "b"`
@@ -57,6 +58,7 @@ pub trait Comparator {
     }
 
     /// Changes `*key` to a short string `>= *key`.
+    ///
     /// Simple comparator implementations may return with `*key` unchanged,
     /// i.e., an implementation of this method that does nothing is correct.
     fn find_short_successor(&self, key: &[u8]) -> Option<&[u8]> {

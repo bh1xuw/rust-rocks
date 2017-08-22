@@ -7,6 +7,7 @@ use rocks_sys as ll;
 use to_raw::ToRaw;
 
 #[repr(C)]
+#[derive(Debug, Copy, Clone, PartialEq, Eq, Hash)]
 pub enum CompactionStyle {
     /// level based compaction style
     CompactionStyleLevel = 0x0,
@@ -22,10 +23,11 @@ pub enum CompactionStyle {
     CompactionStyleNone = 0x3,
 }
 
-// In Level-based comapction, it Determines which file from a level to be
-// picked to merge to the next level. We suggest people try
-// kMinOverlappingRatio first when you tune your database.
+/// In Level-based comapction, it Determines which file from a level to be
+/// picked to merge to the next level. We suggest people try
+/// kMinOverlappingRatio first when you tune your database.
 #[repr(C)]
+#[derive(Debug, Copy, Clone, PartialEq, Eq, Hash)]
 pub enum CompactionPri {
     /// Slightly Priotize larger files by size compensated by #deletes
     ByCompensatedSize = 0x0,
@@ -76,6 +78,34 @@ impl CompactionOptionsFIFO {
         }
         self
     }
+
+    /// Drop files older than TTL. TTL based deletion will take precedence over
+    /// size based deletion if ttl > 0.
+    /// delete if `sst_file_creation_time < (current_time - ttl)`
+    ///
+    /// unit: seconds. Ex: 1 day = 1 * 24 * 60 * 60
+    ///
+    /// Default: 0 (disabled)
+    pub fn ttl(self, val: u64) -> Self {
+        unsafe {
+            ll::rocks_fifo_compaction_options_set_ttl(self.raw, val);
+        }
+        self
+    }
+
+    /// If true, try to do compaction to compact smaller files into larger ones.
+    /// Minimum files to compact follows options.level0_file_num_compaction_trigger
+    /// and compaction won't trigger if average compact bytes per del file is
+    /// larger than options.write_buffer_size. This is to protect large files
+    /// from being compacted again.
+    ///
+    /// Default: false
+    pub fn allow_compaction(self, val: bool) -> Self {
+        unsafe {
+            ll::rocks_fifo_compaction_options_set_allow_compaction(self.raw, val as u8);
+        }
+        self
+    }
 }
 
 /// Compression options for different compression algorithms like Zlib
@@ -114,6 +144,7 @@ impl Default for CompressionOptions {
 
 /// Return status For inplace update callback
 #[repr(C)]
+#[derive(Debug, Copy, Clone, PartialEq, Eq, Hash)]
 pub enum UpdateStatus {
     /// Nothing to update
     Failed = 0,
@@ -124,5 +155,5 @@ pub enum UpdateStatus {
 }
 
 
-// TODO: not in current version
-pub struct AdvancedColumnFamilyOptions {}
+// FIXME: impled in ColumnFamilyOptions
+// pub struct AdvancedColumnFamilyOptions {}

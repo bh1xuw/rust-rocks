@@ -1,3 +1,4 @@
+//! Debug helper functions
 
 use std::fmt;
 use std::slice;
