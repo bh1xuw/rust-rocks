@@ -40,14 +40,14 @@ List all supported compression types:
 
 ```toml
 [dependencies]
-rocks = "0.1.0"
+rocks = "0.1"
 ```
 
 With all static features
 
 ```toml
 [dependencies.rocks]
-version = "0.1.0"
+version = "0.1"
 default-features = false
 features = ["static-link", "rocks-sys/snappy", "rocks-sys/zlib", "rocks-sys/bzip2", "rocks-sys/lz4", "rocks-sys/zstd"]
 ```
