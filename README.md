@@ -1,6 +1,7 @@
 # RustRocks
 
-[![Build Status][https://travis-ci.org/bh1xuw/rust-rocks.svg?branch=master]][https://travis-ci.org/bh1xuw/rust-rocks] | [![crates.io badge][https://img.shields.io/crates/v/rocks.svg]][https://crates.io/crates/rocks]
+[![Build Status](https://travis-ci.org/bh1xuw/rust-rocks.svg?branch=master)](https://travis-ci.org/bh1xuw/rust-rocks)
+[![crates.io badge](https://img.shields.io/crates/v/rocks.svg)](https://crates.io/crates/rocks)
 
 Another RocksDB binding for Rust. [Documentation](https://docs.rs/rocks/)
 
