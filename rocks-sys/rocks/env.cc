@@ -77,9 +77,23 @@ int64_t rocks_env_get_current_time(rocks_env_t* env, rocks_status_t** status) {
   }
 }
 
+// needs destroy
+cxx_string_t* rocks_env_time_to_string(rocks_env_t* env, uint64_t time) {
+  auto st = new std::string(env->rep->TimeToString(time));
+  return reinterpret_cast<cxx_string_t*>(st);
+}
+
 int rocks_env_get_background_threads(rocks_env_t* env, int pri) {
   auto priority = static_cast<Env::Priority>(pri);
   return env->rep->GetBackgroundThreads(priority);
+}
+
+void rocks_env_inc_background_threads_if_needed(rocks_env_t* env, int number, int pri) {
+  env->rep->IncBackgroundThreadsIfNeeded(number, static_cast<Env::Priority>(pri));
+}
+
+void rocks_env_lower_thread_pool_io_priority(rocks_env_t* env, int pool) {
+  env->rep->LowerThreadPoolIOPriority(static_cast<Env::Priority>(pool));
 }
 
 uint64_t rocks_env_get_thread_id(rocks_env_t* env) { return env->rep->GetThreadID(); }

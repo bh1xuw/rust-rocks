@@ -860,7 +860,13 @@ void rocks_env_get_host_name(rocks_env_t* env, char* name, uint64_t len, rocks_s
 
 int64_t rocks_env_get_current_time(rocks_env_t* env, rocks_status_t** status);
 
+cxx_string_t* rocks_env_time_to_string(rocks_env_t* env, uint64_t time);
+
 int rocks_env_get_background_threads(rocks_env_t* env, int pri);
+
+void rocks_env_inc_background_threads_if_needed(rocks_env_t* env, int number, int pri);
+
+void rocks_env_lower_thread_pool_io_priority(rocks_env_t* env, int pool);
 
 uint64_t rocks_env_get_thread_id(rocks_env_t* env);
 

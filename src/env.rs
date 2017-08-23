@@ -9,6 +9,7 @@
 
 use std::mem;
 use std::ptr;
+use std::str;
 use std::path::Path;
 use std::ffi::CStr;
 
@@ -30,8 +31,6 @@ lazy_static! {
         Env { raw: unsafe { ll::rocks_create_default_env() } }
     };
 }
-
-
 
 /// Priority for scheduling job in thread pool
 #[repr(C)]
@@ -379,7 +378,15 @@ impl Env {
 
     /// Converts seconds-since-Jan-01-1970 to a printable string
     pub fn time_to_string(&self, time: u64) -> String {
-        unimplemented!()
+        unsafe {
+            let cxx_string = ll::rocks_env_time_to_string(self.raw, time);
+            let ret = CStr::from_ptr(ll::cxx_string_data(cxx_string) as *const _)
+                .to_str()
+                .unwrap()
+                .into();
+            ll::cxx_string_destroy(cxx_string);
+            ret
+        }
     }
 
     /// The number of background worker threads of a specific thread pool
@@ -397,21 +404,23 @@ impl Env {
     }
 
     pub fn get_background_threads(&self, pri: Priority) -> i32 {
-        unsafe {
-            ll::rocks_env_get_background_threads(self.raw, mem::transmute(pri)) as i32
-        }
+        unsafe { ll::rocks_env_get_background_threads(self.raw, mem::transmute(pri)) as i32 }
     }
 
     /// Enlarge number of background worker threads of a specific thread pool
     /// for this environment if it is smaller than specified. 'LOW' is the default
     /// pool.
     pub fn inc_background_threads_if_needed(&self, number: i32, pri: Priority) {
-        unimplemented!()
+        unsafe {
+            ll::rocks_env_inc_background_threads_if_needed(self.raw, number, mem::transmute(pri));
+        }
     }
 
     /// Lower IO priority for threads from the specified pool.
     pub fn lower_thread_pool_io_priority(&self, pool: Priority) {
-        unimplemented!()
+        unsafe {
+            ll::rocks_env_lower_thread_pool_io_priority(self.raw, mem::transmute(pool));
+        }
     }
 
     /// Returns the status of all threads that belong to the current Env.
@@ -440,6 +449,7 @@ mod tests {
         assert!(env.now_micros() > 1500000000000000);
         assert!(env.get_hostname().is_ok());
         assert!(env.get_current_time().is_ok());
+        assert!(env.time_to_string(env.get_current_time().unwrap()).len() > 10);
     }
 
     #[test]

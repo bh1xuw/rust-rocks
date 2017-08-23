@@ -1834,9 +1834,25 @@ extern "C" {
      -> i64;
 }
 extern "C" {
+    pub fn rocks_env_time_to_string(env: *mut rocks_env_t, time: u64)
+     -> *mut cxx_string_t;
+}
+extern "C" {
     pub fn rocks_env_get_background_threads(env: *mut rocks_env_t,
                                             pri: ::std::os::raw::c_int)
      -> ::std::os::raw::c_int;
+}
+extern "C" {
+    pub fn rocks_env_inc_background_threads_if_needed(env: *mut rocks_env_t,
+                                                      number:
+                                                          ::std::os::raw::c_int,
+                                                      pri:
+                                                          ::std::os::raw::c_int);
+}
+extern "C" {
+    pub fn rocks_env_lower_thread_pool_io_priority(env: *mut rocks_env_t,
+                                                   pool:
+                                                       ::std::os::raw::c_int);
 }
 extern "C" {
     pub fn rocks_env_get_thread_id(env: *mut rocks_env_t) -> u64;
