@@ -21,6 +21,18 @@ rocks_env_t* rocks_create_mem_env() {
   return result;
 }
 
+rocks_env_t* rocks_create_timed_env() {
+  rocks_env_t* result = new rocks_env_t;
+  result->rep = rocksdb::NewTimedEnv(Env::Default());
+  result->is_default = false;
+  return result;
+}
+
+void rocks_env_destroy(rocks_env_t* env) {
+  if (!env->is_default) delete env->rep;
+  delete env;
+}
+
 void rocks_env_set_background_threads(rocks_env_t* env, int n) { env->rep->SetBackgroundThreads(n); }
 
 void rocks_env_set_high_priority_background_threads(rocks_env_t* env, int n) {
@@ -44,10 +56,33 @@ rocks_logger_t* rocks_env_new_logger(rocks_env_t* env, const char* name_ptr, siz
   }
 }
 
-void rocks_env_destroy(rocks_env_t* env) {
-  if (!env->is_default) delete env->rep;
-  delete env;
+uint64_t rocks_env_now_micros(rocks_env_t* env) { return env->rep->NowMicros(); }
+
+uint64_t rocks_env_now_nanos(rocks_env_t* env) { return env->rep->NowNanos(); }
+
+void rocks_env_sleep_for_microseconds(rocks_env_t* env, int32_t micros) {
+  return env->rep->SleepForMicroseconds(micros);
 }
+
+void rocks_env_get_host_name(rocks_env_t* env, char* name, uint64_t len, rocks_status_t** status) {
+  SaveError(status, env->rep->GetHostName(name, len));
+}
+
+int64_t rocks_env_get_current_time(rocks_env_t* env, rocks_status_t** status) {
+  int64_t unix_time;
+  if (SaveError(status, env->rep->GetCurrentTime(&unix_time))) {
+    return 0;
+  } else {
+    return unix_time;
+  }
+}
+
+int rocks_env_get_background_threads(rocks_env_t* env, int pri) {
+  auto priority = static_cast<Env::Priority>(pri);
+  return env->rep->GetBackgroundThreads(priority);
+}
+
+uint64_t rocks_env_get_thread_id(rocks_env_t* env) { return env->rep->GetThreadID(); }
 }
 
 extern "C" {

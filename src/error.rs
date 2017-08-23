@@ -76,8 +76,16 @@ impl Drop for Status {
     }
 }
 
-
 impl Status {
+    pub fn with_message(msg: &'static str) -> Status {
+        let code = Code::InvalidArgument;
+        assert!(code != Code::_Ok, "Can't create a Ok status in Rust");
+        unsafe {
+            let ccode = mem::transmute(code);
+            Status { raw: ll::rocks_status_create_with_code_and_msg(ccode, msg.as_ptr() as *const _, msg.len()) }
+        }
+    }
+
     pub fn is_not_found(&self) -> bool {
         self.code() == Code::NotFound
     }

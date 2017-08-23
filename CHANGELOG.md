@@ -7,6 +7,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 ## Unreleased
 ### Added
 - convenience.h useful functions, like options stringify
+- more usefull functions in env.h
 
 ## 0.1.1 - 2017-08-22
 ### Added

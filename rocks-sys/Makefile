@@ -8,6 +8,8 @@ src/%.rs: rocks/%.h
 		--whitelist-function 'cxx_.*?' \
 		--whitelist-function 'free.*?' \
 		--whitelist-type 'rocks.*?' \
+		--whitelist-type 'rust_.*?' \
+		--whitelist-type 'cxx_.*?' \
 		$^ -o $@
 
 # $^ -o $@

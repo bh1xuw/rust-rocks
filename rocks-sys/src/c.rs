@@ -211,6 +211,13 @@ extern "C" {
     pub fn rocks_status_destroy(s: *mut rocks_status_t);
 }
 extern "C" {
+    pub fn rocks_status_create_with_code_and_msg(code: ::std::os::raw::c_int,
+                                                 msg:
+                                                     *const ::std::os::raw::c_char,
+                                                 len: usize)
+     -> *mut rocks_status_t;
+}
+extern "C" {
     pub fn rocks_status_code(s: *mut rocks_status_t) -> ::std::os::raw::c_int;
 }
 extern "C" {
@@ -1775,6 +1782,12 @@ extern "C" {
     pub fn rocks_create_mem_env() -> *mut rocks_env_t;
 }
 extern "C" {
+    pub fn rocks_create_timed_env() -> *mut rocks_env_t;
+}
+extern "C" {
+    pub fn rocks_env_destroy(env: *mut rocks_env_t);
+}
+extern "C" {
     pub fn rocks_env_set_background_threads(env: *mut rocks_env_t,
                                             n: ::std::os::raw::c_int);
 }
@@ -1800,7 +1813,33 @@ extern "C" {
      -> *mut rocks_logger_t;
 }
 extern "C" {
-    pub fn rocks_env_destroy(env: *mut rocks_env_t);
+    pub fn rocks_env_now_micros(env: *mut rocks_env_t) -> u64;
+}
+extern "C" {
+    pub fn rocks_env_now_nanos(env: *mut rocks_env_t) -> u64;
+}
+extern "C" {
+    pub fn rocks_env_sleep_for_microseconds(env: *mut rocks_env_t,
+                                            micros: i32);
+}
+extern "C" {
+    pub fn rocks_env_get_host_name(env: *mut rocks_env_t,
+                                   name: *mut ::std::os::raw::c_char,
+                                   len: u64,
+                                   status: *mut *mut rocks_status_t);
+}
+extern "C" {
+    pub fn rocks_env_get_current_time(env: *mut rocks_env_t,
+                                      status: *mut *mut rocks_status_t)
+     -> i64;
+}
+extern "C" {
+    pub fn rocks_env_get_background_threads(env: *mut rocks_env_t,
+                                            pri: ::std::os::raw::c_int)
+     -> ::std::os::raw::c_int;
+}
+extern "C" {
+    pub fn rocks_env_get_thread_id(env: *mut rocks_env_t) -> u64;
 }
 extern "C" {
     pub fn rocks_envoptions_create() -> *mut rocks_envoptions_t;

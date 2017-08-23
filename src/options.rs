@@ -1475,10 +1475,11 @@ impl DBOptions {
     /// e.g. to read/write files, schedule background work, etc.
     ///
     /// Default: Env::Default()
-    ///
-    /// Rust: unimplemented!()
-    pub fn env(self, env: Env) -> Self {
-        unimplemented!()
+    pub fn env(self, env: &'static Env) -> Self {
+        unsafe {
+            ll::rocks_dboptions_set_env(self.raw, env.raw());
+        }
+        self
     }
 
     /// Use to control write rate of flush and compaction. Flush has higher

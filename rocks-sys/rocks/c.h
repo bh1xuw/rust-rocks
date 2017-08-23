@@ -140,13 +140,15 @@ typedef struct rocks_external_file_ingestion_info_t rocks_external_file_ingestio
 
 /* aux */
 typedef struct cxx_string_vector_t cxx_string_vector_t;
-typedef struct cxx_string_t cxx_string_t;
+typedef struct cxx_string_t cxx_string_t; /* std::string */
 
 /* ****************************** functions ****************************** */
 
 /* status */
 rocks_status_t** rocks_status_create();
 void rocks_status_destroy(rocks_status_t* s);
+
+rocks_status_t* rocks_status_create_with_code_and_msg(int code, const char* msg, size_t len);
 
 int rocks_status_code(rocks_status_t* s);
 int rocks_status_subcode(rocks_status_t* s);
@@ -834,6 +836,9 @@ void rocks_ratelimiter_destroy(rocks_ratelimiter_t* limiter);
 rocks_env_t* rocks_create_default_env();
 
 rocks_env_t* rocks_create_mem_env();
+rocks_env_t* rocks_create_timed_env();
+
+void rocks_env_destroy(rocks_env_t* env);
 
 void rocks_env_set_background_threads(rocks_env_t* env, int n);
 
@@ -845,7 +850,19 @@ unsigned int rocks_env_get_thread_pool_queue_len(rocks_env_t* env, int pri);
 
 rocks_logger_t* rocks_env_new_logger(rocks_env_t* env, const char* name_ptr, size_t name_len, rocks_status_t** status);
 
-void rocks_env_destroy(rocks_env_t* env);
+uint64_t rocks_env_now_micros(rocks_env_t* env);
+
+uint64_t rocks_env_now_nanos(rocks_env_t* env);
+
+void rocks_env_sleep_for_microseconds(rocks_env_t* env, int32_t micros);
+
+void rocks_env_get_host_name(rocks_env_t* env, char* name, uint64_t len, rocks_status_t** status);
+
+int64_t rocks_env_get_current_time(rocks_env_t* env, rocks_status_t** status);
+
+int rocks_env_get_background_threads(rocks_env_t* env, int pri);
+
+uint64_t rocks_env_get_thread_id(rocks_env_t* env);
 
 rocks_envoptions_t* rocks_envoptions_create();
 void rocks_envoptions_destroy(rocks_envoptions_t* opt);
