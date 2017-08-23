@@ -30,7 +30,8 @@ For Linux(with rocksdb installed into /usr/local):
 
 For static build:
 
-    # refer .travis.yml
+    git submodule update --init --recursive
+    cargo test --features "static-link rocks-sys/snappy rocks-sys/zlib rocks-sys/bzip2 rocks-sys/lz4 rocks-sys/zstd"
 
 List all supported compression types:
 
@@ -51,6 +52,13 @@ version = "0.1"
 default-features = false
 features = ["static-link", "rocks-sys/snappy", "rocks-sys/zlib", "rocks-sys/bzip2", "rocks-sys/lz4", "rocks-sys/zstd"]
 ```
+
+## FAQ
+
+- [Which features are supported/missing comparing to C++ RocksDB?](https://github.com/bh1xuw/rust-rocks/issues/1)
+- [Why another RocksDB binding for Rust?](https://github.com/bh1xuw/rust-rocks/issues/2)
+
+Feel free to Open a [New Issue](https://github.com/bh1xuw/rust-rocks/issues/new).
 
 ## TODOs
 
