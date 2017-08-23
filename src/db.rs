@@ -1714,6 +1714,15 @@ impl<'a> DBRef<'a> {
         }
     }
 
+    /// Request stopping background work, if wait is true wait until it's done
+    ///
+    /// Original in rocksdb/utilities/convenience.h
+    pub fn cancel_background_work(&self, wait: bool) {
+        unsafe {
+            ll::rocks_cancel_all_background_work(self.raw(), wait as u8);
+        }
+    }
+
     /// This function will enable automatic compactions for the given column
     /// families if they were previously disabled. The function will first set the
     /// disable_auto_compactions option for each column family to 'false', after
@@ -1915,6 +1924,28 @@ impl<'a> DBRef<'a> {
         let mut status = ptr::null_mut::<ll::rocks_status_t>();
         unsafe {
             ll::rocks_db_delete_file(self.raw(), name.as_bytes().as_ptr() as *const _, name.len(), &mut status);
+            Status::from_ll(status)
+        }
+    }
+
+    /// Delete files which are entirely in the given range
+    ///
+    /// Could leave some keys in the range which are in files which are not
+    /// entirely in the range.
+    ///
+    /// Snapshots before the delete might not see the data in the given range.
+    pub fn delete_files_in_range(&self, column_family: &ColumnFamilyHandle, begin: &[u8], end: &[u8]) -> Result<()> {
+        let mut status = ptr::null_mut::<ll::rocks_status_t>();
+        unsafe {
+            ll::rocks_db_delete_files_in_range(
+                self.raw(),
+                column_family.raw(),
+                begin.as_ptr() as *const _,
+                begin.len(),
+                end.as_ptr() as *const _,
+                end.len(),
+                &mut status,
+            );
             Status::from_ll(status)
         }
     }
@@ -3115,7 +3146,42 @@ mod tests {
 
         let vals = props.iter().map(|(k, _)| k).collect::<Vec<_>>();
         assert!(vals.len() > 4);
-        let vals = props.iter().map(|(_, v)| v).collect::<Vec<_>>();
-        assert!(vals.len() > 4);
+    }
+
+    #[test]
+    fn delete_files_in_range() {
+        let tmp_dir = ::tempdir::TempDir::new_in("", "rocks").unwrap();
+        let db = DB::open(
+            Options::default().map_db_options(|db| db.create_if_missing(true)),
+            // NOTE: disable auto compaction
+            // .map_cf_options(|cf| cf.disable_auto_compactions(true)),
+            &tmp_dir,
+        ).unwrap();
+
+        // will have 10 sst file
+        for i in 0..10 {
+            let key = format!("k{}", i);
+            let val = format!("v{}", i * i);
+
+            db.put(WriteOptions::default_instance(), key.as_bytes(), val.as_bytes())
+                .unwrap();
+
+            assert!(db.flush(&FlushOptions::default().wait(true)).is_ok());
+        }
+
+        // NOTE: size is manifest_file_size, not total size
+        let (_old_size, old_files) = db.get_live_files(false).expect("should get live files");
+
+        assert!(
+            db.delete_files_in_range(&db.default_column_family(), b"k2", b"k8")
+                .is_ok()
+        );
+
+        let (_new_size, new_files) = db.get_live_files(false).expect("should get live files");
+
+        assert!(new_files.len() < old_files.len());
+        for f in &new_files {
+            assert!(old_files.contains(f));
+        }
     }
 }

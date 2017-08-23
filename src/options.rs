@@ -4,6 +4,9 @@ use std::u64;
 use std::path::{Path, PathBuf};
 use std::mem;
 use std::ptr;
+use std::fmt;
+use std::slice;
+use std::str;
 use std::os::raw::c_int;
 use std::marker::PhantomData;
 
@@ -145,6 +148,38 @@ pub struct ColumnFamilyOptions {
 impl ToRaw<ll::rocks_cfoptions_t> for ColumnFamilyOptions {
     fn raw(&self) -> *mut ll::rocks_cfoptions_t {
         self.raw
+    }
+}
+
+impl Default for ColumnFamilyOptions {
+    fn default() -> Self {
+        ColumnFamilyOptions { raw: unsafe { ll::rocks_cfoptions_create() } }
+    }
+}
+
+impl Drop for ColumnFamilyOptions {
+    fn drop(&mut self) {
+        unsafe {
+            ll::rocks_cfoptions_destroy(self.raw);
+        }
+    }
+}
+
+impl fmt::Display for ColumnFamilyOptions {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        unsafe {
+            let cxx_string = ll::rocks_get_string_from_cfoptions(self.raw);
+            let len = ll::cxx_string_size(cxx_string);
+            let base = ll::cxx_string_data(cxx_string);
+            if !cxx_string.is_null() {
+                let str_rep = str::from_utf8_unchecked(slice::from_raw_parts(base as *const u8, len));
+                try!(f.write_str(str_rep));
+                ll::cxx_string_destroy(cxx_string);
+                Ok(())
+            } else {
+                f.write_str("ColumnFamilyOptions { error while converting to String }")
+            }
+        }
     }
 }
 
@@ -1331,21 +1366,6 @@ impl ColumnFamilyOptions {
     }
 }
 
-
-impl Default for ColumnFamilyOptions {
-    fn default() -> Self {
-        ColumnFamilyOptions { raw: unsafe { ll::rocks_cfoptions_create() } }
-    }
-}
-
-impl Drop for ColumnFamilyOptions {
-    fn drop(&mut self) {
-        unsafe {
-            ll::rocks_cfoptions_destroy(self.raw);
-        }
-    }
-}
-
 /// Specify the file access pattern once a compaction is started.
 /// It will be applied to all input files of a compaction.
 ///
@@ -1380,6 +1400,24 @@ impl Drop for DBOptions {
 impl ToRaw<ll::rocks_dboptions_t> for DBOptions {
     fn raw(&self) -> *mut ll::rocks_dboptions_t {
         self.raw
+    }
+}
+
+impl fmt::Display for DBOptions {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        unsafe {
+            let cxx_string = ll::rocks_get_string_from_dboptions(self.raw);
+            let len = ll::cxx_string_size(cxx_string);
+            let base = ll::cxx_string_data(cxx_string);
+            if !cxx_string.is_null() {
+                let str_rep = str::from_utf8_unchecked(slice::from_raw_parts(base as *const u8, len));
+                try!(f.write_str(str_rep));
+                ll::cxx_string_destroy(cxx_string);
+                Ok(())
+            } else {
+                f.write_str("DBOptions { error while converting to String }")
+            }
+        }
     }
 }
 
@@ -3042,8 +3080,20 @@ mod tests {
     use super::super::rocksdb::*;
 
     #[test]
+    fn dboptions_stringify() {
+        let opts = DBOptions::default().allow_2pc(true);
+        assert!(format!("{}", opts).contains("allow_2pc=true"));
+    }
+
+    #[test]
+    fn cfoptions_stringify() {
+        let opts = ColumnFamilyOptions::default().max_write_buffer_number(5);
+        assert!(format!("{}", opts).contains("max_write_buffer_number=5"));
+    }
+
+    #[test]
     fn readoptions() {
-        // FIXME: is disable nlock cache works?
+        // FIXME: is disable block cache works?
         let tmp_dir = ::tempdir::TempDir::new_in(".", "rocks").unwrap();
         let db = DB::open(
             Options::default()

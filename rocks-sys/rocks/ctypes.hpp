@@ -51,6 +51,9 @@ struct cxx_string_vector_t {
   std::vector<std::string> rep;
 };
 
+// std::string
+typedef struct cxx_string_t cxx_string_t;
+
 static bool SaveError(rocks_status_t** status, const Status&& s) {
   if (s.ok()) {
     *status = nullptr;

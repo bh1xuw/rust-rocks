@@ -24,20 +24,22 @@ const void* cxx_vector_slice_nth(const void* list, size_t n) {
   return (void*)&p->at(n);
 }
 
-void cxx_string_assign(void* s, const char* p, size_t len) {
+void cxx_string_assign(cxx_string_t* s, const char* p, size_t len) {
   auto str = reinterpret_cast<std::string*>(s);
   str->assign(p, len);
 }
 
-const char* cxx_string_data(const void* s) {
+const char* cxx_string_data(const cxx_string_t* s) {
   auto str = reinterpret_cast<const std::string*>(s);
   return str->data();
 }
 
-size_t cxx_string_size(const void* s) {
+size_t cxx_string_size(const cxx_string_t* s) {
   auto str = reinterpret_cast<const std::string*>(s);
   return str->size();
 }
+
+void cxx_string_destroy(cxx_string_t* s) { delete reinterpret_cast<std::string*>(s); }
 
 cxx_string_vector_t* cxx_string_vector_create() { return new cxx_string_vector_t; }
 

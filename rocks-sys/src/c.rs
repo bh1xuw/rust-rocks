@@ -201,6 +201,9 @@ pub struct rocks_external_file_ingestion_info_t([u8; 0]);
 #[repr(C)]
 #[derive(Debug, Copy, Clone)]
 pub struct cxx_string_vector_t([u8; 0]);
+#[repr(C)]
+#[derive(Debug, Copy, Clone)]
+pub struct cxx_string_t([u8; 0]);
 extern "C" {
     pub fn rocks_status_create() -> *mut *mut rocks_status_t;
 }
@@ -2272,6 +2275,11 @@ extern "C" {
                                                                                 ::std::os::raw::c_int);
 }
 extern "C" {
+    pub fn rocks_block_based_table_options_set_metadata_block_size(options:
+                                                                       *mut rocks_block_based_table_options_t,
+                                                                   val: u64);
+}
+extern "C" {
     pub fn rocks_block_based_table_options_set_partition_filters(options:
                                                                      *mut rocks_block_based_table_options_t,
                                                                  val:
@@ -3006,6 +3014,30 @@ extern "C" {
                                                         *mut ::std::os::raw::c_int);
 }
 extern "C" {
+    pub fn rocks_cancel_all_background_work(db: *mut rocks_db_t,
+                                            wait: ::std::os::raw::c_uchar);
+}
+extern "C" {
+    pub fn rocks_db_delete_files_in_range(db: *mut rocks_db_t,
+                                          column_family:
+                                              *mut rocks_column_family_handle_t,
+                                          begin_ptr:
+                                              *const ::std::os::raw::c_char,
+                                          begin_len: usize,
+                                          end_ptr:
+                                              *const ::std::os::raw::c_char,
+                                          end_len: usize,
+                                          status: *mut *mut rocks_status_t);
+}
+extern "C" {
+    pub fn rocks_get_string_from_dboptions(opts: *mut rocks_dboptions_t)
+     -> *mut cxx_string_t;
+}
+extern "C" {
+    pub fn rocks_get_string_from_cfoptions(opts: *mut rocks_cfoptions_t)
+     -> *mut cxx_string_t;
+}
+extern "C" {
     pub fn rocks_table_props_collection_destroy(coll:
                                                     *mut rocks_table_props_collection_t);
 }
@@ -3649,15 +3681,18 @@ extern "C" {
      -> *const ::std::os::raw::c_void;
 }
 extern "C" {
-    pub fn cxx_string_assign(s: *mut ::std::os::raw::c_void,
+    pub fn cxx_string_assign(s: *mut cxx_string_t,
                              p: *const ::std::os::raw::c_char, len: usize);
 }
 extern "C" {
-    pub fn cxx_string_data(s: *const ::std::os::raw::c_void)
+    pub fn cxx_string_data(s: *const cxx_string_t)
      -> *const ::std::os::raw::c_char;
 }
 extern "C" {
-    pub fn cxx_string_size(s: *const ::std::os::raw::c_void) -> usize;
+    pub fn cxx_string_size(s: *const cxx_string_t) -> usize;
+}
+extern "C" {
+    pub fn cxx_string_destroy(s: *mut cxx_string_t);
 }
 extern "C" {
     pub fn cxx_string_vector_create() -> *mut cxx_string_vector_t;

@@ -1,4 +1,3 @@
-
 //! `WriteBufferManager` is for managing memory allocation for one or more
 //! MemTables.
 

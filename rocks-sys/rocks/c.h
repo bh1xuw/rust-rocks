@@ -140,6 +140,7 @@ typedef struct rocks_external_file_ingestion_info_t rocks_external_file_ingestio
 
 /* aux */
 typedef struct cxx_string_vector_t cxx_string_vector_t;
+typedef struct cxx_string_t cxx_string_t;
 
 /* ****************************** functions ****************************** */
 
@@ -1019,11 +1020,9 @@ void rocks_block_based_table_options_set_block_restart_interval(rocks_block_base
                                                                 int block_restart_interval);
 void rocks_block_based_table_options_set_index_block_restart_interval(rocks_block_based_table_options_t* options,
                                                                       int val);
-/*
-void rocks_block_based_table_options_set_metadata_block_size(
-                                                             rocks_block_based_table_options_t*
-options, uint64_t val);
-*/
+
+void rocks_block_based_table_options_set_metadata_block_size(rocks_block_based_table_options_t* options, uint64_t val);
+
 void rocks_block_based_table_options_set_partition_filters(rocks_block_based_table_options_t* options,
                                                            unsigned char val);
 void rocks_block_based_table_options_set_use_delta_encoding(rocks_block_based_table_options_t* options,
@@ -1311,6 +1310,12 @@ rocks_writebatch_t* rocks_transaction_log_iterator_get_batch(rocks_transaction_l
 /* convenience */
 int* rocks_get_supported_compressions(size_t* len);
 void rocks_get_supported_compressions_destroy(int* ptr);
+void rocks_cancel_all_background_work(rocks_db_t* db, unsigned char wait);
+void rocks_db_delete_files_in_range(rocks_db_t* db, rocks_column_family_handle_t* column_family, const char* begin_ptr,
+                                    size_t begin_len, const char* end_ptr, size_t end_len, rocks_status_t** status);
+// cxx_string_destroy must be called for following
+cxx_string_t* rocks_get_string_from_dboptions(rocks_dboptions_t* opts);
+cxx_string_t* rocks_get_string_from_cfoptions(rocks_cfoptions_t* opts);
 
 /* table_properties */
 void rocks_table_props_collection_destroy(rocks_table_props_collection_t* coll);
@@ -1511,9 +1516,11 @@ void free(void* p);
 size_t cxx_vector_slice_size(const void* list);
 const void* cxx_vector_slice_nth(const void* list, size_t n);
 
-void cxx_string_assign(void* s, const char* p, size_t len);
-const char* cxx_string_data(const void* s);
-size_t cxx_string_size(const void* s);
+/* std::string */
+void cxx_string_assign(cxx_string_t* s, const char* p, size_t len);
+const char* cxx_string_data(const cxx_string_t* s);
+size_t cxx_string_size(const cxx_string_t* s);
+void cxx_string_destroy(cxx_string_t* s);
 
 cxx_string_vector_t* cxx_string_vector_create();
 void cxx_string_vector_destory(cxx_string_vector_t* v);

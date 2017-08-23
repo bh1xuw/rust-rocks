@@ -43,6 +43,14 @@ pub enum IndexType {
     TwoLevelIndexSearch,
 }
 
+// not yet supported. Will fail
+#[derive(Debug, Copy, Clone, PartialEq, Eq, Hash)]
+#[repr(C)]
+pub enum ChecksumType {
+    NoChecksum = 0,
+    CRC32c = 1,
+}
+
 /// For advanced user only
 pub struct BlockBasedTableOptions {
     raw: *mut ll::rocks_block_based_table_options_t,
@@ -120,6 +128,9 @@ impl BlockBasedTableOptions {
         self
     }
 
+    /// The index type that will be used for this table.
+    ///
+    /// Default: BinarySearch
     pub fn index_type(self, val: IndexType) -> Self {
         unsafe { ll::rocks_block_based_table_options_set_index_type(self.raw, mem::transmute(val)) }
         self
@@ -232,11 +243,10 @@ impl BlockBasedTableOptions {
     /// TODO(myabandeh): remove the note above when filter partitions are cut
     /// separately
     pub fn metadata_block_size(self, val: u64) -> Self {
-        // unsafe {
-        //     ll::rocks_block_based_table_options_set_metadata_block_size(self.raw, val);
-        // }
-        // self
-        unimplemented!() // FIXME: in 5.4
+        unsafe {
+            ll::rocks_block_based_table_options_set_metadata_block_size(self.raw, val);
+        }
+        self
     }
 
     /// Note: currently this option requires kTwoLevelIndexSearch to be set as

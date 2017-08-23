@@ -112,12 +112,9 @@ void rocks_block_based_table_options_set_index_block_restart_interval(rocks_bloc
   options->rep.index_block_restart_interval = val;
 }
 
-/*
-void rocks_block_based_table_options_set_metadata_block_size(
-                                                             rocks_block_based_table_options_t*
-options, uint64_t val) { options->rep.metadata_block_size = val;
+void rocks_block_based_table_options_set_metadata_block_size(rocks_block_based_table_options_t* options, uint64_t val) {
+  options->rep.metadata_block_size = val;
 }
-*/
 
 void rocks_block_based_table_options_set_partition_filters(rocks_block_based_table_options_t* options,
                                                            unsigned char val) {
