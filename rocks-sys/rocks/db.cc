@@ -1,5 +1,6 @@
 #include "rocksdb/db.h"
 #include "rocks/ctypes.hpp"
+#include "rocksdb/utilities/info_log_finder.h"
 
 #include "rocks/rust_export.h"
 
@@ -689,5 +690,16 @@ void rocks_destroy_db(const rocks_options_t* options, const char* name, rocks_st
 void rocks_repair_db(const rocks_options_t* options, const char* name, rocks_status_t** status) {
   auto st = RepairDB(name, options->rep);
   SaveError(status, std::move(st));
+}
+
+// rocksdb/utilities/info_log_finder.h
+cxx_string_vector_t* rocks_db_get_info_log_list(rocks_db_t* db, rocks_status_t** status) {
+  auto info_log_list = new std::vector<std::string>;
+  if (SaveError(status, GetInfoLogList(db->rep, info_log_list))) {
+    delete info_log_list;
+    return nullptr;
+  } else {
+    return reinterpret_cast<cxx_string_vector_t*>(info_log_list);
+  }
 }
 }

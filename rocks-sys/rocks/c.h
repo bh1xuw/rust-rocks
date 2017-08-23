@@ -827,6 +827,10 @@ void rocks_destroy_db(const rocks_options_t* options, const char* name, rocks_st
 
 void rocks_repair_db(const rocks_options_t* options, const char* name, rocks_status_t** status);
 
+/* > utilities/info_log_finder.h */
+
+cxx_string_vector_t* rocks_db_get_info_log_list(rocks_db_t* db, rocks_status_t** status);
+
 /* rate_limiter.h */
 rocks_ratelimiter_t* rocks_ratelimiter_create(int64_t rate_bytes_per_sec, int64_t refill_period_us, int32_t fairness);
 

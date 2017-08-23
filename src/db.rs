@@ -2244,6 +2244,28 @@ impl<'a> DBRef<'a> {
             Status::from_ll(status).map(|()| KeyVersionVec::from_ll(coll_ptr))
         }
     }
+
+    // utilities/info_log_finder.h
+    /// This function can be used to list the Information logs,
+    /// given the db pointer.
+    pub fn get_info_log_list(&self) -> Result<Vec<String>> {
+        let mut status = ptr::null_mut();
+        unsafe {
+            let cvec = ll::rocks_db_get_info_log_list(self.raw(), &mut status);
+            Status::from_ll(status).map(|()| {
+                let size = ll::cxx_string_vector_size(cvec);
+                let ret = (0..size).into_iter()
+                    .map(|i| {
+                        let base = ll::cxx_string_vector_nth(cvec, i) as *const u8;
+                        let len = ll::cxx_string_vector_nth_size(cvec, i);
+                        str::from_utf8_unchecked(slice::from_raw_parts(base, len)).into()
+                    })
+                    .collect();
+                ll::cxx_string_vector_destory(cvec);
+                ret
+                })
+        }
+    }
 }
 
 // ==================================================
@@ -2368,6 +2390,9 @@ fn it_works() {
     println!("cf => {:?}", cfhandle);
 
     assert!(db.name().contains("rocks"));
+
+    assert!(db.get_info_log_list().is_ok());
+    assert!(db.get_info_log_list().unwrap().contains(&"LOG".to_string()));
 }
 
 #[test]
