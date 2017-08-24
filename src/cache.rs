@@ -45,10 +45,10 @@ impl Cache {
         }
     }
 
-    // sets the maximum configured capacity of the cache. When the new
-    // capacity is less than the old capacity and the existing usage is
-    // greater than new capacity, the implementation will do its best job to
-    // purge the released entries from the cache in order to lower the usage
+    /// sets the maximum configured capacity of the cache. When the new
+    /// capacity is less than the old capacity and the existing usage is
+    /// greater than new capacity, the implementation will do its best job to
+    /// purge the released entries from the cache in order to lower the usage
     pub fn set_capacity(&mut self, capacity: usize) {
         unsafe {
             ll::rocks_cache_set_capacity(self.raw, capacity);

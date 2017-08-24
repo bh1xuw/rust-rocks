@@ -1759,18 +1759,13 @@ extern "C" {
 }
 extern "C" {
     pub fn rocks_destroy_db(options: *const rocks_options_t,
-                            name: *const ::std::os::raw::c_char,
+                            name: *const ::std::os::raw::c_char, len: usize,
                             status: *mut *mut rocks_status_t);
 }
 extern "C" {
     pub fn rocks_repair_db(options: *const rocks_options_t,
-                           name: *const ::std::os::raw::c_char,
+                           name: *const ::std::os::raw::c_char, len: usize,
                            status: *mut *mut rocks_status_t);
-}
-extern "C" {
-    pub fn rocks_db_get_info_log_list(db: *mut rocks_db_t,
-                                      status: *mut *mut rocks_status_t)
-     -> *mut cxx_string_vector_t;
 }
 extern "C" {
     pub fn rocks_ratelimiter_create(rate_bytes_per_sec: i64,

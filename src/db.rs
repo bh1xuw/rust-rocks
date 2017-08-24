@@ -2245,6 +2245,7 @@ impl<'a> DBRef<'a> {
         }
     }
 
+    /*
     // utilities/info_log_finder.h
     /// This function can be used to list the Information logs,
     /// given the db pointer.
@@ -2266,6 +2267,7 @@ impl<'a> DBRef<'a> {
                 })
         }
     }
+    */
 }
 
 // ==================================================
@@ -2275,8 +2277,13 @@ impl<'a> DBRef<'a> {
 /// Destroy the contents of the specified database.
 ///
 /// Be very careful using this method.
-pub fn destroy_db(name: &str, options: &Options) -> Result<()> {
-    unimplemented!()
+pub fn destroy_db<P: AsRef<Path>>(options: &Options, name: P) -> Result<()> {
+    let name = name.as_ref().to_str().expect("db name should be valid utf8");
+    let mut status = ptr::null_mut();
+    unsafe {
+        ll::rocks_destroy_db(options.raw(), name.as_ptr() as *const _, name.len(), &mut status);
+        Status::from_ll(status)
+    }
 }
 
 
@@ -2289,15 +2296,15 @@ pub fn destroy_db(name: &str, options: &Options) -> Result<()> {
 /// specified in `column_families`.
 ///
 /// `column_families` Descriptors for known column families
-pub fn repair_db(dbname: &str, db_options: &DBOptions, column_families: &[&ColumnFamilyDescriptor]) -> Result<()> {
+pub fn repair_db_with_cf<P: AsRef<Path>>(db_options: &DBOptions, dbname: P, column_families: &[&ColumnFamilyDescriptor]) -> Result<()> {
     unimplemented!()
 }
 
 /// `unknown_cf_opts` Options for column families encountered during the
 /// repair that were not specified in `column_families`.
-pub fn repair_db_with_unknown_cf_opts(
-    dbname: &str,
+pub fn repair_db_with_unknown_cf_opts<P: AsRef<Path>>(
     db_options: &DBOptions,
+    dbname: P,
     column_families: &[&ColumnFamilyDescriptor],
     unknown_cf_opts: &ColumnFamilyOptions,
 ) -> Result<()> {
@@ -2306,8 +2313,13 @@ pub fn repair_db_with_unknown_cf_opts(
 
 /// `options` These options will be used for the database and for ALL column
 /// families encountered during the repair.
-pub fn repair_db_all_cfs(dbname: &str, options: &Options) -> Result<()> {
-    unimplemented!()
+pub fn repair_db<P: AsRef<Path>>(options: &Options, name: P) -> Result<()> {
+    let name = name.as_ref().to_str().expect("db name should be valid utf8");
+    let mut status = ptr::null_mut();
+    unsafe {
+        ll::rocks_repair_db(options.raw(), name.as_ptr() as *const _, name.len(), &mut status);
+        Status::from_ll(status)
+    }
 }
 
 
@@ -2391,8 +2403,9 @@ fn it_works() {
 
     assert!(db.name().contains("rocks"));
 
-    assert!(db.get_info_log_list().is_ok());
-    assert!(db.get_info_log_list().unwrap().contains(&"LOG".to_string()));
+    // FIXME: missing on static build?
+    // assert!(db.get_info_log_list().is_ok());
+    // assert!(db.get_info_log_list().unwrap().contains(&"LOG".to_string()));
 }
 
 #[test]
@@ -2567,7 +2580,6 @@ fn test_ingest_sst_file() {
 
 #[cfg(test)]
 mod tests {
-    use std::iter;
     use super::*;
     use super::super::rocksdb::*;
 
@@ -2589,10 +2601,11 @@ mod tests {
         for i in 0..100 {
             let key = format!("test2-key-{}", i);
             let val = format!("rocksdb-value-{}", i * 10);
-            let value: String = iter::repeat(val).take(1000).collect::<Vec<_>>().concat();
 
-            db.put(&WriteOptions::default(), key.as_bytes(), value.as_bytes())
+            db.put(&WriteOptions::default(), key.as_bytes(), val.as_bytes())
                 .unwrap();
+
+            db.flush(&Default::default()).unwrap()
         }
 
         // will be shown in LOG file
@@ -3178,7 +3191,7 @@ mod tests {
         let tmp_dir = ::tempdir::TempDir::new_in("", "rocks").unwrap();
         let db = DB::open(
             Options::default().map_db_options(|db| db.create_if_missing(true)),
-            // NOTE: disable auto compaction
+            // NOTE: delete_files_in_range() requires auto compaction
             // .map_cf_options(|cf| cf.disable_auto_compactions(true)),
             &tmp_dir,
         ).unwrap();

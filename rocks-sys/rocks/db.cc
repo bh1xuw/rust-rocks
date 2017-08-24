@@ -682,16 +682,17 @@ rocks_table_props_collection_t* rocks_db_get_properties_of_tables_in_range(
 }
 
 // public functions
-void rocks_destroy_db(const rocks_options_t* options, const char* name, rocks_status_t** status) {
-  auto st = DestroyDB(name, options->rep);
+void rocks_destroy_db(const rocks_options_t* options, const char* name, size_t len, rocks_status_t** status) {
+  auto st = DestroyDB(std::string(name, len), options->rep);
   SaveError(status, std::move(st));
 }
 
-void rocks_repair_db(const rocks_options_t* options, const char* name, rocks_status_t** status) {
-  auto st = RepairDB(name, options->rep);
+void rocks_repair_db(const rocks_options_t* options, const char* name, size_t len, rocks_status_t** status) {
+  auto st = RepairDB(std::string(name, len), options->rep);
   SaveError(status, std::move(st));
 }
 
+/*
 // rocksdb/utilities/info_log_finder.h
 cxx_string_vector_t* rocks_db_get_info_log_list(rocks_db_t* db, rocks_status_t** status) {
   auto info_log_list = new std::vector<std::string>;
@@ -702,4 +703,5 @@ cxx_string_vector_t* rocks_db_get_info_log_list(rocks_db_t* db, rocks_status_t**
     return reinterpret_cast<cxx_string_vector_t*>(info_log_list);
   }
 }
+*/
 }

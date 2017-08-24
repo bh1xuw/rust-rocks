@@ -823,13 +823,13 @@ rocks_table_props_collection_t* rocks_db_get_properties_of_tables_in_range(
     const size_t* start_key_lens, const char* const* limit_keys, const size_t* limit_key_lens, rocks_status_t** status);
 
 /*    pub fn */
-void rocks_destroy_db(const rocks_options_t* options, const char* name, rocks_status_t** status);
-
-void rocks_repair_db(const rocks_options_t* options, const char* name, rocks_status_t** status);
+void rocks_destroy_db(const rocks_options_t* options, const char* name, size_t len, rocks_status_t** status);
+void rocks_repair_db(const rocks_options_t* options, const char* name, size_t len, rocks_status_t** status);
 
 /* > utilities/info_log_finder.h */
 
-cxx_string_vector_t* rocks_db_get_info_log_list(rocks_db_t* db, rocks_status_t** status);
+// FIXME: missing on static build?
+// cxx_string_vector_t* rocks_db_get_info_log_list(rocks_db_t* db, rocks_status_t** status);
 
 /* rate_limiter.h */
 rocks_ratelimiter_t* rocks_ratelimiter_create(int64_t rate_bytes_per_sec, int64_t refill_period_us, int32_t fairness);
