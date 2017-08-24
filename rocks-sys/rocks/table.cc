@@ -84,7 +84,14 @@ void rocks_block_based_table_options_set_block_cache(rocks_block_based_table_opt
   }
 }
 
-// persistent_cache
+void rocks_block_based_table_options_set_persistent_cache(rocks_block_based_table_options_t* options,
+                                                          rocks_persistent_cache_t* cache) {
+  if (cache == nullptr) {
+    options->rep.persistent_cache = nullptr;
+  } else {
+    options->rep.persistent_cache = cache->rep;
+  }
+}
 
 void rocks_block_based_table_options_set_block_cache_compressed(rocks_block_based_table_options_t* options,
                                                                 rocks_cache_t* block_cache_compressed) {

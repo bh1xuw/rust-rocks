@@ -39,6 +39,7 @@ pub type Result<T> = result::Result<T, Status>;
 
 pub mod advanced_options;
 pub mod cache;
+pub mod persistent_cache;
 pub mod compaction_filter;
 pub mod comparator;
 pub mod db;

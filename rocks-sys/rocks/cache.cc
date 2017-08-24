@@ -1,4 +1,5 @@
 #include "rocksdb/cache.h"
+#include "rocksdb/persistent_cache.h"
 
 #include "rocks/ctypes.hpp"
 
@@ -35,4 +36,31 @@ size_t rocks_cache_get_usage(rocks_cache_t* cache) { return cache->rep->GetUsage
 size_t rocks_cache_get_pinned_usage(rocks_cache_t* cache) { return cache->rep->GetPinnedUsage(); }
 
 const char* rocks_cache_name(rocks_cache_t* cache) { return cache->rep->Name(); }
+}
+
+// persistent_cache
+extern "C" {
+rocks_persistent_cache_t* rocks_new_persistent_cache(const rocks_env_t* env, const char* path, size_t path_len,
+                                                     uint64_t size, const rocks_logger_t* log,
+                                                     unsigned char optimized_for_nvm, rocks_status_t** status) {
+  auto ret = new rocks_persistent_cache_t;
+  auto st = NewPersistentCache(env->rep, std::string(path, path_len), size, log->rep, optimized_for_nvm, &ret->rep);
+  if (SaveError(status, std::move(st))) {
+    delete ret;
+    return nullptr;
+  } else {
+    return ret;
+  }
+}
+
+void rocks_persistent_cache_destroy(rocks_persistent_cache_t* cache) { delete cache; }
+
+rocks_persistent_cache_t* rocks_persistent_cache_clone(rocks_persistent_cache_t* cache) {
+  return new rocks_persistent_cache_t{cache->rep};
+}
+
+cxx_string_t* rocks_persistent_cache_get_printable_options(rocks_persistent_cache_t* cache) {
+  auto str = new std::string(cache->rep->GetPrintableOptions());
+  return reinterpret_cast<cxx_string_t*>(str);
+}
 }

@@ -65,6 +65,9 @@ typedef struct rocks_raw_filterpolicy_t rocks_raw_filterpolicy_t;
 /* cache */
 typedef struct rocks_cache_t rocks_cache_t;
 
+/* persistent_cache */
+typedef struct rocks_persistent_cache_t rocks_persistent_cache_t;
+
 /* merge_operator.h */
 typedef struct rocks_associative_mergeoperator_t rocks_associative_mergeoperator_t;
 typedef struct rocks_mergeoperator_t rocks_mergeoperator_t;
@@ -1043,7 +1046,8 @@ void rocks_block_based_table_options_set_no_block_cache(rocks_block_based_table_
                                                         unsigned char no_block_cache);
 void rocks_block_based_table_options_set_block_cache(rocks_block_based_table_options_t* options,
                                                      rocks_cache_t* block_cache);
-// persistent_cache
+void rocks_block_based_table_options_set_persistent_cache(rocks_block_based_table_options_t* options,
+                                                          rocks_persistent_cache_t* cache);
 void rocks_block_based_table_options_set_block_cache_compressed(rocks_block_based_table_options_t* options,
                                                                 rocks_cache_t* block_cache_compressed);
 void rocks_block_based_table_options_set_block_size(rocks_block_based_table_options_t* options, size_t block_size);
@@ -1133,6 +1137,16 @@ size_t rocks_cache_get_usage(rocks_cache_t* cache);
 size_t rocks_cache_get_pinned_usage(rocks_cache_t* cache);
 
 const char* rocks_cache_name(rocks_cache_t* cache);
+
+/* persistent_cache */
+rocks_persistent_cache_t* rocks_new_persistent_cache(const rocks_env_t* env, const char* path, size_t path_len,
+                                                     uint64_t size, const rocks_logger_t* log,
+                                                     unsigned char optimized_for_nvm, rocks_status_t** status);
+
+void rocks_persistent_cache_destroy(rocks_persistent_cache_t* cache);
+rocks_persistent_cache_t* rocks_persistent_cache_clone(rocks_persistent_cache_t* cache);
+
+cxx_string_t* rocks_persistent_cache_get_printable_options(rocks_persistent_cache_t* cache);
 
 /* sst_file_writer */
 rocks_external_sst_file_info_t* rocks_external_sst_file_info_create();

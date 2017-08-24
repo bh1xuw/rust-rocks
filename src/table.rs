@@ -23,6 +23,7 @@ use rocks_sys as ll;
 use cache::Cache;
 use to_raw::ToRaw;
 use filter_policy::FilterPolicy;
+use persistent_cache::PersistentCache;
 
 #[derive(Debug, Copy, Clone, PartialEq, Eq, Hash)]
 #[repr(C)]
@@ -172,10 +173,20 @@ impl BlockBasedTableOptions {
         self
     }
 
-    // If non-NULL use the specified cache for pages read from device
-    // IF NULL, no page cache is used
-    //
-    // std::shared_ptr<PersistentCache> persistent_cache = nullptr;
+    /// If non-NULL use the specified cache for pages read from device
+    /// IF NULL, no page cache is used
+    ///
+    pub fn persistent_cache(self, val: Option<PersistentCache>) -> Self {
+        match val {
+            None => unsafe {
+                ll::rocks_block_based_table_options_set_persistent_cache(self.raw, ptr::null_mut());
+            },
+            Some(cache) => unsafe {
+                ll::rocks_block_based_table_options_set_persistent_cache(self.raw, cache.raw());
+            },
+        }
+        self
+    }
 
     /// If non-NULL use the specified cache for compressed blocks.
     ///
@@ -366,7 +377,6 @@ impl BlockBasedTableOptions {
         self
     }
 }
-
 
 #[repr(u8)]
 pub enum EncodingType {

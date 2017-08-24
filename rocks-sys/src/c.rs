@@ -92,6 +92,9 @@ pub struct rocks_raw_filterpolicy_t([u8; 0]);
 pub struct rocks_cache_t([u8; 0]);
 #[repr(C)]
 #[derive(Debug, Copy, Clone)]
+pub struct rocks_persistent_cache_t([u8; 0]);
+#[repr(C)]
+#[derive(Debug, Copy, Clone)]
 pub struct rocks_associative_mergeoperator_t([u8; 0]);
 #[repr(C)]
 #[derive(Debug, Copy, Clone)]
@@ -2312,6 +2315,12 @@ extern "C" {
                                                                *mut rocks_cache_t);
 }
 extern "C" {
+    pub fn rocks_block_based_table_options_set_persistent_cache(options:
+                                                                    *mut rocks_block_based_table_options_t,
+                                                                cache:
+                                                                    *mut rocks_persistent_cache_t);
+}
+extern "C" {
     pub fn rocks_block_based_table_options_set_block_cache_compressed(options:
                                                                           *mut rocks_block_based_table_options_t,
                                                                       block_cache_compressed:
@@ -2515,6 +2524,29 @@ extern "C" {
 extern "C" {
     pub fn rocks_cache_name(cache: *mut rocks_cache_t)
      -> *const ::std::os::raw::c_char;
+}
+extern "C" {
+    pub fn rocks_new_persistent_cache(env: *const rocks_env_t,
+                                      path: *const ::std::os::raw::c_char,
+                                      path_len: usize, size: u64,
+                                      log: *const rocks_logger_t,
+                                      optimized_for_nvm:
+                                          ::std::os::raw::c_uchar,
+                                      status: *mut *mut rocks_status_t)
+     -> *mut rocks_persistent_cache_t;
+}
+extern "C" {
+    pub fn rocks_persistent_cache_destroy(cache:
+                                              *mut rocks_persistent_cache_t);
+}
+extern "C" {
+    pub fn rocks_persistent_cache_clone(cache: *mut rocks_persistent_cache_t)
+     -> *mut rocks_persistent_cache_t;
+}
+extern "C" {
+    pub fn rocks_persistent_cache_get_printable_options(cache:
+                                                            *mut rocks_persistent_cache_t)
+     -> *mut cxx_string_t;
 }
 extern "C" {
     pub fn rocks_external_sst_file_info_create()

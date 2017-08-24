@@ -14,6 +14,7 @@
 #include "rocksdb/merge_operator.h"
 #include "rocksdb/metadata.h"
 #include "rocksdb/options.h"
+#include "rocksdb/persistent_cache.h"
 #include "rocksdb/rate_limiter.h"
 #include "rocksdb/slice_transform.h"
 #include "rocksdb/sst_file_writer.h"
@@ -550,6 +551,11 @@ struct rocks_event_listener_t : public EventListener {
 /* thread_status */
 struct rocks_thread_status_t {
   ThreadStatus rep;
+};
+
+/* persistent_cache */
+struct rocks_persistent_cache_t {
+  std::shared_ptr<PersistentCache> rep;
 };
 
 #ifdef __cplusplus
