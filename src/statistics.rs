@@ -425,7 +425,7 @@ impl fmt::Display for Histograms {
 
 /// Repr single histogram data item
 #[repr(C)]
-#[derive(Debug, Clone)]
+#[derive(Default, Debug, Clone)]
 pub struct HistogramData {
     pub median: f64,
     pub percentile95: f64,
@@ -482,6 +482,9 @@ impl Default for Statistics {
     }
 }
 
+unsafe impl Send for Statistics {}
+unsafe impl Sync for Statistics {}
+
 impl Statistics {
     pub fn new() -> Statistics {
         Statistics { raw: unsafe { ll::rocks_statistics_create() } }
@@ -493,7 +496,7 @@ impl Statistics {
 
     pub fn histogram_data(&self, type_: Histograms) -> HistogramData {
         unsafe {
-            let mut data: HistogramData = mem::zeroed();
+            let mut data = HistogramData::default();
             ll::rocks_statistics_histogram_data(
                 self.raw,
                 mem::transmute(type_),

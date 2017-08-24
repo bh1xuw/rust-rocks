@@ -34,6 +34,7 @@ use super::slice::{CVec, PinnableSlice};
 
 const DEFAULT_COLUMN_FAMILY_NAME: &'static str = "default";
 
+/// Descriptor of a column family, name and the options
 pub struct ColumnFamilyDescriptor {
     name: CString,
     options: Option<ColumnFamilyOptions>,
@@ -84,50 +85,46 @@ impl<'a> From<(&'a str, ColumnFamilyOptions)> for ColumnFamilyDescriptor {
     }
 }
 
+
 /// Handle for a opened column family
-pub struct ColumnFamilyHandle<'a, 'b: 'a> {
+pub struct ColumnFamilyHandle {
     raw: *mut ll::rocks_column_family_handle_t,
-    db: &'a DBRef<'b>,
-    owned: bool,
 }
 
-impl<'a, 'b> Drop for ColumnFamilyHandle<'a, 'b> {
+impl Drop for ColumnFamilyHandle {
     fn drop(&mut self) {
-        if self.owned {
-            let mut status = ptr::null_mut::<ll::rocks_status_t>();
-            unsafe {
-                ll::rocks_db_destroy_column_family_handle(self.db.raw, self.raw(), &mut status);
-                assert!(Status::from_ll(status).is_ok());
-            }
-        } else {
-            unsafe {
-                // this will not delete default CF
-                ll::rocks_column_family_handle_destroy(self.raw);
-            }
+        // this will not delete default CF
+        unsafe {
+            ll::rocks_column_family_handle_destroy(self.raw);
         }
     }
 }
 
-// FIXME: is this right?
-impl<'a, 'b> AsRef<ColumnFamilyHandle<'a, 'b>> for ColumnFamilyHandle<'a, 'b> {
-    fn as_ref(&self) -> &ColumnFamilyHandle<'a, 'b> {
+impl AsRef<ColumnFamilyHandle> for ColumnFamilyHandle {
+    fn as_ref(&self) -> &ColumnFamilyHandle {
         self
     }
 }
 
-impl<'a, 'b> fmt::Debug for ColumnFamilyHandle<'a, 'b> {
+impl fmt::Debug for ColumnFamilyHandle {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         write!(f, "CFHandle(id={}, name={:?})", self.id(), self.name())
     }
 }
 
-impl<'a, 'b> ToRaw<ll::rocks_column_family_handle_t> for ColumnFamilyHandle<'a, 'b> {
+impl ToRaw<ll::rocks_column_family_handle_t> for ColumnFamilyHandle {
     fn raw(&self) -> *mut ll::rocks_column_family_handle_t {
         self.raw
     }
 }
 
-impl<'a, 'b: 'a> ColumnFamilyHandle<'a, 'b> {
+impl FromRaw<ll::rocks_column_family_handle_t> for ColumnFamilyHandle {
+    unsafe fn from_ll(raw: *mut ll::rocks_column_family_handle_t) -> ColumnFamilyHandle {
+        ColumnFamilyHandle { raw: raw }
+    }
+}
+
+impl ColumnFamilyHandle {
     /// Returns the name of the column family associated with the current handle.
     pub fn name(&self) -> &str {
         unsafe {
@@ -140,7 +137,50 @@ impl<'a, 'b: 'a> ColumnFamilyHandle<'a, 'b> {
     pub fn id(&self) -> u32 {
         unsafe { ll::rocks_column_family_handle_get_id(self.raw) }
     }
+}
 
+/// An opened column family, owned for RAII style management
+pub struct ColumnFamily<'a, 'b: 'a> {
+    handle: ColumnFamilyHandle,
+    db: &'a DBRef<'b>,
+    owned: bool,
+}
+
+impl<'a, 'b> Drop for ColumnFamily<'a, 'b> {
+    fn drop(&mut self) {
+        if self.owned {
+            let mut status = ptr::null_mut::<ll::rocks_status_t>();
+            unsafe {
+                ll::rocks_db_destroy_column_family_handle(self.db.raw, self.raw(), &mut status);
+                assert!(Status::from_ll(status).is_ok());
+                // make underlying cf_handle a nullptr, rocks-sys will skip delete it.
+                self.handle.raw = ptr::null_mut();
+            }
+        }
+    }
+}
+
+// FIXME: is this right?
+impl<'a, 'b> AsRef<ColumnFamilyHandle> for ColumnFamily<'a, 'b> {
+    fn as_ref(&self) -> &ColumnFamilyHandle {
+        &self.handle
+    }
+}
+
+impl<'a, 'b> ops::Deref for ColumnFamily<'a, 'b> {
+    type Target = ColumnFamilyHandle;
+    fn deref(&self) -> &ColumnFamilyHandle {
+        &self.handle
+    }
+}
+
+impl<'a, 'b> fmt::Debug for ColumnFamily<'a, 'b> {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        write!(f, "CF(db={}, cf_id={}, cf_name={:?})", self.db.name(), self.id(), self.name())
+    }
+}
+
+impl<'a, 'b: 'a> ColumnFamily<'a, 'b> {
     // TODO:
     // Fills "*desc" with the up-to-date descriptor of the column family
     // associated with this handle. Since it fills "*desc" with the up-to-date
@@ -714,7 +754,7 @@ impl<'a> DB<'a> {
         options: &Options,
         name: P,
         column_families: I,
-    ) -> Result<(DB<'b>, Vec<ColumnFamilyHandle<'c, 'b>>)> {
+    ) -> Result<(DB<'b>, Vec<ColumnFamily<'c, 'b>>)> {
         let opt = options.raw();
         let dbname = name.as_ref()
             .to_str()
@@ -761,8 +801,8 @@ impl<'a> DB<'a> {
                     cfhandles
                         .into_iter()
                         .map(|p| {
-                            ColumnFamilyHandle {
-                                raw: p,
+                            ColumnFamily {
+                                handle: ColumnFamilyHandle { raw: p },
                                 db: db_ref,
                                 owned: true,
                             }
@@ -834,18 +874,14 @@ impl<'a> DB<'a> {
 impl<'a> DBRef<'a> {
     /// Create a column_family and return the handle of column family
     /// through the argument handle.
-    pub fn create_column_family(
-        &self,
-        cfopts: &ColumnFamilyOptions,
-        column_family_name: &str,
-    ) -> Result<ColumnFamilyHandle> {
+    pub fn create_column_family(&self, cfopts: &ColumnFamilyOptions, column_family_name: &str) -> Result<ColumnFamily> {
         let dbname = CString::new(column_family_name).unwrap();
         let mut status = ptr::null_mut::<ll::rocks_status_t>();
         unsafe {
             let handle = ll::rocks_db_create_column_family(self.raw(), cfopts.raw(), dbname.as_ptr(), &mut status);
             Status::from_ll(status).map(|_| {
-                ColumnFamilyHandle {
-                    raw: handle,
+                ColumnFamily {
+                    handle: ColumnFamilyHandle { raw: handle },
                     db: self.borrow(),
                     owned: true,
                 }
@@ -1309,7 +1345,7 @@ impl<'a> DBRef<'a> {
         }
     }
 
-    pub fn new_iterators<'c, 'b: 'c, T: AsRef<ColumnFamilyHandle<'c, 'b>>>(
+    pub fn new_iterators<'c, 'b: 'c, T: AsRef<ColumnFamilyHandle>>(
         &'b self,
         options: &ReadOptions,
         cfs: &[T],
@@ -2175,9 +2211,9 @@ impl<'a> DBRef<'a> {
     }
 
     /// Returns default column family handle
-    pub fn default_column_family(&self) -> ColumnFamilyHandle {
-        ColumnFamilyHandle {
-            raw: unsafe { ll::rocks_db_default_column_family(self.raw()) },
+    pub fn default_column_family(&self) -> ColumnFamily {
+        ColumnFamily {
+            handle: ColumnFamilyHandle { raw: unsafe { ll::rocks_db_default_column_family(self.raw()) } },
             db: self.borrow(),
             owned: false,
         }
@@ -2278,7 +2314,7 @@ impl<'a> DBRef<'a> {
 ///
 /// Be very careful using this method.
 pub fn destroy_db<P: AsRef<Path>>(options: &Options, name: P) -> Result<()> {
-    let name = name.as_ref().to_str().expect("db name should be valid utf8");
+    let name = name.as_ref().to_str().expect("valid utf8");
     let mut status = ptr::null_mut();
     unsafe {
         ll::rocks_destroy_db(options.raw(), name.as_ptr() as *const _, name.len(), &mut status);
@@ -2296,7 +2332,11 @@ pub fn destroy_db<P: AsRef<Path>>(options: &Options, name: P) -> Result<()> {
 /// specified in `column_families`.
 ///
 /// `column_families` Descriptors for known column families
-pub fn repair_db_with_cf<P: AsRef<Path>>(db_options: &DBOptions, dbname: P, column_families: &[&ColumnFamilyDescriptor]) -> Result<()> {
+pub fn repair_db_with_cf<P: AsRef<Path>>(
+    db_options: &DBOptions,
+    dbname: P,
+    column_families: &[&ColumnFamilyDescriptor],
+) -> Result<()> {
     unimplemented!()
 }
 
@@ -2314,7 +2354,7 @@ pub fn repair_db_with_unknown_cf_opts<P: AsRef<Path>>(
 /// `options` These options will be used for the database and for ALL column
 /// families encountered during the repair.
 pub fn repair_db<P: AsRef<Path>>(options: &Options, name: P) -> Result<()> {
-    let name = name.as_ref().to_str().expect("db name should be valid utf8");
+    let name = name.as_ref().to_str().expect("valid utf8");
     let mut status = ptr::null_mut();
     unsafe {
         ll::rocks_repair_db(options.raw(), name.as_ptr() as *const _, name.len(), &mut status);

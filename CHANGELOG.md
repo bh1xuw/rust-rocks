@@ -9,6 +9,9 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 - convenience.h useful functions, like options stringify
 - more usefull functions in env.h
 
+### Changed
+- Now CF handling splits into ColumnFamily and ColumnFamilyHandle
+
 ## 0.1.1 - 2017-08-22
 ### Added
 - New Options after RocksDB 5.4 to 5.7.2
