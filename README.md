@@ -69,7 +69,7 @@ Big picture:
 - [x] Rust style
   - [x] wraps Status into a Rust style ``Result<T>``
   - [x] ``*Options`` via builder pattern
-  - [ ] handle CFHandle lifetime, Ref safety
+  - [x] handle CFHandle lifetime, Ref safety
 - [ ] Lifetime safely guarantee
   - [x] `ReadOptions` + `snapshot`
   - [x] `ReadOptions` + `iterate_upper_bound`
