@@ -200,6 +200,9 @@ pub struct rocks_mem_table_info_t([u8; 0]);
 pub struct rocks_external_file_ingestion_info_t([u8; 0]);
 #[repr(C)]
 #[derive(Debug, Copy, Clone)]
+pub struct rocks_thread_status_t([u8; 0]);
+#[repr(C)]
+#[derive(Debug, Copy, Clone)]
 pub struct cxx_string_vector_t([u8; 0]);
 #[repr(C)]
 #[derive(Debug, Copy, Clone)]
@@ -1853,6 +1856,14 @@ extern "C" {
     pub fn rocks_env_lower_thread_pool_io_priority(env: *mut rocks_env_t,
                                                    pool:
                                                        ::std::os::raw::c_int);
+}
+extern "C" {
+    pub fn rocks_env_get_thread_list(env: *mut rocks_env_t, len: *mut usize)
+     -> *mut *mut rocks_thread_status_t;
+}
+extern "C" {
+    pub fn rocks_env_get_thread_list_destroy(p:
+                                                 *mut *mut rocks_thread_status_t);
 }
 extern "C" {
     pub fn rocks_env_get_thread_id(env: *mut rocks_env_t) -> u64;
@@ -3723,6 +3734,57 @@ extern "C" {
     pub fn rocks_external_file_ingestion_info_get_table_properties(info:
                                                                        *const rocks_external_file_ingestion_info_t)
      -> *mut rocks_table_props_t;
+}
+extern "C" {
+    pub fn rocks_thread_status_destroy(status: *mut rocks_thread_status_t);
+}
+extern "C" {
+    pub fn rocks_thread_status_get_thread_id(status:
+                                                 *const rocks_thread_status_t)
+     -> u64;
+}
+extern "C" {
+    pub fn rocks_thread_status_get_thread_type(status:
+                                                   *const rocks_thread_status_t)
+     -> ::std::os::raw::c_int;
+}
+extern "C" {
+    pub fn rocks_thread_status_get_db_name(status:
+                                               *const rocks_thread_status_t,
+                                           len: *mut usize)
+     -> *const ::std::os::raw::c_char;
+}
+extern "C" {
+    pub fn rocks_thread_status_get_cf_name(status:
+                                               *const rocks_thread_status_t,
+                                           len: *mut usize)
+     -> *const ::std::os::raw::c_char;
+}
+extern "C" {
+    pub fn rocks_thread_status_get_operation_type(status:
+                                                      *const rocks_thread_status_t)
+     -> ::std::os::raw::c_int;
+}
+extern "C" {
+    pub fn rocks_thread_status_get_op_elapsed_micros(status:
+                                                         *const rocks_thread_status_t)
+     -> u64;
+}
+extern "C" {
+    pub fn rocks_thread_status_get_operation_stage(status:
+                                                       *const rocks_thread_status_t)
+     -> ::std::os::raw::c_int;
+}
+extern "C" {
+    pub fn rocks_thread_status_get_op_properties(status:
+                                                     *const rocks_thread_status_t,
+                                                 len: *mut usize)
+     -> *const u64;
+}
+extern "C" {
+    pub fn rocks_thread_status_get_state_type(status:
+                                                  *const rocks_thread_status_t)
+     -> ::std::os::raw::c_int;
 }
 extern "C" {
     pub fn free(p: *mut ::std::os::raw::c_void);

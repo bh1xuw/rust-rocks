@@ -16,6 +16,7 @@ pub use transaction_log::LogFile;
 pub use merge_operator::{AssociativeMergeOperator, MergeOperator};
 pub use table_properties::{TableProperties, TablePropertiesCollection};
 pub use comparator::Comparator;
+pub use env::{Env, Logger};
 
 pub use super::Result;
 

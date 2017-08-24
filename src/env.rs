@@ -16,7 +16,7 @@ use std::ffi::CStr;
 use rocks_sys as ll;
 
 use error::Status;
-use to_raw::ToRaw;
+use to_raw::{ToRaw, FromRaw};
 use thread_status::ThreadStatus;
 use super::Result;
 
@@ -425,7 +425,16 @@ impl Env {
 
     /// Returns the status of all threads that belong to the current Env.
     pub fn get_thread_list(&self) -> Vec<ThreadStatus> {
-        unimplemented!()
+        let mut len = 0;
+        unsafe {
+            let thread_status_arr = ll::rocks_env_get_thread_list(self.raw, &mut len);
+            let ret = (0..len)
+                .into_iter()
+                .map(|i| ThreadStatus::from_ll(*thread_status_arr.offset(i as isize)))
+                .collect();
+            ll::rocks_env_get_thread_list_destroy(thread_status_arr);
+            ret
+        }
     }
 
     /// Returns the ID of the current thread.

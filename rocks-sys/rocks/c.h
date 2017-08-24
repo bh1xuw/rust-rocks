@@ -138,6 +138,9 @@ typedef struct rocks_table_file_creation_brief_info_t rocks_table_file_creation_
 typedef struct rocks_mem_table_info_t rocks_mem_table_info_t;
 typedef struct rocks_external_file_ingestion_info_t rocks_external_file_ingestion_info_t;
 
+/* thread_status */
+typedef struct rocks_thread_status_t rocks_thread_status_t;
+
 /* aux */
 typedef struct cxx_string_vector_t cxx_string_vector_t;
 typedef struct cxx_string_t cxx_string_t; /* std::string */
@@ -872,6 +875,9 @@ void rocks_env_inc_background_threads_if_needed(rocks_env_t* env, int number, in
 
 void rocks_env_lower_thread_pool_io_priority(rocks_env_t* env, int pool);
 
+rocks_thread_status_t** rocks_env_get_thread_list(rocks_env_t* env, size_t* len);
+void rocks_env_get_thread_list_destroy(rocks_thread_status_t** p);
+
 uint64_t rocks_env_get_thread_id(rocks_env_t* env);
 
 rocks_envoptions_t* rocks_envoptions_create();
@@ -1536,6 +1542,19 @@ const char* rocks_external_file_ingestion_info_get_internal_file_path(const rock
 uint64_t rocks_external_file_ingestion_info_get_global_seqno(const rocks_external_file_ingestion_info_t* info);
 rocks_table_props_t* rocks_external_file_ingestion_info_get_table_properties(
     const rocks_external_file_ingestion_info_t* info);
+
+/* thread_status */
+void rocks_thread_status_destroy(rocks_thread_status_t* status);
+
+uint64_t rocks_thread_status_get_thread_id(const rocks_thread_status_t* status);
+int rocks_thread_status_get_thread_type(const rocks_thread_status_t* status);
+const char* rocks_thread_status_get_db_name(const rocks_thread_status_t* status, size_t* len);
+const char* rocks_thread_status_get_cf_name(const rocks_thread_status_t* status, size_t* len);
+int rocks_thread_status_get_operation_type(const rocks_thread_status_t* status);
+uint64_t rocks_thread_status_get_op_elapsed_micros(const rocks_thread_status_t* status);
+int rocks_thread_status_get_operation_stage(const rocks_thread_status_t* status);
+const uint64_t* rocks_thread_status_get_op_properties(const rocks_thread_status_t* status, size_t* len);
+int rocks_thread_status_get_state_type(const rocks_thread_status_t* status);
 
 /* aux */
 void free(void* p);

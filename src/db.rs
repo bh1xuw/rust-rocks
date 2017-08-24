@@ -160,7 +160,6 @@ impl<'a, 'b> Drop for ColumnFamily<'a, 'b> {
     }
 }
 
-// FIXME: is this right?
 impl<'a, 'b> AsRef<ColumnFamilyHandle> for ColumnFamily<'a, 'b> {
     fn as_ref(&self) -> &ColumnFamilyHandle {
         &self.handle
@@ -190,14 +189,6 @@ impl<'a, 'b: 'a> ColumnFamily<'a, 'b> {
     //
     // Note that this function is not supported in RocksDBLite.
     // pub fn descriptor(&self) -> Result<ColumnFamilyDescriptor> {
-    // }
-    //
-
-    // TODO:
-    // Returns the comparator of the column family associated with the
-    // current handle.
-    // pub fn get_comparator(&self) -> Comparator {
-    // unimplemented!()
     // }
     //
 
@@ -1896,10 +1887,11 @@ impl<'a> DBRef<'a> {
     /// for new data that arrived to already-flushed column families while other
     /// column families were flushing
     pub fn get_live_files(&self, flush_memtable: bool) -> Result<(u64, Vec<String>)> {
-        let mut file_size = 0;
+        let mut manifest_file_size = 0;
         let mut status = ptr::null_mut::<ll::rocks_status_t>();
         unsafe {
-            let files = ll::rocks_db_get_live_files(self.raw(), flush_memtable as u8, &mut file_size, &mut status);
+            let files =
+                ll::rocks_db_get_live_files(self.raw(), flush_memtable as u8, &mut manifest_file_size, &mut status);
             Status::from_ll(status).map(|_| {
                 let n = ll::cxx_string_vector_size(files) as usize;
                 let mut ret = Vec::with_capacity(n);
@@ -1911,7 +1903,7 @@ impl<'a> DBRef<'a> {
                     ret.push(String::from_utf8_lossy(f).to_owned().to_string());
                 }
                 ll::cxx_string_vector_destory(files);
-                (file_size, ret)
+                (manifest_file_size, ret)
             })
         }
     }
@@ -2084,7 +2076,6 @@ impl<'a> DBRef<'a> {
 
                 let num_sstfiles = ll::rocks_column_family_metadata_levels_files_count(cfmeta, lv);
 
-                // return
                 let mut current_level = LevelMetaData {
                     level: level as u32,
                     size: lv_size,

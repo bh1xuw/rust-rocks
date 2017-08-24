@@ -336,5 +336,6 @@ fn main() {
         .file("rocks/debug.cc")
         .file("rocks/listener.cc")
         .file("rocks/compaction_job_stats.cc")
+        .file("rocks/thread_status.cc")
         .compile("librocksdb_wrap.a");
 }

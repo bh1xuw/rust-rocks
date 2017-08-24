@@ -547,6 +547,11 @@ struct rocks_event_listener_t : public EventListener {
   }
 };
 
+/* thread_status */
+struct rocks_thread_status_t {
+  ThreadStatus rep;
+};
+
 #ifdef __cplusplus
 }
 #endif

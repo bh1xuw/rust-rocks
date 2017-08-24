@@ -1028,6 +1028,9 @@ mod tests {
         let ret = db.ingest_external_file(&[sst_dir.path().join("2333.sst")], &IngestExternalFileOptions::default());
         assert!(ret.is_ok(), "ingest external file fails: {:?}", ret);
 
+        // must have bg threads
+        assert!(Env::default_instance().get_thread_list().len() > 0);
+
         // safe shutdown
         assert!(db.pause_background_work().is_ok());
     }

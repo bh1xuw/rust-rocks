@@ -96,6 +96,23 @@ void rocks_env_lower_thread_pool_io_priority(rocks_env_t* env, int pool) {
   env->rep->LowerThreadPoolIOPriority(static_cast<Env::Priority>(pool));
 }
 
+rocks_thread_status_t** rocks_env_get_thread_list(rocks_env_t* env, size_t* len) {
+  std::vector<ThreadStatus> thread_list;
+
+  env->rep->GetThreadList(&thread_list);
+  *len = thread_list.size();
+
+  auto ptrs = new rocks_thread_status_t*[*len];
+  for (auto i = 0; i < *len; i++) {
+    ptrs[i] = new rocks_thread_status_t{thread_list[i]};
+  }
+  return ptrs;
+}
+
+void rocks_env_get_thread_list_destroy(rocks_thread_status_t** p) {
+  delete[] p;  // delete this array of pointers
+}
+
 uint64_t rocks_env_get_thread_id(rocks_env_t* env) { return env->rep->GetThreadID(); }
 }
 
