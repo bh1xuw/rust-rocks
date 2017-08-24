@@ -9,8 +9,9 @@ use std::str;
 use std::slice;
 use std::mem;
 use std::fmt;
+
 use error::Status;
-use db::DBRef;
+use db::{DBRef, ColumnFamilyHandle};
 use types::SequenceNumber;
 use table_properties::{TableProperties, TablePropertiesCollection};
 use options::CompressionType;
@@ -627,15 +628,16 @@ pub trait EventListener {
     /// returned value.
     fn on_memtable_sealed(&mut self, info: &MemTableInfo) {}
 
-    // A call-back function for RocksDB which will be called before
-    // a column family handle is deleted.
-    //
-    // Note that the this function must be implemented in a way such that
-    // it should not run for an extended period of time before the function
-    // returns.  Otherwise, RocksDB may be blocked.
-    // @param handle is a pointer to the column family handle to be deleted
-    // which will become a dangling pointer after the deletion.
-    // pub fn on_column_family_handle_deletion_started(&mut self, handle: *mut ()) {}
+    /// A call-back function for RocksDB which will be called before
+    /// a column family handle is deleted.
+    ///
+    /// Note that the this function must be implemented in a way such that
+    /// it should not run for an extended period of time before the function
+    /// returns.  Otherwise, RocksDB may be blocked.
+    ///
+    /// @param handle is a pointer to the column family handle to be deleted
+    /// which will become a dangling pointer after the deletion.
+    fn on_column_family_handle_deletion_started(&mut self, handle: &ColumnFamilyHandle) {}
 
     /// A call-back function for RocksDB which will be called after an external
     /// file is ingested using IngestExternalFile.
@@ -805,6 +807,16 @@ pub mod c {
     }
 
     #[no_mangle]
+    pub unsafe extern "C" fn rust_event_listener_on_column_family_handle_deletion_started(
+        l: *mut (),
+        handle: *mut ll::rocks_column_family_handle_t,
+    ) {
+        let listener = l as *mut Box<EventListener>;
+        let cf = ColumnFamilyHandle::from_ll(handle);
+        (*listener).on_column_family_handle_deletion_started(&cf);
+    }
+
+    #[no_mangle]
     pub unsafe extern "C" fn rust_event_listener_on_external_file_ingested(
         l: *mut (),
         db: *mut (), // DB**
@@ -875,6 +887,7 @@ mod tests {
         table_file_creation_started_called: usize,
         on_memtable_sealed_called: usize,
         on_external_file_ingested_called: usize,
+        on_column_family_handle_deletion_started_called: usize,
     }
 
     impl Drop for MyEventListener {
@@ -885,6 +898,9 @@ mod tests {
                     self.table_file_creation_started_called * self.on_memtable_sealed_called *
                     self.on_external_file_ingested_called > 0
             );
+
+            // FIXME: seems default cf is deleted twice
+            assert!(self.on_column_family_handle_deletion_started_called > 0);
 
             // assert!(false);
             // FIXME: must assert drop is called
@@ -930,6 +946,11 @@ mod tests {
         fn on_memtable_sealed(&mut self, info: &MemTableInfo) {
             assert!(info.num_entries() > 0);
             self.on_memtable_sealed_called += 1;
+        }
+
+        fn on_column_family_handle_deletion_started(&mut self, handle: &ColumnFamilyHandle) {
+            assert_eq!(handle.id(), 0); // default cf
+            self.on_column_family_handle_deletion_started_called += 1;
         }
 
         fn on_external_file_ingested(&mut self, db: &DBRef, info: &ExternalFileIngestionInfo) {
@@ -983,6 +1004,12 @@ mod tests {
             }
         }
 
+        /*
+        let cf = db.create_column_family(&Default::default(), "index").unwrap();
+        cf.put(&Default::default(), b"test_idx", b"index_val").unwrap();
+        assert!(db.drop_column_family(&cf).is_ok());
+        */
+
         assert!(db.flush(&Default::default()).is_ok());
 
         // ingest an sst file
@@ -1004,5 +1031,4 @@ mod tests {
         // safe shutdown
         assert!(db.pause_background_work().is_ok());
     }
-
 }

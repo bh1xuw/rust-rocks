@@ -93,7 +93,7 @@ pub struct ColumnFamilyHandle {
 
 impl Drop for ColumnFamilyHandle {
     fn drop(&mut self) {
-        // this will not delete default CF
+        // this will not delete CF
         unsafe {
             ll::rocks_column_family_handle_destroy(self.raw);
         }
@@ -886,6 +886,17 @@ impl<'a> DBRef<'a> {
                     owned: true,
                 }
             })
+        }
+    }
+
+    /// Drop a column family specified by column_family handle. This call
+    /// only records a drop record in the manifest and prevents the column
+    /// family from flushing and compacting.
+    pub fn drop_column_family(&self, column_family: &ColumnFamilyHandle) -> Result<()> {
+        let mut status = ptr::null_mut::<ll::rocks_status_t>();
+        unsafe {
+            ll::rocks_db_drop_column_family(self.raw(), column_family.raw(), &mut status);
+            Status::from_ll(status)
         }
     }
 

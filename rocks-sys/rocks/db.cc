@@ -145,7 +145,6 @@ rocks_column_family_handle_t* rocks_db_create_column_family(rocks_db_t* db,
   return handle;
 }
 
-// FIXME: seem unused
 rocks_column_family_handle_t* rocks_db_default_column_family(rocks_db_t* db) {
   return new rocks_column_family_handle_t{db->rep->DefaultColumnFamily()};
 }
@@ -160,14 +159,11 @@ void rocks_db_destroy_column_family_handle(rocks_db_t* db, rocks_column_family_h
   delete handle;
 }
 
+// NOTE: never delete handle-rep, since it'll be deleted by DestroyColumnFamilyHandle
 void rocks_column_family_handle_destroy(rocks_column_family_handle_t* handle) {
   // if already freed by rocks_db_destroy_column_family_handle
   if (handle == nullptr) {
     return;
-  }
-  // if this is not default CF
-  if (handle->rep->GetID() != 0) {
-    delete handle->rep;
   }
   delete handle;
 }

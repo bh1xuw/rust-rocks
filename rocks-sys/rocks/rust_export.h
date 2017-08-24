@@ -141,6 +141,10 @@ extern void rust_event_listener_on_table_file_creation_started(void* l, const Ta
 
 extern void rust_event_listener_on_memtable_sealed(void* l, const MemTableInfo*);
 
+struct rocks_column_family_handle_t;
+
+extern void rust_event_listener_on_column_family_handle_deletion_started(void* l, rocks_column_family_handle_t*);
+
 extern void rust_event_listener_on_external_file_ingested(void* l, DB**, const ExternalFileIngestionInfo*);
 
 struct rocks_status_t;

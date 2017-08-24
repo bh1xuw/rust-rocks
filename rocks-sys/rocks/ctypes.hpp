@@ -516,7 +516,9 @@ struct rocks_event_listener_t : public EventListener {
 
   void OnMemTableSealed(const MemTableInfo& info) override { rust_event_listener_on_memtable_sealed(this->obj, &info); }
 
-  void OnColumnFamilyHandleDeletionStarted(ColumnFamilyHandle* handle) override {}
+  void OnColumnFamilyHandleDeletionStarted(ColumnFamilyHandle* handle) override {
+    rust_event_listener_on_column_family_handle_deletion_started(this->obj, new rocks_column_family_handle_t{handle});
+  }
 
   void OnExternalFileIngested(DB* db, const ExternalFileIngestionInfo& info) override {
     rust_event_listener_on_external_file_ingested(this->obj, &db, &info);
