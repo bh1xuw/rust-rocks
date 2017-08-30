@@ -47,7 +47,7 @@ impl PersistentCache {
         env: &Env,
         path: P,
         size: u64,
-        log: &Logger,
+        log: Option<&Logger>,
         optimized_for_nvm: bool,
     ) -> Result<PersistentCache> {
         let path_str = path.as_ref().to_str().expect("valid utf8");
@@ -58,7 +58,7 @@ impl PersistentCache {
                 path_str.as_ptr() as *const _,
                 path_str.len(),
                 size,
-                log.raw(),
+                log.map(|logger| logger.raw()).unwrap_or_else(ptr::null_mut),
                 optimized_for_nvm as u8,
                 &mut status,
             );
@@ -86,11 +86,11 @@ impl PersistentCache {
 #[test]
 fn test_persistent_cache() {
     let tmp_dir = ::tempdir::TempDir::new_in("", "rocks").unwrap();
-    let logger = Env::default_instance()
-        .create_logger(tmp_dir.path().join("test.logfiles"))
-        .unwrap();
+    // let logger = Env::default_instance()
+    //     .create_logger(tmp_dir.path().join("test.logfiles"))
+    //     .unwrap();
     // NOTE: from RocksdB, size should be big enough
-    let pcache = PersistentCache::new(Env::default_instance(), tmp_dir.path(), 1 << 30, &logger, true).unwrap();
+    let pcache = PersistentCache::new(Env::default_instance(), tmp_dir.path(), 1 << 30, None, true).unwrap();
 
     assert!(format!("{:?}", pcache).contains("is_compressed: 1"));
 }

@@ -44,7 +44,8 @@ rocks_persistent_cache_t* rocks_new_persistent_cache(const rocks_env_t* env, con
                                                      uint64_t size, const rocks_logger_t* log,
                                                      unsigned char optimized_for_nvm, rocks_status_t** status) {
   auto ret = new rocks_persistent_cache_t;
-  auto st = NewPersistentCache(env->rep, std::string(path, path_len), size, log->rep, optimized_for_nvm, &ret->rep);
+  auto logger = log == nullptr ? nullptr : log->rep;
+  auto st = NewPersistentCache(env->rep, std::string(path, path_len), size, logger, optimized_for_nvm, &ret->rep);
   if (SaveError(status, std::move(st))) {
     delete ret;
     return nullptr;

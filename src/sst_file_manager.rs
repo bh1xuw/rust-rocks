@@ -3,24 +3,31 @@
 
 use std::path::Path;
 
+use rocks_sys as ll;
+
 use env::Env;
 use env::Logger;
 use error::Status;
+use super::Result;
 
 /// SstFileManager is used to track SST files in the DB and control there
 /// deletion rate.
+///
 /// All SstFileManager public functions are thread-safe.
 pub struct SstFileManager;
 
+unsafe impl Sync for SstFileManager {}
+unsafe impl Send for SstFileManager {}
+
 
 impl SstFileManager {
-    pub fn new(
-        env: Env,
-        info_log: Option<Logger>,
-        trash_dir: &Path,
+    pub fn new<P: AsRef<Path>>(
+        env: &Env,
+        info_log: Option<&Logger>,
+        trash_dir: P,
         rate_bytes_per_sec: i64,
         delete_existing_trash: bool,
-    ) -> Result<SstFileManager, Status> {
+    ) -> Result<SstFileManager> {
         unimplemented!()
     }
 }
