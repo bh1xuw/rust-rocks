@@ -1,6 +1,6 @@
 [package]
 name = "rocks"
-version = "0.1.3"
+version = "0.1.4"
 authors = ["BH1XUW <bh1xuw@gmail.com>"]
 description = "RocksDB bindings for Rust."
 repository = "https://github.com/bh1xuw/rust-rocks"
@@ -19,7 +19,7 @@ travis-ci = { repository = "bh1xuw/rust-rocks", branch = "master" }
 
 [dependencies]
 lazy_static = "0.2"
-rocks-sys = { path = "rocks-sys", version = "0.1.3" }
+rocks-sys = { path = "rocks-sys", version = "0.1.4" }
 
 [dev-dependencies]
 tempdir = "0.3"

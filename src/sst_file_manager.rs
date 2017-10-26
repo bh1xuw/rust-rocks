@@ -3,11 +3,8 @@
 
 use std::path::Path;
 
-use rocks_sys as ll;
-
 use env::Env;
 use env::Logger;
-use error::Status;
 use super::Result;
 
 /// SstFileManager is used to track SST files in the DB and control there
@@ -18,7 +15,6 @@ pub struct SstFileManager;
 
 unsafe impl Sync for SstFileManager {}
 unsafe impl Send for SstFileManager {}
-
 
 impl SstFileManager {
     pub fn new<P: AsRef<Path>>(
