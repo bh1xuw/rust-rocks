@@ -105,6 +105,8 @@ pub enum Tickers {
     CompactionKeyDropUser,
     /// all keys in range were deleted.
     CompactionRangeDelDropObsolete,
+    // Deletions obsoleted before bottom level due to file gap optimization.
+    CompactionOptimizedDelDropObsolete,
 
     /// Number of keys written to the database via the Put and Write call's
     NumberKeysWritten,
@@ -277,6 +279,7 @@ impl fmt::Display for Tickers {
             CompactionKeyDropRangeDel => "rocksdb.compaction.key.drop.range_del",
             CompactionKeyDropUser => "rocksdb.compaction.key.drop.user",
             CompactionRangeDelDropObsolete => "rocksdb.compaction.range_del.drop.obsolete",
+            CompactionOptimizedDelDropObsolete => "rocksdb.compaction.optimized.del.drop.obsolete",
             NumberKeysWritten => "rocksdb.number.keys.written",
             NumberKeysRead => "rocksdb.number.keys.read",
             NumberKeysUpdated => "rocksdb.number.keys.updated",

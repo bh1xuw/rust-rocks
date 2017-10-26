@@ -9,7 +9,7 @@ Make RocksDB really rocks!
 
 ## How to compile
 
-Link against: RocksDB 5.7.2.
+Link against: RocksDB 5.8.0.
 
 tests pass under:
 

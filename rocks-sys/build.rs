@@ -298,13 +298,19 @@ fn main() {
 
     imp::build();
 
-    ::gcc::Build::new()
+    let mut build = ::gcc::Build::new();
+
+    #[cfg(feature = "static-link")]
+    {
+        build.include("rocksdb/include");
+    }
+
+    build
         .cpp(true)
         .pic(true)
         .opt_level(2)
         .warnings(false)
         .flag("-std=c++11")
-        .include("rocksdb/include")
         .include(".")
         .file("rocks/cache.cc")
         .file("rocks/comparator.cc")

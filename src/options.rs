@@ -260,11 +260,11 @@ impl ColumnFamilyOptions {
     /// REQUIRES: The client must ensure that the comparator supplied
     /// here has the same name and orders keys *exactly* the same as the
     /// comparator provided to previous open calls on the same DB.
-    pub fn comparator(self, val: Box<Comparator>) -> Self {
+    pub fn comparator<T: Comparator>(self, val: &'static T) -> Self {
         unsafe {
             // FIXME: mem leaks, CFOptions.comparator is a raw pointer,
             // not a shared_ptr
-            let raw_ptr = Box::into_raw(Box::new(val)); // Box<Box<Comparator>>
+            let raw_ptr = Box::into_raw(Box::new(val as &Comparator));
             ll::rocks_cfoptions_set_comparator_by_trait(self.raw, raw_ptr as *mut _);
         }
         self

@@ -72,7 +72,7 @@ pub mod c {
 
     #[no_mangle]
     pub unsafe extern "C" fn rust_comparator_compare(cp: *mut (), a: *const &[u8], b: *const &[u8]) -> c_int {
-        let comparator = cp as *mut Box<Comparator>;
+        let comparator = cp as *mut &Comparator;
         // FIXME: 8 byte Ordering
         mem::transmute::<_, i8>((*comparator).compare(*a, *b)) as c_int
     }
@@ -80,14 +80,14 @@ pub mod c {
 
     #[no_mangle]
     pub unsafe extern "C" fn rust_comparator_equal(cp: *mut (), a: *const &[u8], b: *const &[u8]) -> c_char {
-        let comparator = cp as *mut Box<Comparator>;
+        let comparator = cp as *mut &Comparator;
         ((*comparator).equal(*a, *b)) as c_char
     }
 
 
     #[no_mangle]
     pub unsafe extern "C" fn rust_comparator_name(cp: *mut ()) -> *const c_char {
-        let comparator = cp as *mut Box<Comparator>;
+        let comparator = cp as *mut &Comparator;
         (*comparator).name().as_ptr() as *const _
     }
 
@@ -98,7 +98,7 @@ pub mod c {
         limit: *const &[u8],
     ) {
         // Slice&
-        let comparator = cp as *mut Box<Comparator>;
+        let comparator = cp as *mut &Comparator;
 
         let start_ptr = ll::cxx_string_data(start as *const _);
         let start_len = ll::cxx_string_size(start as *const _);
@@ -115,7 +115,7 @@ pub mod c {
     #[no_mangle]
     pub unsafe extern "C" fn rust_comparator_find_short_successor(cp: *mut (), key: *mut ()) {
         // std::string*
-        let comparator = cp as *mut Box<Comparator>;
+        let comparator = cp as *mut &Comparator;
 
         let key_ptr = ll::cxx_string_data(key as *const _);
         let key_len = ll::cxx_string_size(key as *const _);
@@ -130,7 +130,7 @@ pub mod c {
     #[no_mangle]
     pub unsafe extern "C" fn rust_comparator_drop(op: *mut ()) {
         assert!(!op.is_null());
-        let operator = op as *mut Box<Comparator>;
+        let operator = op as *mut &Comparator;
         Box::from_raw(operator);
     }
 }
@@ -193,26 +193,31 @@ mod tests {
         assert!(first > second);
     }
 
+
+    pub struct MyComparator;
+
+    impl Comparator for MyComparator {
+        fn compare(&self, a: &[u8], b: &[u8]) -> Ordering {
+            let sa = unsafe { str::from_utf8_unchecked(a) };
+            let sb = unsafe { str::from_utf8_unchecked(b) };
+            sa.to_lowercase().cmp(&sb.to_lowercase())
+        }
+    }
+
+    lazy_static! {
+        static ref CMP: MyComparator = {
+            MyComparator
+        };
+    }
+
     #[test]
     fn custom_lowercase_comparator() {
         let tmp_dir = ::tempdir::TempDir::new_in(".", "rocks").unwrap();
 
-        pub struct MyComparator;
-
-        impl Comparator for MyComparator {
-            fn compare(&self, a: &[u8], b: &[u8]) -> Ordering {
-                let sa = unsafe { str::from_utf8_unchecked(a) };
-                let sb = unsafe { str::from_utf8_unchecked(b) };
-                sa.to_lowercase().cmp(&sb.to_lowercase())
-            }
-        }
-
-        let db = DB::open(
-            Options::default()
-                .map_db_options(|db| db.create_if_missing(true))
-                .map_cf_options(|cf| cf.comparator(Box::new(MyComparator))),
-            tmp_dir,
-        ).unwrap();
+        let opts = Options::default()
+            .map_db_options(|db| db.create_if_missing(true))
+            .map_cf_options(|cf| cf.comparator(&*CMP));
+        let db = DB::open(opts, tmp_dir).unwrap();
 
         assert!(db.put(&WriteOptions::default(), b"Key1", b"").is_ok());
         assert!(db.put(&WriteOptions::default(), b"kEY3", b"").is_ok());
