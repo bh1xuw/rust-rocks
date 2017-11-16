@@ -1441,7 +1441,7 @@ impl DBOptions {
     /// Default: false
     pub fn create_missing_column_families(self, val: bool) -> Self {
         unsafe {
-            ll::rocks_dboptions_set_create_if_missing(self.raw, val as u8);
+            ll::rocks_dboptions_set_create_missing_column_families(self.raw, val as u8);
         }
         self
     }
