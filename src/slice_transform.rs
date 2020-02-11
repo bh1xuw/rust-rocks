@@ -55,7 +55,7 @@ pub mod c {
         ret_value: *mut *const c_char,
         ret_len: *mut usize,
     ) {
-        let trans = t as *mut Box<SliceTransform>;
+        let trans = t as *mut Box<dyn SliceTransform>;
         let ret = (*trans).transform(key);
         *ret_value = ret.as_ptr() as *const _;
         *ret_len = ret.len();
@@ -63,19 +63,19 @@ pub mod c {
 
     #[no_mangle]
     pub unsafe extern "C" fn rust_slice_transform_name(t: *mut ()) -> *const c_char {
-        let trans = t as *mut Box<SliceTransform>;
+        let trans = t as *mut Box<dyn SliceTransform>;
         (*trans).name().as_ptr() as *const _
     }
 
     #[no_mangle]
     pub unsafe extern "C" fn rust_slice_transform_in_domain(t: *mut (), key: &&[u8]) -> c_char {
-        let trans = t as *mut Box<SliceTransform>;
+        let trans = t as *mut Box<dyn SliceTransform>;
         (*trans).in_domain(key) as c_char
     }
 
     #[no_mangle]
     pub unsafe extern "C" fn rust_slice_transform_drop(t: *mut ()) {
-        let trans = t as *mut Box<SliceTransform>;
+        let trans = t as *mut Box<dyn SliceTransform>;
         Box::from_raw(trans);
     }
 }

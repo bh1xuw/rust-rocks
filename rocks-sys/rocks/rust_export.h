@@ -155,10 +155,12 @@ extern void rust_compaction_event_listener_drop(void* l);
 
 extern void* rust_event_listener_get_compaction_event_listener(void* l);
 
+/*
 // CompactionEventListener
 extern void rust_compaction_event_listener_on_compaction(
     void* l, int32_t level, const Slice* key, CompactionEventListener::CompactionListenerValueType value_type,
     const Slice* existing_value, uint64_t sn, unsigned char is_new);
+*/
 
 #ifdef __cplusplus
 }

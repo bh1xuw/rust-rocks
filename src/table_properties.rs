@@ -501,28 +501,28 @@ pub mod c {
         file_size: u64,
     ) {
         assert!(!c.is_null());
-        let collector = c as *mut Box<TablePropertiesCollector>;
+        let collector = c as *mut Box<dyn TablePropertiesCollector>;
         (*collector).add_user_key(key, value, mem::transmute(type_), SequenceNumber(seq), file_size);
     }
 
     #[no_mangle]
     pub unsafe extern "C" fn rust_table_props_collector_finish(c: *mut (), props: *mut UserCollectedProperties) {
         assert!(!c.is_null());
-        let collector = c as *mut Box<TablePropertiesCollector>;
+        let collector = c as *mut Box<dyn TablePropertiesCollector>;
         props.as_mut().map(|p| (*collector).finish(p));
     }
 
     #[no_mangle]
     pub unsafe extern "C" fn rust_table_props_collector_name(c: *mut ()) -> *const c_char {
         assert!(!c.is_null());
-        let collector = c as *mut Box<TablePropertiesCollector>;
+        let collector = c as *mut Box<dyn TablePropertiesCollector>;
         (*collector).name().as_ptr() as *const _
     }
 
     #[no_mangle]
     pub unsafe extern "C" fn rust_table_props_collector_need_compact(c: *mut ()) -> c_uchar {
         assert!(!c.is_null());
-        let collector = c as *mut Box<TablePropertiesCollector>;
+        let collector = c as *mut Box<dyn TablePropertiesCollector>;
         (*collector).need_compact() as c_uchar
     }
 
@@ -530,7 +530,7 @@ pub mod c {
     #[no_mangle]
     pub unsafe extern "C" fn rust_table_props_collector_drop(f: *mut ()) {
         assert!(!f.is_null());
-        let filter = f as *mut Box<TablePropertiesCollector>;
+        let filter = f as *mut Box<dyn TablePropertiesCollector>;
         Box::from_raw(filter);
     }
 
@@ -538,9 +538,9 @@ pub mod c {
     pub unsafe extern "C" fn rust_table_props_collector_factory_new_collector(
         f: *mut (),
         cf_id: u32,
-    ) -> *mut Box<TablePropertiesCollector> {
+    ) -> *mut Box<dyn TablePropertiesCollector> {
         assert!(!f.is_null());
-        let factory = f as *mut Box<TablePropertiesCollectorFactory>;
+        let factory = f as *mut Box<dyn TablePropertiesCollectorFactory>;
         let collector = (*factory).new_collector(Context { column_family_id: cf_id });
         Box::into_raw(Box::new(collector))
     }
@@ -548,14 +548,14 @@ pub mod c {
     #[no_mangle]
     pub unsafe extern "C" fn rust_table_props_collector_factory_name(f: *mut ()) -> *const c_char {
         assert!(!f.is_null());
-        let factory = f as *mut Box<TablePropertiesCollectorFactory>;
+        let factory = f as *mut Box<dyn TablePropertiesCollectorFactory>;
         (*factory).name().as_ptr() as *const _
     }
 
     #[no_mangle]
     pub unsafe extern "C" fn rust_table_props_collector_factory_drop(f: *mut ()) {
         assert!(!f.is_null());
-        let filter = f as *mut Box<TablePropertiesCollectorFactory>;
+        let filter = f as *mut Box<dyn TablePropertiesCollectorFactory>;
         Box::from_raw(filter);
     }
 }

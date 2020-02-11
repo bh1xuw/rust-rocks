@@ -144,16 +144,13 @@ pub trait CompactionFilter {
         Decision::Keep
     }
 
-    /// By default, compaction will only call Filter() on keys written after the
-    /// most recent call to GetSnapshot(). However, if the compaction filter
-    /// overrides IgnoreSnapshots to make it return true, the compaction filter
-    /// will be called even if the keys were written before the last snapshot.
-    /// This behavior is to be used only when we want to delete a set of keys
-    /// irrespective of snapshots. In particular, care should be taken
-    /// to understand that the values of thesekeys will change even if we are
-    /// using a snapshot.
+    /// This function is deprecated. Snapshots will always be ignored for
+    /// compaction filters, because we realized that not ignoring snapshots doesn't
+    /// provide the gurantee we initially thought it would provide. Repeatable
+    /// reads will not be guaranteed anyway. If you override the function and
+    /// returns false, we will fail the compaction.
     fn ignore_snapshots(&self) -> bool {
-        false
+        true
     }
 
     /// Returns a name that identifies this compaction filter.
@@ -198,7 +195,7 @@ pub mod c {
         key: &&[u8], // *Slice
         value_type: ValueType,
         existing_value: &&[u8], // *Slice
-        new_value: *mut (), // *std::string
+        new_value: *mut (),     // *std::string
         skip_until: *mut (),
     ) -> c_int {
         assert!(!f.is_null());
@@ -231,20 +228,12 @@ pub mod c {
         let filter = f as *mut Box<CompactionFilter>;
         (*filter).name().as_ptr() as *const _
     }
-
-    #[no_mangle]
-    pub unsafe extern "C" fn rust_compaction_filter_ignore_snapshots(f: *mut ()) -> c_uchar {
-        assert!(!f.is_null());
-        let filter = f as *mut Box<CompactionFilter>;
-        (*filter).ignore_snapshots() as c_uchar
-    }
 }
-
 
 #[cfg(test)]
 mod tests {
-    use super::*;
     use super::super::rocksdb::*;
+    use super::*;
 
     pub struct MyCompactionFilter;
 
@@ -272,7 +261,8 @@ mod tests {
                 .map_db_options(|db| db.create_if_missing(true))
                 .map_cf_options(|cf| cf.compaction_filter(Box::new(MyCompactionFilter))),
             &tmp_dir,
-        ).unwrap();
+        )
+        .unwrap();
 
         println!("compact and try remove range");
         assert!(db.put(&WriteOptions::default(), b"key-0", b"23333").is_ok());
@@ -287,46 +277,37 @@ mod tests {
         assert!(db.put(&WriteOptions::default(), b"key-8", b"23333").is_ok());
 
         println!("compact and delete");
-        assert!(
-            db.put(&WriteOptions::default(), b"will-delete-me", b"TO-BE-DELETED")
-                .is_ok()
-        );
+        assert!(db
+            .put(&WriteOptions::default(), b"will-delete-me", b"TO-BE-DELETED")
+            .is_ok());
 
         println!("compact and change value");
-        assert!(
-            db.put(&WriteOptions::default(), b"will-fix-me", b"an-typo-in-value")
-                .is_ok()
-        );
+        assert!(db
+            .put(&WriteOptions::default(), b"will-fix-me", b"an-typo-in-value")
+            .is_ok());
 
         // now compact full range
         let ret = db.compact_range(&Default::default(), ..);
         assert!(ret.is_ok(), "error: {:?}", ret);
 
         assert!(db.get(&ReadOptions::default(), b"will-delete-me").is_err());
-        assert!(
-            db.get(&ReadOptions::default(), b"will-delete-me")
-                .unwrap_err()
-                .is_not_found()
-        );
+        assert!(db
+            .get(&ReadOptions::default(), b"will-delete-me")
+            .unwrap_err()
+            .is_not_found());
 
         assert!(db.get(&ReadOptions::default(), b"key-0").is_err());
-        assert!(
-            db.get(&ReadOptions::default(), b"key-0")
-                .unwrap_err()
-                .is_not_found()
-        );
+        assert!(db.get(&ReadOptions::default(), b"key-0").unwrap_err().is_not_found());
 
         assert!(db.get(&ReadOptions::default(), b"key-4").is_err());
-        assert!(
-            db.get(&ReadOptions::default(), b"key-4")
-                .unwrap_err()
-                .is_not_found()
-        );
+        assert!(db.get(&ReadOptions::default(), b"key-4").unwrap_err().is_not_found());
 
         assert_eq!(db.get(&ReadOptions::default(), b"key-5").unwrap(), b"23333");
 
-        assert_eq!(db.get(&ReadOptions::default(), b"will-fix-me").unwrap(), b"a-typo-not-in-value");
-
+        assert_eq!(
+            db.get(&ReadOptions::default(), b"will-fix-me").unwrap(),
+            b"a-typo-not-in-value"
+        );
 
         drop(db);
         drop(tmp_dir);

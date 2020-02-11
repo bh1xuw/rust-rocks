@@ -289,7 +289,7 @@ impl WriteBatch {
         let mut status = ptr::null_mut();
         unsafe {
             // Box<&mut WriteBatchHandler>
-            let raw_ptr = Box::into_raw(Box::new(handler as &mut WriteBatchHandler)) as *mut c_void;
+            let raw_ptr = Box::into_raw(Box::new(handler as &mut dyn WriteBatchHandler)) as *mut c_void;
             ll::rocks_writebatch_iterate(self.raw, raw_ptr, &mut status);
             FromRaw::from_ll(status)
         }
@@ -484,21 +484,21 @@ pub mod c {
         value: &&[u8],
     ) {
         assert!(!h.is_null());
-        let handler = h as *mut &mut WriteBatchHandler;
+        let handler = h as *mut &mut dyn WriteBatchHandler;
         (*handler).put_cf(column_family_id, key, value);
     }
 
     #[no_mangle]
     pub unsafe extern "C" fn rust_write_batch_handler_delete_cf(h: *mut (), column_family_id: u32, key: &&[u8]) {
         assert!(!h.is_null());
-        let handler = h as *mut &mut WriteBatchHandler;
+        let handler = h as *mut &mut dyn WriteBatchHandler;
         (*handler).delete_cf(column_family_id, key);
     }
 
     #[no_mangle]
     pub unsafe extern "C" fn rust_write_batch_handler_single_delete_cf(h: *mut (), column_family_id: u32, key: &&[u8]) {
         assert!(!h.is_null());
-        let handler = h as *mut &mut WriteBatchHandler;
+        let handler = h as *mut &mut dyn WriteBatchHandler;
         (*handler).single_delete_cf(column_family_id, key);
     }
 
@@ -510,7 +510,7 @@ pub mod c {
         end_key: &&[u8],
     ) {
         assert!(!h.is_null());
-        let handler = h as *mut &mut WriteBatchHandler;
+        let handler = h as *mut &mut dyn WriteBatchHandler;
         (*handler).delete_range_cf(column_family_id, begin_key, end_key);
     }
 
@@ -522,56 +522,56 @@ pub mod c {
         value: &&[u8],
     ) {
         assert!(!h.is_null());
-        let handler = h as *mut &mut WriteBatchHandler;
+        let handler = h as *mut &mut dyn WriteBatchHandler;
         (*handler).merge_cf(column_family_id, key, value);
     }
 
     #[no_mangle]
     pub unsafe extern "C" fn rust_write_batch_handler_log_data(h: *mut (), blob: &&[u8]) {
         assert!(!h.is_null());
-        let handler = h as *mut &mut WriteBatchHandler;
+        let handler = h as *mut &mut dyn WriteBatchHandler;
         (*handler).log_data(blob);
     }
 
     #[no_mangle]
     pub unsafe extern "C" fn rust_write_batch_handler_mark_begin_prepare(h: *mut ()) {
         assert!(!h.is_null());
-        let handler = h as *mut &mut WriteBatchHandler;
+        let handler = h as *mut &mut dyn WriteBatchHandler;
         (*handler).mark_begin_prepare();
     }
 
     #[no_mangle]
     pub unsafe extern "C" fn rust_write_batch_handler_mark_end_prepare(h: *mut (), xid: &&[u8]) {
         assert!(!h.is_null());
-        let handler = h as *mut &mut WriteBatchHandler;
+        let handler = h as *mut &mut dyn WriteBatchHandler;
         (*handler).mark_end_prepare(xid);
     }
 
     #[no_mangle]
     pub unsafe extern "C" fn rust_write_batch_handler_mark_rollback(h: *mut (), xid: &&[u8]) {
         assert!(!h.is_null());
-        let handler = h as *mut &mut WriteBatchHandler;
+        let handler = h as *mut &mut dyn WriteBatchHandler;
         (*handler).mark_rollback(xid);
     }
 
     #[no_mangle]
     pub unsafe extern "C" fn rust_write_batch_handler_mark_commit(h: *mut (), xid: &&[u8]) {
         assert!(!h.is_null());
-        let handler = h as *mut &mut WriteBatchHandler;
+        let handler = h as *mut &mut dyn WriteBatchHandler;
         (*handler).mark_commit(xid);
     }
 
     #[no_mangle]
     pub unsafe extern "C" fn rust_write_batch_handler_will_continue(h: *mut ()) -> c_uchar {
         assert!(!h.is_null());
-        let handler = h as *mut &mut WriteBatchHandler;
+        let handler = h as *mut &mut dyn WriteBatchHandler;
         (*handler).will_continue() as c_uchar
     }
 
     #[no_mangle]
     pub unsafe extern "C" fn rust_write_batch_handler_drop(h: *mut ()) {
         assert!(!h.is_null());
-        let handler = h as *mut &mut WriteBatchHandler;
+        let handler = h as *mut &mut dyn WriteBatchHandler;
         Box::from_raw(handler);
     }
 }

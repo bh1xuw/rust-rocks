@@ -3,6 +3,8 @@
 #ifndef __RUST_ROCSK_SYS_H____
 #define __RUST_ROCSK_SYS_H____
 
+#include <iostream>
+
 #include "rocksdb/cache.h"
 #include "rocksdb/compaction_filter.h"
 #include "rocksdb/db.h"
@@ -24,10 +26,9 @@
 #include "rocksdb/transaction_log.h"
 #include "rocksdb/utilities/debug.h"
 #include "rocksdb/write_buffer_manager.h"
-
 #include "rust_export.h"
 
-#include <iostream>
+using std::shared_ptr;
 
 using namespace rocksdb;
 
@@ -256,7 +257,7 @@ struct rocks_writebatch_handler_t : public WriteBatch::Handler {
 
   void LogData(const Slice& blob) override { rust_write_batch_handler_log_data(this->obj, &blob); }
 
-  Status MarkBeginPrepare() override {
+  Status MarkBeginPrepare(bool = false) override {
     rust_write_batch_handler_mark_begin_prepare(this->obj);
     return Status::OK();
   }
@@ -470,6 +471,7 @@ struct rocks_key_version_collection_t {
 };
 
 /* listener */
+/*
 struct rocks_compaction_event_listener_t : public CompactionEventListener {
   void* obj;  // rust *mut &mut TraitObj
 
@@ -482,10 +484,11 @@ struct rocks_compaction_event_listener_t : public CompactionEventListener {
     rust_compaction_event_listener_on_compaction(this->obj, level, &key, value_type, &existing_value, sn, is_new);
   }
 };
+*/
 
 struct rocks_event_listener_t : public EventListener {
   void* obj;  // rust Box<trait obj>
-  std::vector<std::unique_ptr<rocks_compaction_event_listener_t>> compaction_listeners;
+  // std::vector<std::unique_ptr<rocks_compaction_event_listener_t>> compaction_listeners;
 
   rocks_event_listener_t(void* trait_obj) : obj(trait_obj) {}
 
@@ -537,6 +540,7 @@ struct rocks_event_listener_t : public EventListener {
     }
   }
 
+  /*
   CompactionEventListener* GetCompactionEventListener() override {
     auto trait_obj = rust_event_listener_get_compaction_event_listener(this->obj);
     if (trait_obj == nullptr) {
@@ -546,6 +550,7 @@ struct rocks_event_listener_t : public EventListener {
         std::unique_ptr<rocks_compaction_event_listener_t>(new rocks_compaction_event_listener_t(trait_obj)));
     return &*this->compaction_listeners.back();
   }
+  */
 };
 
 /* thread_status */

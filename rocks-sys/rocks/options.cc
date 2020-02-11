@@ -315,10 +315,12 @@ void rocks_cfoptions_set_hash_link_list_rep(rocks_cfoptions_t* opt, size_t bucke
   opt->rep.memtable_factory.reset(rocksdb::NewHashLinkListRepFactory(bucket_count));
 }
 
+/*
 void rocks_cfoptions_set_hash_cuckoo_rep(rocks_cfoptions_t* opt, size_t write_buffer_size, size_t average_data_size,
                                          unsigned int hash_function_count) {
   opt->rep.memtable_factory.reset(NewHashCuckooRepFactory(write_buffer_size, average_data_size, hash_function_count));
 }
+*/
 
 // since default is empty vector, add is ok
 void rocks_cfoptions_add_table_properties_collector_factories_by_trait(rocks_cfoptions_t* opt,
@@ -593,9 +595,12 @@ void rocks_dboptions_set_allow_ingest_behind(rocks_dboptions_t* opt, unsigned ch
   opt->rep.allow_ingest_behind = v;
 }
 
+/*
+// Deprecated by two_write_queues
 void rocks_dboptions_set_concurrent_prepare(rocks_dboptions_t* opt, unsigned char v) {
   opt->rep.concurrent_prepare = v;
 }
+*/
 
 void rocks_dboptions_set_manual_wal_flush(rocks_dboptions_t* opt, unsigned char v) { opt->rep.manual_wal_flush = v; }
 
@@ -782,9 +787,13 @@ void rocks_fifo_compaction_options_set_max_table_files_size(rocks_fifo_compactio
   fifo_opts->rep.max_table_files_size = size;
 }
 
+/*
+Remove ttl option from `CompactionOptionsFIFO`.
+The option has been deprecated and ttl in `ColumnFamilyOptions` is used instead.
 void rocks_fifo_compaction_options_set_ttl(rocks_fifo_compaction_options_t* fifo_opts, uint64_t val) {
   fifo_opts->rep.ttl = val;
 }
+*/
 
 void rocks_fifo_compaction_options_set_allow_compaction(rocks_fifo_compaction_options_t* fifo_opts, unsigned char val) {
   fifo_opts->rep.allow_compaction = val;

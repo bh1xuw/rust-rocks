@@ -18,7 +18,7 @@ include = [
 travis-ci = { repository = "bh1xuw/rust-rocks", branch = "master" }
 
 [dependencies]
-lazy_static = "0.2"
+lazy_static = "1.4"
 rocks-sys = { path = "rocks-sys", version = "0.1.4" }
 
 [dev-dependencies]

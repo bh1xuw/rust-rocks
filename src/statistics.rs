@@ -67,6 +67,13 @@ pub enum Tickers {
 
     /// \# of times bloom filter has avoided file reads.
     BloomFilterUseful,
+    /// # of times bloom FullFilter has not avoided the reads.
+    BloomFilterFullPositive,
+    /// # of times bloom FullFilter has not avoided the reads and data actually
+    /// exist.
+    BloomFilterFullTruePositive,
+
+    BloomFilterMicros,
 
     /// \# persistent cache hit
     PersistentCacheHit,
@@ -107,6 +114,8 @@ pub enum Tickers {
     CompactionRangeDelDropObsolete,
     // Deletions obsoleted before bottom level due to file gap optimization.
     CompactionOptimizedDelDropObsolete,
+    // If a compaction was cancelled in sfm to prevent ENOSPC
+    CompactionCancelled,
 
     /// Number of keys written to the database via the Put and Write call's
     NumberKeysWritten,
@@ -338,6 +347,10 @@ impl fmt::Display for Tickers {
             ReadAmpEstimateUsefulBytes => "rocksdb.read.amp.estimate.useful.bytes",
             ReadAmpTotalReadBytes => "rocksdb.read.amp.total.read.bytes",
             NumberRateLimiterDrains => "rocksdb.number.rate_limiter.drains",
+            BloomFilterFullPositive => "rocksdb.bloom.filter.full.positive",
+            BloomFilterFullTruePositive => "rocksdb.bloom.filter.full.true.positive",
+            BloomFilterMicros => "rocksdb.bloom.filter.micros",
+            CompactionCancelled => "rocksdb.compaction.cancelled",
         };
         write!(f, "{}", val)
     }
@@ -578,7 +591,7 @@ mod tests {
                 db.create_if_missing(true)
                 .statistics(Some(stat.clone())) // FIXME: is this the best way?
                 .rate_limiter(Some(RateLimiter::new(4096, // 4 KiB/s
-                                                    10_000, // 10 ms
+                                                    100_000, // 10 ms
                                                     10)))
             }),
             &tmp_dir,
@@ -599,6 +612,7 @@ mod tests {
         println!("st => {}", stat);
         assert!(stat.get_ticker_count(Tickers::BlockCacheBytesWrite) > 0);
         // this is the last ticker, since we set up rate limiter to a low value, this must be true
+        println!("debug rate limiter: {}", stat.get_ticker_count(Tickers::NumberRateLimiterDrains));
         assert!(stat.get_ticker_count(Tickers::NumberRateLimiterDrains) > 0);
 
         // a multiline string
