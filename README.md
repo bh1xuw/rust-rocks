@@ -83,7 +83,7 @@ Big picture:
   - [ ] appveyor integration for windows
 - [x] Zero-Copy between C++ part
   - [x] pinnable slice support
-  - [x] exports String/Vec<u8> to C++ via `assign`-style API
+  - [x] exports `String/Vec<u8>` to C++ via `assign`-style API
 - [ ] Full documentation with code examples
   - [x] good enough by copying C++ comments
   - [ ] rename C++ function names to rust name in doc comments

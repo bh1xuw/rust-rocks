@@ -22,5 +22,5 @@ pub trait FlushBlockPolicyFactory {
     ///
     /// Callers must delete the result after any database that is using the
     /// result has been closed.
-    fn new_flush_block_policy(&self, table_options: &BlockBasedTableOptions) -> Box<FlushBlockPolicy>;
+    fn new_flush_block_policy(&self, table_options: &BlockBasedTableOptions) -> Box<dyn FlushBlockPolicy>;
 }

@@ -666,7 +666,7 @@ pub trait EventListener {
 
     /// Factory method to return CompactionEventListener. If multiple listeners
     /// provides CompactionEventListner, only the first one will be used.
-    fn get_compaction_event_listener(&mut self) -> Option<&mut CompactionEventListener> {
+    fn get_compaction_event_listener(&mut self) -> Option<&mut dyn CompactionEventListener> {
         None
     }
 }
@@ -683,7 +683,7 @@ pub mod c {
 
     #[no_mangle]
     pub unsafe extern "C" fn rust_event_listener_drop(l: *mut ()) {
-        let listener = l as *mut Box<EventListener>;
+        let listener = l as *mut Box<dyn EventListener>;
         Box::from_raw(listener);
     }
 
@@ -715,7 +715,7 @@ pub mod c {
         db: *mut (), // DB**
         info: *mut ll::rocks_flush_job_info_t,
     ) {
-        let listener = l as *mut Box<EventListener>;
+        let listener = l as *mut Box<dyn EventListener>;
         let db_ref = mem::transmute::<_, DBRef>(db);
         let flush_job_info = flush_job_info_convert(info);
 
@@ -728,7 +728,7 @@ pub mod c {
         db: *mut (), // DB**
         info: *mut ll::rocks_flush_job_info_t,
     ) {
-        let listener = l as *mut Box<EventListener>;
+        let listener = l as *mut Box<dyn EventListener>;
         let db_ref = mem::transmute::<_, DBRef>(db);
         let flush_job_info = flush_job_info_convert(info);
 
@@ -740,7 +740,7 @@ pub mod c {
         l: *mut (),
         info: *mut ll::rocks_table_file_deletion_info_t,
     ) {
-        let listener = l as *mut Box<EventListener>;
+        let listener = l as *mut Box<dyn EventListener>;
         let info = TableFileDeletionInfo {
             db_name: {
                 let mut len = 0;
@@ -769,7 +769,7 @@ pub mod c {
         db: *mut (), // DB** <=> DBRef
         ci: *mut ll::rocks_compaction_job_info_t,
     ) {
-        let listener = l as *mut Box<EventListener>;
+        let listener = l as *mut Box<dyn EventListener>;
         let db_ref = mem::transmute::<_, DBRef>(db);
         let info = CompactionJobInfo {
             raw: ci,
@@ -784,7 +784,7 @@ pub mod c {
         l: *mut (),
         info: *mut ll::rocks_table_file_creation_info_t,
     ) {
-        let listener = l as *mut Box<EventListener>;
+        let listener = l as *mut Box<dyn EventListener>;
         let info = TableFileCreationInfo { raw: info };
         (*listener).on_table_file_created(&info);
     }
@@ -794,14 +794,14 @@ pub mod c {
         l: *mut (),
         info: *mut ll::rocks_table_file_creation_brief_info_t,
     ) {
-        let listener = l as *mut Box<EventListener>;
+        let listener = l as *mut Box<dyn EventListener>;
         let info = TableFileCreationBriefInfo { raw: info };
         (*listener).on_table_file_creation_started(&info);
     }
 
     #[no_mangle]
     pub unsafe extern "C" fn rust_event_listener_on_memtable_sealed(l: *mut (), info: *mut ll::rocks_mem_table_info_t) {
-        let listener = l as *mut Box<EventListener>;
+        let listener = l as *mut Box<dyn EventListener>;
         let info = MemTableInfo { raw: info };
         (*listener).on_memtable_sealed(&info);
     }
@@ -811,7 +811,7 @@ pub mod c {
         l: *mut (),
         handle: *mut ll::rocks_column_family_handle_t,
     ) {
-        let listener = l as *mut Box<EventListener>;
+        let listener = l as *mut Box<dyn EventListener>;
         let cf = ColumnFamilyHandle::from_ll(handle);
         (*listener).on_column_family_handle_deletion_started(&cf);
     }
@@ -822,7 +822,7 @@ pub mod c {
         db: *mut (), // DB**
         info: *const ll::rocks_external_file_ingestion_info_t,
     ) {
-        let listener = l as *mut Box<EventListener>;
+        let listener = l as *mut Box<dyn EventListener>;
         let db_ref = mem::transmute::<_, DBRef>(db);
         let info = ExternalFileIngestionInfo { raw: info };
         (*listener).on_external_file_ingested(&db_ref, &info);
@@ -834,7 +834,7 @@ pub mod c {
         reason: BackgroundErrorReason,
         bg_error: *mut ll::rocks_status_t,
     ) -> u8 {
-        let listener = l as *mut Box<EventListener>;
+        let listener = l as *mut Box<dyn EventListener>;
         let result = Result::from_ll(bg_error);
         let ret = (*listener).on_background_error(reason, result.unwrap_err());
         if ret.is_ok() { 0 } else { 1 }
@@ -842,7 +842,7 @@ pub mod c {
 
     #[no_mangle]
     pub unsafe extern "C" fn rust_event_listener_get_compaction_event_listener(l: *mut ()) -> *mut () {
-        let listener = l as *mut Box<EventListener>;
+        let listener = l as *mut Box<dyn EventListener>;
         match (*listener).get_compaction_event_listener() {
             Some(mut_ref) => Box::into_raw(Box::new(mut_ref)) as *mut (),
             None => ptr::null_mut(),
@@ -852,7 +852,7 @@ pub mod c {
     // CompactionEventListener
     #[no_mangle]
     pub unsafe extern "C" fn rust_compaction_event_listener_drop(l: *mut ()) {
-        let compaction_listener = l as *mut &mut CompactionEventListener;
+        let compaction_listener = l as *mut &mut dyn CompactionEventListener;
         Box::from_raw(compaction_listener);
     }
 
@@ -866,7 +866,7 @@ pub mod c {
         sn: u64,
         is_new: u8,
     ) {
-        let compaction_listener = l as *mut &mut CompactionEventListener;
+        let compaction_listener = l as *mut &mut dyn CompactionEventListener;
         (*compaction_listener).on_compaction(level, key, value_type, existing_value, SequenceNumber(sn), is_new != 0)
     }
 }
@@ -963,8 +963,8 @@ mod tests {
             Err(bg_error)
         }
 
-        fn get_compaction_event_listener(&mut self) -> Option<&mut CompactionEventListener> {
-            static mut FUNC: &'static Fn(CompactionEvent) = &|event| {
+        fn get_compaction_event_listener(&mut self) -> Option<&mut dyn CompactionEventListener> {
+            static mut FUNC: &'static dyn Fn(CompactionEvent) = &|event| {
                 assert!(event.is_new);
                 // print here will suppress rust test's capture
                 // since it'll be called from C++

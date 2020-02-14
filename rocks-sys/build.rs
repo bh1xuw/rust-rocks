@@ -294,7 +294,7 @@ mod imp {
 fn main() {
     println!("cargo:rerun-if-changed=build.rs");
     println!("cargo:rerun-if-changed=./");
-    println!("cargo:rerun-if-changed=./rocks");
+    println!("cargo:rerun-if-changed=./rocks/");
 
     imp::build();
 

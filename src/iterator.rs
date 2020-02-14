@@ -31,7 +31,7 @@ unsafe impl<'a> Send for Iterator<'a> {}
 
 impl<'a> fmt::Debug for Iterator<'a> {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        try!(write!(f, "Iterator("));
+        write!(f, "Iterator(")?;
         if self.is_valid() {
             write!(f, "key={:?})", String::from_utf8_lossy(self.key()))
         } else {

@@ -1,7 +1,7 @@
 //! `CompactionFilter` allows an application to modify/delete a key-value at
 //! the time of compaction.
 
-use std::os::raw::{c_char, c_int, c_uchar};
+use std::os::raw::{c_char, c_int};
 
 use rocks_sys as ll;
 
@@ -163,7 +163,7 @@ pub trait CompactionFilter {
 /// Each compaction will create a new `CompactionFilter` allowing the
 /// application to know about different compactions
 pub trait CompactionFilterFactory {
-    fn create_compaction_filter(&self, context: &Context) -> Box<CompactionFilter>;
+    fn create_compaction_filter(&self, context: &Context) -> Box<dyn CompactionFilter>;
 
     /// Returns a name that identifies this compaction filter factory.
     fn name(&self) -> &str {
@@ -199,7 +199,7 @@ pub mod c {
         skip_until: *mut (),
     ) -> c_int {
         assert!(!f.is_null());
-        let filter = f as *mut Box<CompactionFilter>;
+        let filter = f as *mut Box<dyn CompactionFilter>;
         // must be the same as C part
         match (*filter).filter(level as u32, key, value_type, existing_value) {
             Decision::Keep => 0,
@@ -218,15 +218,22 @@ pub mod c {
     #[no_mangle]
     pub unsafe extern "C" fn rust_compaction_filter_drop(f: *mut ()) {
         assert!(!f.is_null());
-        let filter = f as *mut Box<CompactionFilter>;
+        let filter = f as *mut Box<dyn CompactionFilter>;
         Box::from_raw(filter);
     }
 
     #[no_mangle]
     pub unsafe extern "C" fn rust_compaction_filter_name(f: *mut ()) -> *const c_char {
         assert!(!f.is_null());
-        let filter = f as *mut Box<CompactionFilter>;
+        let filter = f as *mut Box<dyn CompactionFilter>;
         (*filter).name().as_ptr() as *const _
+    }
+
+    #[no_mangle]
+    pub unsafe extern "C" fn rust_compaction_filter_ignore_snapshots(f: *mut ()) -> c_char {
+        assert!(!f.is_null());
+        let filter = f as *mut Box<dyn CompactionFilter>;
+        (*filter).ignore_snapshots() as _
     }
 }
 

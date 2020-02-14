@@ -200,7 +200,7 @@ pub mod c {
     ) -> i32 {
         assert!(!op.is_null());
         unsafe {
-            let operator = op as *mut Box<MergeOperator>;
+            let operator = op as *mut Box<dyn MergeOperator>;
             let m_in: &MergeOperationInput = &*(merge_in as *const MergeOperationInput);
             let m_out: &mut MergeOperationOutput = &mut *(merge_out as *mut MergeOperationOutput);
             let ret = (*operator).full_merge(m_in, m_out);
@@ -212,7 +212,7 @@ pub mod c {
     pub extern "C" fn rust_merge_operator_drop(op: *mut ()) {
         assert!(!op.is_null());
         unsafe {
-            let operator = op as *mut Box<MergeOperator>;
+            let operator = op as *mut Box<dyn MergeOperator>;
             Box::from_raw(operator);
         }
     }
@@ -230,7 +230,7 @@ pub mod c {
         // FIXME: this is very dangerous and unsafe play.
         assert!(!op.is_null());
         unsafe {
-            let operator = op as *mut Box<AssociativeMergeOperator>;
+            let operator = op as *mut Box<dyn AssociativeMergeOperator>;
             let nval = (*operator).merge(*key, existing_value.map(|&s| s), *value, logger);
             if let Some(val) = nval {
                 *new_value_len = val.len();
@@ -249,7 +249,7 @@ pub mod c {
     pub extern "C" fn rust_associative_merge_operator_name(op: *mut ()) -> *const u8 {
         assert!(!op.is_null());
         unsafe {
-            let operator = op as *mut Box<AssociativeMergeOperator>;
+            let operator = op as *mut Box<dyn AssociativeMergeOperator>;
             (*operator).name().as_bytes().as_ptr()
         }
     }
@@ -260,7 +260,7 @@ pub mod c {
     pub extern "C" fn rust_merge_operator_name(op: *mut ()) -> *const u8 {
         assert!(!op.is_null());
         unsafe {
-            let operator = op as *mut Box<MergeOperator>;
+            let operator = op as *mut Box<dyn MergeOperator>;
             (*operator).name().as_bytes().as_ptr()
         }
     }
@@ -277,7 +277,7 @@ pub mod c {
     pub extern "C" fn rust_associative_merge_operator_drop(op: *mut ()) {
         assert!(!op.is_null());
         unsafe {
-            let operator = op as *mut Box<AssociativeMergeOperator>;
+            let operator = op as *mut Box<dyn AssociativeMergeOperator>;
             Box::from_raw(operator);
         }
     }
@@ -298,7 +298,7 @@ mod tests {
 
     #[test]
     fn it_works() {
-        let op: Box<AssociativeMergeOperator> = Box::new(MyAssocMergeOp);
+        let op: Box<dyn AssociativeMergeOperator> = Box::new(MyAssocMergeOp);
     }
 
     #[test]

@@ -476,7 +476,7 @@ pub struct Context {
 /// `TablePropertiesCollector` for each new table
 pub trait TablePropertiesCollectorFactory {
     /// has to be thread-safe
-    fn new_collector(&mut self, context: Context) -> Box<TablePropertiesCollector>;
+    fn new_collector(&mut self, context: Context) -> Box<dyn TablePropertiesCollector>;
 
     /// The name of the properties collector can be used for debugging purpose.
     fn name(&self) -> &str {
@@ -590,7 +590,7 @@ mod tests {
     pub struct MyTblPropsCollectorFactory;
 
     impl TablePropertiesCollectorFactory for MyTblPropsCollectorFactory {
-        fn new_collector(&mut self, context: Context) -> Box<TablePropertiesCollector> {
+        fn new_collector(&mut self, context: Context) -> Box<dyn TablePropertiesCollector> {
             Box::new(MyTblPropsCollector {
                 counter: time::SystemTime::now()
                     .duration_since(time::UNIX_EPOCH)

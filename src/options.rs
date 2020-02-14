@@ -1,33 +1,33 @@
 //! Common options for DB, CF, read/write/flush/compact...
 
-use std::u64;
-use std::path::{Path, PathBuf};
-use std::mem;
-use std::ptr;
 use std::fmt;
+use std::marker::PhantomData;
+use std::mem;
+use std::os::raw::c_int;
+use std::path::{Path, PathBuf};
+use std::ptr;
 use std::slice;
 use std::str;
-use std::os::raw::c_int;
-use std::marker::PhantomData;
+use std::u64;
 
 use rocks_sys as ll;
 
+use advanced_options::{CompactionOptionsFIFO, CompactionPri, CompactionStyle, CompressionOptions};
+use cache::Cache;
+use compaction_filter::{CompactionFilter, CompactionFilterFactory};
+use comparator::Comparator;
 use env::{Env, InfoLogLevel, Logger};
 use listener::EventListener;
-use write_buffer_manager::WriteBufferManager;
-use rate_limiter::RateLimiter;
-use sst_file_manager::SstFileManager;
-use statistics::Statistics;
-use cache::Cache;
-use advanced_options::{CompactionOptionsFIFO, CompactionPri, CompactionStyle, CompressionOptions};
-use universal_compaction::CompactionOptionsUniversal;
-use compaction_filter::{CompactionFilter, CompactionFilterFactory};
 use merge_operator::{AssociativeMergeOperator, MergeOperator};
-use table::{BlockBasedTableOptions, CuckooTableOptions, PlainTableOptions};
-use comparator::Comparator;
+use rate_limiter::RateLimiter;
 use slice_transform::SliceTransform;
 use snapshot::Snapshot;
+use sst_file_manager::SstFileManager;
+use statistics::Statistics;
+use table::{BlockBasedTableOptions, CuckooTableOptions, PlainTableOptions};
 use table_properties::TablePropertiesCollectorFactory;
+use universal_compaction::CompactionOptionsUniversal;
+use write_buffer_manager::WriteBufferManager;
 
 use to_raw::{FromRaw, ToRaw};
 
@@ -43,7 +43,6 @@ lazy_static! {
         WriteOptions::default()
     };
 }
-
 
 /// DB contents are stored in a set of blocks, each of which holds a
 /// sequence of key,value pairs.  Each block may be compressed before
@@ -100,7 +99,7 @@ pub enum WALRecoveryMode {
     SkipAnyCorruptedRecords = 0x03,
 }
 
-
+#[derive(Debug)]
 pub struct DbPath {
     pub path: PathBuf,
     /// Target size of total files under the path, in byte.
@@ -153,7 +152,9 @@ impl ToRaw<ll::rocks_cfoptions_t> for ColumnFamilyOptions {
 
 impl Default for ColumnFamilyOptions {
     fn default() -> Self {
-        ColumnFamilyOptions { raw: unsafe { ll::rocks_cfoptions_create() } }
+        ColumnFamilyOptions {
+            raw: unsafe { ll::rocks_cfoptions_create() },
+        }
     }
 }
 
@@ -173,7 +174,7 @@ impl fmt::Display for ColumnFamilyOptions {
             let base = ll::cxx_string_data(cxx_string);
             if !cxx_string.is_null() {
                 let str_rep = str::from_utf8_unchecked(slice::from_raw_parts(base as *const u8, len));
-                try!(f.write_str(str_rep));
+                f.write_str(str_rep)?;
                 ll::cxx_string_destroy(cxx_string);
                 Ok(())
             } else {
@@ -186,7 +187,9 @@ impl fmt::Display for ColumnFamilyOptions {
 impl ColumnFamilyOptions {
     /// Create ColumnFamilyOptions with default values for all fields
     pub fn new() -> ColumnFamilyOptions {
-        ColumnFamilyOptions { raw: unsafe { ll::rocks_cfoptions_create() } }
+        ColumnFamilyOptions {
+            raw: unsafe { ll::rocks_cfoptions_create() },
+        }
     }
 
     unsafe fn from_ll(raw: *mut ll::rocks_cfoptions_t) -> ColumnFamilyOptions {
@@ -194,7 +197,9 @@ impl ColumnFamilyOptions {
     }
 
     pub fn from_options(opt: &Options) -> ColumnFamilyOptions {
-        ColumnFamilyOptions { raw: unsafe { ll::rocks_cfoptions_create_from_options(opt.raw()) } }
+        ColumnFamilyOptions {
+            raw: unsafe { ll::rocks_cfoptions_create_from_options(opt.raw()) },
+        }
     }
 
     /// Some functions that make it easier to optimize RocksDB
@@ -264,7 +269,7 @@ impl ColumnFamilyOptions {
         unsafe {
             // FIXME: mem leaks, CFOptions.comparator is a raw pointer,
             // not a shared_ptr
-            let raw_ptr = Box::into_raw(Box::new(val as &Comparator));
+            let raw_ptr = Box::into_raw(Box::new(val as &dyn Comparator));
             ll::rocks_cfoptions_set_comparator_by_trait(self.raw, raw_ptr as *mut _);
         }
         self
@@ -291,7 +296,7 @@ impl ColumnFamilyOptions {
     /// openning the DB in this case.
     ///
     /// Default: nullptr
-    pub fn merge_operator(self, val: Box<MergeOperator>) -> Self {
+    pub fn merge_operator(self, val: Box<dyn MergeOperator>) -> Self {
         unsafe {
             let raw_ptr = Box::into_raw(Box::new(val)); // Box<Box<MergeOperator>>
             ll::rocks_cfoptions_set_merge_operator_by_merge_op_trait(self.raw, raw_ptr as *mut _);
@@ -299,7 +304,7 @@ impl ColumnFamilyOptions {
         self
     }
 
-    pub fn associative_merge_operator(self, val: Box<AssociativeMergeOperator>) -> Self {
+    pub fn associative_merge_operator(self, val: Box<dyn AssociativeMergeOperator>) -> Self {
         unsafe {
             // FIXME: into_raw
             let raw_ptr = Box::into_raw(Box::new(val)); // Box<Box<AssociativeMergeOperator>>
@@ -323,7 +328,7 @@ impl ColumnFamilyOptions {
     /// thread-safe.
     ///
     /// Default: nullptr
-    pub fn compaction_filter(self, filter: Box<CompactionFilter + Sync>) -> Self {
+    pub fn compaction_filter(self, filter: Box<dyn CompactionFilter + Sync>) -> Self {
         unsafe {
             // FIXME: mem leaks
             // CFOptions.compaction_filter is a raw pointer
@@ -341,7 +346,7 @@ impl ColumnFamilyOptions {
     /// from a single thread and so does not need to be thread-safe.
     ///
     /// Default: nullptr
-    pub fn compaction_filter_factory(self, factory: Box<CompactionFilterFactory>) -> Self {
+    pub fn compaction_filter_factory(self, factory: Box<dyn CompactionFilterFactory>) -> Self {
         // unsafe {
         // ll::rocks_cfoptions_set_compaction_filter_factory(self.raw, )
         // }
@@ -454,7 +459,7 @@ impl ColumnFamilyOptions {
     ///
     /// Default: nullptr
     // FIXME: split other prefix extractor variants
-    pub fn prefix_extractor(self, val: Box<SliceTransform + Sync>) -> Self {
+    pub fn prefix_extractor(self, val: Box<dyn SliceTransform + Sync>) -> Self {
         unsafe {
             let raw_ptr = Box::into_raw(Box::new(val));
             ll::rocks_cfoptions_set_prefix_extractor_by_trait(self.raw, raw_ptr as *mut _);
@@ -756,7 +761,7 @@ impl ColumnFamilyOptions {
     /// the prefix can be the key itself.
     ///
     /// Default: nullptr (disable)
-    pub fn memtable_insert_with_hint_prefix_extractor(self, val: Box<SliceTransform + Sync>) -> Self {
+    pub fn memtable_insert_with_hint_prefix_extractor(self, val: Box<dyn SliceTransform + Sync>) -> Self {
         unsafe {
             let raw_ptr = Box::into_raw(Box::new(val));
             ll::rocks_cfoptions_set_memtable_insert_with_hint_prefix_extractor_by_trait(self.raw, raw_ptr as *mut _);
@@ -821,7 +826,6 @@ impl ColumnFamilyOptions {
         }
         self
     }
-
 
     /// Different levels can have different compression policies. There
     /// are cases where most lower levels would like to use quick compression
@@ -1027,7 +1031,6 @@ impl ColumnFamilyOptions {
         let cval = val.iter().map(|&v| v as c_int).collect::<Vec<_>>();
         let num_levels = val.len();
         unsafe {
-
             ll::rocks_cfoptions_set_max_bytes_for_level_multiplier_additional(self.raw, cval.as_ptr(), num_levels);
         }
         self
@@ -1282,7 +1285,7 @@ impl ColumnFamilyOptions {
     /// performed.
     ///
     /// Rust: add one at a time
-    pub fn table_properties_collector_factory(self, val: Box<TablePropertiesCollectorFactory>) -> Self {
+    pub fn table_properties_collector_factory(self, val: Box<dyn TablePropertiesCollectorFactory>) -> Self {
         unsafe {
             let raw_ptr = Box::into_raw(Box::new(val));
             ll::rocks_cfoptions_add_table_properties_collector_factories_by_trait(self.raw, raw_ptr as *mut _);
@@ -1385,7 +1388,9 @@ pub struct DBOptions {
 
 impl Default for DBOptions {
     fn default() -> Self {
-        DBOptions { raw: unsafe { ll::rocks_dboptions_create() } }
+        DBOptions {
+            raw: unsafe { ll::rocks_dboptions_create() },
+        }
     }
 }
 
@@ -1411,7 +1416,7 @@ impl fmt::Display for DBOptions {
             let base = ll::cxx_string_data(cxx_string);
             if !cxx_string.is_null() {
                 let str_rep = str::from_utf8_unchecked(slice::from_raw_parts(base as *const u8, len));
-                try!(f.write_str(str_rep));
+                f.write_str(str_rep)?;
                 ll::cxx_string_destroy(cxx_string);
                 Ok(())
             } else {
@@ -1638,20 +1643,17 @@ impl DBOptions {
     /// Default: empty
     pub fn db_paths<P: Into<DbPath>, T: IntoIterator<Item = P>>(self, val: T) -> Self {
         let paths = val.into_iter().map(|p| p.into()).collect::<Vec<_>>();
+        // must hold PathBuf.to_str()
+        let path_strs = paths.iter().map(|s| (s.path.to_str().unwrap(), s.target_size)).collect::<Vec<_>>();
+
         let num_paths = paths.len();
         let mut cpaths = Vec::with_capacity(num_paths);
         let mut cpath_lens = Vec::with_capacity(num_paths);
         let mut sizes = Vec::with_capacity(num_paths);
-        for dbpath in paths {
-            cpaths.push(
-                dbpath
-                    .path
-                    .to_str()
-                    .map(|s| s.as_ptr() as _)
-                    .unwrap_or_else(ptr::null),
-            );
-            cpath_lens.push(dbpath.path.to_str().map(|s| s.len()).unwrap_or_default());
-            sizes.push(dbpath.target_size);
+        for path in path_strs {
+            cpaths.push(path.0.as_ptr() as _);
+            cpath_lens.push(path.0.len());
+            sizes.push(path.1);
         }
 
         unsafe {
@@ -2096,7 +2098,7 @@ impl DBOptions {
         unsafe {
             ll::rocks_dboptions_add_listener(
                 self.raw,
-                Box::into_raw(Box::new(Box::new(val) as Box<EventListener>)) as *mut _,
+                Box::into_raw(Box::new(Box::new(val) as Box<dyn EventListener>)) as *mut _,
             );
         }
         self
@@ -2365,7 +2367,9 @@ impl AsRef<Options> for Options {
 
 impl Default for Options {
     fn default() -> Self {
-        Options { raw: unsafe { ll::rocks_options_create() } }
+        Options {
+            raw: unsafe { ll::rocks_options_create() },
+        }
     }
 }
 
@@ -2399,7 +2403,9 @@ impl Options {
     pub fn new(dbopt: Option<DBOptions>, cfopt: Option<ColumnFamilyOptions>) -> Options {
         let dbopt = dbopt.unwrap_or_default();
         let cfopt = cfopt.unwrap_or_default();
-        Options { raw: unsafe { ll::rocks_options_create_from_db_cf_options(dbopt.raw(), cfopt.raw()) } }
+        Options {
+            raw: unsafe { ll::rocks_options_create_from_db_cf_options(dbopt.raw(), cfopt.raw()) },
+        }
     }
 
     // Some functions that make it easier to optimize RocksDB
@@ -2409,7 +2415,12 @@ impl Options {
         let dbopt = unsafe { DBOptions::from_ll(ll::rocks_dboptions_create_from_options(self.raw)) };
         let new_dbopt = f(dbopt);
         let old_cfopt = unsafe { ColumnFamilyOptions::from_ll(ll::rocks_cfoptions_create_from_options(self.raw)) };
-        unsafe { Options::from_ll(ll::rocks_options_create_from_db_cf_options(new_dbopt.raw(), old_cfopt.raw())) }
+        unsafe {
+            Options::from_ll(ll::rocks_options_create_from_db_cf_options(
+                new_dbopt.raw(),
+                old_cfopt.raw(),
+            ))
+        }
     }
 
     /// Configure ColumnFamilyOptions using builder style.
@@ -2417,7 +2428,12 @@ impl Options {
         let cfopt = unsafe { ColumnFamilyOptions::from_ll(ll::rocks_cfoptions_create_from_options(self.raw)) };
         let new_cfopt = f(cfopt);
         let old_dbopt = unsafe { DBOptions::from_ll(ll::rocks_dboptions_create_from_options(self.raw)) };
-        unsafe { Options::from_ll(ll::rocks_options_create_from_db_cf_options(old_dbopt.raw(), new_cfopt.raw())) }
+        unsafe {
+            Options::from_ll(ll::rocks_options_create_from_db_cf_options(
+                old_dbopt.raw(),
+                new_cfopt.raw(),
+            ))
+        }
     }
 
     /// Set appropriate parameters for bulk loading.
@@ -2692,7 +2708,6 @@ impl<'a> ReadOptions<'a> {
         self
     }
 
-
     /// If true, keys deleted using the `delete_range()` API will be visible to
     /// readers until they are naturally deleted during compaction. This improves
     /// read performance in DBs with many range deletions.
@@ -2721,7 +2736,9 @@ impl AsRef<WriteOptions> for WriteOptions {
 
 impl Default for WriteOptions {
     fn default() -> Self {
-        WriteOptions { raw: unsafe { ll::rocks_writeoptions_create() } }
+        WriteOptions {
+            raw: unsafe { ll::rocks_writeoptions_create() },
+        }
     }
 }
 
@@ -2822,7 +2839,9 @@ pub struct FlushOptions {
 
 impl Default for FlushOptions {
     fn default() -> Self {
-        FlushOptions { raw: unsafe { ll::rocks_flushoptions_create() } }
+        FlushOptions {
+            raw: unsafe { ll::rocks_flushoptions_create() },
+        }
     }
 }
 
@@ -2881,7 +2900,9 @@ impl Drop for CompactionOptions {
 
 impl CompactionOptions {
     pub fn new() -> CompactionOptions {
-        CompactionOptions { raw: unsafe { ll::rocks_compaction_options_create() } }
+        CompactionOptions {
+            raw: unsafe { ll::rocks_compaction_options_create() },
+        }
     }
 
     /// Compaction output compression type
@@ -2928,7 +2949,9 @@ pub struct CompactRangeOptions {
 
 impl Default for CompactRangeOptions {
     fn default() -> Self {
-        CompactRangeOptions { raw: unsafe { ll::rocks_compactrange_options_create() } }
+        CompactRangeOptions {
+            raw: unsafe { ll::rocks_compactrange_options_create() },
+        }
     }
 }
 
@@ -3003,7 +3026,9 @@ pub struct IngestExternalFileOptions {
 
 impl Default for IngestExternalFileOptions {
     fn default() -> Self {
-        IngestExternalFileOptions { raw: unsafe { ll::rocks_ingestexternalfile_options_create() } }
+        IngestExternalFileOptions {
+            raw: unsafe { ll::rocks_ingestexternalfile_options_create() },
+        }
     }
 }
 
@@ -3077,8 +3102,8 @@ unsafe impl Sync for IngestExternalFileOptions {}
 
 #[cfg(test)]
 mod tests {
-    use super::*;
     use super::super::rocksdb::*;
+    use super::*;
 
     #[test]
     fn dboptions_stringify() {
@@ -3101,17 +3126,15 @@ mod tests {
                 .map_db_options(|db| db.create_if_missing(true))
                 .map_cf_options(|cf| {
                     cf.table_factory_block_based(
-                        BlockBasedTableOptions::default()
-                            .no_block_cache(true)
-                            .block_cache(None),
+                        BlockBasedTableOptions::default().no_block_cache(true).block_cache(None),
                     )
                 }),
             &tmp_dir,
-        ).unwrap();
-        assert!(
-            db.put(&Default::default(), b"long-key", vec![b'A'; 1024].as_ref())
-                .is_ok()
-        );
+        )
+        .unwrap();
+        assert!(db
+            .put(&Default::default(), b"long-key", vec![b'A'; 1024].as_ref())
+            .is_ok());
         assert!(db.compact_range(&Default::default(), ..).is_ok());
         let val = db.get(&ReadOptions::default().read_tier(ReadTier::BlockCacheTier), b"long-key");
         assert!(val.is_ok());
@@ -3130,29 +3153,28 @@ mod tests {
         assert_eq!(w1.raw, w2.raw);
     }
 
-
     #[test]
     fn compact_range_options() {
         let tmp_dir = ::tempdir::TempDir::new_in(".", "rocks").unwrap();
-        let db = DB::open(Options::default().map_db_options(|db| db.create_if_missing(true)), &tmp_dir).unwrap();
-        assert!(
-            db.put(&Default::default(), b"long-key", vec![b'A'; 1024 * 1024].as_ref())
-                .is_ok()
-        );
+        let db = DB::open(
+            Options::default().map_db_options(|db| db.create_if_missing(true)),
+            &tmp_dir,
+        )
+        .unwrap();
+        assert!(db
+            .put(&Default::default(), b"long-key", vec![b'A'; 1024 * 1024].as_ref())
+            .is_ok());
         assert!(db.flush(&FlushOptions::default().wait(true)).is_ok());
-        assert!(
-            db.put(&Default::default(), b"long-key-2", vec![b'A'; 2 * 1024].as_ref())
-                .is_ok()
-        );
+        assert!(db
+            .put(&Default::default(), b"long-key-2", vec![b'A'; 2 * 1024].as_ref())
+            .is_ok());
 
-        assert!(
-            db.compact_range(
-                &CompactRangeOptions::default()
-                    .change_level(true)
-                    .target_level(4), // TO level 4
+        assert!(db
+            .compact_range(
+                &CompactRangeOptions::default().change_level(true).target_level(4), // TO level 4
                 ..,
-            ).is_ok()
-        );
+            )
+            .is_ok());
 
         let meta = db.get_column_family_metadata(&db.default_column_family());
         println!("Meta => {:?}", meta);

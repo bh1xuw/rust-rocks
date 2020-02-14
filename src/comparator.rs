@@ -72,7 +72,7 @@ pub mod c {
 
     #[no_mangle]
     pub unsafe extern "C" fn rust_comparator_compare(cp: *mut (), a: *const &[u8], b: *const &[u8]) -> c_int {
-        let comparator = cp as *mut &Comparator;
+        let comparator = cp as *mut &dyn Comparator;
         // FIXME: 8 byte Ordering
         mem::transmute::<_, i8>((*comparator).compare(*a, *b)) as c_int
     }
@@ -80,14 +80,14 @@ pub mod c {
 
     #[no_mangle]
     pub unsafe extern "C" fn rust_comparator_equal(cp: *mut (), a: *const &[u8], b: *const &[u8]) -> c_char {
-        let comparator = cp as *mut &Comparator;
+        let comparator = cp as *mut &dyn Comparator;
         ((*comparator).equal(*a, *b)) as c_char
     }
 
 
     #[no_mangle]
     pub unsafe extern "C" fn rust_comparator_name(cp: *mut ()) -> *const c_char {
-        let comparator = cp as *mut &Comparator;
+        let comparator = cp as *mut &dyn Comparator;
         (*comparator).name().as_ptr() as *const _
     }
 
@@ -98,7 +98,7 @@ pub mod c {
         limit: *const &[u8],
     ) {
         // Slice&
-        let comparator = cp as *mut &Comparator;
+        let comparator = cp as *mut &dyn Comparator;
 
         let start_ptr = ll::cxx_string_data(start as *const _);
         let start_len = ll::cxx_string_size(start as *const _);
@@ -115,7 +115,7 @@ pub mod c {
     #[no_mangle]
     pub unsafe extern "C" fn rust_comparator_find_short_successor(cp: *mut (), key: *mut ()) {
         // std::string*
-        let comparator = cp as *mut &Comparator;
+        let comparator = cp as *mut &dyn Comparator;
 
         let key_ptr = ll::cxx_string_data(key as *const _);
         let key_len = ll::cxx_string_size(key as *const _);
@@ -130,7 +130,7 @@ pub mod c {
     #[no_mangle]
     pub unsafe extern "C" fn rust_comparator_drop(op: *mut ()) {
         assert!(!op.is_null());
-        let operator = op as *mut &Comparator;
+        let operator = op as *mut &dyn Comparator;
         Box::from_raw(operator);
     }
 }

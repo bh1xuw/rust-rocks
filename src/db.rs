@@ -2746,8 +2746,6 @@ mod tests {
     }
 
     #[test]
-    #[ignore]
-    // FIXME: fails
     fn db_paths() {
         let tmp_dir = ::tempdir::TempDir::new_in(".", "rocks").unwrap();
         let dir1 = ::tempdir::TempDir::new_in(".", "rocks").unwrap();
@@ -2757,13 +2755,14 @@ mod tests {
         let opt = Options::default().map_db_options(|dbopt| {
             dbopt
                 .create_if_missing(true)
-                .db_paths(vec![&dir1.path(), &dir2.path()])        /* only puts sst file */
+                .db_paths(vec![&dir1.path(), &dir2.path()])        /* only has sst file */
                 .wal_dir(&wal_dir)
         });
 
         let db = DB::open(opt, &tmp_dir);
         if db.is_err() {
-            println!("err => {:?}", db.unwrap_err());
+            println!("db error");
+            println!("err => {:?}", db);
             return;
         }
         let db = db.unwrap();

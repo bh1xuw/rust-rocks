@@ -20,21 +20,18 @@ pub struct ColumnFamilyMetaData {
 
 impl fmt::Debug for ColumnFamilyMetaData {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        try!(
-            f.debug_struct("ColumnFamily")
-                .field("name", &self.name)
-                .field("file_count", &self.file_count)
-                .field("size", &self.size)
-                .finish()
-        );
-        try!(write!(f, "\n"));
+        f.debug_struct("ColumnFamily")
+            .field("name", &self.name)
+            .field("file_count", &self.file_count)
+            .field("size", &self.size)
+            .finish()?;
+        write!(f, "\n")?;
         for level in &self.levels {
-            try!(write!(f, "  > {:?}\n", level));
+            write!(f, "  > {:?}\n", level)?;
         }
         Ok(())
     }
 }
-
 
 /// The metadata that describes a level.
 pub struct LevelMetaData {
@@ -55,7 +52,6 @@ impl fmt::Debug for LevelMetaData {
             .finish()
     }
 }
-
 
 /// The metadata that describes a SST file.
 pub struct SstFileMetaData {
@@ -83,7 +79,6 @@ impl fmt::Debug for SstFileMetaData {
         f.debug_struct("SstFile").field("name", &self.name).finish()
     }
 }
-
 
 /// The full set of metadata associated with each SST file.
 pub struct LiveFileMetaData {

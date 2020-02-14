@@ -34,6 +34,8 @@ pub enum Code {
     Busy = 11,
     Expired = 12,
     TryAgain = 13,
+    CompactionTooLarge = 14,
+    ColumnFamilyDropped = 15,
 }
 
 #[repr(C)]
@@ -47,6 +49,10 @@ pub enum SubCode {
     Deadlock = 5,
     StaleFile = 6,
     MemoryLimit = 7,
+    SpaceLimit = 8,
+    PathNotFound = 9,
+    MergeOperandsInsufficientCapacity = 10,
+    ManualCompactionPaused = 11,
 }
 
 #[derive(Clone, PartialEq, Eq, Hash)]
