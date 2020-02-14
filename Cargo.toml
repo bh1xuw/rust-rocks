@@ -27,7 +27,9 @@ tempdir = "0.3"
 
 [features]
 default = []
-static-link = ["rocks-sys/static-link"]
+static-link = [
+    "rocks-sys/static-link", "rocks-sys/snappy", "rocks-sys/zlib", "rocks-sys/bzip2", "rocks-sys/lz4", "rocks-sys/zstd"
+]
 
 [profile.dev]
 opt-level = 1
