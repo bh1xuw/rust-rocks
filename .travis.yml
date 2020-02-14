@@ -18,7 +18,8 @@ before_script:
   - git submodule update --init --recursive
 
 script:
-  - travis_wait 30 cargo test --features "static-link rocks-sys/snappy rocks-sys/zlib rocks-sys/bzip2 rocks-sys/lz4 rocks-sys/zstd" -v
+  # rocks-sys/snappy
+  - travis_wait 30 cargo test --features "static-link rocks-sys/zlib rocks-sys/bzip2 rocks-sys/lz4 rocks-sys/zstd" -v
 
 env:
   global:
