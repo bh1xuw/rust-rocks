@@ -22,6 +22,6 @@ lz4 = []
 zstd = []
 
 [build-dependencies]
-gcc = "0.3"
+cc = "1.0"
 pkg-config = "0.3"
 cmake = "0.1"

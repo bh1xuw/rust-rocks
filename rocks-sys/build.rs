@@ -1,4 +1,4 @@
-extern crate gcc;
+extern crate cc;
 extern crate cmake;
 
 #[cfg(not(feature = "static-link"))]
@@ -111,7 +111,7 @@ mod imp {
             .output()
             .expect("failed to execute process");
 
-        ::gcc::Build::new()
+        ::cc::Build::new()
             .cpp(true)
             .flag("-std=c++11")
             .opt_level(2)
@@ -138,7 +138,7 @@ mod imp {
             .output()
             .expect("failed to execute process");
 
-        let mut cfg = ::gcc::Build::new();
+        let mut cfg = ::cc::Build::new();
         cfg.include("zlib");
 
         // TODO: borrow following list form Makefile
@@ -166,7 +166,7 @@ mod imp {
                 .status();
         }
 
-        let mut cfg = ::gcc::Build::new();
+        let mut cfg = ::cc::Build::new();
 
         if cfg!(windows) {
             cfg.define("_WIN32", None);
@@ -196,7 +196,7 @@ mod imp {
                 .status();
         }
 
-        ::gcc::Build::new()
+        ::cc::Build::new()
             .include("lz4/lib")
             .opt_level(3)
             .file("lz4/lib/lz4.c")
@@ -233,7 +233,7 @@ mod imp {
             "zstd/lib/dictBuilder/zdict.c",
         ];
 
-        ::gcc::Build::new()
+        ::cc::Build::new()
             .define("ZSTD_LEGACY_SUPPORT", Some("0"))
             .include("zstd/lib")
             .include("zstd/lib/common")
@@ -298,7 +298,7 @@ fn main() {
 
     imp::build();
 
-    let mut build = ::gcc::Build::new();
+    let mut build = ::cc::Build::new();
 
     #[cfg(feature = "static-link")]
     {
