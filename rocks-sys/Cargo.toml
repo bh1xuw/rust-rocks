@@ -9,6 +9,15 @@ categories = ["external-ffi-bindings", "database"]
 license = "Apache-2.0"
 edition = "2018"
 build = "build.rs"
+exclude = [
+    "rocksdb/docs",
+    "rocksdb/java",
+    "zlib/contrib",
+    "snappy/testdata",
+    "zstd/contrib",
+    "zstd/tests",
+    "zstd/programs"
+]
 
 [dependencies]
 
