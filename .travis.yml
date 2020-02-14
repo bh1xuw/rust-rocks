@@ -1,11 +1,11 @@
 language: rust
-dist: trusty
+dist: bionic
 sudo: required
 rust:
   - beta
   - nightly
   - stable
-  
+
 cache:
   directories:
     - target
