@@ -22,8 +22,8 @@ exclude = [
 [dependencies]
 
 [features]
-default = ["snappy", "zlib", "bzip2", "lz4", "zstd"]
-static-link = []
+default = ["snappy"]
+static-link = ["snappy"]
 static-link-all = ["static-link", "snappy", "zlib", "bzip2", "lz4", "zstd"]
 snappy = []
 zlib = []
