@@ -72,7 +72,9 @@ mod imp {
     use cmake;
 
     pub fn build() {
-        println!("cargo:warning=static link feature enabled, it'll take minutes to finish compiling...");
+        println!(
+            "cargo:warning=static link feature enabled, it'll take minutes to finish compiling..."
+        );
 
         #[cfg(feature = "snappy")]
         snappy();
@@ -100,7 +102,11 @@ mod imp {
                 .status();
         }
 
-        let dst = cmake::Config::new("snappy").build_target("snappy").build();
+        let dst = cmake::Config::new(env::current_dir().unwrap().join("snappy"))
+            .build_target("snappy")
+            .build();
+
+        println!("cargo:warning=snappy => {:?}", dst);
 
         println!("cargo:rustc-link-search=native={}/build/", dst.display());
         println!("cargo:rustc-link-lib=static=snappy");
