@@ -1,9 +1,3 @@
-extern crate cc;
-extern crate cmake;
-
-#[cfg(not(feature = "static-link"))]
-extern crate pkg_config;
-
 #[cfg(not(feature = "static-link"))]
 mod imp {
     pub fn build() {
@@ -27,33 +21,33 @@ mod imp {
 
     #[cfg(feature = "snappy")]
     fn snappy() {
-        pkg_config::Config::new().probe("snappy").or_else(|_| {
+        let _ = pkg_config::Config::new().probe("snappy").map_err(|_| {
             println!("cargo:rustc-link-lib=dylib=snappy");
         });
     }
 
     #[cfg(feature = "zlib")]
     fn zlib() {
-        pkg_config::Config::new().probe("zlib").or_else(|_| {
+        let _ = pkg_config::Config::new().probe("zlib").map_err(|_| {
             println!("cargo:rustc-link-lib=dylib=z");
         });
     }
 
     #[cfg(feature = "bzip2")]
     fn bzip2() {
-        println!("cargo:rustc-link-lib=dylib=bzip2");
+        println!("cargo:rustc-link-lib=dylib=bz2");
     }
 
     #[cfg(feature = "lz4")]
     fn lz4() {
-        pkg_config::Config::new().probe("liblz4").or_else(|_| {
+        let _ = pkg_config::Config::new().probe("liblz4").map_err(|_| {
             println!("cargo:rustc-link-lib=dylib=lz4");
         });
     }
 
     #[cfg(feature = "zstd")]
     fn zstd() {
-        pkg_config::Config::new().probe("libzstd").or_else(|_| {
+        let _ = pkg_config::Config::new().probe("libzstd").map_err(|_| {
             println!("cargo:rustc-link-lib=dylib=zstd");
         });
     }
@@ -66,13 +60,14 @@ mod imp {
 #[cfg(feature = "static-link")]
 mod imp {
     use std::env;
+    use std::fs;
     use std::path::Path;
     use std::process::Command;
 
-    use cmake;
-
     pub fn build() {
-        println!("cargo:warning=static link feature enabled, it'll takes some minutes to finish compiling... ");
+        println!(
+            "cargo:warning=static link feature enabled, it'll take minutes to finish compiling..."
+        );
 
         #[cfg(feature = "snappy")]
         snappy();
@@ -100,12 +95,22 @@ mod imp {
                 .status();
         }
 
+        // cmake can only have 1 run in 1 crate
+        // or else the `build` directory will be overwritten
+        let out_dir = env::var("OUT_DIR").unwrap();
+        let this_out_dir = Path::new(&out_dir).join("snappy_out");
+        let _ = fs::create_dir(&this_out_dir);
+
         let dst = cmake::Config::new("snappy")
+            .define("CMAKE_POSITION_INDEPENDENT_CODE", "ON")
             .build_target("snappy")
+            .out_dir(this_out_dir)
+            .very_verbose(true)
+            .uses_cxx11()
             .build();
 
         println!("cargo:rustc-link-search=native={}/build/", dst.display());
-        // will link from rocksdb
+        println!("cargo:rustc-link-lib=static=snappy");
     }
 
     #[cfg(feature = "zlib")]
@@ -123,10 +128,12 @@ mod imp {
             .expect("failed to execute ./configure");
 
         let mut cfg = ::cc::Build::new();
+        cfg.warnings(false);
         cfg.include("zlib");
 
         // TODO: borrow following list form Makefile
-        let filez = "adler32.c crc32.c deflate.c infback.c inffast.c inflate.c inftrees.c trees.c zutil.c";
+        let filez =
+            "adler32.c crc32.c deflate.c infback.c inffast.c inflate.c inftrees.c trees.c zutil.c";
         let fileg = "compress.c uncompr.c gzclose.c gzlib.c gzread.c gzwrite.c";
 
         for file in filez.split(" ") {
@@ -157,11 +164,11 @@ mod imp {
             cfg.define("BZ_EXPORT", None);
         }
 
-        cfg.define("_FILE_OFFSET_BITS", Some("64"));
-
         cfg.include("bzip2")
+            .define("_FILE_OFFSET_BITS", Some("64"))
             .define("BZ_NO_STDIO", None)
             .opt_level(2)
+            .warnings(false)
             .file("bzip2/blocksort.c")
             .file("bzip2/huffman.c")
             .file("bzip2/crctable.c")
@@ -181,8 +188,10 @@ mod imp {
         }
 
         ::cc::Build::new()
+            .warnings(false)
             .include("lz4/lib")
-            .opt_level(3)
+            .opt_level(2)
+            .pic(true)
             .file("lz4/lib/lz4.c")
             .file("lz4/lib/lz4frame.c")
             .file("lz4/lib/lz4hc.c")
@@ -238,9 +247,15 @@ mod imp {
 
         #[cfg(feature = "snappy")]
         {
+            let src = std::env::current_dir().unwrap();
+            let out_dir = env::var("OUT_DIR").unwrap();
+            let snappy_out_dir = Path::new(&out_dir).join("snappy_out");
+
             // FIXME: how to use cmake's define?
             cfg.cxxflag("-DSNAPPY");
-            cfg.cxxflag("-Isnappy");
+            cfg.cxxflag(format!("-I{}", src.join("snappy").display()));
+            // snappy-stubs-public.h
+            cfg.cxxflag(format!("-I{}", snappy_out_dir.join("build").display()));
         }
 
         #[cfg(feature = "zlib")]

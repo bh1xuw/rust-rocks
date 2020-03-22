@@ -8,34 +8,31 @@ keywords = ["ffi", "RocksDB", "facebook", "database"]
 categories = ["external-ffi-bindings", "database"]
 license = "Apache-2.0"
 readme = "README.md"
-
-include = [
-    "src/*.rs",
-    "Cargo.toml",
-]
+include = ["src/*.rs", "Cargo.toml"]
 
 [badges]
 travis-ci = { repository = "bh1xuw/rust-rocks", branch = "master" }
 
 [dependencies]
 lazy_static = "1.4"
-rocks-sys = { path = "rocks-sys", version = "0.1.4" }
+rocks-sys = { path = "rocks-sys", version = "0.1.4", default-features = false }
 
 [dev-dependencies]
 tempdir = "0.3"
-# test = { path = "../jtest", version = "0.1" }
 
 [features]
-default = []
-static-link = [
-    "rocks-sys/static-link", "rocks-sys/snappy", "rocks-sys/zlib", "rocks-sys/bzip2", "rocks-sys/lz4", "rocks-sys/zstd"
-]
+default = ["rocks-sys/default", "rocks-sys/snappy"]
+static-link = ["rocks-sys/static-link", "rocks-sys/snappy"]
+full = ["rocks-sys/static-link-all"]
 
 [profile.dev]
 opt-level = 1
 
 [profile.test]
 opt-level = 1
+
+[package.metadata.docs.rs]
+features = ["static-link"]
 
 [workspace]
 members = ["rocks-sys"]
