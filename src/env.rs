@@ -15,10 +15,10 @@ use std::ffi::CStr;
 
 use rocks_sys as ll;
 
-use error::Status;
-use to_raw::{ToRaw, FromRaw};
-use thread_status::ThreadStatus;
-use super::Result;
+use crate::error::Status;
+use crate::to_raw::{ToRaw, FromRaw};
+use crate::thread_status::ThreadStatus;
+use crate::Result;
 
 pub const DEFAULT_PAGE_SIZE: usize = 4 * 1024;
 

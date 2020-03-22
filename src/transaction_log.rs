@@ -1,16 +1,16 @@
 //! WAL logs
 
-use std::ptr;
 use std::fmt;
 use std::iter::Iterator;
+use std::ptr;
 
 use rocks_sys as ll;
 
-use types::SequenceNumber;
-use write_batch::WriteBatch;
-use to_raw::{FromRaw, ToRaw};
-use error::Status;
-use Result;
+use crate::error::Status;
+use crate::to_raw::{FromRaw, ToRaw};
+use crate::types::SequenceNumber;
+use crate::write_batch::WriteBatch;
+use crate::Result;
 
 /// Is WAL file archived or alive
 #[derive(Debug, Copy, Clone, PartialEq, Eq, Hash)]
@@ -48,10 +48,7 @@ impl fmt::Debug for LogFile {
         write!(
             f,
             "WalFile({:?}, {:?}, #{}, {} bytes)",
-            self.path_name,
-            self.file_type,
-            self.log_number,
-            self.size_in_bytes
+            self.path_name, self.file_type, self.log_number, self.size_in_bytes
         )
     }
 }
@@ -154,7 +151,7 @@ impl Iterator for TransactionLogIterator {
 mod tests {
     use super::super::rocksdb::*;
 
-    use write_batch::WriteBatchIteratorHandler;
+    use crate::write_batch::WriteBatchIteratorHandler;
 
     #[test]
     fn transaction_log_iter() {
@@ -168,7 +165,8 @@ mod tests {
                 })
                 .map_cf_options(|cf| cf.disable_auto_compactions(false)), // disable
             &tmp_dir,
-        ).unwrap();
+        )
+        .unwrap();
 
         for i in 0..100 {
             let key = format!("k{}", i);

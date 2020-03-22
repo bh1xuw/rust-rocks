@@ -3,7 +3,7 @@
 
 use rocks_sys as ll;
 
-use to_raw::ToRaw;
+use crate::to_raw::ToRaw;
 
 /// `RateLimiter` object, which can be shared among RocksDB instances to
 /// control write rate of flush and compaction.
@@ -47,6 +47,10 @@ impl RateLimiter {
     /// continuouly. This fairness parameter grants low-pri requests permission by
     /// 1/fairness chance even though high-pri requests exist to avoid starvation.
     pub fn new(rate_bytes_per_sec: i64, refill_period_us: i64, fairness: i32) -> RateLimiter {
-        RateLimiter { raw: unsafe { ll::rocks_ratelimiter_create(rate_bytes_per_sec, refill_period_us, fairness) } }
+        RateLimiter {
+            raw: unsafe {
+                ll::rocks_ratelimiter_create(rate_bytes_per_sec, refill_period_us, fairness)
+            },
+        }
     }
 }

@@ -3,9 +3,8 @@
 
 use std::path::Path;
 
-use env::Env;
-use env::Logger;
 use super::Result;
+use crate::env::{Env, Logger};
 
 /// SstFileManager is used to track SST files in the DB and control there
 /// deletion rate.

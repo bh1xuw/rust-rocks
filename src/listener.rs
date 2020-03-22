@@ -10,15 +10,14 @@ use std::slice;
 use std::mem;
 use std::fmt;
 
-use error::Status;
-use db::{DBRef, ColumnFamilyHandle};
-use types::SequenceNumber;
-use table_properties::{TableProperties, TablePropertiesCollection};
-use options::CompressionType;
-use compaction_job_stats::CompactionJobStats;
-use to_raw::FromRaw;
-
-use super::Result;
+use crate::error::Status;
+use crate::db::{DBRef, ColumnFamilyHandle};
+use crate::types::SequenceNumber;
+use crate::table_properties::{TableProperties, TablePropertiesCollection};
+use crate::options::CompressionType;
+use crate::compaction_job_stats::CompactionJobStats;
+use crate::to_raw::FromRaw;
+use crate::Result;
 
 #[repr(C)]
 #[derive(Debug, Copy, Clone, PartialEq, Eq, Hash)]
@@ -678,8 +677,8 @@ pub mod c {
     use std::mem;
     use std::ptr;
     use super::*;
-    use db::DBRef;
-    use to_raw::FromRaw;
+    use crate::db::DBRef;
+    use crate::to_raw::FromRaw;
 
     #[no_mangle]
     pub unsafe extern "C" fn rust_event_listener_drop(l: *mut ()) {
@@ -1013,7 +1012,8 @@ mod tests {
         assert!(db.flush(&Default::default()).is_ok());
 
         // ingest an sst file
-        use sst_file_writer::SstFileWriter;
+        use crate::sst_file_writer::SstFileWriter;
+
         let sst_dir = ::tempdir::TempDir::new_in(".", "rocks.sst").unwrap();
         let writer = SstFileWriter::builder().build();
         writer.open(sst_dir.path().join("2333.sst")).unwrap();

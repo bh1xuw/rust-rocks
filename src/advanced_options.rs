@@ -4,7 +4,7 @@ use std::os::raw::c_int;
 
 use rocks_sys as ll;
 
-use to_raw::ToRaw;
+use crate::to_raw::ToRaw;
 
 #[repr(C)]
 #[derive(Debug, Copy, Clone, PartialEq, Eq, Hash)]

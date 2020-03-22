@@ -7,7 +7,7 @@ use std::str;
 
 use rocks_sys as ll;
 
-use to_raw::ToRaw;
+use crate::to_raw::ToRaw;
 
 pub struct CVec<T> {
     data: *mut T,

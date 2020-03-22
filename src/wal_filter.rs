@@ -4,7 +4,7 @@
 use std::collections::BTreeMap;
 use std::os::raw::c_int;
 
-use write_batch::WriteBatch;
+use crate::write_batch::WriteBatch;
 
 #[derive(Debug, Clone)]
 pub enum WalProcessingOption {

@@ -20,10 +20,10 @@ use std::os::raw::c_int;
 
 use rocks_sys as ll;
 
-use cache::Cache;
-use to_raw::ToRaw;
-use filter_policy::FilterPolicy;
-use persistent_cache::PersistentCache;
+use crate::cache::Cache;
+use crate::to_raw::ToRaw;
+use crate::filter_policy::FilterPolicy;
+use crate::persistent_cache::PersistentCache;
 
 #[derive(Debug, Copy, Clone, PartialEq, Eq, Hash)]
 #[repr(C)]

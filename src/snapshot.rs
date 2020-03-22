@@ -1,14 +1,14 @@
 //! Abstract handle to particular state of a DB.
 
 use std::fmt;
-use std::ops;
 use std::marker::PhantomData;
+use std::ops;
 
 use rocks_sys as ll;
 
-use db::DB;
-use types::SequenceNumber;
-use to_raw::{FromRaw, ToRaw};
+use crate::db::DB;
+use crate::to_raw::{FromRaw, ToRaw};
+use crate::types::SequenceNumber;
 
 /// Abstract handle to particular state of a DB.
 /// A Snapshot is an immutable object and can therefore be safely
@@ -92,22 +92,23 @@ impl<'a, 'b> Drop for ManagedSnapshot<'a, 'b> {
 impl<'a, 'b> ManagedSnapshot<'a, 'b> {
     pub fn new(db: &'b DB<'b>) -> ManagedSnapshot<'a, 'b> {
         let snap = db.get_snapshot().expect("should get snapshot");
-        ManagedSnapshot {
-            snapshot: snap,
-            db: db,
-        }
+        ManagedSnapshot { snapshot: snap, db: db }
     }
 }
 
 #[cfg(test)]
 mod tests {
-    use super::*;
     use super::super::rocksdb::*;
+    use super::*;
 
     #[test]
     fn snapshot_read() {
         let tmp_dir = ::tempdir::TempDir::new_in(".", "rocks").unwrap();
-        let db = DB::open(Options::default().map_db_options(|db| db.create_if_missing(true)), &tmp_dir).unwrap();
+        let db = DB::open(
+            Options::default().map_db_options(|db| db.create_if_missing(true)),
+            &tmp_dir,
+        )
+        .unwrap();
 
         assert!(db.put(&WriteOptions::default(), b"k1", b"v1").is_ok());
         assert!(db.put(&WriteOptions::default(), b"k2", b"v2").is_ok());
@@ -138,11 +139,14 @@ mod tests {
         assert_eq!(db.get_int_property("rocksdb.num-snapshots"), Some(0));
     }
 
-
     #[test]
     fn managed_snapshot_read() {
         let tmp_dir = ::tempdir::TempDir::new_in(".", "rocks").unwrap();
-        let db = DB::open(Options::default().map_db_options(|db| db.create_if_missing(true)), &tmp_dir).unwrap();
+        let db = DB::open(
+            Options::default().map_db_options(|db| db.create_if_missing(true)),
+            &tmp_dir,
+        )
+        .unwrap();
 
         assert!(db.put(&WriteOptions::default(), b"k1", b"v1").is_ok());
         assert!(db.put(&WriteOptions::default(), b"k2", b"v2").is_ok());
@@ -155,9 +159,7 @@ mod tests {
             assert!(db.put(&WriteOptions::default(), b"k2", b"v6").is_ok());
             assert!(db.put(&WriteOptions::default(), b"k3", b"v3").is_ok());
 
-            let ropts = ReadOptions::default()
-                .snapshot(Some(&snap))
-                .verify_checksums(false);
+            let ropts = ReadOptions::default().snapshot(Some(&snap)).verify_checksums(false);
 
             assert_eq!(db.get(&ropts, b"k1").expect("db[k1]"), b"v1");
             assert_eq!(db.get(&ropts, b"k2").expect("db[k2]"), b"v2");

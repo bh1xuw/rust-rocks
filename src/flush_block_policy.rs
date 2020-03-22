@@ -1,6 +1,6 @@
 //! Determine when to flush a block.
 
-use table::BlockBasedTableOptions;
+use crate::table::BlockBasedTableOptions;
 
 /// FlushBlockPolicy provides a configurable way to determine when to flush a
 /// block in the block based tables,

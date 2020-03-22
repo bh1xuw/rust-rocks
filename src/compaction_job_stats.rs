@@ -4,7 +4,7 @@ use rocks_sys as ll;
 use std::fmt;
 use std::slice;
 
-use to_raw::FromRaw;
+use crate::to_raw::FromRaw;
 
 pub const MAX_PREFIX_LENGTH: usize = 8;
 

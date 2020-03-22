@@ -3,7 +3,7 @@
 
 use rocks_sys as ll;
 
-use to_raw::ToRaw;
+use crate::to_raw::ToRaw;
 
 /// `WriteBufferManager` is for managing memory allocation for one or more
 /// MemTables.

@@ -8,6 +8,7 @@ keywords = ["ffi", "RocksDB", "facebook", "database"]
 categories = ["external-ffi-bindings", "database"]
 license = "Apache-2.0"
 readme = "README.md"
+edition = "2018"
 include = ["src/*.rs", "Cargo.toml"]
 
 [badges]

@@ -3,7 +3,7 @@
 use std::fmt;
 use std::ops::Deref;
 
-use types::SequenceNumber;
+use crate::types::SequenceNumber;
 
 /// The metadata that describes a column family.
 pub struct ColumnFamilyMetaData {

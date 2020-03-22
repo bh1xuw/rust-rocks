@@ -4,24 +4,25 @@ use rocks_sys as ll;
 
 pub use self::ll::version;
 
-pub use error::Status;
-pub use db::*;
-pub use options::*;
-pub use write_batch::WriteBatch;
-pub use perf_level::*;
-pub use table::*;
-pub use slice::{CVec, PinnableSlice};
-pub use types::SequenceNumber;
-pub use transaction_log::LogFile;
-pub use merge_operator::{AssociativeMergeOperator, MergeOperator};
-pub use table_properties::{TableProperties, TablePropertiesCollection};
-pub use comparator::Comparator;
-pub use env::{Env, Logger};
+pub use crate::error::Status;
+pub use crate::db::*;
+pub use crate::options::*;
+pub use crate::write_batch::WriteBatch;
+pub use crate::perf_level::*;
+pub use crate::table::*;
+pub use crate::slice::{CVec, PinnableSlice};
+pub use crate::types::SequenceNumber;
+pub use crate::transaction_log::LogFile;
+pub use crate::merge_operator::{AssociativeMergeOperator, MergeOperator};
+pub use crate::table_properties::{TableProperties, TablePropertiesCollection};
+pub use crate::comparator::Comparator;
+pub use crate::env::{Env, Logger};
 
 pub use super::Result;
 
 #[test]
 fn test_version() {
     let v = version();
+    println!("version = {}", v);
     assert!(v >= "5.3.1".into());
 }

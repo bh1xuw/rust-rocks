@@ -5,7 +5,7 @@ use std::mem;
 
 use rocks_sys as ll;
 
-use to_raw::ToRaw;
+use crate::to_raw::ToRaw;
 
 /// Algorithm used to make a compaction request stop picking new files
 /// into a single compaction run

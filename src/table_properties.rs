@@ -12,8 +12,8 @@ use std::os::raw::{c_char, c_void};
 
 use rocks_sys as ll;
 
-use types::SequenceNumber;
-use to_raw::{FromRaw, ToRaw};
+use crate::types::SequenceNumber;
+use crate::to_raw::{FromRaw, ToRaw};
 
 pub const UNKNOWN_COLUMN_FAMILY_ID: u32 = u32::MAX;
 

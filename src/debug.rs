@@ -9,8 +9,8 @@ use std::marker::PhantomData;
 
 use rocks_sys as ll;
 
-use to_raw::{FromRaw, ToRaw};
-use types::SequenceNumber;
+use crate::to_raw::{FromRaw, ToRaw};
+use crate::types::SequenceNumber;
 
 
 // Value types encoded as the last component of internal keys.

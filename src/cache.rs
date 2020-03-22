@@ -12,7 +12,7 @@ use std::ffi::CStr;
 
 use rocks_sys as ll;
 
-use to_raw::ToRaw;
+use crate::to_raw::ToRaw;
 
 #[derive(Copy, Clone, Eq, PartialEq, Hash, Debug)]
 pub enum Priority {

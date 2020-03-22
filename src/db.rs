@@ -16,21 +16,20 @@ use std::borrow::Borrow;
 
 use rocks_sys as ll;
 
-use error::Status;
-use options::{ColumnFamilyOptions, CompactRangeOptions, CompactionOptions, DBOptions, FlushOptions,
+use crate::error::Status;
+use crate::options::{ColumnFamilyOptions, CompactRangeOptions, CompactionOptions, DBOptions, FlushOptions,
               IngestExternalFileOptions, Options, ReadOptions, WriteOptions};
-use table_properties::TablePropertiesCollection;
-use snapshot::Snapshot;
-use write_batch::WriteBatch;
-use iterator::Iterator;
-use types::SequenceNumber;
-use to_raw::{FromRaw, ToRaw};
-use metadata::{ColumnFamilyMetaData, LevelMetaData, LiveFileMetaData, SstFileMetaData};
-use transaction_log::{LogFile, TransactionLogIterator};
-use debug::KeyVersionVec;
-
-use super::Result;
-use super::slice::{CVec, PinnableSlice};
+use crate::table_properties::TablePropertiesCollection;
+use crate::snapshot::Snapshot;
+use crate::write_batch::WriteBatch;
+use crate::iterator::Iterator;
+use crate::types::SequenceNumber;
+use crate::to_raw::{FromRaw, ToRaw};
+use crate::metadata::{ColumnFamilyMetaData, LevelMetaData, LiveFileMetaData, SstFileMetaData};
+use crate::transaction_log::{LogFile, TransactionLogIterator};
+use crate::debug::KeyVersionVec;
+use crate::Result;
+use crate::slice::{CVec, PinnableSlice};
 
 const DEFAULT_COLUMN_FAMILY_NAME: &'static str = "default";
 
@@ -2590,7 +2589,7 @@ fn test_key_may_exist() {
 
 #[test]
 fn test_ingest_sst_file() {
-    use sst_file_writer::SstFileWriter;
+    use crate::sst_file_writer::SstFileWriter;
 
     let sst_dir = ::tempdir::TempDir::new_in(".", "rocks.sst").unwrap();
 

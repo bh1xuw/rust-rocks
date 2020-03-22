@@ -1,19 +1,17 @@
 //! An iterator yields a sequence of key/value pairs from a source.
 
-use std::mem;
-use std::slice;
 use std::fmt;
 use std::iter;
 use std::marker::PhantomData;
+use std::mem;
 use std::os::raw::c_void;
+use std::slice;
 
 use rocks_sys as ll;
 
-use error::Status;
-use to_raw::FromRaw;
-
-use super::Result;
-
+use crate::error::Status;
+use crate::to_raw::FromRaw;
+use crate::Result;
 
 /// An iterator yields a sequence of key/value pairs from a source.
 ///
@@ -39,7 +37,6 @@ impl<'a> fmt::Debug for Iterator<'a> {
         }
     }
 }
-
 
 impl<'a> Drop for Iterator<'a> {
     fn drop(&mut self) {
@@ -158,12 +155,11 @@ impl<'a> Iterator<'a> {
 
     /// Property `"rocksdb.iterator.is-key-pinned"`:
     ///
-    /// - If returning "1", this means that the Slice returned by key() is valid
-    ///   as long as the iterator is not deleted.
+    /// - If returning "1", this means that the Slice returned by key() is valid as long as the
+    ///   iterator is not deleted.
     /// - It is guaranteed to always return "1" if
     ///   - Iterator created with `ReadOptions::pin_data = true`
-    ///   - DB tables were created with
-    ///     `BlockBasedTableOptions::use_delta_encoding = false`.
+    ///   - DB tables were created with `BlockBasedTableOptions::use_delta_encoding = false`.
     ///
     /// Property `"rocksdb.iterator.super-version-number"`:
     ///
@@ -192,7 +188,11 @@ impl<'a> Iterator<'a> {
         if !self.is_valid() {
             self.seek_to_first();
         }
-        assert_eq!(self.get_property("rocksdb.iterator.is-key-pinned"), Ok("1".to_owned()), "key is not pinned!");
+        assert_eq!(
+            self.get_property("rocksdb.iterator.is-key-pinned"),
+            Ok("1".to_owned()),
+            "key is not pinned!"
+        );
         IntoIter { inner: self }
     }
 
@@ -201,11 +201,14 @@ impl<'a> Iterator<'a> {
         if !self.is_valid() {
             self.seek_to_last();
         }
-        assert_eq!(self.get_property("rocksdb.iterator.is-key-pinned"), Ok("1".to_owned()), "key is not pinned!");
+        assert_eq!(
+            self.get_property("rocksdb.iterator.is-key-pinned"),
+            Ok("1".to_owned()),
+            "key is not pinned!"
+        );
         IntoRevIter { inner: self }
     }
 }
-
 
 /// Wraps into a rust-style Iterator
 pub struct IntoIter<'a> {
@@ -279,7 +282,6 @@ impl<'a> iter::Iterator for IntoRevIter<'a> {
     }
 }
 
-
 #[cfg(test)]
 mod tests {
     use super::super::rocksdb::*;
@@ -290,9 +292,9 @@ mod tests {
         let tmp_dir = TempDir::new_in(".", "rocks").unwrap();
         let opt = Options::default()
             .map_db_options(|db| db.create_if_missing(true))
-            .map_cf_options(
-                |cf| cf.table_factory_block_based(BlockBasedTableOptions::default().use_delta_encoding(false)),
-            );
+            .map_cf_options(|cf| {
+                cf.table_factory_block_based(BlockBasedTableOptions::default().use_delta_encoding(false))
+            });
         let db = DB::open(opt, tmp_dir.path()).unwrap();
         let mut batch = WriteBatch::new();
 
@@ -318,9 +320,7 @@ mod tests {
         assert!(db.compact_range(&Default::default(), ..).is_ok());
 
         {
-            for (k, v) in db.new_iterator(&ReadOptions::default().pin_data(true))
-                .into_iter()
-            {
+            for (k, v) in db.new_iterator(&ReadOptions::default().pin_data(true)).into_iter() {
                 println!("> {:?} => {:?}", String::from_utf8_lossy(k), String::from_utf8_lossy(v));
             }
         }
@@ -328,7 +328,8 @@ mod tests {
         assert!(ret.is_ok());
         {
             // must pin_data
-            let kvs = db.new_iterator(&ReadOptions::default().pin_data(true))
+            let kvs = db
+                .new_iterator(&ReadOptions::default().pin_data(true))
                 .into_iter()
                 .map(|(k, v)| (String::from_utf8_lossy(k), String::from_utf8_lossy(v)))
                 .collect::<Vec<_>>();
@@ -341,15 +342,17 @@ mod tests {
         println!("it => {:?}", it);
 
         // FIXME: is this right?
-        assert_eq!(it.get_property("rocksdb.iterator.is-key-pinned"), Ok("Iterator is not valid.".to_string()));
+        assert_eq!(
+            it.get_property("rocksdb.iterator.is-key-pinned"),
+            Ok("Iterator is not valid.".to_string())
+        );
 
         it.seek_to_first();
         assert_eq!(it.get_property("rocksdb.iterator.is-key-pinned"), Ok("1".to_string()));
 
         println!(
             "got => {:?}",
-            it.get_property("rocksdb.iterator.super-version-number")
-                .unwrap()
+            it.get_property("rocksdb.iterator.super-version-number").unwrap()
         );
 
         assert_eq!(it.is_valid(), true);
@@ -383,7 +386,8 @@ mod tests {
         let ret = db.write(&WriteOptions::default(), batch);
         assert!(ret.is_ok());
 
-        let keys: Vec<_> = db.new_iterator(&ReadOptions::default().pin_data(true))
+        let keys: Vec<_> = db
+            .new_iterator(&ReadOptions::default().pin_data(true))
             .into_rev_iter()
             .map(|(k, _)| String::from_utf8_lossy(k).to_owned().to_string())
             .collect();

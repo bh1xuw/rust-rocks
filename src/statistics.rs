@@ -6,7 +6,7 @@ use std::os::raw::c_void;
 
 use rocks_sys as ll;
 
-use to_raw::ToRaw;
+use crate::to_raw::ToRaw;
 
 /// Ticker statistics
 #[repr(u32)]

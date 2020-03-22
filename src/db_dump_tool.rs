@@ -4,8 +4,8 @@ use std::path::Path;
 
 use rocks_sys as ll;
 
-use options::Options;
-use to_raw::ToRaw;
+use crate::options::Options;
+use crate::to_raw::ToRaw;
 
 /// Dumps db to a ROCKDUMP file
 pub struct DbDumpTool {

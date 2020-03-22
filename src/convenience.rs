@@ -4,7 +4,7 @@ use std::mem;
 
 use rocks_sys as ll;
 
-use options::CompressionType;
+use crate::options::CompressionType;
 
 /// Get all supported compression type as a list
 pub fn get_supported_compressions() -> Vec<CompressionType> {

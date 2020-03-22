@@ -13,7 +13,7 @@ use std::fmt;
 
 use rocks_sys as ll;
 
-use to_raw::FromRaw;
+use crate::to_raw::FromRaw;
 
 /// The type of a thread.
 #[derive(Debug, Copy, Clone, PartialEq, Eq, Hash)]

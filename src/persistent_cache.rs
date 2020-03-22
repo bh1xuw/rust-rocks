@@ -1,17 +1,17 @@
 //! Persistent cache interface for caching IO pages on a persistent medium.
 
+use std::fmt;
 use std::path::Path;
 use std::ptr;
-use std::fmt;
-use std::str;
 use std::slice;
+use std::str;
 
 use rocks_sys as ll;
 
-use error::Status;
-use env::{Env, Logger};
-use to_raw::ToRaw;
-use super::Result;
+use crate::env::{Env, Logger};
+use crate::error::Status;
+use crate::to_raw::ToRaw;
+use crate::Result;
 
 /// Persistent cache interface for caching IO pages on a persistent medium. The
 /// cache interface is specifically designed for persistent read cache.
@@ -28,7 +28,9 @@ impl ToRaw<ll::rocks_persistent_cache_t> for PersistentCache {
 impl Clone for PersistentCache {
     /// Duplicated PersistentCache inner shared_ptr
     fn clone(&self) -> Self {
-        PersistentCache { raw: unsafe { ll::rocks_persistent_cache_clone(self.raw) } }
+        PersistentCache {
+            raw: unsafe { ll::rocks_persistent_cache_clone(self.raw) },
+        }
     }
 }
 
@@ -39,7 +41,6 @@ impl fmt::Debug for PersistentCache {
             .finish()
     }
 }
-
 
 impl PersistentCache {
     /// Factor method to create a new persistent cache
@@ -62,12 +63,7 @@ impl PersistentCache {
                 optimized_for_nvm as u8,
                 &mut status,
             );
-            Status::from_ll(status)
-                .map(|()| {
-                    PersistentCache {
-                        raw: raw,
-                    }
-                })
+            Status::from_ll(status).map(|()| PersistentCache { raw: raw })
         }
     }
 

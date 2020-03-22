@@ -11,7 +11,7 @@
 
 use rocks_sys as ll;
 
-use to_raw::ToRaw;
+use crate::to_raw::ToRaw;
 
 pub struct FilterPolicy {
     raw: *mut ll::rocks_raw_filterpolicy_t,

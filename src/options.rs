@@ -12,24 +12,24 @@ use std::u64;
 
 use rocks_sys as ll;
 
-use advanced_options::{CompactionOptionsFIFO, CompactionPri, CompactionStyle, CompressionOptions};
-use cache::Cache;
-use compaction_filter::{CompactionFilter, CompactionFilterFactory};
-use comparator::Comparator;
-use env::{Env, InfoLogLevel, Logger};
-use listener::EventListener;
-use merge_operator::{AssociativeMergeOperator, MergeOperator};
-use rate_limiter::RateLimiter;
-use slice_transform::SliceTransform;
-use snapshot::Snapshot;
-use sst_file_manager::SstFileManager;
-use statistics::Statistics;
-use table::{BlockBasedTableOptions, CuckooTableOptions, PlainTableOptions};
-use table_properties::TablePropertiesCollectorFactory;
-use universal_compaction::CompactionOptionsUniversal;
-use write_buffer_manager::WriteBufferManager;
+use crate::advanced_options::{CompactionOptionsFIFO, CompactionPri, CompactionStyle, CompressionOptions};
+use crate::cache::Cache;
+use crate::compaction_filter::{CompactionFilter, CompactionFilterFactory};
+use crate::comparator::Comparator;
+use crate::env::{Env, InfoLogLevel, Logger};
+use crate::listener::EventListener;
+use crate::merge_operator::{AssociativeMergeOperator, MergeOperator};
+use crate::rate_limiter::RateLimiter;
+use crate::slice_transform::SliceTransform;
+use crate::snapshot::Snapshot;
+use crate::sst_file_manager::SstFileManager;
+use crate::statistics::Statistics;
+use crate::table::{BlockBasedTableOptions, CuckooTableOptions, PlainTableOptions};
+use crate::table_properties::TablePropertiesCollectorFactory;
+use crate::universal_compaction::CompactionOptionsUniversal;
+use crate::write_buffer_manager::WriteBufferManager;
 
-use to_raw::{FromRaw, ToRaw};
+use crate::to_raw::{FromRaw, ToRaw};
 
 lazy_static! {
     // since all Options field are guaranteed to be thread safe
