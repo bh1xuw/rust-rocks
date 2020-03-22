@@ -248,7 +248,6 @@ mod imp {
         #[cfg(feature = "snappy")]
         {
             let src = std::env::current_dir().unwrap();
-            println!("cargo:warning=snappy {:?}/snappy", src);
             // FIXME: how to use cmake's define?
             cfg.cxxflag("-DSNAPPY");
             cfg.cxxflag(format!("-I{}", src.join("snappy").display()));
