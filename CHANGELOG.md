@@ -14,6 +14,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 - Static link under linux
 - Refine feature gates
 - Travis CI errors
+- Fix create_missing_column_families #5
 
 ## 0.1.4
 ### Added
