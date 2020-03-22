@@ -257,6 +257,7 @@ mod imp {
             cfg.cxxflag(format!("-I{}", src.join("snappy").display()));
             // snappy-stubs-public.h
             cfg.cxxflag(format!("-I{}", snappy_build_dir.join("build").display()));
+            println!("cargo:warning=dir={}", snappy_build_dir.join("build").display());
         }
 
         #[cfg(feature = "zlib")]
