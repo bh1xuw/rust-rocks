@@ -72,7 +72,7 @@ mod imp {
     use cmake;
 
     pub fn build() {
-        println!("cargo:warning=static link feature enabled, it'll takes some minutes to finish compiling... ");
+        println!("cargo:warning=static link feature enabled, it'll take minutes to finish compiling...");
 
         #[cfg(feature = "snappy")]
         snappy();
