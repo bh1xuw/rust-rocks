@@ -1,6 +1,7 @@
 //! A Comparator object provides a total order across slices that are
 //! used as keys in an sstable or a database.
 
+#[doc(inline)]
 pub use rocks_sys::comparator::Comparator;
 
 #[cfg(test)]
