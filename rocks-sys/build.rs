@@ -280,6 +280,7 @@ mod imp {
         }
 
         let dst = cfg
+            .define("ENABLE_EXPORTS", "ON")
             .define("WITH_CORE_TOOLS", "OFF")
             .define("WITH_TOOLS", "OFF")
             .build_target("rocksdb")
