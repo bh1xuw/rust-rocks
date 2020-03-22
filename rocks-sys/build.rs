@@ -1,9 +1,3 @@
-extern crate cc;
-extern crate cmake;
-
-#[cfg(not(feature = "static-link"))]
-extern crate pkg_config;
-
 #[cfg(not(feature = "static-link"))]
 mod imp {
     pub fn build() {
@@ -69,8 +63,6 @@ mod imp {
     use std::path::Path;
     use std::process::Command;
 
-    use cmake;
-
     pub fn build() {
         println!(
             "cargo:warning=static link feature enabled, it'll take minutes to finish compiling..."
@@ -104,10 +96,7 @@ mod imp {
 
         let dst = cmake::Config::new("snappy")
             .define("CMAKE_POSITION_INDEPENDENT_CODE", "ON")
-            .build_target("snappy")
             .build();
-
-        println!("cargo:warning=snappy => {:?}", dst);
 
         println!("cargo:rustc-link-search=native={}/lib/", dst.display());
         println!("cargo:rustc-link-lib=static=snappy");
