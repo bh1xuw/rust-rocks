@@ -27,15 +27,14 @@ mod imp {
 
     #[cfg(feature = "snappy")]
     fn snappy() {
-        pkg_config::Config::new().probe("snappy").or_else(|_| {
+        pkg_config::Config::new().probe("snappy").map_err(|_| {
             println!("cargo:rustc-link-lib=dylib=snappy");
-            Ok(())
         });
     }
 
     #[cfg(feature = "zlib")]
     fn zlib() {
-        pkg_config::Config::new().probe("zlib").or_else(|_| {
+        pkg_config::Config::new().probe("zlib").map_err(|_| {
             println!("cargo:rustc-link-lib=dylib=z");
             Ok(())
         });
@@ -48,17 +47,15 @@ mod imp {
 
     #[cfg(feature = "lz4")]
     fn lz4() {
-        pkg_config::Config::new().probe("liblz4").or_else(|_| {
+        pkg_config::Config::new().probe("liblz4").map_err(|_| {
             println!("cargo:rustc-link-lib=dylib=lz4");
-            Ok(())
         });
     }
 
     #[cfg(feature = "zstd")]
     fn zstd() {
-        pkg_config::Config::new().probe("libzstd").or_else(|_| {
+        pkg_config::Config::new().probe("libzstd").map_err(|_| {
             println!("cargo:rustc-link-lib=dylib=zstd");
-            Ok(())
         });
     }
 
@@ -104,9 +101,7 @@ mod imp {
                 .status();
         }
 
-        let dst = cmake::Config::new("snappy")
-            .build_target("snappy")
-            .build();
+        let dst = cmake::Config::new("snappy").build_target("snappy").build();
 
         println!("cargo:rustc-link-search=native={}/build/", dst.display());
         // will link from rocksdb
@@ -130,7 +125,8 @@ mod imp {
         cfg.include("zlib");
 
         // TODO: borrow following list form Makefile
-        let filez = "adler32.c crc32.c deflate.c infback.c inffast.c inflate.c inftrees.c trees.c zutil.c";
+        let filez =
+            "adler32.c crc32.c deflate.c infback.c inffast.c inflate.c inftrees.c trees.c zutil.c";
         let fileg = "compress.c uncompr.c gzclose.c gzlib.c gzread.c gzwrite.c";
 
         for file in filez.split(" ") {
