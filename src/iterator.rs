@@ -210,6 +210,24 @@ impl<'a> Iterator<'a> {
     }
 }
 
+impl<'a> iter::IntoIterator for Iterator<'a> {
+    type Item = (&'a [u8], &'a [u8]);
+    type IntoIter = IntoIter<'a>;
+
+    fn into_iter(mut self) -> Self::IntoIter {
+        if !self.is_valid() {
+            self.seek_to_first();
+        }
+        // FIXME: is-key-pinned really used?
+        /*assert_eq!(
+            self.get_property("rocksdb.iterator.is-key-pinned"),
+            Ok("1".to_owned()),
+            "key is not pinned!"
+        );*/
+        IntoIter { inner: self }
+    }
+}
+
 /// Wraps into a rust-style Iterator
 pub struct IntoIter<'a> {
     inner: Iterator<'a>,
