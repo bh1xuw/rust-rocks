@@ -98,16 +98,17 @@ mod imp {
         // cmake can only have 1 run in 1 crate
         // or else the `build` directory will be overwritten
         let out_dir = env::var("OUT_DIR").unwrap();
-        let build_dir = Path::new(&out_dir).join("snappy_build");
-        let _ = fs::create_dir(&build_dir);
+        let this_out_dir = Path::new(&out_dir).join("snappy_out");
+        let _ = fs::create_dir(&this_out_dir);
 
         let dst = cmake::Config::new("snappy")
             .define("CMAKE_POSITION_INDEPENDENT_CODE", "ON")
             .build_target("snappy")
-            .out_dir(build_dir)
+            .out_dir(this_out_dir)
             .very_verbose(true)
             .uses_cxx11()
             .build();
+        fs::copy()
 
         println!("cargo:rustc-link-search=native={}/build/", dst.display());
         println!("cargo:rustc-link-lib=static=snappy");
@@ -248,9 +249,14 @@ mod imp {
         #[cfg(feature = "snappy")]
         {
             let src = std::env::current_dir().unwrap();
+            let out_dir = env::var("OUT_DIR").unwrap();
+            let snappy_out_dir = Path::new(&out_dir).join("snappy_out");
+
             // FIXME: how to use cmake's define?
             cfg.cxxflag("-DSNAPPY");
             cfg.cxxflag(format!("-I{}", src.join("snappy").display()));
+            // snappy-stubs-public.h
+            cfg.cxxflag(format!("-I{}", snappy_build_dir.join("build").display()));
         }
 
         #[cfg(feature = "zlib")]
