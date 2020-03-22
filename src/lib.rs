@@ -66,7 +66,12 @@ pub mod write_batch;
 pub mod write_buffer_manager;
 
 // the prelude
-pub mod rocksdb;
+pub mod prelude;
+
+// #[deprecated(since = "0.1.5", note = "Please use the `prelude` module instead")]
+pub mod rocksdb {
+    pub use crate::prelude::*;
+}
 
 // for raw pointer infomation hiding
 mod to_raw;
