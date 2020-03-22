@@ -39,10 +39,17 @@ For static build:
 List current supported compression types:
 
 ```console
-$ cargo test -- --nocapture compression_types
-supported => [ZSTD, ZlibCompression, SnappyCompression, ZSTDNotFinalCompression, LZ4HCCompression, LZ4Compression, BZip2Compression, NoCompression]
-$ cargo test --features static-link -- --nocapture compression_types
-supported => [SnappyCompression, NoCompression]
+$ cargo run --example it-works
+RocksDB: 6.7.3
+Compression Supported:
+  - NoCompression
+  - SnappyCompression
+  - ZlibCompression
+  - BZip2Compression
+  - LZ4Compression
+  - LZ4HCCompression
+  - ZSTD
+  - ZSTDNotFinalCompression
 ```
 
 ## Installation
