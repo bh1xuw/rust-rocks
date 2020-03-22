@@ -9,13 +9,14 @@ Make RocksDB really rocks!
 
 ## How to compile
 
-Link against: RocksDB 6.6.4.
+Static Link against: RocksDB 6.6.4.
+
+Dynamic Link Tested: RocksDB >6.5.3.
 
 tests pass under:
 
 - macOS 10.12
 - Linux amd64
-- Linux aarch64(Odroid-C2)
 
 For macOS(with rocksdb installed via brew):
 

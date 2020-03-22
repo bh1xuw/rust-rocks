@@ -65,8 +65,9 @@ mod imp {
 
 #[cfg(feature = "static-link")]
 mod imp {
-    use std::process::Command;
+    use std::env;
     use std::path::Path;
+    use std::process::Command;
 
     use cmake;
 
@@ -99,29 +100,12 @@ mod imp {
                 .status();
         }
 
-        Command::new("./autogen.sh")
-            .current_dir("snappy")
-            .output()
-            .expect("failed to execute process");
+        let dst = cmake::Config::new("snappy")
+            .build_target("snappy")
+            .build();
 
-        Command::new("./configure")
-            .current_dir("snappy")
-            .arg("--with-pic")
-            .arg("--enable-static")
-            .output()
-            .expect("failed to execute process");
-
-        ::cc::Build::new()
-            .cpp(true)
-            .flag("-std=c++11")
-            .opt_level(2)
-            .warnings(false)
-            .include("snappy")
-            .file("snappy/snappy.cc")
-            .file("snappy/snappy-sinksource.cc")
-            .file("snappy/snappy-stubs-internal.cc")
-            .file("snappy/snappy-c.cc")
-            .compile("libsnappy.a");
+        println!("cargo:rustc-link-search=native={}/build/", dst.display());
+        // will link from rocksdb
     }
 
     #[cfg(feature = "zlib")]
@@ -132,11 +116,11 @@ mod imp {
                 .status();
         }
 
-        Command::new("./configure")
-            .current_dir("zlib")
+        Command::new(env::current_dir().unwrap().join("zlib/configure"))
+            .current_dir(env::current_dir().unwrap().join("zlib"))
             .arg("--static")
             .output()
-            .expect("failed to execute process");
+            .expect("failed to execute ./configure");
 
         let mut cfg = ::cc::Build::new();
         cfg.include("zlib");
