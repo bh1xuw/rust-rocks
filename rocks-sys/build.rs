@@ -108,7 +108,6 @@ mod imp {
             .very_verbose(true)
             .uses_cxx11()
             .build();
-        fs::copy()
 
         println!("cargo:rustc-link-search=native={}/build/", dst.display());
         println!("cargo:rustc-link-lib=static=snappy");
