@@ -15,15 +15,15 @@
 //! external synchronization.
 
 use std::fmt;
-use std::slice;
-use std::ptr;
 use std::os::raw::{c_uchar, c_void};
+use std::ptr;
+use std::slice;
 
 use rocks_sys as ll;
 
 use crate::db::ColumnFamilyHandle;
 use crate::to_raw::{FromRaw, ToRaw};
-use super::Result;
+use crate::Result;
 
 /// `WriteBatch` holds a collection of updates to apply atomically to a DB.
 pub struct WriteBatch {
@@ -38,13 +38,18 @@ impl Drop for WriteBatch {
 
 impl Clone for WriteBatch {
     fn clone(&self) -> Self {
-        WriteBatch { raw: unsafe { ll::rocks_writebatch_copy(self.raw) } }
+        WriteBatch {
+            raw: unsafe { ll::rocks_writebatch_copy(self.raw) },
+        }
     }
 }
 
 impl fmt::Debug for WriteBatch {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        write!(f, "WriteBatch {{{} items}}", self.count())
+        f.debug_struct("WriteBatch")
+            .field("items", &self.count())
+            .field("data_size", &self.get_data_size())
+            .finish()
     }
 }
 
@@ -70,11 +75,15 @@ impl Default for WriteBatch {
 
 impl WriteBatch {
     pub fn new() -> WriteBatch {
-        WriteBatch { raw: unsafe { ll::rocks_writebatch_create() } }
+        WriteBatch {
+            raw: unsafe { ll::rocks_writebatch_create() },
+        }
     }
 
     pub fn with_reserved_bytes(reserved_bytes: usize) -> WriteBatch {
-        WriteBatch { raw: unsafe { ll::rocks_writebatch_create_with_reserved_bytes(reserved_bytes) } }
+        WriteBatch {
+            raw: unsafe { ll::rocks_writebatch_create_with_reserved_bytes(reserved_bytes) },
+        }
     }
 
     /// Clear all updates buffered in this batch.
@@ -212,7 +221,6 @@ impl WriteBatch {
         unimplemented!()
     }
 
-
     /// Merge "value" with the existing value of "key" in the database.
     /// "key->merge(existing, value)"
     pub fn merge(&mut self, key: &[u8], value: &[u8]) -> &mut Self {
@@ -304,6 +312,15 @@ impl WriteBatch {
         }
     }
 
+    // FIXME: extra data bytes copied, should use GetDataSize()
+    pub fn get_data_size(&self) -> usize {
+        let mut size = 0;
+        unsafe {
+            ll::rocks_writebatch_data(self.raw, &mut size);
+        }
+        size as usize
+    }
+
     /// Returns the number of updates in the batch
     pub fn count(&self) -> usize {
         unsafe { ll::rocks_writebatch_count(self.raw) as usize }
@@ -387,8 +404,14 @@ pub enum WriteBatchEntry {
         key: Vec<u8>,
         value: Vec<u8>,
     },
-    Delete { column_family_id: u32, key: Vec<u8> },
-    SingleDelete { column_family_id: u32, key: Vec<u8> },
+    Delete {
+        column_family_id: u32,
+        key: Vec<u8>,
+    },
+    SingleDelete {
+        column_family_id: u32,
+        key: Vec<u8>,
+    },
     DeleteRange {
         column_family_id: u32,
         begin_key: Vec<u8>,
@@ -399,13 +422,20 @@ pub enum WriteBatchEntry {
         key: Vec<u8>,
         value: Vec<u8>,
     },
-    LogData { blob: Vec<u8> },
+    LogData {
+        blob: Vec<u8>,
+    },
     BeginPrepareMark,
-    EndPrepareMark { xid: Vec<u8> },
-    RollbackMark { xid: Vec<u8> },
-    CommitMark { xid: Vec<u8> },
+    EndPrepareMark {
+        xid: Vec<u8>,
+    },
+    RollbackMark {
+        xid: Vec<u8>,
+    },
+    CommitMark {
+        xid: Vec<u8>,
+    },
 }
-
 
 #[derive(Default, Debug)]
 pub struct WriteBatchIteratorHandler {
@@ -447,27 +477,20 @@ impl WriteBatchHandler for WriteBatchIteratorHandler {
         });
     }
     fn log_data(&mut self, blob: &[u8]) {
-        self.entries.push(WriteBatchEntry::LogData {
-            blob: blob.to_owned(),
-        });
+        self.entries.push(WriteBatchEntry::LogData { blob: blob.to_owned() });
     }
     fn mark_begin_prepare(&mut self) {
         self.entries.push(WriteBatchEntry::BeginPrepareMark);
     }
     fn mark_end_prepare(&mut self, xid: &[u8]) {
-        self.entries.push(WriteBatchEntry::EndPrepareMark {
-            xid: xid.to_owned(),
-        });
+        self.entries
+            .push(WriteBatchEntry::EndPrepareMark { xid: xid.to_owned() });
     }
     fn mark_rollback(&mut self, xid: &[u8]) {
-        self.entries.push(WriteBatchEntry::RollbackMark {
-            xid: xid.to_owned(),
-        });
+        self.entries.push(WriteBatchEntry::RollbackMark { xid: xid.to_owned() });
     }
     fn mark_commit(&mut self, xid: &[u8]) {
-        self.entries.push(WriteBatchEntry::CommitMark {
-            xid: xid.to_owned(),
-        });
+        self.entries.push(WriteBatchEntry::CommitMark { xid: xid.to_owned() });
     }
 }
 
@@ -578,8 +601,8 @@ pub mod c {
 
 #[cfg(test)]
 mod tests {
-    use super::*;
     use super::super::rocksdb::*;
+    use super::*;
 
     #[test]
     fn write_batch_create() {
