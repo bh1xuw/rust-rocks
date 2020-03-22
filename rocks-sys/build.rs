@@ -95,7 +95,7 @@ mod imp {
 
         let dst = cmake::Config::new("snappy")
             .define("CMAKE_POSITION_INDEPENDENT_CODE", "ON")
-            .build_target("snapy")
+            .build_target("snappy")
             .build();
 
         println!("cargo:rustc-link-search=native={}/lib/", dst.display());
