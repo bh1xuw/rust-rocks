@@ -103,7 +103,7 @@ mod imp {
         let dst = cmake::Config::new("snappy").build_target("snappy").build();
 
         println!("cargo:rustc-link-search=native={}/build/", dst.display());
-        // will link from rocksdb
+        println!("cargo:rustc-link-lib=static=snappy");
     }
 
     #[cfg(feature = "zlib")]
