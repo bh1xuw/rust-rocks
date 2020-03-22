@@ -6,14 +6,17 @@
 //!
 //! ```no_run
 //! use rocks::rocksdb::*;
-//! // RAII DB instance
-//! let db = DB::open(&Options::default(), "./data").unwrap();
-//! assert!(db.put(&WriteOptions::default(), b"my key", b"my value").is_ok());
-//! match db.get(&ReadOptions::default(), b"my key") {
-//!     Ok(ref value) => println!("retrieved value {}", String::from_utf8_lossy(value)),
-//!     Err(e) => println!("operational problem encountered: {}", e),
+//!
+//! let opt = Options::default().map_db_options(|db_opt| db_opt.create_if_missing(true));
+//! let db = DB::open(opt, "./data").unwrap();
+//!
+//! assert!(db.put(WriteOptions::default_instance(), b"hello", b"world").is_ok());
+//!
+//! match db.get(ReadOptions::default_instance(), b"hello") {
+//!     Ok(ref value) => println!("hello: {:?}", value),
+//!     Err(e) => eprintln!("error: {}", e),
 //! }
-//! let _ = db.delete(&WriteOptions::default(), b"my key").unwrap();
+//! let _ = db.delete(WriteOptions::default_instance(), b"hello").unwrap();
 //! ```
 // #![cfg_attr(feature = "dev", feature(plugin))]
 // #![cfg_attr(feature = "dev", plugin(clippy))]
