@@ -9,7 +9,7 @@ Make RocksDB really rocks!
 
 ## How to compile
 
-Static Link against: RocksDB 6.6.4 (macOS Homebrew).
+Static Link against: RocksDB 6.7.3.
 
 Dynamic Link Tested: RocksDB 6.5.3 (ArchLinux).
 
