@@ -121,6 +121,7 @@ mod imp {
             .expect("failed to execute ./configure");
 
         let mut cfg = ::cc::Build::new();
+        cfg.warnings(false);
         cfg.include("zlib");
 
         // TODO: borrow following list form Makefile
@@ -180,8 +181,10 @@ mod imp {
         }
 
         ::cc::Build::new()
+            .warnings(false)
             .include("lz4/lib")
-            .opt_level(3)
+            .opt_level(2)
+            .pic(true)
             .file("lz4/lib/lz4.c")
             .file("lz4/lib/lz4frame.c")
             .file("lz4/lib/lz4hc.c")
