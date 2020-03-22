@@ -282,8 +282,6 @@ mod imp {
         let dst = cfg
             // .define("CMAKE_BUILD_TYPE", "Release") //  RelWithDebInfo
             .define("WITH_GFLAGS", "OFF")
-            .define("WITH_CORE_TOOLS", "OFF")
-            .define("WITH_TOOLS", "OFF")
             .build_target("rocksdb")
             .build();
 
