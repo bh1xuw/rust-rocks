@@ -12,6 +12,7 @@ use std::ptr;
 use std::str;
 use std::path::Path;
 use std::ffi::CStr;
+use lazy_static::lazy_static;
 
 use rocks_sys as ll;
 

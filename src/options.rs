@@ -9,6 +9,7 @@ use std::ptr;
 use std::slice;
 use std::str;
 use std::u64;
+use lazy_static::lazy_static;
 
 use rocks_sys as ll;
 

@@ -6,7 +6,9 @@ pub use rocks_sys::comparator::Comparator;
 
 #[cfg(test)]
 mod tests {
+    use lazy_static::lazy_static;
     use std::str;
+
     use super::super::rocksdb::*;
     use super::*;
 
