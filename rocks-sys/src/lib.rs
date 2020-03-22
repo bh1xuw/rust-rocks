@@ -27,7 +27,7 @@ pub extern "C" fn bz_internal_error(errcode: i32) {
 }
 
 #[doc(hidden)]
-pub mod c {
+pub mod rust_export {
     use std::ptr;
 
     #[no_mangle]
