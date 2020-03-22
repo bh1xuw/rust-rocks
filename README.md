@@ -9,27 +9,21 @@ Make RocksDB really rocks!
 
 ## How to compile
 
-Static Link against: RocksDB 6.6.4.
+Static Link against: RocksDB 6.6.4 (macOS Homebrew).
 
-Dynamic Link Tested: RocksDB >6.5.3.
+Dynamic Link Tested: RocksDB 6.5.3 (ArchLinux).
 
 tests pass under:
 
 - macOS 10.15
 - Linux amd64
 
-### macOS
-
-```console
-$ brew install bzip2
-```
-
-For macOS(with rocksdb installed via brew):
+For macOS(with RocksDB installed via brew):
 
     LIBRARY_PATH=/usr/local/lib CXXFLAGS=-I/usr/local/include \
     cargo test -- --nocapture
 
-For Linux(with rocksdb installed into /usr/local):
+For Linux(with RocksDB installed into /usr/local):
 
     LD_LIBRARY_PATH=/usr/local/lib \
     LIBRARY_PATH=/usr/local/lib CXXFLAGS=-I/usr/local/include \
@@ -42,24 +36,40 @@ For static build:
 
     cargo test --features full -- --test-threads 1
 
-List all supported compression types:
+List current supported compression types:
 
-    cargo test -- --nocapture compression_types
+```console
+$ cargo test -- --nocapture compression_types
+supported => [ZSTD, ZlibCompression, SnappyCompression, ZSTDNotFinalCompression, LZ4HCCompression, LZ4Compression, BZip2Compression, NoCompression]
+$ cargo test --features static-link -- --nocapture compression_types
+supported => [SnappyCompression, NoCompression]
+```
 
 ## Installation
+
+Dynamicly link RocksDB:
 
 ```toml
 [dependencies]
 rocks = "0.1"
 ```
 
-With all static features
+Static link against RocksDB(with snappy enabled by default):
 
 ```toml
 [dependencies.rocks]
 version = "0.1"
 default-features = false
-features = ["static-link", "rocks-sys/snappy", "rocks-sys/zlib", "rocks-sys/bzip2", "rocks-sys/lz4", "rocks-sys/zstd"]
+features = ["static-link"]
+```
+
+With all static features:
+
+```toml
+[dependencies.rocks]
+version = "0.1"
+default-features = false
+features = ["full"]
 ```
 
 ## FAQ
