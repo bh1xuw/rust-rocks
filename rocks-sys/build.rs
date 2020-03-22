@@ -65,9 +65,7 @@ mod imp {
     use std::process::Command;
 
     pub fn build() {
-        println!(
-            "cargo:warning=static link feature enabled, it'll take minutes to finish compiling..."
-        );
+        println!("cargo:warning=static link feature enabled, it'll take minutes to finish compiling...");
 
         #[cfg(feature = "snappy")]
         snappy();
@@ -132,8 +130,7 @@ mod imp {
         cfg.include("zlib");
 
         // TODO: borrow following list form Makefile
-        let filez =
-            "adler32.c crc32.c deflate.c infback.c inffast.c inflate.c inftrees.c trees.c zutil.c";
+        let filez = "adler32.c crc32.c deflate.c infback.c inffast.c inflate.c inftrees.c trees.c zutil.c";
         let fileg = "compress.c uncompr.c gzclose.c gzlib.c gzread.c gzwrite.c";
 
         for file in filez.split(" ") {
@@ -282,8 +279,11 @@ mod imp {
             cfg.cxxflag("-Izstd/lib");
         }
 
-        cfg.build_target("rocksdb");
-        let dst = cfg.build();
+        let dst = cfg
+            // .define("CMAKE_BUILD_TYPE", "Release") //  RelWithDebInfo
+            .define("WITH_GFLAGS", "OFF")
+            .build_target("rocksdb")
+            .build();
 
         println!("cargo:rustc-link-search=native={}/build/", dst.display());
         println!("cargo:rustc-link-lib=static=rocksdb");
