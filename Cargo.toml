@@ -20,7 +20,6 @@ rocks-sys = { path = "rocks-sys", version = "0.1.4" }
 [dev-dependencies]
 tempdir = "0.3"
 
-# test = { path = "../jtest", version = "0.1" }
 [features]
 default = ["rocks-sys/snappy"]
 static-link = ["rocks-sys/static-link"]
@@ -31,6 +30,9 @@ opt-level = 1
 
 [profile.test]
 opt-level = 1
+
+[package.metadata.docs.rs]
+features = ["static-link"]
 
 [workspace]
 members = ["rocks-sys"]

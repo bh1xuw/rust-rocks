@@ -40,6 +40,8 @@ For static build:
     git submodule update --init --recursive
     cargo test --features static-link -- --test-threads 1
 
+    cargo test --features full -- --test-threads 1
+
 List all supported compression types:
 
     cargo test -- --nocapture compression_types

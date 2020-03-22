@@ -35,3 +35,6 @@ zstd = []
 cc = "1.0"
 pkg-config = "0.3"
 cmake = "0.1"
+
+[package.metadata.docs.rs]
+features = ["static-link"]
