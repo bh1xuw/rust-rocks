@@ -59,7 +59,6 @@ mod imp {
 
 #[cfg(feature = "static-link")]
 mod imp {
-    use std::env;
     use std::path::Path;
     use std::process::Command;
 
@@ -96,6 +95,7 @@ mod imp {
 
         let dst = cmake::Config::new("snappy")
             .define("CMAKE_POSITION_INDEPENDENT_CODE", "ON")
+            .build_target("snapy")
             .build();
 
         println!("cargo:rustc-link-search=native={}/lib/", dst.display());
@@ -104,6 +104,8 @@ mod imp {
 
     #[cfg(feature = "zlib")]
     fn zlib() {
+        use std::env;
+
         if !Path::new("zlib/.git").exists() {
             let _ = Command::new("git")
                 .args(&["submodule", "update", "--init", "zlib"])
