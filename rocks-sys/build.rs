@@ -102,13 +102,14 @@ mod imp {
                 .status();
         }
 
-        let dst = cmake::Config::new(env::current_dir().unwrap().join("snappy"))
+        let dst = cmake::Config::new("snappy")
+            .define("CMAKE_POSITION_INDEPENDENT_CODE", "ON")
             .build_target("snappy")
             .build();
 
         println!("cargo:warning=snappy => {:?}", dst);
 
-        println!("cargo:rustc-link-search=native={}/build/", dst.display());
+        println!("cargo:rustc-link-search=native={}/lib/", dst.display());
         println!("cargo:rustc-link-lib=static=snappy");
     }
 
