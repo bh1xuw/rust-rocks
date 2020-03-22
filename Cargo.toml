@@ -15,14 +15,14 @@ travis-ci = { repository = "bh1xuw/rust-rocks", branch = "master" }
 
 [dependencies]
 lazy_static = "1.4"
-rocks-sys = { path = "rocks-sys", version = "0.1.4" }
+rocks-sys = { path = "rocks-sys", version = "0.1.4", default-features = false }
 
 [dev-dependencies]
 tempdir = "0.3"
 
 [features]
-default = ["rocks-sys/snappy"]
-static-link = ["rocks-sys/static-link"]
+default = ["rocks-sys/default", "rocks-sys/snappy"]
+static-link = ["rocks-sys/static-link", "rocks-sys/snappy"]
 full = ["rocks-sys/static-link-all"]
 
 [profile.dev]

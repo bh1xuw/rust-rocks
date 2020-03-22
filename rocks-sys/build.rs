@@ -59,6 +59,8 @@ mod imp {
 
 #[cfg(feature = "static-link")]
 mod imp {
+    use std::env;
+    use std::fs;
     use std::path::Path;
     use std::process::Command;
 
@@ -93,19 +95,26 @@ mod imp {
                 .status();
         }
 
+        // cmake can only have 1 run in 1 crate
+        // or else the `build` directory will be overwritten
+        let out_dir = env::var("OUT_DIR").unwrap();
+        let build_dir = Path::new(&out_dir).join("snappy_build");
+        let _ = fs::create_dir(&build_dir);
+
         let dst = cmake::Config::new("snappy")
             .define("CMAKE_POSITION_INDEPENDENT_CODE", "ON")
             .build_target("snappy")
+            .out_dir(build_dir)
+            .very_verbose(true)
+            .uses_cxx11()
             .build();
 
-        println!("cargo:rustc-link-search=native={}/lib/", dst.display());
+        println!("cargo:rustc-link-search=native={}/build/", dst.display());
         println!("cargo:rustc-link-lib=static=snappy");
     }
 
     #[cfg(feature = "zlib")]
     fn zlib() {
-        use std::env;
-
         if !Path::new("zlib/.git").exists() {
             let _ = Command::new("git")
                 .args(&["submodule", "update", "--init", "zlib"])
@@ -238,9 +247,11 @@ mod imp {
 
         #[cfg(feature = "snappy")]
         {
+            let src = std::env::current_dir().unwrap();
+            println!("cargo:warning=snappy {:?}/snappy", src);
             // FIXME: how to use cmake's define?
             cfg.cxxflag("-DSNAPPY");
-            cfg.cxxflag("-Isnappy");
+            cfg.cxxflag(format!("-I{}", src.join("snappy").display()));
         }
 
         #[cfg(feature = "zlib")]
