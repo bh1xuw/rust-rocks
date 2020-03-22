@@ -29,6 +29,7 @@ mod imp {
     fn snappy() {
         pkg_config::Config::new().probe("snappy").or_else(|_| {
             println!("cargo:rustc-link-lib=dylib=snappy");
+            Ok(())
         });
     }
 
@@ -36,6 +37,7 @@ mod imp {
     fn zlib() {
         pkg_config::Config::new().probe("zlib").or_else(|_| {
             println!("cargo:rustc-link-lib=dylib=z");
+            Ok(())
         });
     }
 
@@ -48,6 +50,7 @@ mod imp {
     fn lz4() {
         pkg_config::Config::new().probe("liblz4").or_else(|_| {
             println!("cargo:rustc-link-lib=dylib=lz4");
+            Ok(())
         });
     }
 
@@ -55,6 +58,7 @@ mod imp {
     fn zstd() {
         pkg_config::Config::new().probe("libzstd").or_else(|_| {
             println!("cargo:rustc-link-lib=dylib=zstd");
+            Ok(())
         });
     }
 
@@ -157,11 +161,11 @@ mod imp {
             cfg.define("BZ_EXPORT", None);
         }
 
-        cfg.define("_FILE_OFFSET_BITS", Some("64"));
-
         cfg.include("bzip2")
+            .define("_FILE_OFFSET_BITS", Some("64"))
             .define("BZ_NO_STDIO", None)
             .opt_level(2)
+            .warnings(false)
             .file("bzip2/blocksort.c")
             .file("bzip2/huffman.c")
             .file("bzip2/crctable.c")

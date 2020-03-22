@@ -18,7 +18,7 @@ before_script:
   - git submodule update --init --recursive
 
 script:
-  - travis_wait 30 cargo test --features "static-link" -v
+  - travis_wait 30 cargo test --features "static-link" -- --test-threads 1
 
 env:
   global:

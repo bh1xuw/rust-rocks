@@ -15,7 +15,7 @@ Dynamic Link Tested: RocksDB >6.5.3.
 
 tests pass under:
 
-- macOS 10.12
+- macOS 10.15
 - Linux amd64
 
 For macOS(with rocksdb installed via brew):
@@ -32,7 +32,7 @@ For Linux(with rocksdb installed into /usr/local):
 For static build:
 
     git submodule update --init --recursive
-    cargo test --features "static-link rocks-sys/snappy rocks-sys/zlib rocks-sys/bzip2 rocks-sys/lz4 rocks-sys/zstd"
+    cargo test --features "static-link"
 
 List all supported compression types:
 
