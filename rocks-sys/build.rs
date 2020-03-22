@@ -36,7 +36,6 @@ mod imp {
     fn zlib() {
         pkg_config::Config::new().probe("zlib").map_err(|_| {
             println!("cargo:rustc-link-lib=dylib=z");
-            Ok(())
         });
     }
 
