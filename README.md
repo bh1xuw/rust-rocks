@@ -18,6 +18,12 @@ tests pass under:
 - macOS 10.15
 - Linux amd64
 
+### macOS
+
+```console
+$ brew install bzip2
+```
+
 For macOS(with rocksdb installed via brew):
 
     LIBRARY_PATH=/usr/local/lib CXXFLAGS=-I/usr/local/include \

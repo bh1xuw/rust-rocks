@@ -27,33 +27,33 @@ mod imp {
 
     #[cfg(feature = "snappy")]
     fn snappy() {
-        pkg_config::Config::new().probe("snappy").map_err(|_| {
+        let _ = pkg_config::Config::new().probe("snappy").map_err(|_| {
             println!("cargo:rustc-link-lib=dylib=snappy");
         });
     }
 
     #[cfg(feature = "zlib")]
     fn zlib() {
-        pkg_config::Config::new().probe("zlib").map_err(|_| {
+        let _ = pkg_config::Config::new().probe("zlib").map_err(|_| {
             println!("cargo:rustc-link-lib=dylib=z");
         });
     }
 
     #[cfg(feature = "bzip2")]
     fn bzip2() {
-        println!("cargo:rustc-link-lib=dylib=bzip2");
+        println!("cargo:rustc-link-lib=dylib=bz2");
     }
 
     #[cfg(feature = "lz4")]
     fn lz4() {
-        pkg_config::Config::new().probe("liblz4").map_err(|_| {
+        let _ = pkg_config::Config::new().probe("liblz4").map_err(|_| {
             println!("cargo:rustc-link-lib=dylib=lz4");
         });
     }
 
     #[cfg(feature = "zstd")]
     fn zstd() {
-        pkg_config::Config::new().probe("libzstd").map_err(|_| {
+        let _ = pkg_config::Config::new().probe("libzstd").map_err(|_| {
             println!("cargo:rustc-link-lib=dylib=zstd");
         });
     }
