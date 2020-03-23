@@ -2516,7 +2516,8 @@ fn test_list_cfs() {
 
     let cfs = ret.unwrap();
     if let Ok((db, cf_handles)) = DB::open_with_column_families(&Options::default(), path, cfs) {
-        let iters = db.new_iterators(&ReadOptions::default(), &cf_handles);
+        let iters = db.new_iterators(&ReadOptions::default().pin_data(true), &cf_handles);
+        println!("its => {:?}", iters);
         assert!(iters.is_ok());
     }
 }

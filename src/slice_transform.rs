@@ -26,7 +26,7 @@ mod tests {
 
     // FIXME: useless?
     #[test]
-    fn prefix_extractor_customized() {
+    fn customized_prefix_extractor() {
         let tmp_dir = ::tempdir::TempDir::new_in(".", "rocks").unwrap();
         let db = DB::open(
             Options::default()
@@ -43,26 +43,14 @@ mod tests {
         // if use another prefix, iterator may be wrong.
         // since it will find a non-included key and skip following.
         // FOR TEST ONLY, this kind of prefix extractor is joking!
-        assert!(db
-            .put(&WriteOptions::default(), b"AA-abcdef-003", b"23333")
-            .is_ok());
-        assert!(db
-            .put(&WriteOptions::default(), b"AA-abcdef-001", b"23333")
-            .is_ok());
-        assert!(db
-            .put(&WriteOptions::default(), b"AA-abcdef-002", b"23333")
-            .is_ok());
-        assert!(db
-            .put(&WriteOptions::default(), b"BB-abcdef-005", b"23333")
-            .is_ok());
-        assert!(db
-            .put(&WriteOptions::default(), b"AA-abcdef-002", b"23333")
-            .is_ok());
-        assert!(db
-            .put(&WriteOptions::default(), b"CC-abcdef-001", b"23333")
-            .is_ok());
+        assert!(db.put(&WriteOptions::default(), b"AA-abcdef-003", b"23333").is_ok());
+        assert!(db.put(&WriteOptions::default(), b"AA-abcdef-001", b"23333").is_ok());
+        assert!(db.put(&WriteOptions::default(), b"AA-abcdef-002", b"23333").is_ok());
+        assert!(db.put(&WriteOptions::default(), b"BB-abcdef-005", b"23333").is_ok());
+        assert!(db.put(&WriteOptions::default(), b"AA-abcdef-002", b"23333").is_ok());
+        assert!(db.put(&WriteOptions::default(), b"CC-abcdef-001", b"23333").is_ok());
 
-        let mut it = db.new_iterator(&ReadOptions::default().prefix_same_as_start(true));
+        let mut it = db.new_iterator(&ReadOptions::default().pin_data(true).prefix_same_as_start(true));
         it.seek(b"---abcdef--");
 
         assert!(it.is_valid());
@@ -92,29 +80,15 @@ mod tests {
         )
         .unwrap();
 
-        assert!(db
-            .put(&WriteOptions::default(), b"abc-003", b"23333")
-            .is_ok());
-        assert!(db
-            .put(&WriteOptions::default(), b"abc-001", b"23333")
-            .is_ok());
-        assert!(db
-            .put(&WriteOptions::default(), b"abc-002", b"23333")
-            .is_ok());
-        assert!(db
-            .put(&WriteOptions::default(), b"abc-005", b"23333")
-            .is_ok());
-        assert!(db
-            .put(&WriteOptions::default(), b"abc-002", b"23333")
-            .is_ok());
-        assert!(db
-            .put(&WriteOptions::default(), b"abc-006", b"23333")
-            .is_ok());
-        assert!(db
-            .put(&WriteOptions::default(), b"def-000", b"23333")
-            .is_ok());
+        assert!(db.put(&WriteOptions::default(), b"abc-003", b"23333").is_ok());
+        assert!(db.put(&WriteOptions::default(), b"abc-001", b"23333").is_ok());
+        assert!(db.put(&WriteOptions::default(), b"abc-002", b"23333").is_ok());
+        assert!(db.put(&WriteOptions::default(), b"abc-005", b"23333").is_ok());
+        assert!(db.put(&WriteOptions::default(), b"abc-002", b"23333").is_ok());
+        assert!(db.put(&WriteOptions::default(), b"abc-006", b"23333").is_ok());
+        assert!(db.put(&WriteOptions::default(), b"def-000", b"23333").is_ok());
 
-        let mut it = db.new_iterator(&ReadOptions::default().prefix_same_as_start(true));
+        let mut it = db.new_iterator(&ReadOptions::default().pin_data(true).prefix_same_as_start(true));
         it.seek(b"abc-");
 
         assert!(it.is_valid());

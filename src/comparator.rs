@@ -26,7 +26,7 @@ mod tests {
         assert!(db.put(&WriteOptions::default(), b"key1", b"val2").is_ok());
         assert!(db.put(&WriteOptions::default(), b"key2", b"val2").is_ok());
 
-        let mut it = db.new_iterator(&ReadOptions::default());
+        let mut it = db.new_iterator(&ReadOptions::default().pin_data(true));
 
         it.seek_to_first();
         assert!(it.is_valid());
@@ -53,7 +53,7 @@ mod tests {
         assert!(db.put(&WriteOptions::default(), b"key1", b"").is_ok());
         assert!(db.put(&WriteOptions::default(), b"key2", b"").is_ok());
 
-        let mut it = db.new_iterator(&ReadOptions::default());
+        let mut it = db.new_iterator(&ReadOptions::default().pin_data(true));
 
         it.seek_to_first();
         assert!(it.is_valid());
