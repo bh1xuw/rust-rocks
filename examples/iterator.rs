@@ -1,5 +1,5 @@
-use std::str;
 use rocks::prelude::*;
+use std::str;
 
 fn main() {
     let opt = Options::default().map_db_options(|db_opt| db_opt.create_if_missing(true));
@@ -8,19 +8,51 @@ fn main() {
     let mut wb = WriteBatch::new();
 
     for i in 0..1000 {
-        wb.put(format!("{:03}-key", i).as_bytes(), format!("value-{:03}", i).as_bytes());
+        wb.put(format!("{:3}-key", i).as_bytes(), format!("value-{:03}", i).as_bytes());
     }
 
     println!("wb => {:?}", wb);
 
     let _ = db.write(WriteOptions::default_instance(), wb).unwrap();
 
-    println!("got => {:?}", db.get(ReadOptions::default_instance(), b"key-042"));
+    println!(
+        "db[042-key] => {:?}",
+        db.get(ReadOptions::default_instance(), b"042-key")
+    );
 
-    for (key, value) in db.new_iterator(ReadOptions::default_instance()) {
+    // pin_data pins iterator key
+    let mut it = db.new_iterator(&ReadOptions::default().pin_data(true));
+
+    // this requires pin_data, since it saves key and use it after next()
+    let items = (&mut it).take(10).collect::<Vec<_>>();
+    for (key, value) in items {
         unsafe {
-            println!("{:?} => {:?}", str::from_utf8_unchecked(key), str::from_utf8_unchecked(value));
+            println!(
+                "{:?} => {:?}",
+                str::from_utf8_unchecked(key),
+                str::from_utf8_unchecked(value)
+            );
         }
     }
+
+    for (key, value) in (&mut it).take(10) {
+        unsafe {
+            println!(
+                "{:?} => {:?}",
+                str::from_utf8_unchecked(key),
+                str::from_utf8_unchecked(value)
+            );
+        }
+    }
+
+    for key in it.keys().take(10) {
+        unsafe {
+            println!(
+                "key = {:?}",
+                str::from_utf8_unchecked(key),
+            );
+        }
+    }
+
     println!("done!");
 }
