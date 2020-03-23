@@ -48,10 +48,19 @@ impl<'a> Drop for Iterator<'a> {
 
 impl<'a> FromRaw<ll::rocks_iterator_t> for Iterator<'a> {
     unsafe fn from_ll(raw: *mut ll::rocks_iterator_t) -> Self {
-        Iterator {
+        let mut it = Iterator {
             raw: raw,
             _marker: PhantomData,
+        };
+        if !it.is_valid() {
+            it.seek_to_first();
         }
+        debug_assert_eq!(
+            it.get_property("rocksdb.iterator.is-key-pinned").unwrap_or_default(),
+            "1",
+            "key is not pinned!"
+        );
+        it
     }
 }
 
@@ -121,7 +130,7 @@ impl<'a> Iterator<'a> {
     /// the iterator.
     ///
     /// REQUIRES: `is_valid()`
-    pub fn key(&self) -> &[u8] {
+    pub fn key(&self) -> &'a [u8] {
         unsafe {
             let mut len = 0;
             let ptr = ll::rocks_iter_key(self.raw, &mut len);
@@ -134,7 +143,7 @@ impl<'a> Iterator<'a> {
     /// the iterator.
     ///
     /// REQUIRES: `!AtEnd() && !AtStart()`
-    pub fn value(&self) -> &[u8] {
+    pub fn value(&self) -> &'a [u8] {
         unsafe {
             let mut len = 0;
             let ptr = ll::rocks_iter_value(self.raw, &mut len);
@@ -181,82 +190,30 @@ impl<'a> Iterator<'a> {
         }
     }
 
-    // FIXME: leaks value?
-    // TODO: failes under empty db
-    /// Consume and make a rust style iterator
-    pub fn into_iter(mut self) -> IntoIter<'a> {
-        if !self.is_valid() {
-            self.seek_to_first();
-        }
-        assert_eq!(
-            self.get_property("rocksdb.iterator.is-key-pinned"),
-            Ok("1".to_owned()),
-            "key is not pinned!"
-        );
-        IntoIter { inner: self }
-    }
-
-    /// consume and make a reversed rust style iterator
-    pub fn into_rev_iter(mut self) -> IntoRevIter<'a> {
-        if !self.is_valid() {
-            self.seek_to_last();
-        }
-        assert_eq!(
-            self.get_property("rocksdb.iterator.is-key-pinned"),
-            Ok("1".to_owned()),
-            "key is not pinned!"
-        );
+    /// Consume and make a reversed rustic style iterator
+    pub fn rev(mut self) -> IntoRevIter<'a> {
+        self.seek_to_last();
         IntoRevIter { inner: self }
     }
-}
 
-impl<'a> iter::IntoIterator for Iterator<'a> {
-    type Item = (&'a [u8], &'a [u8]);
-    type IntoIter = IntoIter<'a>;
+    /// An iterator visiting all keys in current order.
+    pub fn keys(self) -> Keys<'a> {
+        Keys { inner: self }
+    }
 
-    fn into_iter(mut self) -> Self::IntoIter {
-        if !self.is_valid() {
-            self.seek_to_first();
-        }
-        // FIXME: is-key-pinned really used?
-        /*assert_eq!(
-            self.get_property("rocksdb.iterator.is-key-pinned"),
-            Ok("1".to_owned()),
-            "key is not pinned!"
-        );*/
-        IntoIter { inner: self }
+    pub fn values(self) -> Values<'a> {
+        Values { inner: self }
     }
 }
 
-/// Wraps into a rust-style Iterator
-pub struct IntoIter<'a> {
-    inner: Iterator<'a>,
-}
-
-impl<'a> IntoIter<'a> {
-    pub fn into_inner(self) -> Iterator<'a> {
-        self.inner
-    }
-}
-
-impl<'a> iter::Iterator for IntoIter<'a> {
+impl<'a> iter::Iterator for Iterator<'a> {
     type Item = (&'a [u8], &'a [u8]);
 
-    // FIXME: is it dangerous if data is un-pinned?
-    fn next(&mut self) -> Option<(&'a [u8], &'a [u8])> {
-        if self.inner.is_valid() {
-            // let ret = Some((self.inner.key(), self.inner.value()));
-            let k = unsafe {
-                let mut len = 0;
-                let ptr = ll::rocks_iter_key(self.inner.raw, &mut len);
-                slice::from_raw_parts(ptr as _, len)
-            };
-            let v = unsafe {
-                let mut len = 0;
-                let ptr = ll::rocks_iter_value(self.inner.raw, &mut len);
-                slice::from_raw_parts(ptr as _, len)
-            };
-            self.inner.next();
+    fn next(&mut self) -> Option<Self::Item> {
+        if self.is_valid() {
+            let k = self.key();
+            let v = self.value();
+            self.next();
             Some((k, v))
         } else {
             None
@@ -273,27 +230,61 @@ impl<'a> IntoRevIter<'a> {
     pub fn into_inner(self) -> Iterator<'a> {
         self.inner
     }
+
+    pub fn keys(self) -> Keys<'a> {
+        Keys { inner: self.inner }
+    }
+
+    pub fn values(self) -> Values<'a> {
+        Values { inner: self.inner }
+    }
 }
 
 impl<'a> iter::Iterator for IntoRevIter<'a> {
     type Item = (&'a [u8], &'a [u8]);
 
-    // FIXME: is it dangerous if data is un-pinned?
-    fn next(&mut self) -> Option<(&'a [u8], &'a [u8])> {
+    fn next(&mut self) -> Option<Self::Item> {
         if self.inner.is_valid() {
-            // let ret = Some((self.inner.key(), self.inner.value()));
-            let k = unsafe {
-                let mut len = 0;
-                let ptr = ll::rocks_iter_key(self.inner.raw, &mut len);
-                slice::from_raw_parts(ptr as _, len)
-            };
-            let v = unsafe {
-                let mut len = 0;
-                let ptr = ll::rocks_iter_value(self.inner.raw, &mut len);
-                slice::from_raw_parts(ptr as _, len)
-            };
+            let k = self.inner.key();
+            let v = self.inner.value();
             self.inner.prev();
             Some((k, v))
+        } else {
+            None
+        }
+    }
+}
+
+pub struct Keys<'a> {
+    inner: Iterator<'a>,
+}
+
+impl<'a> iter::Iterator for Keys<'a> {
+    type Item = &'a [u8];
+
+    fn next(&mut self) -> Option<Self::Item> {
+        if self.inner.is_valid() {
+            let k = self.inner.key();
+            self.inner.next();
+            Some(k)
+        } else {
+            None
+        }
+    }
+}
+
+pub struct Values<'a> {
+    inner: Iterator<'a>,
+}
+
+impl<'a> iter::Iterator for Values<'a> {
+    type Item = &'a [u8];
+
+    fn next(&mut self) -> Option<Self::Item> {
+        if self.inner.is_valid() {
+            let v = self.inner.value();
+            self.inner.next();
+            Some(v)
         } else {
             None
         }
@@ -406,7 +397,7 @@ mod tests {
 
         let keys: Vec<_> = db
             .new_iterator(&ReadOptions::default().pin_data(true))
-            .into_rev_iter()
+            .rev()
             .map(|(k, _)| String::from_utf8_lossy(k).to_owned().to_string())
             .collect();
         assert_eq!(keys, vec!["k9", "k8", "k6", "k5", "k4", "k3", "k2", "k1"]);
