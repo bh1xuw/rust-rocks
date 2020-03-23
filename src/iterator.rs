@@ -193,7 +193,7 @@ impl<'a> Iterator<'a> {
         }
     }
 
-    /// Consume and make a reversed rustic style iterator
+    /// Consume and make a reversed rustic style iterator.
     pub fn rev(mut self) -> IntoRevIter<'a> {
         self.seek_to_last();
         IntoRevIter { inner: self }
@@ -204,6 +204,7 @@ impl<'a> Iterator<'a> {
         Keys { inner: self }
     }
 
+    /// An iterator visiting all values in current order.
     pub fn values(self) -> Values<'a> {
         Values { inner: self }
     }
@@ -234,12 +235,12 @@ impl<'a> IntoRevIter<'a> {
         self.inner
     }
 
-    pub fn keys(self) -> Keys<'a> {
-        Keys { inner: self.inner }
+    pub fn keys(self) -> RevKeys<'a> {
+        RevKeys { inner: self.inner }
     }
 
-    pub fn values(self) -> Values<'a> {
-        Values { inner: self.inner }
+    pub fn values(self) -> RevValues<'a> {
+        RevValues { inner: self.inner }
     }
 }
 
@@ -276,6 +277,24 @@ impl<'a> iter::Iterator for Keys<'a> {
     }
 }
 
+pub struct RevKeys<'a> {
+    inner: Iterator<'a>,
+}
+
+impl<'a> iter::Iterator for RevKeys<'a> {
+    type Item = &'a [u8];
+
+    fn next(&mut self) -> Option<Self::Item> {
+        if self.inner.is_valid() {
+            let k = self.inner.key();
+            self.inner.prev();
+            Some(k)
+        } else {
+            None
+        }
+    }
+}
+
 pub struct Values<'a> {
     inner: Iterator<'a>,
 }
@@ -287,6 +306,24 @@ impl<'a> iter::Iterator for Values<'a> {
         if self.inner.is_valid() {
             let v = self.inner.value();
             self.inner.next();
+            Some(v)
+        } else {
+            None
+        }
+    }
+}
+
+pub struct RevValues<'a> {
+    inner: Iterator<'a>,
+}
+
+impl<'a> iter::Iterator for RevValues<'a> {
+    type Item = &'a [u8];
+
+    fn next(&mut self) -> Option<Self::Item> {
+        if self.inner.is_valid() {
+            let v = self.inner.value();
+            self.inner.prev();
             Some(v)
         } else {
             None
@@ -395,7 +432,8 @@ mod tests {
         let keys: Vec<_> = db
             .new_iterator(&ReadOptions::default().pin_data(true))
             .rev()
-            .map(|(k, _)| String::from_utf8_lossy(k).to_owned().to_string())
+            .keys()
+            .map(|k| String::from_utf8_lossy(k).to_owned().to_string())
             .collect();
         assert_eq!(keys, vec!["k9", "k8", "k6", "k5", "k4", "k3", "k2", "k1"]);
     }
