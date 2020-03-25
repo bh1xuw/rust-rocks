@@ -235,6 +235,14 @@ impl<'a> IntoRevIter<'a> {
         self.inner
     }
 
+    pub fn seek(&mut self, target: &[u8]) {
+        self.inner.seek(target)
+    }
+
+    pub fn seek_for_prev(&mut self, target: &[u8]) {
+        self.inner.seek_for_prev(target)
+    }
+
     pub fn keys(self) -> RevKeys<'a> {
         RevKeys { inner: self.inner }
     }
@@ -261,6 +269,20 @@ impl<'a> iter::Iterator for IntoRevIter<'a> {
 
 pub struct Keys<'a> {
     inner: Iterator<'a>,
+}
+
+impl<'a> Keys<'a> {
+    pub fn rev(self) -> RevKeys<'a> {
+        RevKeys { inner: self.inner }
+    }
+
+    pub fn seek(&mut self, target: &[u8]) {
+        self.inner.seek(target)
+    }
+
+    pub fn seek_for_prev(&mut self, target: &[u8]) {
+        self.inner.seek_for_prev(target)
+    }
 }
 
 impl<'a> iter::Iterator for Keys<'a> {
@@ -297,6 +319,13 @@ impl<'a> iter::Iterator for RevKeys<'a> {
 
 pub struct Values<'a> {
     inner: Iterator<'a>,
+}
+
+impl<'a> Values<'a> {
+    // FIXME: is this useless?
+    pub fn rev(self) -> RevValues<'a> {
+        RevValues { inner: self.inner }
+    }
 }
 
 impl<'a> iter::Iterator for Values<'a> {
