@@ -42,9 +42,9 @@ pub struct ColumnFamilyDescriptor {
 }
 
 impl ColumnFamilyDescriptor {
-    fn with_name(name: &str) -> ColumnFamilyDescriptor {
+    fn with_name<T: AsRef<str>>(name: T) -> ColumnFamilyDescriptor {
         ColumnFamilyDescriptor {
-            name: CString::new(name).expect("need a valid column family name"),
+            name: CString::new(name.as_ref()).expect("need a valid column family name"),
             options: None,
         }
     }
@@ -53,9 +53,9 @@ impl ColumnFamilyDescriptor {
         self.name.as_ptr()
     }
 
-    pub fn new(name: &str, options: ColumnFamilyOptions) -> ColumnFamilyDescriptor {
+    pub fn new<T: AsRef<str>>(name: T, options: ColumnFamilyOptions) -> ColumnFamilyDescriptor {
         ColumnFamilyDescriptor {
-            name: CString::new(name).expect("need a valid column family name"),
+            name: CString::new(name.as_ref()).expect("need a valid column family name"),
             options: Some(options),
         }
     }
@@ -68,21 +68,9 @@ impl Default for ColumnFamilyDescriptor {
     }
 }
 
-impl From<String> for ColumnFamilyDescriptor {
-    fn from(name: String) -> Self {
-        ColumnFamilyDescriptor::with_name(&name)
-    }
-}
-
-impl<'a> From<&'a str> for ColumnFamilyDescriptor {
-    fn from(name: &'a str) -> Self {
+impl<T: AsRef<str>> From<T> for ColumnFamilyDescriptor {
+    fn from(name: T) -> Self {
         ColumnFamilyDescriptor::with_name(name)
-    }
-}
-
-impl<'a> From<(&'a str, ColumnFamilyOptions)> for ColumnFamilyDescriptor {
-    fn from((name, options): (&'a str, ColumnFamilyOptions)) -> Self {
-        ColumnFamilyDescriptor::new(name, options)
     }
 }
 
@@ -175,13 +163,11 @@ impl<'a, 'b> ops::Deref for ColumnFamily<'a, 'b> {
 
 impl<'a, 'b> fmt::Debug for ColumnFamily<'a, 'b> {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        write!(
-            f,
-            "CF(db={}, cf_id={}, cf_name={:?})",
-            self.db.name(),
-            self.id(),
-            self.name()
-        )
+        f.debug_struct("ColumnFamily")
+            .field("db", &self.db.name())
+            .field("name", &self.name())
+            .field("id", &self.id())
+            .finish()
     }
 }
 
