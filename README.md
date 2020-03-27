@@ -114,3 +114,11 @@ Big picture:
   - [x] good enough by copying C++ comments
   - [ ] rename C++ function names to rust name in doc comments
   - [ ] more examples in doc comment
+
+## Development
+
+Bindgen:
+
+```console
+$ PATH="/usr/local/opt/llvm/bin:$PATH" make
+```
