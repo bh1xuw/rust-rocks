@@ -36,16 +36,17 @@ use crate::Result;
 const DEFAULT_COLUMN_FAMILY_NAME: &'static str = "default";
 
 /// Descriptor of a column family, name and the options
+#[derive(Debug)]
 pub struct ColumnFamilyDescriptor {
     name: CString,
-    options: Option<ColumnFamilyOptions>,
+    options: ColumnFamilyOptions,
 }
 
 impl ColumnFamilyDescriptor {
     fn with_name<T: AsRef<str>>(name: T) -> ColumnFamilyDescriptor {
         ColumnFamilyDescriptor {
             name: CString::new(name.as_ref()).expect("need a valid column family name"),
-            options: None,
+            options: ColumnFamilyOptions::default(),
         }
     }
 
@@ -56,7 +57,25 @@ impl ColumnFamilyDescriptor {
     pub fn new<T: AsRef<str>>(name: T, options: ColumnFamilyOptions) -> ColumnFamilyDescriptor {
         ColumnFamilyDescriptor {
             name: CString::new(name.as_ref()).expect("need a valid column family name"),
-            options: Some(options),
+            options,
+        }
+    }
+
+    pub fn name(&self) -> &str {
+        self.name.to_str().expect("non utf8 cf name")
+    }
+
+    pub fn options(&self) -> &ColumnFamilyOptions {
+        &self.options
+    }
+
+    /// Configure ColumnFamilyOptions using builder style.
+    pub fn map_cf_options<F: FnOnce(ColumnFamilyOptions) -> ColumnFamilyOptions>(self, f: F) -> Self {
+        let ColumnFamilyDescriptor { name, options } = self;
+        let new_options = f(options);
+        ColumnFamilyDescriptor {
+            name,
+            options: new_options,
         }
     }
 }
@@ -757,13 +776,9 @@ impl<'a> DB<'a> {
         let mut cfopts: Vec<*const ll::rocks_cfoptions_t> = Vec::with_capacity(num_column_families);
         let mut cfhandles = vec![ptr::null_mut(); num_column_families];
 
-        // FIXME: is it necessary to create?
-        // hold it to call ffi function
-        let default_cfopt = ColumnFamilyOptions::from_options(options);
-
         for cf in &cfs {
             cfnames.push(cf.name_as_ptr());
-            cfopts.push(cf.options.as_ref().unwrap_or_else(|| &default_cfopt).raw());
+            cfopts.push(cf.options.raw());
         }
 
         let mut status = ptr::null_mut::<ll::rocks_status_t>();

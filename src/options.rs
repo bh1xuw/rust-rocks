@@ -1,5 +1,6 @@
 //! Common options for DB, CF, read/write/flush/compact...
 
+use lazy_static::lazy_static;
 use std::fmt;
 use std::marker::PhantomData;
 use std::mem;
@@ -9,7 +10,6 @@ use std::ptr;
 use std::slice;
 use std::str;
 use std::u64;
-use lazy_static::lazy_static;
 
 use rocks_sys as ll;
 
@@ -151,6 +151,12 @@ impl ToRaw<ll::rocks_cfoptions_t> for ColumnFamilyOptions {
     }
 }
 
+impl FromRaw<ll::rocks_cfoptions_t> for ColumnFamilyOptions {
+    unsafe fn from_ll(raw: *mut ll::rocks_cfoptions_t) -> Self {
+        ColumnFamilyOptions { raw }
+    }
+}
+
 impl Default for ColumnFamilyOptions {
     fn default() -> Self {
         ColumnFamilyOptions {
@@ -167,8 +173,9 @@ impl Drop for ColumnFamilyOptions {
     }
 }
 
-impl fmt::Display for ColumnFamilyOptions {
+impl fmt::Debug for ColumnFamilyOptions {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        write!(f, "ColumnFamilyOptions {{ ")?;
         unsafe {
             let cxx_string = ll::rocks_get_string_from_cfoptions(self.raw);
             let len = ll::cxx_string_size(cxx_string);
@@ -177,11 +184,11 @@ impl fmt::Display for ColumnFamilyOptions {
                 let str_rep = str::from_utf8_unchecked(slice::from_raw_parts(base as *const u8, len));
                 f.write_str(str_rep)?;
                 ll::cxx_string_destroy(cxx_string);
-                Ok(())
             } else {
-                f.write_str("ColumnFamilyOptions { error while converting to String }")
+                write!(f, "error while converting to String")?;
             }
         }
+        write!(f, "}}")
     }
 }
 
@@ -656,12 +663,12 @@ impl ColumnFamilyOptions {
         self
     }
 
-    /// * existing_value - pointer to previous value (from both memtable and sst).
-    ///                  pub nullptr if key doesn't exist
-    /// * existing_value_size - pointer to size of existing_value).
-    ///                       pub nullptr if key doesn't exist
-    /// * delta_value - Delta value to be merged with the existing_value.
-    ///               pub Stored in transaction logs.
+    ///
+    /// * existing_value - pointer to previous value (from both memtable and sst). pub nullptr if
+    ///   key doesn't exist
+    /// * existing_value_size - pointer to size of existing_value). pub nullptr if key doesn't exist
+    /// * delta_value - Delta value to be merged with the existing_value. pub Stored in transaction
+    ///   logs.
     /// * merged_value - Set when delta is applied on the previous value.
     ///
     /// Applicable only when inplace_update_support is true,
@@ -1129,9 +1136,8 @@ impl ColumnFamilyOptions {
     ///
     /// # Arguments
     ///
-    /// - count: Passed to the constructor of the underlying std::vector of each
-    ///   VectorRep. On initialization, the underlying array will be at least count
-    ///   bytes reserved for usage.
+    /// - count: Passed to the constructor of the underlying std::vector of each VectorRep. On
+    ///   initialization, the underlying array will be at least count bytes reserved for usage.
     ///
     ///   Default: 0
     pub fn memtable_factory_vector_rep(self, count: usize) -> Self {
@@ -1152,8 +1158,8 @@ impl ColumnFamilyOptions {
     /// - skiplist_height: the max height of the skiplist
     ///
     ///   Default: 4
-    /// - skiplist_branching_factor: probabilistic size ratio between adjacent
-    ///   link lists in the skiplist
+    /// - skiplist_branching_factor: probabilistic size ratio between adjacent link lists in the
+    ///   skiplist
     ///
     ///   Default: 4
     pub fn memtable_factory_hash_skip_list_rep(
@@ -1183,25 +1189,24 @@ impl ColumnFamilyOptions {
     /// - bucket_count: number of fixed array buckets
     ///
     ///   Default: 50000
-    /// - huge_page_tlb_size: if <=0, allocate the hash table bytes from malloc.
-    ///   Otherwise from huge page TLB. The user needs to reserve
-    ///   huge pages for it to be allocated, like:
+    /// - huge_page_tlb_size: if <=0, allocate the hash table bytes from malloc. Otherwise from huge
+    ///   page TLB. The user needs to reserve huge pages for it to be allocated, like:
     ///
     ///   > sysctl -w vm.nr_hugepages=20
     ///
     ///   See linux doc Documentation/vm/hugetlbpage.txt
     ///
     ///   Default: 0
-    /// - bucket_entries_logging_threshold: if number of entries in one bucket
-    ///   exceeds this number, log about it.
+    /// - bucket_entries_logging_threshold: if number of entries in one bucket exceeds this number,
+    ///   log about it.
     ///
     ///   Default: 4096
-    /// - if_log_bucket_dist_when_flash: if true, log distribution of number of
-    ///   entries when flushing.
+    /// - if_log_bucket_dist_when_flash: if true, log distribution of number of entries when
+    ///   flushing.
     ///
     ///   Default: true
-    /// - threshold_use_skiplist: a bucket switches to skip list if number of
-    ///   entries exceed this parameter.
+    /// - threshold_use_skiplist: a bucket switches to skip list if number of entries exceed this
+    ///   parameter.
     ///
     ///   Default: 256
     pub fn memtable_factory_hash_link_list_rep(self, bucket_count: usize) -> Self {
@@ -1237,14 +1242,12 @@ impl ColumnFamilyOptions {
     /// # Arguments
     ///
     /// - write_buffer_size: the write buffer size in bytes.
-    /// - average_data_size: the average size of key + value in bytes.  This value
-    ///   together with write_buffer_size will be used to compute the number
-    ///   of buckets.
+    /// - average_data_size: the average size of key + value in bytes.  This value together with
+    ///   write_buffer_size will be used to compute the number of buckets.
     ///
     ///   Default: 64
-    /// - hash_function_count: the number of hash functions that will be used by
-    ///   the cuckoo-hash.  The number also equals to the number of possible
-    ///   buckets each key will have.
+    /// - hash_function_count: the number of hash functions that will be used by the cuckoo-hash.
+    ///   The number also equals to the number of possible buckets each key will have.
     ///
     ///   Default: 4
     pub fn memtable_factory_hash_cuckoo_rep(
@@ -1409,8 +1412,9 @@ impl ToRaw<ll::rocks_dboptions_t> for DBOptions {
     }
 }
 
-impl fmt::Display for DBOptions {
+impl fmt::Debug for DBOptions {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        write!(f, "DBOptions {{ ")?;
         unsafe {
             let cxx_string = ll::rocks_get_string_from_dboptions(self.raw);
             let len = ll::cxx_string_size(cxx_string);
@@ -1419,11 +1423,11 @@ impl fmt::Display for DBOptions {
                 let str_rep = str::from_utf8_unchecked(slice::from_raw_parts(base as *const u8, len));
                 f.write_str(str_rep)?;
                 ll::cxx_string_destroy(cxx_string);
-                Ok(())
             } else {
-                f.write_str("DBOptions { error while converting to String }")
+                write!(f, "error while converting to String")?;
             }
         }
+        write!(f, "}}")
     }
 }
 
@@ -1510,15 +1514,14 @@ impl DBOptions {
     ///
     ///  - Throttle the deletion rate of the SST files.
     ///  - Keep track the total size of all SST files.
-    ///  - Set a maximum allowed space limit for SST files that when reached
-    ///    the DB wont do any further flushes or compactions and will set the
-    ///    background error.
+    ///  - Set a maximum allowed space limit for SST files that when reached the DB wont do any
+    ///    further flushes or compactions and will set the background error.
     ///  - Can be shared between multiple dbs.
     ///
     /// Limitations:
     ///
-    ///  - Only track and throttle deletes of SST files in
-    ///    first db_path (db_name if db_paths is empty).
+    ///  - Only track and throttle deletes of SST files in first db_path (db_name if db_paths is
+    ///    empty).
     ///
     /// Default: nullptr
     pub fn sst_file_manager(self, val: Option<SstFileManager>) -> Self {
@@ -1645,7 +1648,10 @@ impl DBOptions {
     pub fn db_paths<P: Into<DbPath>, T: IntoIterator<Item = P>>(self, val: T) -> Self {
         let paths = val.into_iter().map(|p| p.into()).collect::<Vec<_>>();
         // must hold PathBuf.to_str()
-        let path_strs = paths.iter().map(|s| (s.path.to_str().unwrap(), s.target_size)).collect::<Vec<_>>();
+        let path_strs = paths
+            .iter()
+            .map(|s| (s.path.to_str().unwrap(), s.target_size))
+            .collect::<Vec<_>>();
 
         let num_paths = paths.len();
         let mut cpaths = Vec::with_capacity(num_paths);
@@ -2440,7 +2446,6 @@ impl Options {
     /// Set appropriate parameters for bulk loading.
     /// The reason that this is a function that returns "this" instead of a
     /// constructor is to enable chaining of multiple similar calls in the future.
-    ///
 
     /// All data will be in level 0 without any automatic compaction.
     /// It's recommended to manually call CompactRange(NULL, NULL) before reading
@@ -3109,13 +3114,13 @@ mod tests {
     #[test]
     fn dboptions_stringify() {
         let opts = DBOptions::default().allow_2pc(true);
-        assert!(format!("{}", opts).contains("allow_2pc=true"));
+        assert!(format!("{:?}", opts).contains("allow_2pc=true"));
     }
 
     #[test]
     fn cfoptions_stringify() {
         let opts = ColumnFamilyOptions::default().max_write_buffer_number(5);
-        assert!(format!("{}", opts).contains("max_write_buffer_number=5"));
+        assert!(format!("{:?}", opts).contains("max_write_buffer_number=5"));
     }
 
     #[test]
