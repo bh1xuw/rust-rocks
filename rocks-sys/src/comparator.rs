@@ -104,14 +104,14 @@ pub mod rust_export {
         let start_len = crate::cxx_string_size(start as *const _);
 
         let ret = (*comparator).find_shortest_separator(
-            slice::from_raw_parts(start_ptr as *const _, start_len),
+            slice::from_raw_parts(start_ptr as *const _, start_len as _),
             *limit,
         );
         if let Some(new_start) = ret {
             crate::cxx_string_assign(
                 start as *mut _,
                 new_start.as_ptr() as *const _,
-                new_start.len(),
+                new_start.len() as _,
             )
         }
     }
@@ -125,9 +125,9 @@ pub mod rust_export {
         let key_len = crate::cxx_string_size(key as *const _);
 
         let ret =
-            (*comparator).find_short_successor(slice::from_raw_parts(key_ptr as *const _, key_len));
+            (*comparator).find_short_successor(slice::from_raw_parts(key_ptr as *const _, key_len as _));
         if let Some(new_key) = ret {
-            crate::cxx_string_assign(key as *mut _, new_key.as_ptr() as *const _, new_key.len());
+            crate::cxx_string_assign(key as *mut _, new_key.as_ptr() as *const _, new_key.len() as _);
         }
     }
 

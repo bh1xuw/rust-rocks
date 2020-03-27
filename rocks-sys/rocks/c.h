@@ -169,6 +169,11 @@ const char* rocks_pinnable_slice_data(rocks_pinnable_slice_t* s);
 
 size_t rocks_pinnable_slice_size(rocks_pinnable_slice_t* s);
 
+/* ColumnFamilyDescriptor */
+const char* rocks_column_family_descriptor_get_name(const rocks_column_family_descriptor_t* desc);
+
+rocks_cfoptions_t* rocks_column_family_descriptor_get_cfoptions(rocks_column_family_descriptor_t* desc);
+
 /* options.h */
 /*    start */
 rocks_options_t* rocks_options_create();
@@ -1569,6 +1574,11 @@ uint64_t rocks_thread_status_get_op_elapsed_micros(const rocks_thread_status_t* 
 int rocks_thread_status_get_operation_stage(const rocks_thread_status_t* status);
 const uint64_t* rocks_thread_status_get_op_properties(const rocks_thread_status_t* status, size_t* len);
 int rocks_thread_status_get_state_type(const rocks_thread_status_t* status);
+
+/* options_util */
+rocks_column_family_descriptor_t** rocks_load_latest_options(const char* c_dbpath, rocks_dboptions_t* db_options,
+                                                            size_t* cf_descs_len, rocks_status_t** status);
+void rocks_load_options_destroy_cf_descs(rocks_column_family_descriptor_t** c_cf_descs, size_t len);
 
 /* aux */
 void free(void* p);

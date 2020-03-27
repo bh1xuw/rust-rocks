@@ -1,15 +1,27 @@
 #include "rocksdb/db.h"
-#include "rocks/ctypes.hpp"
-#include "rocksdb/utilities/info_log_finder.h"
-
-#include "rocks/rust_export.h"
 
 #include <iostream>
 #include <unordered_map>
 
+#include "rocks/ctypes.hpp"
+#include "rocks/rust_export.h"
+#include "rocksdb/utilities/info_log_finder.h"
+
 using namespace rocksdb;
 
 using std::shared_ptr;
+
+extern "C" {
+const char* rocks_column_family_descriptor_get_name(const rocks_column_family_descriptor_t* desc) {
+  return desc->rep.name.c_str();
+}
+
+// This copies the cfoptions, so caller need to call the rocks_cfoptions_destroy
+rocks_cfoptions_t* rocks_column_family_descriptor_get_cfoptions(rocks_column_family_descriptor_t* desc) {
+  auto ret = new rocks_cfoptions_t{desc->rep.options};
+  return ret;
+}
+}
 
 extern "C" {
 const char* rocks_column_family_handle_get_name(const rocks_column_family_handle_t* handle) {

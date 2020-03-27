@@ -342,5 +342,6 @@ fn main() {
         .file("rocks/listener.cc")
         .file("rocks/compaction_job_stats.cc")
         .file("rocks/thread_status.cc")
+        .file("rocks/options_util.cc")
         .compile("librocksdb_wrap.a");
 }

@@ -79,7 +79,7 @@ struct rocks_pinnable_slice_t {
 
 /* db */
 struct rocks_column_family_descriptor_t {
-  DB* rep;
+  ColumnFamilyDescriptor rep;
 };
 struct rocks_column_family_handle_t {
   ColumnFamilyHandle* rep;
