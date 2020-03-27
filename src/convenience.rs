@@ -21,13 +21,11 @@ pub fn get_supported_compressions() -> Vec<CompressionType> {
     }
 }
 
-
-
 #[test]
 fn test_compression_types() {
     let types = get_supported_compressions();
-    // [ZlibCompression, SnappyCompression, LZ4HCCompression, LZ4Compression, BZip2Compression, NoCompression]
-    println!("supported => {:?}", types);
+    // [ZlibCompression, SnappyCompression, LZ4HCCompression, LZ4Compression, BZip2Compression,
+    // NoCompression]
     assert!(types.len() >= 1);
     assert!(types.contains(&CompressionType::NoCompression));
 }

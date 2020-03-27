@@ -1,9 +1,9 @@
-//! this is for information hiding
+//! This is for information hiding.
 
-pub trait ToRaw<T> {
+pub(crate) trait ToRaw<T> {
     fn raw(&self) -> *mut T;
 }
 
-pub trait FromRaw<T> {
+pub(crate) trait FromRaw<T> {
     unsafe fn from_ll(_: *mut T) -> Self;
 }
