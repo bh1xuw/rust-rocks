@@ -17,7 +17,6 @@ use std::str;
 use rocks_sys as ll;
 
 use crate::debug::KeyVersionVec;
-use crate::error::Status;
 use crate::iterator::Iterator;
 use crate::metadata::{ColumnFamilyMetaData, LevelMetaData, LiveFileMetaData, SstFileMetaData};
 use crate::options::{
@@ -31,9 +30,9 @@ use crate::to_raw::{FromRaw, ToRaw};
 use crate::transaction_log::{LogFile, TransactionLogIterator};
 use crate::types::SequenceNumber;
 use crate::write_batch::WriteBatch;
-use crate::Result;
+use crate::{Error, Result};
 
-const DEFAULT_COLUMN_FAMILY_NAME: &'static str = "default";
+pub const DEFAULT_COLUMN_FAMILY_NAME: &'static str = "default";
 
 /// Descriptor of a column family, name and the options
 #[derive(Debug)]
@@ -159,7 +158,7 @@ impl<'a, 'b> Drop for ColumnFamily<'a, 'b> {
             let mut status = ptr::null_mut::<ll::rocks_status_t>();
             unsafe {
                 ll::rocks_db_destroy_column_family_handle(self.db.raw, self.raw(), &mut status);
-                assert!(Status::from_ll(status).is_ok());
+                assert!(Error::from_ll(status).is_ok());
                 // make underlying cf_handle a nullptr, rocks-sys will skip delete it.
                 self.handle.raw = ptr::null_mut();
             }
@@ -218,7 +217,7 @@ impl<'a, 'b: 'a> ColumnFamily<'a, 'b> {
                 value.len(),
                 &mut status,
             );
-            Status::from_ll(status)
+            Error::from_ll(status)
         }
     }
 
@@ -233,7 +232,7 @@ impl<'a, 'b: 'a> ColumnFamily<'a, 'b> {
                 key.len(),
                 &mut status,
             );
-            Status::from_ll(status)
+            Error::from_ll(status)
         }
     }
 
@@ -248,7 +247,7 @@ impl<'a, 'b: 'a> ColumnFamily<'a, 'b> {
                 key.len(),
                 &mut status,
             );
-            Status::from_ll(status)
+            Error::from_ll(status)
         }
     }
 
@@ -265,7 +264,7 @@ impl<'a, 'b: 'a> ColumnFamily<'a, 'b> {
                 end_key.len(),
                 &mut status,
             );
-            Status::from_ll(status)
+            Error::from_ll(status)
         }
     }
 
@@ -282,7 +281,7 @@ impl<'a, 'b: 'a> ColumnFamily<'a, 'b> {
                 val.len(),
                 &mut status,
             );
-            Status::from_ll(status)
+            Error::from_ll(status)
         }
     }
 
@@ -300,7 +299,7 @@ impl<'a, 'b: 'a> ColumnFamily<'a, 'b> {
                 pinnable_val.raw(),
                 &mut status,
             );
-            Status::from_ll(status).map(|_| pinnable_val)
+            Error::from_ll(status).map(|_| pinnable_val)
         }
     }
 
@@ -335,7 +334,7 @@ impl<'a, 'b: 'a> ColumnFamily<'a, 'b> {
             );
 
             for i in 0..num_keys {
-                ret.push(Status::from_ll(status[i]).map(|_| CVec::from_raw_parts(vals[i] as *mut u8, vals_lens[i])));
+                ret.push(Error::from_ll(status[i]).map(|_| CVec::from_raw_parts(vals[i] as *mut u8, vals_lens[i])));
             }
             ret
         }
@@ -434,7 +433,7 @@ impl<'a, 'b: 'a> ColumnFamily<'a, 'b> {
                 range.end_key_len(),
                 &mut status,
             );
-            Status::from_ll(status)
+            Error::from_ll(status)
         }
     }
 
@@ -465,7 +464,7 @@ impl<'a, 'b: 'a> ColumnFamily<'a, 'b> {
                 val_lens.as_ptr(),
                 &mut status,
             );
-            Status::from_ll(status)
+            Error::from_ll(status)
         }
     }
 
@@ -540,7 +539,7 @@ impl<'a, 'b: 'a> ColumnFamily<'a, 'b> {
                 options.raw(),
                 &mut status,
             );
-            Status::from_ll(status)
+            Error::from_ll(status)
         }
     }
 
@@ -729,7 +728,7 @@ impl<'a> DB<'a> {
         let mut status = ptr::null_mut::<ll::rocks_status_t>();
         unsafe {
             let db_ptr = ll::rocks_db_open(opt, dbname.as_ptr(), &mut status);
-            Status::from_ll(status).map(|_| DB::from_ll(db_ptr))
+            Error::from_ll(status).map(|_| DB::from_ll(db_ptr))
         }
     }
 
@@ -792,7 +791,7 @@ impl<'a> DB<'a> {
                 cfhandles.as_mut_ptr(),
                 &mut status,
             );
-            Status::from_ll(status).map(|_| {
+            Error::from_ll(status).map(|_| {
                 let db = DB::from_ll(db_ptr);
                 // lifetime transmute
                 let db_ref = mem::transmute(&*db.context);
@@ -829,7 +828,7 @@ impl<'a> DB<'a> {
                 error_if_log_file_exist as u8,
                 &mut status,
             );
-            Status::from_ll(status).map(|_| DB::from_ll(db_ptr))
+            Error::from_ll(status).map(|_| DB::from_ll(db_ptr))
         }
     }
 
@@ -843,7 +842,7 @@ impl<'a> DB<'a> {
         let mut lencfs = 0;
         unsafe {
             let cfs = ll::rocks_db_list_column_families(options.raw(), dbname.as_ptr(), &mut lencfs, &mut status);
-            Status::from_ll(status).map(|_| {
+            Error::from_ll(status).map(|_| {
                 if lencfs == 0 {
                     vec![]
                 } else {
@@ -867,7 +866,7 @@ impl<'a> DBRef<'a> {
         let mut status = ptr::null_mut::<ll::rocks_status_t>();
         unsafe {
             let handle = ll::rocks_db_create_column_family(self.raw(), cfopts.raw(), dbname.as_ptr(), &mut status);
-            Status::from_ll(status).map(|_| ColumnFamily {
+            Error::from_ll(status).map(|_| ColumnFamily {
                 handle: ColumnFamilyHandle { raw: handle },
                 db: self.borrow(),
                 owned: true,
@@ -882,7 +881,7 @@ impl<'a> DBRef<'a> {
         let mut status = ptr::null_mut::<ll::rocks_status_t>();
         unsafe {
             ll::rocks_db_drop_column_family(self.raw(), column_family.raw(), &mut status);
-            Status::from_ll(status)
+            Error::from_ll(status)
         }
     }
 
@@ -903,7 +902,7 @@ impl<'a> DBRef<'a> {
                 value.len(),
                 &mut status,
             );
-            Status::from_ll(status)
+            Error::from_ll(status)
         }
     }
 
@@ -926,7 +925,7 @@ impl<'a> DBRef<'a> {
                 value.len(),
                 &mut status,
             );
-            Status::from_ll(status)
+            Error::from_ll(status)
         }
     }
 
@@ -945,7 +944,7 @@ impl<'a> DBRef<'a> {
                 key.len(),
                 &mut status,
             );
-            Status::from_ll(status)
+            Error::from_ll(status)
         }
     }
 
@@ -960,7 +959,7 @@ impl<'a> DBRef<'a> {
                 key.len(),
                 &mut status,
             );
-            Status::from_ll(status)
+            Error::from_ll(status)
         }
     }
 
@@ -990,7 +989,7 @@ impl<'a> DBRef<'a> {
                 key.len(),
                 &mut status,
             );
-            Status::from_ll(status)
+            Error::from_ll(status)
         }
     }
 
@@ -1010,7 +1009,7 @@ impl<'a> DBRef<'a> {
                 key.len(),
                 &mut status,
             );
-            Status::from_ll(status)
+            Error::from_ll(status)
         }
     }
 
@@ -1048,7 +1047,7 @@ impl<'a> DBRef<'a> {
                 end_key.len(),
                 &mut status,
             );
-            Status::from_ll(status)
+            Error::from_ll(status)
         }
     }
 
@@ -1069,7 +1068,7 @@ impl<'a> DBRef<'a> {
                 val.len(),
                 &mut status,
             );
-            Status::from_ll(status)
+            Error::from_ll(status)
         }
     }
 
@@ -1092,7 +1091,7 @@ impl<'a> DBRef<'a> {
                 val.len(),
                 &mut status,
             );
-            Status::from_ll(status)
+            Error::from_ll(status)
         }
     }
 
@@ -1108,7 +1107,7 @@ impl<'a> DBRef<'a> {
         let mut status = ptr::null_mut::<ll::rocks_status_t>();
         unsafe {
             ll::rocks_db_write(self.raw(), options.raw(), updates.raw(), &mut status);
-            Status::from_ll(status)
+            Error::from_ll(status)
         }
     }
 
@@ -1116,9 +1115,9 @@ impl<'a> DBRef<'a> {
     /// corresponding value in *value and return OK.
     ///
     /// If there is no entry for "key" leave *value unchanged and return
-    /// a status for which Status::IsNotFound() returns true.
+    /// a status for which Error::IsNotFound() returns true.
     ///
-    /// May return some other Status on an error.
+    /// May return some other Error on an error.
     pub fn get(&self, options: &ReadOptions, key: &[u8]) -> Result<PinnableSlice> {
         let mut status = ptr::null_mut::<ll::rocks_status_t>();
         // FIXME: should be mut
@@ -1132,7 +1131,7 @@ impl<'a> DBRef<'a> {
                 pinnable_val.raw(),
                 &mut status,
             );
-            Status::from_ll(status).map(|_| pinnable_val)
+            Error::from_ll(status).map(|_| pinnable_val)
         }
     }
 
@@ -1155,14 +1154,14 @@ impl<'a> DBRef<'a> {
                 pinnable_val.raw(),
                 &mut status,
             );
-            Status::from_ll(status).map(|_| pinnable_val)
+            Error::from_ll(status).map(|_| pinnable_val)
         }
     }
 
     /// If keys[i] does not exist in the database, then the i'th returned
-    /// status will be one for which Status::IsNotFound() is true, and
+    /// status will be one for which Error::IsNotFound() is true, and
     /// (*values)[i] will be set to some arbitrary value (often ""). Otherwise,
-    /// the i'th returned status will have Status::ok() true, and (*values)[i]
+    /// the i'th returned status will have Error::ok() true, and (*values)[i]
     /// will store the value associated with keys[i].
     ///
     /// (*values) will always be resized to be the same size as (keys).
@@ -1199,7 +1198,7 @@ impl<'a> DBRef<'a> {
             );
 
             for i in 0..num_keys {
-                ret.push(Status::from_ll(status[i]).map(|_| CVec::from_raw_parts(vals[i] as *mut u8, vals_lens[i])));
+                ret.push(Error::from_ll(status[i]).map(|_| CVec::from_raw_parts(vals[i] as *mut u8, vals_lens[i])));
             }
             ret
         }
@@ -1242,7 +1241,7 @@ impl<'a> DBRef<'a> {
             );
 
             for i in 0..num_keys {
-                ret.push(Status::from_ll(status[i]).map(|_| CVec::from_raw_parts(vals[i] as *mut u8, vals_lens[i])));
+                ret.push(Error::from_ll(status[i]).map(|_| CVec::from_raw_parts(vals[i] as *mut u8, vals_lens[i])));
             }
             ret
         }
@@ -1372,7 +1371,7 @@ impl<'a> DBRef<'a> {
                 cfs_len,
                 &mut status,
             );
-            Status::from_ll(status).map(|_| c_iters.into_iter().map(|ptr| Iterator::from_ll(ptr)).collect())
+            Error::from_ll(status).map(|_| c_iters.into_iter().map(|ptr| Iterator::from_ll(ptr)).collect())
         }
     }
 
@@ -1641,7 +1640,7 @@ impl<'a> DBRef<'a> {
                 range.end_key_len(),
                 &mut status,
             );
-            Status::from_ll(status)
+            Error::from_ll(status)
         }
     }
 
@@ -1676,7 +1675,7 @@ impl<'a> DBRef<'a> {
                 val_lens.as_ptr(),
                 &mut status,
             );
-            Status::from_ll(status)
+            Error::from_ll(status)
         }
     }
 
@@ -1706,7 +1705,7 @@ impl<'a> DBRef<'a> {
                 val_lens.as_ptr(),
                 &mut status,
             );
-            Status::from_ll(status)
+            Error::from_ll(status)
         }
     }
 
@@ -1749,7 +1748,7 @@ impl<'a> DBRef<'a> {
                 output_path_id as c_int,
                 &mut status,
             );
-            Status::from_ll(status)
+            Error::from_ll(status)
         }
     }
 
@@ -1760,7 +1759,7 @@ impl<'a> DBRef<'a> {
         let mut status = ptr::null_mut::<ll::rocks_status_t>();
         unsafe {
             ll::rocks_db_pause_background_work(self.raw(), &mut status);
-            Status::from_ll(status)
+            Error::from_ll(status)
         }
     }
 
@@ -1768,7 +1767,7 @@ impl<'a> DBRef<'a> {
         let mut status = ptr::null_mut::<ll::rocks_status_t>();
         unsafe {
             ll::rocks_db_continue_background_work(self.raw(), &mut status);
-            Status::from_ll(status)
+            Error::from_ll(status)
         }
     }
 
@@ -1798,7 +1797,7 @@ impl<'a> DBRef<'a> {
         let mut status = ptr::null_mut::<ll::rocks_status_t>();
         unsafe {
             ll::rocks_db_enable_auto_compaction(self.raw(), c_cfs.as_ptr(), cfs_len, &mut status);
-            Status::from_ll(status)
+            Error::from_ll(status)
         }
     }
 
@@ -1837,7 +1836,7 @@ impl<'a> DBRef<'a> {
         let mut status = ptr::null_mut::<ll::rocks_status_t>();
         unsafe {
             ll::rocks_db_flush(self.raw(), options.raw(), &mut status);
-            Status::from_ll(status)
+            Error::from_ll(status)
         }
     }
 
@@ -1850,7 +1849,7 @@ impl<'a> DBRef<'a> {
         let mut status = ptr::null_mut::<ll::rocks_status_t>();
         unsafe {
             ll::rocks_db_sync_wal(self.raw(), &mut status);
-            Status::from_ll(status)
+            Error::from_ll(status)
         }
     }
 
@@ -1866,7 +1865,7 @@ impl<'a> DBRef<'a> {
         let mut status = ptr::null_mut::<ll::rocks_status_t>();
         unsafe {
             ll::rocks_db_disable_file_deletions(self.raw(), &mut status);
-            Status::from_ll(status)
+            Error::from_ll(status)
         }
     }
 
@@ -1885,7 +1884,7 @@ impl<'a> DBRef<'a> {
         let mut status = ptr::null_mut::<ll::rocks_status_t>();
         unsafe {
             ll::rocks_db_enable_file_deletions(self.raw(), force as u8, &mut status);
-            Status::from_ll(status)
+            Error::from_ll(status)
         }
     }
 
@@ -1911,7 +1910,7 @@ impl<'a> DBRef<'a> {
         unsafe {
             let files =
                 ll::rocks_db_get_live_files(self.raw(), flush_memtable as u8, &mut manifest_file_size, &mut status);
-            Status::from_ll(status).map(|_| {
+            Error::from_ll(status).map(|_| {
                 let n = ll::cxx_string_vector_size(files) as usize;
                 let mut ret = Vec::with_capacity(n);
                 for i in 0..n {
@@ -1932,7 +1931,7 @@ impl<'a> DBRef<'a> {
         let mut status = ptr::null_mut::<ll::rocks_status_t>();
         unsafe {
             let cfiles = ll::rocks_db_get_sorted_wal_files(self.raw(), &mut status);
-            Status::from_ll(status).map(|()| {
+            Error::from_ll(status).map(|()| {
                 let num_files = ll::rocks_logfiles_size(cfiles);
                 let mut files = Vec::with_capacity(num_files);
                 for i in 0..num_files {
@@ -1960,7 +1959,7 @@ impl<'a> DBRef<'a> {
     /// seq_number. If the sequence number is non existent, it returns an iterator
     /// at the first available seq_no after the requested seq_no
     ///
-    /// Returns Status::OK if iterator is valid
+    /// Returns Error::OK if iterator is valid
     ///
     /// Must set WAL_ttl_seconds or WAL_size_limit_MB to large values to
     /// use this api, else the WAL files will get
@@ -1970,7 +1969,7 @@ impl<'a> DBRef<'a> {
         let mut status = ptr::null_mut::<ll::rocks_status_t>();
         unsafe {
             let iter_raw_ptr = ll::rocks_db_get_update_since(self.raw(), seq_number.0, &mut status);
-            Status::from_ll(status).map(|_| TransactionLogIterator::from_ll(iter_raw_ptr))
+            Error::from_ll(status).map(|_| TransactionLogIterator::from_ll(iter_raw_ptr))
         }
     }
 
@@ -1986,7 +1985,7 @@ impl<'a> DBRef<'a> {
                 name.len(),
                 &mut status,
             );
-            Status::from_ll(status)
+            Error::from_ll(status)
         }
     }
 
@@ -2008,7 +2007,7 @@ impl<'a> DBRef<'a> {
                 end.len(),
                 &mut status,
             );
-            Status::from_ll(status)
+            Error::from_ll(status)
         }
     }
 
@@ -2187,7 +2186,7 @@ impl<'a> DBRef<'a> {
                 options.raw(),
                 &mut status,
             );
-            Status::from_ll(status)
+            Error::from_ll(status)
         }
     }
 
@@ -2217,19 +2216,19 @@ impl<'a> DBRef<'a> {
                 options.raw(),
                 &mut status,
             );
-            Status::from_ll(status)
+            Error::from_ll(status)
         }
     }
 
     /// Sets the globally unique ID created at database creation time by invoking
-    /// `Env::GenerateUniqueId()`, in identity. Returns Status::OK if identity could
+    /// `Env::GenerateUniqueId()`, in identity. Returns Error::OK if identity could
     /// be set properly
     pub fn get_db_identity(&self) -> Result<String> {
         let mut identity = String::new();
         let mut status = ptr::null_mut::<ll::rocks_status_t>();
         unsafe {
             ll::rocks_db_get_db_identity(self.raw(), &mut identity as *mut String as *mut _, &mut status);
-            Status::from_ll(status).map(|_| identity)
+            Error::from_ll(status).map(|_| identity)
         }
     }
 
@@ -2251,7 +2250,7 @@ impl<'a> DBRef<'a> {
         let mut status = ptr::null_mut();
         unsafe {
             let props_ptr = ll::rocks_db_get_properties_of_all_tables(self.raw(), column_family.raw, &mut status);
-            Status::from_ll(status).map(|()| TablePropertiesCollection::from_ll(props_ptr))
+            Error::from_ll(status).map(|()| TablePropertiesCollection::from_ll(props_ptr))
         }
     }
 
@@ -2283,7 +2282,7 @@ impl<'a> DBRef<'a> {
                 limit_key_lens.as_ptr(),
                 &mut status,
             );
-            Status::from_ll(status).map(|()| TablePropertiesCollection::from_ll(props_ptr))
+            Error::from_ll(status).map(|()| TablePropertiesCollection::from_ll(props_ptr))
         }
     }
 
@@ -2302,7 +2301,7 @@ impl<'a> DBRef<'a> {
                 end_key.len(),
                 &mut status,
             );
-            Status::from_ll(status).map(|()| KeyVersionVec::from_ll(coll_ptr))
+            Error::from_ll(status).map(|()| KeyVersionVec::from_ll(coll_ptr))
         }
     }
 
@@ -2314,7 +2313,7 @@ impl<'a> DBRef<'a> {
         let mut status = ptr::null_mut();
         unsafe {
             let cvec = ll::rocks_db_get_info_log_list(self.raw(), &mut status);
-            Status::from_ll(status).map(|()| {
+            Error::from_ll(status).map(|()| {
                 let size = ll::cxx_string_vector_size(cvec);
                 let ret = (0..size).into_iter()
                     .map(|i| {
@@ -2343,7 +2342,7 @@ pub fn destroy_db<P: AsRef<Path>>(options: &Options, name: P) -> Result<()> {
     let mut status = ptr::null_mut();
     unsafe {
         ll::rocks_destroy_db(options.raw(), name.as_ptr() as *const _, name.len(), &mut status);
-        Status::from_ll(status)
+        Error::from_ll(status)
     }
 }
 
@@ -2382,7 +2381,7 @@ pub fn repair_db<P: AsRef<Path>>(options: &Options, name: P) -> Result<()> {
     let mut status = ptr::null_mut();
     unsafe {
         ll::rocks_repair_db(options.raw(), name.as_ptr() as *const _, name.len(), &mut status);
-        Status::from_ll(status)
+        Error::from_ll(status)
     }
 }
 

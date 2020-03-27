@@ -8,9 +8,9 @@
 //! non-const method, all threads accessing the same Status must use
 //! external synchronization.
 
+use std::ffi::CStr;
 use std::fmt;
 use std::mem;
-use std::ffi::CStr;
 use std::str;
 
 use rocks_sys as ll;
@@ -55,81 +55,84 @@ pub enum SubCode {
     ManualCompactionPaused = 11,
 }
 
-#[derive(Clone, PartialEq, Eq, Hash)]
-pub struct Status {
-    raw: *mut ll::rocks_status_t,
+#[repr(C)]
+#[derive(Debug, Copy, Clone, PartialEq, Eq, Hash)]
+pub enum Severity {
+    NoError = 0,
+    SoftError = 1,
+    HardError = 2,
+    FatalError = 3,
+    UnrecoverableError = 4,
 }
 
-impl ToRaw<ll::rocks_status_t> for Status {
+#[derive(Clone, PartialEq, Eq, Hash)]
+pub enum Error {
+    LowLevel(*mut ll::rocks_status_t),
+}
+
+impl ToRaw<ll::rocks_status_t> for Error {
     fn raw(&self) -> *mut ll::rocks_status_t {
-        self.raw
+        match *self {
+            Error::LowLevel(raw) => raw,
+        }
     }
 }
 
-impl FromRaw<ll::rocks_status_t> for Result<(), Status> {
-    unsafe fn from_ll(raw: *mut ll::rocks_status_t) -> Result<(), Status> {
+impl FromRaw<ll::rocks_status_t> for Result<(), Error> {
+    unsafe fn from_ll(raw: *mut ll::rocks_status_t) -> Result<(), Error> {
         if raw.is_null() || ll::rocks_status_code(raw) == 0 {
             Ok(())
         } else {
-            Err(Status { raw: raw })
+            Err(Error::LowLevel(raw))
         }
     }
 }
 
-impl Drop for Status {
+impl Drop for Error {
     fn drop(&mut self) {
-        unsafe { ll::rocks_status_destroy(self.raw) }
+        if !self.raw().is_null() {
+            unsafe { ll::rocks_status_destroy(self.raw()) }
+        }
     }
 }
 
-impl Status {
-    pub fn with_message(msg: &'static str) -> Status {
-        let code = Code::InvalidArgument;
-        assert!(code != Code::_Ok, "Can't create a Ok status in Rust");
-        unsafe {
-            let ccode = mem::transmute(code);
-            Status { raw: ll::rocks_status_create_with_code_and_msg(ccode, msg.as_ptr() as *const _, msg.len()) }
-        }
-    }
-
+impl Error {
     pub fn is_not_found(&self) -> bool {
         self.code() == Code::NotFound
     }
 
     pub fn code(&self) -> Code {
-        unsafe { mem::transmute(ll::rocks_status_code(self.raw)) }
+        unsafe { mem::transmute(ll::rocks_status_code(self.raw())) }
     }
 
     pub fn subcode(&self) -> SubCode {
-        unsafe { mem::transmute(ll::rocks_status_subcode(self.raw)) }
+        unsafe { mem::transmute(ll::rocks_status_subcode(self.raw())) }
+    }
+
+    pub fn severity(&self) -> Severity {
+        unsafe { mem::transmute(ll::rocks_status_severity(self.raw())) }
     }
 
     /// string indicating the message of the Status
     pub fn state(&self) -> &str {
         unsafe {
-            let ptr = ll::rocks_status_get_state(self.raw);
-            ptr.as_ref()
-                .and_then(|s| CStr::from_ptr(s).to_str().ok())
-                .unwrap_or("")
+            let ptr = ll::rocks_status_get_state(self.raw());
+            ptr.as_ref().and_then(|s| CStr::from_ptr(s).to_str().ok()).unwrap_or("")
         }
     }
 
-    pub fn from_ll(raw: *mut ll::rocks_status_t) -> Result<(), Status> {
-        if raw.is_null() || unsafe { ll::rocks_status_code(raw) } == 0 {
-            Ok(())
-        } else {
-            Err(Status { raw: raw })
-        }
+    pub(crate) fn from_ll(raw: *mut ll::rocks_status_t) -> Result<(), Self> {
+        unsafe { FromRaw::from_ll(raw) }
     }
 }
 
-impl fmt::Display for Status {
+impl fmt::Display for Error {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        write!(f, "Status({:?}, {:?}, {})", self.code(), self.subcode(), self.state())
+        write!(f, "Error({:?}, {:?}, {})", self.code(), self.subcode(), self.state())
     }
 }
 
-impl fmt::Debug for Status {
+impl fmt::Debug for Error {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         write!(f, "{:?}({:?}, {:?})", self.code(), self.subcode(), self.state())
     }

@@ -7,29 +7,27 @@
 //! All Env implementations are safe for concurrent access from
 //! multiple threads without any external synchronization.
 
+use lazy_static::lazy_static;
+use std::ffi::CStr;
 use std::mem;
+use std::path::Path;
 use std::ptr;
 use std::str;
-use std::path::Path;
-use std::ffi::CStr;
-use lazy_static::lazy_static;
 
 use rocks_sys as ll;
 
-use crate::error::Status;
-use crate::to_raw::{ToRaw, FromRaw};
 use crate::thread_status::ThreadStatus;
-use crate::Result;
+use crate::to_raw::{FromRaw, ToRaw};
+use crate::{Error, Result};
 
 pub const DEFAULT_PAGE_SIZE: usize = 4 * 1024;
 
 lazy_static! {
-    static ref DEFAULT_ENVOPTIONS: EnvOptions = {
-        EnvOptions::default()
-    };
-
+    static ref DEFAULT_ENVOPTIONS: EnvOptions = { EnvOptions::default() };
     static ref DEFAULT_ENV: Env = {
-        Env { raw: unsafe { ll::rocks_create_default_env() } }
+        Env {
+            raw: unsafe { ll::rocks_create_default_env() },
+        }
     };
 }
 
@@ -61,7 +59,9 @@ impl ToRaw<ll::rocks_envoptions_t> for EnvOptions {
 
 impl Default for EnvOptions {
     fn default() -> Self {
-        EnvOptions { raw: unsafe { ll::rocks_envoptions_create() } }
+        EnvOptions {
+            raw: unsafe { ll::rocks_envoptions_create() },
+        }
     }
 }
 
@@ -280,7 +280,9 @@ impl Env {
     ///
     /// FIXME: missing base_env
     pub fn new_mem() -> Env {
-        Env { raw: unsafe { ll::rocks_create_mem_env() } }
+        Env {
+            raw: unsafe { ll::rocks_create_mem_env() },
+        }
     }
 
     /// Returns a new environment that measures function call times for filesystem
@@ -290,9 +292,10 @@ impl Env {
     ///
     /// FIXME: missing base_env
     pub fn new_timed() -> Env {
-        Env { raw: unsafe { ll::rocks_create_timed_env() } }
+        Env {
+            raw: unsafe { ll::rocks_create_timed_env() },
+        }
     }
-
 
     /// The number of background worker threads of a specific thread pool
     pub fn set_low_priority_background_threads(&self, number: i32) {
@@ -326,7 +329,7 @@ impl Env {
         unsafe {
             let name = fname.as_ref().to_str().unwrap();
             let logger = ll::rocks_env_new_logger(self.raw, name.as_ptr() as *const _, name.len(), &mut status);
-            Status::from_ll(status).map(|_| Logger::from_ll(logger))
+            Error::from_ll(status).map(|_| Logger::from_ll(logger))
         }
     }
 
@@ -359,10 +362,7 @@ impl Env {
         let mut status = ptr::null_mut();
         unsafe {
             ll::rocks_env_get_host_name(self.raw, (&mut buf).as_mut_ptr() as *mut _, 128, &mut status);
-            Status::from_ll(status)
-                .map(|()| CStr::from_ptr((&buf).as_ptr() as *const _))
-                .and_then(|s| s.to_str().map_err(|_| Status::with_message("utf8 error")))
-                .map(|s| s.into())
+            Error::from_ll(status).map(|_| CStr::from_ptr(buf[..].as_ptr() as _).to_string_lossy().to_string())
         }
     }
 
@@ -372,8 +372,7 @@ impl Env {
         let mut status = ptr::null_mut();
         unsafe {
             let tm = ll::rocks_env_get_current_time(self.raw, &mut status);
-            Status::from_ll(status)
-                .map(|()| tm as u64)
+            Error::from_ll(status).map(|()| tm as u64)
         }
     }
 
@@ -444,12 +443,11 @@ impl Env {
     }
 }
 
-
 #[cfg(test)]
 mod tests {
+    use super::*;
     use std::fs::File;
     use std::io::prelude::*;
-    use super::*;
 
     #[test]
     fn env_basic() {

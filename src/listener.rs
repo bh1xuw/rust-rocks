@@ -3,21 +3,20 @@
 
 use rocks_sys as ll;
 
-use std::marker::PhantomData;
-use std::ptr;
-use std::str;
-use std::slice;
-use std::mem;
 use std::fmt;
+use std::marker::PhantomData;
+use std::mem;
+use std::ptr;
+use std::slice;
+use std::str;
 
-use crate::error::Status;
-use crate::db::{DBRef, ColumnFamilyHandle};
-use crate::types::SequenceNumber;
-use crate::table_properties::{TableProperties, TablePropertiesCollection};
-use crate::options::CompressionType;
 use crate::compaction_job_stats::CompactionJobStats;
+use crate::db::{ColumnFamilyHandle, DBRef};
+use crate::options::CompressionType;
+use crate::table_properties::{TableProperties, TablePropertiesCollection};
 use crate::to_raw::FromRaw;
-use crate::Result;
+use crate::types::SequenceNumber;
+use crate::{Error, Result};
 
 #[repr(C)]
 #[derive(Debug, Copy, Clone, PartialEq, Eq, Hash)]
@@ -41,7 +40,6 @@ impl fmt::Debug for TableFileCreationBriefInfo {
             .finish()
     }
 }
-
 
 impl TableFileCreationBriefInfo {
     /// the name of the database where the file was created
@@ -507,7 +505,6 @@ where
     }
 }
 
-
 /// `EventListener` class contains a set of call-back functions that will
 /// be called when specific RocksDB event happens such as flush.  It can
 /// be used as a building block for developing custom features such as
@@ -581,12 +578,10 @@ pub trait EventListener {
     ///
     /// # Arguments
     ///
-    /// - db: a pointer to the rocksdb instance which just compacted
-    ///   a file.
+    /// - db: a pointer to the rocksdb instance which just compacted a file.
     ///
-    /// - ci: a reference to a CompactionJobInfo struct. `ci` is released
-    ///   after this function is returned, and must be copied if it is needed
-    ///   outside of this function.
+    /// - ci: a reference to a CompactionJobInfo struct. `ci` is released after this function is
+    ///   returned, and must be copied if it is needed outside of this function.
     fn on_compaction_completed(&mut self, db: &DBRef, ci: &CompactionJobInfo) {}
 
     /// A call-back function for RocksDB which will be called whenever
@@ -649,7 +644,7 @@ pub trait EventListener {
     /// A call-back function for RocksDB which will be called before setting the
     /// background error status to a non-OK value. The new background error status
     /// is provided in `bg_error` and can be modified by the callback. E.g., a
-    /// callback can suppress errors by resetting it to Status::OK(), thus
+    /// callback can suppress errors by resetting it to Error::OK(), thus
     /// preventing the database from entering read-only mode. We do not provide any
     /// guarantee when failed flushes/compactions will be rescheduled if the user
     /// suppresses an error.
@@ -659,7 +654,7 @@ pub trait EventListener {
     /// computations or blocking calls in this function.
     ///
     /// Rust: use `Ok(())` to suppress errors, use `Err(bg_error)` otherwise and default impl.
-    fn on_background_error(&mut self, reason: BackgroundErrorReason, bg_error: Status) -> Result<()> {
+    fn on_background_error(&mut self, reason: BackgroundErrorReason, bg_error: Error) -> Result<()> {
         Err(bg_error)
     }
 
@@ -672,13 +667,13 @@ pub trait EventListener {
 
 #[doc(hidden)]
 pub mod c {
-    use std::str;
-    use std::slice;
-    use std::mem;
-    use std::ptr;
     use super::*;
     use crate::db::DBRef;
     use crate::to_raw::FromRaw;
+    use std::mem;
+    use std::ptr;
+    use std::slice;
+    use std::str;
 
     #[no_mangle]
     pub unsafe extern "C" fn rust_event_listener_drop(l: *mut ()) {
@@ -836,7 +831,11 @@ pub mod c {
         let listener = l as *mut Box<dyn EventListener>;
         let result = Result::from_ll(bg_error);
         let ret = (*listener).on_background_error(reason, result.unwrap_err());
-        if ret.is_ok() { 0 } else { 1 }
+        if ret.is_ok() {
+            0
+        } else {
+            1
+        }
     }
 
     #[no_mangle]
@@ -870,11 +869,10 @@ pub mod c {
     }
 }
 
-
 #[cfg(test)]
 mod tests {
-    use super::*;
     use super::super::rocksdb::*;
+    use super::*;
 
     #[derive(Default)]
     struct MyEventListener {
@@ -892,10 +890,15 @@ mod tests {
     impl Drop for MyEventListener {
         fn drop(&mut self) {
             assert!(
-                self.flush_begin_called * self.flush_completed_called * self.table_file_deleted_called *
-                    self.compaction_completed_called * self.table_file_created_called *
-                    self.table_file_creation_started_called * self.on_memtable_sealed_called *
-                    self.on_external_file_ingested_called > 0
+                self.flush_begin_called
+                    * self.flush_completed_called
+                    * self.table_file_deleted_called
+                    * self.compaction_completed_called
+                    * self.table_file_created_called
+                    * self.table_file_creation_started_called
+                    * self.on_memtable_sealed_called
+                    * self.on_external_file_ingested_called
+                    > 0
             );
 
             // FIXME: seems default cf is deleted twice
@@ -958,7 +961,7 @@ mod tests {
         }
 
         // TODO: how to test this?
-        fn on_background_error(&mut self, reason: BackgroundErrorReason, bg_error: Status) -> Result<()> {
+        fn on_background_error(&mut self, reason: BackgroundErrorReason, bg_error: Error) -> Result<()> {
             Err(bg_error)
         }
 
@@ -977,13 +980,10 @@ mod tests {
     fn event_listener_works() {
         let tmp_dir = ::tempdir::TempDir::new_in(".", "rocks").unwrap();
         let db = DB::open(
-            Options::default().map_db_options(|db| {
-                db.create_if_missing(true).add_listener(
-                    MyEventListener::default(),
-                )
-            }),
+            Options::default().map_db_options(|db| db.create_if_missing(true).add_listener(MyEventListener::default())),
             &tmp_dir,
-        ).unwrap();
+        )
+        .unwrap();
 
         for i in 0..100 {
             let key = format!("test2-key-{}", i);
@@ -996,10 +996,7 @@ mod tests {
                 assert!(db.flush(&FlushOptions::default().wait(true)).is_ok());
             }
             if i % 36 == 0 {
-                assert!(
-                    db.compact_range(&CompactRangeOptions::default(), ..)
-                        .is_ok()
-                );
+                assert!(db.compact_range(&CompactRangeOptions::default(), ..).is_ok());
             }
         }
 
@@ -1025,7 +1022,10 @@ mod tests {
         let info = writer.finish().unwrap();
         assert_eq!(info.num_entries(), 9);
 
-        let ret = db.ingest_external_file(&[sst_dir.path().join("2333.sst")], &IngestExternalFileOptions::default());
+        let ret = db.ingest_external_file(
+            &[sst_dir.path().join("2333.sst")],
+            &IngestExternalFileOptions::default(),
+        );
         assert!(ret.is_ok(), "ingest external file fails: {:?}", ret);
 
         // must have bg threads

@@ -1,16 +1,15 @@
 //! WAL logs
 
 use std::fmt;
-use std::iter::Iterator;
+use std::iter;
 use std::ptr;
 
 use rocks_sys as ll;
 
-use crate::error::Status;
 use crate::to_raw::{FromRaw, ToRaw};
 use crate::types::SequenceNumber;
 use crate::write_batch::WriteBatch;
-use crate::Result;
+use crate::{Error, Result};
 
 /// Is WAL file archived or alive
 #[derive(Debug, Copy, Clone, PartialEq, Eq, Hash)]
@@ -113,7 +112,7 @@ impl TransactionLogIterator {
         let mut status = ptr::null_mut();
         unsafe {
             ll::rocks_transaction_log_iterator_status(self.raw, &mut status);
-            Status::from_ll(status)
+            Error::from_ll(status)
         }
     }
 
@@ -133,7 +132,7 @@ impl TransactionLogIterator {
     }
 }
 
-impl Iterator for TransactionLogIterator {
+impl iter::Iterator for TransactionLogIterator {
     type Item = BatchResult;
 
     fn next(&mut self) -> Option<Self::Item> {

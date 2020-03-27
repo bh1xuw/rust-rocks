@@ -4,21 +4,20 @@ use std::ptr;
 use crate::db::ColumnFamilyDescriptor;
 use crate::options::{ColumnFamilyOptions, DBOptions};
 use crate::to_raw::{FromRaw, ToRaw};
-use crate::Result;
-use crate::Status;
+use crate::{Error, Result};
 
 use rocks_sys as ll;
 
 pub fn load_latest_options(path: &str) -> Result<(DBOptions, Vec<ColumnFamilyDescriptor>)> {
     let cpath = CString::new(path).unwrap();
     let db_opt = DBOptions::default();
-
     let mut cf_descs_len = 0_usize;
     let mut status = ptr::null_mut();
     let mut cf_descs: Vec<ColumnFamilyDescriptor> = Vec::new();
+
     let c_cf_descs =
         unsafe { ll::rocks_load_latest_options(cpath.as_ptr(), db_opt.raw(), &mut cf_descs_len, &mut status) };
-    if let Err(error) = Status::from_ll(status) {
+    if let Err(error) = Error::from_ll(status) {
         return Err(error);
     }
     for i in 0..cf_descs_len {

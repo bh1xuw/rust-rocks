@@ -9,9 +9,8 @@ use std::str;
 use rocks_sys as ll;
 
 use crate::env::{Env, Logger};
-use crate::error::Status;
 use crate::to_raw::ToRaw;
-use crate::Result;
+use crate::{Error, Result};
 
 /// Persistent cache interface for caching IO pages on a persistent medium. The
 /// cache interface is specifically designed for persistent read cache.
@@ -63,7 +62,7 @@ impl PersistentCache {
                 optimized_for_nvm as u8,
                 &mut status,
             );
-            Status::from_ll(status).map(|()| PersistentCache { raw: raw })
+            Error::from_ll(status).map(|()| PersistentCache { raw: raw })
         }
     }
 

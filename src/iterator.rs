@@ -9,9 +9,8 @@ use std::slice;
 
 use rocks_sys as ll;
 
-use crate::error::Status;
 use crate::to_raw::FromRaw;
-use crate::Result;
+use crate::{Error, Result};
 
 /// An iterator yields a sequence of key/value pairs from a source.
 ///
@@ -156,12 +155,12 @@ impl<'a> Iterator<'a> {
 
     /// If an error has occurred, return it.  Else return an ok status.
     /// If non-blocking IO is requested and this operation cannot be
-    /// satisfied without doing some IO, then this returns `Status::Incomplete()`.
+    /// satisfied without doing some IO, then this returns `Error::Incomplete()`.
     pub fn status(&self) -> Result<()> {
         unsafe {
             let mut status = mem::zeroed();
             ll::rocks_iter_get_status(self.raw, &mut status);
-            Status::from_ll(status)
+            Error::from_ll(status)
         }
     }
 
@@ -189,7 +188,7 @@ impl<'a> Iterator<'a> {
                 &mut status,
             );
             // FIXME: rocksdb return error string in get_property
-            Status::from_ll(status).map(|_| ret)
+            Error::from_ll(status).map(|_| ret)
         }
     }
 

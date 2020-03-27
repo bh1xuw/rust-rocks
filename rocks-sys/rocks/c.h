@@ -151,13 +151,11 @@ typedef struct cxx_string_t cxx_string_t; /* std::string */
 /* ****************************** functions ****************************** */
 
 /* status */
-rocks_status_t** rocks_status_create();
 void rocks_status_destroy(rocks_status_t* s);
-
-rocks_status_t* rocks_status_create_with_code_and_msg(int code, const char* msg, size_t len);
 
 int rocks_status_code(rocks_status_t* s);
 int rocks_status_subcode(rocks_status_t* s);
+int rocks_status_severity(rocks_status_t* s);
 const char* rocks_status_get_state(rocks_status_t* s);
 
 /* slice */

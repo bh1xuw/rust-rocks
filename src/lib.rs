@@ -24,10 +24,10 @@
 // #![allow(not_unsafe_ptr_arg_deref, wrong_self_convention, doc_markdown)]
 #![allow(unused_variables, dead_code)]
 
-pub use error::Status;
+pub use error::Error;
 
 /// The result type returned by RocksDB, wraps Status
-pub type Result<T> = std::result::Result<T, Status>;
+pub type Result<T> = std::result::Result<T, Error>;
 
 pub mod advanced_options;
 pub mod cache;

@@ -10,11 +10,10 @@ use rocks_sys as ll;
 
 use crate::db::ColumnFamilyHandle;
 use crate::env::EnvOptions;
-use crate::error::Status;
 use crate::options::Options;
 use crate::to_raw::ToRaw;
 use crate::types::SequenceNumber;
-use crate::Result;
+use crate::{Error, Result};
 
 /// ExternalSstFileInfo include information about sst files created
 /// using SstFileWriter
@@ -131,7 +130,7 @@ impl SstFileWriter {
         unsafe {
             let path = file_path.as_ref().to_str().expect("file path");
             ll::rocks_sst_file_writer_open(self.raw, path.as_ptr() as *const _, path.len(), &mut status);
-            Status::from_ll(status)
+            Error::from_ll(status)
         }
     }
 
@@ -149,7 +148,7 @@ impl SstFileWriter {
                 value.len(),
                 &mut status,
             );
-            Status::from_ll(status)
+            Error::from_ll(status)
         }
     }
 
@@ -167,7 +166,7 @@ impl SstFileWriter {
                 value.len(),
                 &mut status,
             );
-            Status::from_ll(status)
+            Error::from_ll(status)
         }
     }
 
@@ -178,7 +177,7 @@ impl SstFileWriter {
         let mut status = ptr::null_mut();
         unsafe {
             ll::rocks_sst_file_writer_delete(self.raw, key.as_ptr() as *const _, key.len(), &mut status);
-            Status::from_ll(status)
+            Error::from_ll(status)
         }
     }
 
@@ -191,7 +190,7 @@ impl SstFileWriter {
         unsafe {
             let info = ExternalSstFileInfo::new();
             ll::rocks_sst_file_writer_finish(self.raw, info.raw, &mut status);
-            Status::from_ll(status).map(|_| info)
+            Error::from_ll(status).map(|_| info)
         }
     }
 

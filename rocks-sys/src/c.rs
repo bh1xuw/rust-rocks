@@ -351,23 +351,16 @@ pub struct cxx_string_t {
     _unused: [u8; 0],
 }
 extern "C" {
-    pub fn rocks_status_create() -> *mut *mut rocks_status_t;
-}
-extern "C" {
     pub fn rocks_status_destroy(s: *mut rocks_status_t);
-}
-extern "C" {
-    pub fn rocks_status_create_with_code_and_msg(
-        code: ::std::os::raw::c_int,
-        msg: *const ::std::os::raw::c_char,
-        len: usize,
-    ) -> *mut rocks_status_t;
 }
 extern "C" {
     pub fn rocks_status_code(s: *mut rocks_status_t) -> ::std::os::raw::c_int;
 }
 extern "C" {
     pub fn rocks_status_subcode(s: *mut rocks_status_t) -> ::std::os::raw::c_int;
+}
+extern "C" {
+    pub fn rocks_status_severity(s: *mut rocks_status_t) -> ::std::os::raw::c_int;
 }
 extern "C" {
     pub fn rocks_status_get_state(s: *mut rocks_status_t) -> *const ::std::os::raw::c_char;
