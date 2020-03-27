@@ -7,11 +7,14 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 ## Unreleased
 ### Added
 - New examples
+- Options file handling: `load_latest_options`
 
 ### Changed
 - Use edition 2018
 - Link against RocksDB 6.7.3
 - New DB interator implementation
+- Refactored ColumnFamilyDescriptor
+- Rename `Status` to `Error`
 
 ## 0.1.5
 ### Changed
