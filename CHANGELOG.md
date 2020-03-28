@@ -14,8 +14,9 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 - Link against RocksDB 6.7.3
 - New DB interator implementation
 - Refactored ColumnFamilyDescriptor
-- Rename `Status` to `Error`
+- Rename `Status` to `Error`, refine implementation
 - Refactor DBRef using Arc
+- Minor argument type changes
 
 ## 0.1.5
 ### Changed
