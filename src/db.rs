@@ -419,7 +419,7 @@ impl ColumnFamily {
         }
     }
 
-    pub fn compact_range<R: ToCompactRange>(&self, options: &CompactRangeOptions, range: R) -> Result<()> {
+    pub fn compact_range<R: AsCompactRange>(&self, options: &CompactRangeOptions, range: R) -> Result<()> {
         let mut status = ptr::null_mut::<ll::rocks_status_t>();
         unsafe {
             ll::rocks_db_compact_range_opt_cf(
@@ -779,7 +779,6 @@ impl DB {
             );
             Error::from_ll(status).map(|_| {
                 let db = DB::from_ll(db_ptr);
-                // lifetime transmute
                 let db_ref = db.context.clone();
                 (
                     db,
@@ -1595,7 +1594,7 @@ impl DBRef {
     ///
     /// For Rust: use range expr, and since `compact_range()` use superset of range,
     /// we ignore inclusive relation.
-    pub fn compact_range<R: ToCompactRange>(&self, options: &CompactRangeOptions, range: R) -> Result<()> {
+    pub fn compact_range<R: AsCompactRange>(&self, options: &CompactRangeOptions, range: R) -> Result<()> {
         let mut status = ptr::null_mut::<ll::rocks_status_t>();
         unsafe {
             ll::rocks_db_compact_range_opt(
@@ -2341,7 +2340,7 @@ pub fn repair_db<P: AsRef<Path>>(options: &Options, name: P) -> Result<()> {
 }
 
 // TODO: reimpl with std::collections::range::RangeArgument
-pub trait ToCompactRange {
+pub trait AsCompactRange {
     fn start_key(&self) -> *const u8 {
         ptr::null()
     }
@@ -2359,7 +2358,7 @@ pub trait ToCompactRange {
     }
 }
 
-impl<'a> ToCompactRange for ops::Range<&'a [u8]> {
+impl<'a> AsCompactRange for ops::Range<&'a [u8]> {
     fn start_key(&self) -> *const u8 {
         self.start.as_ptr()
     }
@@ -2377,7 +2376,7 @@ impl<'a> ToCompactRange for ops::Range<&'a [u8]> {
     }
 }
 
-impl<'a> ToCompactRange for ops::RangeTo<&'a [u8]> {
+impl<'a> AsCompactRange for ops::RangeTo<&'a [u8]> {
     fn end_key(&self) -> *const u8 {
         self.end.as_ptr()
     }
@@ -2387,7 +2386,7 @@ impl<'a> ToCompactRange for ops::RangeTo<&'a [u8]> {
     }
 }
 
-impl<'a> ToCompactRange for ops::RangeFrom<&'a [u8]> {
+impl<'a> AsCompactRange for ops::RangeFrom<&'a [u8]> {
     fn start_key(&self) -> *const u8 {
         self.start.as_ptr()
     }
@@ -2397,4 +2396,4 @@ impl<'a> ToCompactRange for ops::RangeFrom<&'a [u8]> {
     }
 }
 
-impl ToCompactRange for ops::RangeFull {}
+impl AsCompactRange for ops::RangeFull {}
