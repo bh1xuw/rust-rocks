@@ -115,8 +115,6 @@ fn test_open_cf() {
 }
 
 #[test]
-#[ignore]
-// FIXME: lifetime leaks
 fn test_cf_lifetime() {
     let tmp_dir = TempDir::new_in(".", "rocks").unwrap();
 
@@ -138,6 +136,7 @@ fn test_cf_lifetime() {
             cf_handle = Some(cf);
         }
     }
+    println!("db lifetime ends");
     println!("cf name => {:?}", cf_handle.unwrap().name());
 }
 
@@ -621,6 +620,7 @@ fn change_options() {
         &tmp_dir,
     )
     .unwrap();
+    let default_cf = db.default_column_family();
     assert!(db
         .put(&Default::default(), b"long-key", vec![b'A'; 1024 * 1024].as_ref())
         .is_ok());
@@ -643,10 +643,10 @@ fn change_options() {
     .iter()
     .cloned()
     .collect();
-    assert!(db.set_options(&new_opt).is_ok());
+    assert!(db.set_options(&default_cf, &new_opt).is_ok());
 
     let new_opt: HashMap<&str, &str> = [("non-exist-write_buffer_size", "10000000")].iter().cloned().collect();
-    let ret = db.set_options(&new_opt);
+    let ret = db.set_options(&default_cf, &new_opt);
     assert!(ret.is_err());
     assert!(format!("{:?}", ret).contains("Unrecognized option"));
 }
@@ -661,6 +661,8 @@ fn approximate_sizes() {
         &tmp_dir,
     )
     .unwrap();
+    let default_cf = db.default_column_family();
+
     assert!(db
         .put(&Default::default(), b"long-key", vec![b'A'; 1024 * 1024].as_ref())
         .is_ok());
@@ -669,7 +671,7 @@ fn approximate_sizes() {
         .put(&Default::default(), b"long-key-2", vec![b'A'; 2 * 1024].as_ref())
         .is_ok());
 
-    let sizes = db.get_approximate_sizes(&[b"long-key".as_ref()..&b"long-key-".as_ref()]);
+    let sizes = db.get_approximate_sizes(&default_cf, &[&b"long-key"[..]..&b"long-key-"[..]]);
     assert_eq!(sizes.len(), 1);
     assert!(sizes[0] > 0);
 
@@ -680,7 +682,7 @@ fn approximate_sizes() {
         db.put(&WriteOptions::default(), key.as_bytes(), val.as_bytes())
             .unwrap();
     }
-    let (count, size) = db.get_approximate_memtable_stats(b"a".as_ref()..&b"z".as_ref());
+    let (count, size) = db.get_approximate_memtable_stats(&default_cf, b"a".as_ref()..&b"z".as_ref());
     assert!(count > 0 && count < 200);
     assert!(size > 0);
 }

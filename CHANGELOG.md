@@ -15,6 +15,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 - New DB interator implementation
 - Refactored ColumnFamilyDescriptor
 - Rename `Status` to `Error`
+- Refactor DBRef using Arc
 
 ## 0.1.5
 ### Changed

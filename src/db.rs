@@ -1,11 +1,9 @@
 //! A DB is a persistent ordered map from keys to values.
 
-use std::borrow::Borrow;
 use std::collections::hash_map::HashMap;
 use std::ffi::{CStr, CString};
 use std::fmt;
 use std::iter::IntoIterator;
-use std::marker::PhantomData;
 use std::mem;
 use std::ops;
 use std::os::raw::{c_char, c_int, c_void};
@@ -13,6 +11,7 @@ use std::path::Path;
 use std::ptr;
 use std::slice;
 use std::str;
+use std::sync::Arc;
 
 use rocks_sys as ll;
 
@@ -146,40 +145,40 @@ impl ColumnFamilyHandle {
 }
 
 /// An opened column family, owned for RAII style management
-pub struct ColumnFamily<'a, 'b: 'a> {
+pub struct ColumnFamily {
     handle: ColumnFamilyHandle,
-    db: &'a DBRef<'b>,
+    db: Arc<DBRef>,
     owned: bool,
 }
 
-impl<'a, 'b> Drop for ColumnFamily<'a, 'b> {
+impl Drop for ColumnFamily {
     fn drop(&mut self) {
         if self.owned {
             let mut status = ptr::null_mut::<ll::rocks_status_t>();
             unsafe {
                 ll::rocks_db_destroy_column_family_handle(self.db.raw, self.raw(), &mut status);
                 assert!(Error::from_ll(status).is_ok());
-                // make underlying cf_handle a nullptr, rocks-sys will skip delete it.
+                // make underlying cf_handle a nullptr, rocks-sys will skip deleting it.
                 self.handle.raw = ptr::null_mut();
             }
         }
     }
 }
 
-impl<'a, 'b> AsRef<ColumnFamilyHandle> for ColumnFamily<'a, 'b> {
+impl AsRef<ColumnFamilyHandle> for ColumnFamily {
     fn as_ref(&self) -> &ColumnFamilyHandle {
         &self.handle
     }
 }
 
-impl<'a, 'b> ops::Deref for ColumnFamily<'a, 'b> {
+impl ops::Deref for ColumnFamily {
     type Target = ColumnFamilyHandle;
     fn deref(&self) -> &ColumnFamilyHandle {
         &self.handle
     }
 }
 
-impl<'a, 'b> fmt::Debug for ColumnFamily<'a, 'b> {
+impl fmt::Debug for ColumnFamily {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         f.debug_struct("ColumnFamily")
             .field("db", &self.db.name())
@@ -189,7 +188,7 @@ impl<'a, 'b> fmt::Debug for ColumnFamily<'a, 'b> {
     }
 }
 
-impl<'a, 'b: 'a> ColumnFamily<'a, 'b> {
+impl ColumnFamily {
     // TODO:
     // Fills "*desc" with the up-to-date descriptor of the column family
     // associated with this handle. Since it fills "*desc" with the up-to-date
@@ -437,21 +436,24 @@ impl<'a, 'b: 'a> ColumnFamily<'a, 'b> {
         }
     }
 
-    pub fn set_options(&self, new_options: &HashMap<&str, &str>) -> Result<()> {
-        let num_options = new_options.len();
-        let mut key_ptrs = Vec::with_capacity(num_options);
-        let mut key_lens = Vec::with_capacity(num_options);
-        let mut val_ptrs = Vec::with_capacity(num_options);
-        let mut val_lens = Vec::with_capacity(num_options);
-        new_options
-            .iter()
+    pub fn set_options<T, H>(&self, new_options: H) -> Result<()>
+    where
+        T: AsRef<str>,
+        H: IntoIterator<Item = (T, T)>,
+    {
+        let mut key_ptrs = Vec::with_capacity(2);
+        let mut key_lens = Vec::with_capacity(2);
+        let mut val_ptrs = Vec::with_capacity(2);
+        let mut val_lens = Vec::with_capacity(2);
+        let num_options = new_options
+            .into_iter()
             .map(|(key, val)| {
-                key_ptrs.push(key.as_ptr() as *const c_char);
-                key_lens.push(key.len());
-                val_ptrs.push(val.as_ptr() as *const c_char);
-                val_lens.push(val.len());
+                key_ptrs.push(key.as_ref().as_ptr() as *const c_char);
+                key_lens.push(key.as_ref().len());
+                val_ptrs.push(val.as_ref().as_ptr() as *const c_char);
+                val_lens.push(val.as_ref().len());
             })
-            .last();
+            .count();
         let mut status = ptr::null_mut();
         unsafe {
             ll::rocks_db_set_options_cf(
@@ -631,19 +633,27 @@ impl<'a, 'b: 'a> ColumnFamily<'a, 'b> {
 }
 
 /// Borrowed DB handle
-pub struct DBRef<'a> {
+pub struct DBRef {
     raw: *mut ll::rocks_db_t,
-    _marker: PhantomData<&'a ()>,
 }
 
-impl<'a> ToRaw<ll::rocks_db_t> for DBRef<'a> {
+impl Drop for DBRef {
+    #[inline]
+    fn drop(&mut self) {
+        unsafe {
+            ll::rocks_db_close(self.raw);
+        }
+    }
+}
+
+impl ToRaw<ll::rocks_db_t> for DBRef {
     fn raw(&self) -> *mut ll::rocks_db_t {
         self.raw
     }
 }
 
-unsafe impl<'a> Sync for DBRef<'a> {}
-unsafe impl<'a> Send for DBRef<'a> {}
+unsafe impl Sync for DBRef {}
+unsafe impl Send for DBRef {}
 
 /// A `DB` is a persistent ordered map from keys to values.
 ///
@@ -666,63 +676,45 @@ unsafe impl<'a> Send for DBRef<'a> {}
 ///
 /// assert_eq!(val, b"my-value");
 /// ```
-pub struct DB<'a> {
-    context: Box<DBRef<'a>>,
+pub struct DB {
+    context: Arc<DBRef>,
 }
 
-impl<'a> Drop for DB<'a> {
-    #[inline]
-    fn drop(&mut self) {
-        unsafe {
-            ll::rocks_db_close(self.context.raw());
-        }
-    }
-}
+impl ops::Deref for DB {
+    type Target = DBRef;
 
-impl<'a> Borrow<DBRef<'a>> for DB<'a> {
-    fn borrow(&self) -> &DBRef<'a> {
+    fn deref(&self) -> &DBRef {
         &self.context
     }
 }
 
-impl<'a> ops::Deref for DB<'a> {
-    type Target = DBRef<'a>;
-
-    fn deref(&self) -> &DBRef<'a> {
-        &self.context
-    }
-}
-
-impl<'a> fmt::Debug for DB<'a> {
+impl fmt::Debug for DB {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         write!(f, "DB({:?})", self.name())
     }
 }
 
-unsafe impl<'a> Sync for DB<'a> {}
-unsafe impl<'a> Send for DB<'a> {}
+unsafe impl Sync for DB {}
+unsafe impl Send for DB {}
 
-impl<'a> ToRaw<ll::rocks_db_t> for DB<'a> {
+impl ToRaw<ll::rocks_db_t> for DB {
     fn raw(&self) -> *mut ll::rocks_db_t {
         self.context.raw
     }
 }
 
-impl<'a> FromRaw<ll::rocks_db_t> for DB<'a> {
-    unsafe fn from_ll(raw: *mut ll::rocks_db_t) -> DB<'a> {
-        let context = DBRef {
-            raw: raw,
-            _marker: PhantomData,
-        };
+impl FromRaw<ll::rocks_db_t> for DB {
+    unsafe fn from_ll(raw: *mut ll::rocks_db_t) -> DB {
+        let context = DBRef { raw: raw };
         DB {
-            context: Box::new(context),
+            context: Arc::new(context),
         }
     }
 }
 
-impl<'a> DB<'a> {
+impl DB {
     /// Open the database with the specified `name`.
-    pub fn open<'b, T: AsRef<Options>, P: AsRef<Path>>(options: T, name: P) -> Result<DB<'b>> {
+    pub fn open<T: AsRef<Options>, P: AsRef<Path>>(options: T, name: P) -> Result<DB> {
         let opt = options.as_ref().raw();
         let dbname = name.as_ref().to_str().and_then(|s| CString::new(s).ok()).unwrap();
         let mut status = ptr::null_mut::<ll::rocks_status_t>();
@@ -750,17 +742,11 @@ impl<'a> DB<'a> {
     /// will use to operate on column family `column_family[i]`.
     // FIXME: this should be DBOptions
     // FIXME: lifetime leaks
-    pub fn open_with_column_families<
-        'b: 'c,
-        'c,
-        CF: Into<ColumnFamilyDescriptor>,
-        P: AsRef<Path>,
-        I: IntoIterator<Item = CF>,
-    >(
+    pub fn open_with_column_families<CF: Into<ColumnFamilyDescriptor>, P: AsRef<Path>, I: IntoIterator<Item = CF>>(
         options: &Options,
         name: P,
         column_families: I,
-    ) -> Result<(DB<'b>, Vec<ColumnFamily<'c, 'b>>)> {
+    ) -> Result<(DB, Vec<ColumnFamily>)> {
         let opt = options.raw();
         let dbname = name.as_ref().to_str().and_then(|s| CString::new(s).ok()).unwrap();
 
@@ -794,14 +780,14 @@ impl<'a> DB<'a> {
             Error::from_ll(status).map(|_| {
                 let db = DB::from_ll(db_ptr);
                 // lifetime transmute
-                let db_ref = mem::transmute(&*db.context);
+                let db_ref = db.context.clone();
                 (
                     db,
                     cfhandles
                         .into_iter()
                         .map(|p| ColumnFamily {
                             handle: ColumnFamilyHandle { raw: p },
-                            db: db_ref,
+                            db: db_ref.clone(),
                             owned: true,
                         })
                         .collect(),
@@ -814,11 +800,7 @@ impl<'a> DB<'a> {
     /// that modify data, like `put/delete`, will return error.
     /// If the db is opened in read only mode, then no compactions
     /// will happen.
-    pub fn open_for_readonly<'b, P: AsRef<Path>>(
-        options: &Options,
-        name: P,
-        error_if_log_file_exist: bool,
-    ) -> Result<DB<'b>> {
+    pub fn open_for_readonly<P: AsRef<Path>>(options: &Options, name: P, error_if_log_file_exist: bool) -> Result<DB> {
         let dbname = name.as_ref().to_str().and_then(|s| CString::new(s).ok()).unwrap();
         let mut status = ptr::null_mut::<ll::rocks_status_t>();
         unsafe {
@@ -856,9 +838,7 @@ impl<'a> DB<'a> {
             })
         }
     }
-}
 
-impl<'a> DBRef<'a> {
     /// Create a column_family and return the handle of column family
     /// through the argument handle.
     pub fn create_column_family(&self, cfopts: &ColumnFamilyOptions, column_family_name: &str) -> Result<ColumnFamily> {
@@ -868,12 +848,11 @@ impl<'a> DBRef<'a> {
             let handle = ll::rocks_db_create_column_family(self.raw(), cfopts.raw(), dbname.as_ptr(), &mut status);
             Error::from_ll(status).map(|_| ColumnFamily {
                 handle: ColumnFamilyHandle { raw: handle },
-                db: self.borrow(),
+                db: self.context.clone(),
                 owned: true,
             })
         }
     }
-
     /// Drop a column family specified by column_family handle. This call
     /// only records a drop record in the manifest and prevents the column
     /// family from flushing and compacting.
@@ -885,6 +864,19 @@ impl<'a> DBRef<'a> {
         }
     }
 
+    /// Returns default column family handle
+    pub fn default_column_family(&self) -> ColumnFamily {
+        ColumnFamily {
+            handle: ColumnFamilyHandle {
+                raw: unsafe { ll::rocks_db_default_column_family(self.raw()) },
+            },
+            db: self.context.clone(),
+            owned: false,
+        }
+    }
+}
+
+impl DBRef {
     /// Set the database entry for `"key"` to `"value"`.
     /// If `"key"` already exists, it will be overwritten.
     /// Returns OK on success, and a non-OK status on error.
@@ -1382,7 +1374,7 @@ impl<'a> DBRef<'a> {
     ///
     /// nullptr will be returned if the DB fails to take a snapshot or does
     /// not support snapshot.
-    pub fn get_snapshot(&'a self) -> Option<Snapshot<'a>> {
+    pub fn get_snapshot(&self) -> Option<Snapshot> {
         unsafe {
             let ptr = ll::rocks_db_get_snapshot(self.raw());
             if ptr.is_null() {
@@ -1530,26 +1522,7 @@ impl<'a> DBRef<'a> {
         }
     }
 
-    /// For each i in [0,n-1], store in "sizes[i]", the approximate
-    /// file system space used by keys in "[range[i].start .. range[i].limit)".
-    ///
-    /// Note that the returned sizes measure file system space usage, so
-    /// if the user data compresses by a factor of ten, the returned
-    /// sizes will be one-tenth the size of the corresponding user data size.
-    ///
-    /// If include_flags defines whether the returned size should include
-    /// the recently written data in the mem-tables (if
-    /// the mem-table type supports it), data serialized to disk, or both.
-    /// include_flags should be of type DB::SizeApproximationFlags
-    pub fn get_approximate_sizes(&self, ranges: &[ops::Range<&[u8]>]) -> Vec<u64> {
-        self.get_approximate_sizes_cf(&self.default_column_family(), ranges)
-    }
-
-    pub fn get_approximate_sizes_cf(
-        &self,
-        column_family: &ColumnFamilyHandle,
-        ranges: &[ops::Range<&[u8]>],
-    ) -> Vec<u64> {
+    pub fn get_approximate_sizes(&self, column_family: &ColumnFamilyHandle, ranges: &[ops::Range<&[u8]>]) -> Vec<u64> {
         // include_flags: u8
         let num_ranges = ranges.len();
         let mut range_start_ptrs = Vec::with_capacity(num_ranges);
@@ -1566,7 +1539,7 @@ impl<'a> DBRef<'a> {
         unsafe {
             ll::rocks_db_get_approximate_sizes_cf(
                 self.raw(),
-                column_family.raw,
+                column_family.raw(),
                 num_ranges,
                 range_start_ptrs.as_ptr(),
                 range_start_lens.as_ptr(),
@@ -1578,13 +1551,7 @@ impl<'a> DBRef<'a> {
         sizes
     }
 
-    /// The method is similar to GetApproximateSizes, except it
-    /// returns approximate number of records in memtables.
-    pub fn get_approximate_memtable_stats(&self, range: ops::Range<&[u8]>) -> (u64, u64) {
-        self.get_approximate_memtable_stats_cf(&self.default_column_family(), range)
-    }
-
-    pub fn get_approximate_memtable_stats_cf(
+    pub fn get_approximate_memtable_stats(
         &self,
         column_family: &ColumnFamilyHandle,
         range: ops::Range<&[u8]>,
@@ -1594,7 +1561,7 @@ impl<'a> DBRef<'a> {
         unsafe {
             ll::rocks_db_get_approximate_memtable_stats_cf(
                 self.raw(),
-                column_family.raw,
+                column_family.raw(),
                 range.start.as_ptr() as *const c_char,
                 range.start.len(),
                 range.end.as_ptr() as *const c_char,
@@ -1644,25 +1611,24 @@ impl<'a> DBRef<'a> {
         }
     }
 
-    pub fn set_options(&self, new_options: &HashMap<&str, &str>) -> Result<()> {
-        self.set_options_cf(&self.default_column_family(), new_options)
-    }
-
-    pub fn set_options_cf(&self, column_family: &ColumnFamilyHandle, new_options: &HashMap<&str, &str>) -> Result<()> {
-        let num_options = new_options.len();
-        let mut key_ptrs = Vec::with_capacity(num_options);
-        let mut key_lens = Vec::with_capacity(num_options);
-        let mut val_ptrs = Vec::with_capacity(num_options);
-        let mut val_lens = Vec::with_capacity(num_options);
-        new_options
-            .iter()
+    pub fn set_options<T, H>(&self, column_family: &ColumnFamilyHandle, new_options: H) -> Result<()>
+    where
+        T: AsRef<str>,
+        H: IntoIterator<Item = (T, T)>,
+    {
+        let mut key_ptrs = Vec::with_capacity(2);
+        let mut key_lens = Vec::with_capacity(2);
+        let mut val_ptrs = Vec::with_capacity(2);
+        let mut val_lens = Vec::with_capacity(2);
+        let num_options = new_options
+            .into_iter()
             .map(|(key, val)| {
-                key_ptrs.push(key.as_ptr() as *const c_char);
-                key_lens.push(key.len());
-                val_ptrs.push(val.as_ptr() as *const c_char);
-                val_lens.push(val.len());
+                key_ptrs.push(key.as_ref().as_ptr() as *const c_char);
+                key_lens.push(key.as_ref().len());
+                val_ptrs.push(val.as_ref().as_ptr() as *const c_char);
+                val_lens.push(val.as_ref().len());
             })
-            .last();
+            .count();
         let mut status = ptr::null_mut();
         unsafe {
             ll::rocks_db_set_options_cf(
@@ -2229,17 +2195,6 @@ impl<'a> DBRef<'a> {
         unsafe {
             ll::rocks_db_get_db_identity(self.raw(), &mut identity as *mut String as *mut _, &mut status);
             Error::from_ll(status).map(|_| identity)
-        }
-    }
-
-    /// Returns default column family handle
-    pub fn default_column_family(&self) -> ColumnFamily {
-        ColumnFamily {
-            handle: ColumnFamilyHandle {
-                raw: unsafe { ll::rocks_db_default_column_family(self.raw()) },
-            },
-            db: self.borrow(),
-            owned: false,
         }
     }
 

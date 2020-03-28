@@ -65,7 +65,7 @@ impl<'a> Snapshot<'a> {
 /// Note: this is a pure rust implementation
 pub struct ManagedSnapshot<'a, 'b: 'a> {
     snapshot: Snapshot<'a>,
-    db: &'b DB<'b>,
+    db: &'b DB,
 }
 
 impl<'a, 'b: 'a> ops::Deref for ManagedSnapshot<'a, 'b> {
@@ -90,7 +90,7 @@ impl<'a, 'b> Drop for ManagedSnapshot<'a, 'b> {
 }
 
 impl<'a, 'b> ManagedSnapshot<'a, 'b> {
-    pub fn new(db: &'b DB<'b>) -> ManagedSnapshot<'a, 'b> {
+    pub fn new(db: &'b DB) -> ManagedSnapshot<'a, 'b> {
         let snap = db.get_snapshot().expect("should get snapshot");
         ManagedSnapshot { snapshot: snap, db: db }
     }
