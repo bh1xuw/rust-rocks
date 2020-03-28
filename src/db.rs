@@ -1094,7 +1094,7 @@ impl DBRef {
     /// Returns OK on success, non-OK on failure.
     ///
     /// Note: consider setting `options.sync = true`.
-    pub fn write(&self, options: &WriteOptions, updates: WriteBatch) -> Result<()> {
+    pub fn write(&self, options: &WriteOptions, updates: &WriteBatch) -> Result<()> {
         let mut status = ptr::null_mut::<ll::rocks_status_t>();
         unsafe {
             ll::rocks_db_write(self.raw(), options.raw(), updates.raw(), &mut status);
