@@ -21,4 +21,4 @@ jobs:
     - name: Build
       run: cargo build --features static-link --verbose
     - name: Run tests
-      run: cargo test --features static-link -- --test-threads 1
+      run: cargo test --tests --features static-link --no-fail-fast -- --test-threads 1
