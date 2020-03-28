@@ -137,3 +137,5 @@ impl fmt::Debug for Error {
         write!(f, "{:?}({:?}, {:?})", self.code(), self.subcode(), self.state())
     }
 }
+
+impl ::std::error::Error for Error {}

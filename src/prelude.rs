@@ -17,7 +17,7 @@ pub use crate::transaction_log::LogFile;
 pub use crate::types::SequenceNumber;
 pub use crate::write_batch::WriteBatch;
 
-pub use super::{Error, Result};
+pub use super::Error;
 
 #[test]
 fn test_version() {
