@@ -51,6 +51,17 @@ pub struct MergeOperationInput<'a> {
 }
 
 impl<'a> MergeOperationInput<'a> {
+    /// The key associated with the merge operation.
+    pub fn key(&self) -> &[u8] {
+        self.key
+    }
+
+    /// The existing value of the current key, nullptr means that the
+    /// value doesn't exist.
+    pub fn existing_value(&self) -> Option<&[u8]> {
+        self.existing_value.map(|&val| val)
+    }
+
     /// A list of operands to apply.
     pub fn operands(&self) -> &[&[u8]] {
         unsafe {
