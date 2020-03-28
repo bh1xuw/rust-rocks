@@ -20,6 +20,7 @@ rocks-sys = { path = "rocks-sys", version = "0.1.5", default-features = false }
 
 [dev-dependencies]
 tempdir = "0.3"
+lazy_static = "1"
 
 [features]
 default = ["rocks-sys/default", "rocks-sys/snappy"]

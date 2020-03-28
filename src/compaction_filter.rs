@@ -76,10 +76,9 @@ pub trait CompactionFilter {
     // CompactionFilter concurrently.
     //
     // For rust:
-    // - None: false, indicates that the kv should be preserved in the
-    //   output of this compaction run.
-    // - Some(None): true, indicates that this key-value should be removed
-    //   from the output of the compaction.
+    // - None: false, indicates that the kv should be preserved in the output of this compaction run.
+    // - Some(None): true, indicates that this key-value should be removed from the output of the
+    //   compaction.
     // - Some(Some(vec![])): modify the existing_value and pass it back through new_value.
     // fn filter(&self, level: u32, key: &[u8], existing_value: &[u8]) -> Option<Option<Vec<u8>>> {
     // None
@@ -109,10 +108,9 @@ pub trait CompactionFilter {
     ///  * kKeep - keep the key-value pair.
     ///  * kRemove - remove the key-value pair or merge operand.
     ///  * kChangeValue - keep the key and change the value/operand to *new_value.
-    ///  * kRemoveAndSkipUntil - remove this key-value pair, and also remove
-    ///    all key-value pairs with key in [key, *skip_until). This range
-    ///    of keys will be skipped without reading, potentially saving some
-    ///    IO operations compared to removing the keys one by one.
+    ///  * kRemoveAndSkipUntil - remove this key-value pair, and also remove all key-value pairs
+    ///    with key in [key, *skip_until). This range of keys will be skipped without reading,
+    ///    potentially saving some IO operations compared to removing the keys one by one.
     ///
     ///    *skip_until <= key is treated the same as Decision::kKeep
     ///    (since the range [key, *skip_until) is empty).
@@ -140,7 +138,7 @@ pub trait CompactionFilter {
     ///
     /// Rust:
     ///   Decision for detailed return type.
-    fn filter(&self, level: u32, key: &[u8], value_type: ValueType, existing_value: &[u8]) -> Decision {
+    fn filter(&mut self, level: i32, key: &[u8], value_type: ValueType, existing_value: &[u8]) -> Decision {
         Decision::Keep
     }
 
@@ -189,6 +187,7 @@ pub mod c {
     use super::*;
 
     #[no_mangle]
+    #[allow(mutable_transmutes)]
     pub unsafe extern "C" fn rust_compaction_filter_call(
         f: *mut (),
         level: c_int,
@@ -199,53 +198,55 @@ pub mod c {
         skip_until: *mut (),
     ) -> c_int {
         assert!(!f.is_null());
-        let filter = f as *mut Box<dyn CompactionFilter>;
+        // FIXME: borrow as mutable
+        let filter = f as *mut &mut (dyn CompactionFilter + Sync);
         // must be the same as C part
-        match (*filter).filter(level as u32, key, value_type, existing_value) {
+        match (*filter).filter(level, key, value_type, existing_value) {
             Decision::Keep => 0,
             Decision::Remove => 1,
             Decision::ChangeValue(nval) => {
                 ll::cxx_string_assign(new_value as *mut _, nval.as_ptr() as *const _, nval.len());
                 2
-            }
+            },
             Decision::RemoveAndSkipUntil(skip) => {
                 ll::cxx_string_assign(skip_until as *mut _, skip.as_ptr() as *const _, skip.len());
                 3
-            }
+            },
         }
     }
 
     #[no_mangle]
     pub unsafe extern "C" fn rust_compaction_filter_drop(f: *mut ()) {
         assert!(!f.is_null());
-        let filter = f as *mut Box<dyn CompactionFilter>;
+        let filter = f as *mut &(dyn CompactionFilter + Sync);
         Box::from_raw(filter);
     }
 
     #[no_mangle]
     pub unsafe extern "C" fn rust_compaction_filter_name(f: *mut ()) -> *const c_char {
         assert!(!f.is_null());
-        let filter = f as *mut Box<dyn CompactionFilter>;
-        (*filter).name().as_ptr() as *const _
+        let filter = f as *mut &(dyn CompactionFilter + Sync);
+        (*filter).name().as_ptr() as _
     }
 
     #[no_mangle]
     pub unsafe extern "C" fn rust_compaction_filter_ignore_snapshots(f: *mut ()) -> c_char {
         assert!(!f.is_null());
-        let filter = f as *mut Box<dyn CompactionFilter>;
+        let filter = f as *mut &(dyn CompactionFilter + Sync);
         (*filter).ignore_snapshots() as _
     }
 }
 
 #[cfg(test)]
 mod tests {
-    use super::super::rocksdb::*;
+    use crate::rocksdb::*;
     use super::*;
+    use lazy_static::lazy_static;
 
     pub struct MyCompactionFilter;
 
     impl CompactionFilter for MyCompactionFilter {
-        fn filter(&self, level: u32, key: &[u8], value_type: ValueType, existing_value: &[u8]) -> Decision {
+        fn filter(&mut self, level: i32, key: &[u8], value_type: ValueType, existing_value: &[u8]) -> Decision {
             assert_eq!(value_type, ValueType::Value); // haven't set up merge test
 
             if existing_value == b"TO-BE-DELETED" {
@@ -260,13 +261,17 @@ mod tests {
         }
     }
 
+    lazy_static! {
+        static ref MY_COMPACTION_FILTER: MyCompactionFilter = MyCompactionFilter;
+    }
+
     #[test]
     fn compaction_filter() {
         let tmp_dir = ::tempdir::TempDir::new_in(".", "rocks").unwrap();
         let db = DB::open(
             Options::default()
                 .map_db_options(|db| db.create_if_missing(true))
-                .map_cf_options(|cf| cf.compaction_filter(Box::new(MyCompactionFilter))),
+                .map_cf_options(|cf| cf.compaction_filter(&*MY_COMPACTION_FILTER)),
             &tmp_dir,
         )
         .unwrap();

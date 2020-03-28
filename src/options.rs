@@ -336,7 +336,7 @@ impl ColumnFamilyOptions {
     /// thread-safe.
     ///
     /// Default: nullptr
-    pub fn compaction_filter(self, filter: Box<dyn CompactionFilter + Sync>) -> Self {
+    pub fn compaction_filter(self, filter: &'static (dyn CompactionFilter + Sync)) -> Self {
         unsafe {
             // FIXME: mem leaks
             // CFOptions.compaction_filter is a raw pointer
