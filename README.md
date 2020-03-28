@@ -122,3 +122,10 @@ Bindgen:
 ```console
 $ PATH="/usr/local/opt/llvm/bin:$PATH" make
 ```
+
+## Known bugs
+
+- Minor memory leaks
+- Strange test link error under Linux
+  - Link error while `cargo test --workspace`
+  - Link error while `cargo test`
