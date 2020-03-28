@@ -714,6 +714,7 @@ pub mod c {
         let flush_job_info = flush_job_info_convert(info);
 
         (*listener).on_flush_completed(&db_ref, &flush_job_info);
+        mem::forget(db_ref);
     }
 
     #[no_mangle]
@@ -727,6 +728,7 @@ pub mod c {
         let flush_job_info = flush_job_info_convert(info);
 
         (*listener).on_flush_begin(&db_ref, &flush_job_info);
+        mem::forget(db_ref);
     }
 
     #[no_mangle]
@@ -771,6 +773,7 @@ pub mod c {
         };
 
         (*listener).on_compaction_completed(&db_ref, &info);
+        mem::forget(db_ref);
     }
 
     #[no_mangle]
@@ -820,6 +823,7 @@ pub mod c {
         let db_ref = mem::transmute::<_, DBRef>(db);
         let info = ExternalFileIngestionInfo { raw: info };
         (*listener).on_external_file_ingested(&db_ref, &info);
+        mem::forget(db_ref);
     }
 
     #[no_mangle]
