@@ -1,7 +1,6 @@
 extern crate rocks;
 
 use rocks::prelude::*;
-use std::str;
 
 const DB_PATH: &str = "/tmp/rocksdb_column_families_example";
 
