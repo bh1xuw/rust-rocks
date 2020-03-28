@@ -1436,6 +1436,20 @@ impl DBOptions {
         DBOptions { raw: raw }
     }
 
+    /// By default, RocksDB uses only one background thread for flush and
+    /// compaction. Calling this function will set it up such that total of
+    /// `total_threads` is used. Good value for `total_threads` is the number of
+    /// cores. You almost definitely want to call this function if your system is
+    /// bottlenecked by RocksDB.
+    ///
+    /// Default: 16
+    pub fn increase_parallelism(self, total_threads: i32) -> Self {
+        unsafe {
+            ll::rocks_dboptions_increase_parallelism(self.raw, total_threads);
+        }
+        self
+    }
+
     /// If true, the database will be created if it is missing.
     ///
     /// Default: false
