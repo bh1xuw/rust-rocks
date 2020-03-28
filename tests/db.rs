@@ -68,7 +68,7 @@ fn test_list_cfs() {
     assert!(ret.as_ref().unwrap().contains(&"cf2".to_owned()));
 
     let cfs = ret.unwrap();
-    if let Ok((db, cf_handles)) = DB::open_with_column_families(&Options::default(), path, cfs) {
+    if let Ok((db, cf_handles)) = DB::open_with_column_families(&DBOptions::default(), path, cfs) {
         let iters = db.new_iterators(&ReadOptions::default().pin_data(true), &cf_handles);
         println!("its => {:?}", iters);
         assert!(iters.is_ok());
@@ -98,7 +98,7 @@ fn test_db_get() {
 fn test_open_cf() {
     let tmp_dir = TempDir::new_in(".", "rocks").unwrap();
 
-    let opt = Options::default().map_db_options(|db| db.create_if_missing(true));
+    let opt = DBOptions::default().create_if_missing(true);
 
     let ret = DB::open_with_column_families(
         &opt,
@@ -118,7 +118,7 @@ fn test_open_cf() {
 fn test_cf_lifetime() {
     let tmp_dir = TempDir::new_in(".", "rocks").unwrap();
 
-    let opt = Options::default().map_db_options(|db| db.create_if_missing(true));
+    let opt = DBOptions::default().create_if_missing(true);
 
     let mut cf_handle = None;
     {

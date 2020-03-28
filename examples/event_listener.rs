@@ -108,7 +108,7 @@ impl EventListener for MyEventListener {
     }
 
     // TODO: how to test this?
-    fn on_background_error(&mut self, reason: BackgroundErrorReason, bg_error: Error) -> Result<()> {
+    fn on_background_error(&mut self, reason: BackgroundErrorReason, bg_error: Error) -> Result<(), Error> {
         println!("! background error: reason={:?}", reason);
         Err(bg_error)
     }

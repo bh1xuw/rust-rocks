@@ -177,7 +177,7 @@ mod tests {
                 .put(format!("M{}", i).as_bytes(), format!("V{}", i).as_bytes())
                 .put(format!("N{}", i).as_bytes(), format!("V{}", i * i * i).as_bytes());
 
-            assert!(db.write(WriteOptions::default_instance(), batch).is_ok());
+            assert!(db.write(WriteOptions::default_instance(), &batch).is_ok());
 
             if i % 9 == 0 {
                 assert!(db.flush(&FlushOptions::default().wait(true)).is_ok());

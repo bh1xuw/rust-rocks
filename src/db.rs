@@ -740,10 +740,8 @@ impl DB {
     /// If everything is OK, handles will on return be the same size
     /// as `column_families` --- `handles[i]` will be a handle that you
     /// will use to operate on column family `column_family[i]`.
-    // FIXME: this should be DBOptions
-    // FIXME: lifetime leaks
     pub fn open_with_column_families<CF: Into<ColumnFamilyDescriptor>, P: AsRef<Path>, I: IntoIterator<Item = CF>>(
-        options: &Options,
+        options: &DBOptions,
         name: P,
         column_families: I,
     ) -> Result<(DB, Vec<ColumnFamily>)> {

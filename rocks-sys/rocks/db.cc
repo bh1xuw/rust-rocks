@@ -63,7 +63,7 @@ rocks_db_t* rocks_db_open_for_read_only(const rocks_options_t* options, const ch
   }
 }
 
-rocks_db_t* rocks_db_open_column_families(const rocks_options_t* db_options, const char* name, int num_column_families,
+rocks_db_t* rocks_db_open_column_families(const rocks_dboptions_t* db_options, const char* name, int num_column_families,
                                           const char* const* column_family_names,
                                           const rocks_cfoptions_t* const* column_family_options,
                                           rocks_column_family_handle_t** column_family_handles,
@@ -76,7 +76,7 @@ rocks_db_t* rocks_db_open_column_families(const rocks_options_t* db_options, con
 
   DB* db = nullptr;
   std::vector<ColumnFamilyHandle*> handles;
-  if (SaveError(status, DB::Open(DBOptions(db_options->rep), std::string(name), column_families, &handles, &db))) {
+  if (SaveError(status, DB::Open(db_options->rep, std::string(name), column_families, &handles, &db))) {
     return nullptr;
   }
 

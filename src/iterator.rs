@@ -391,7 +391,7 @@ mod tests {
             .put(b"name", b"BH1XUwqrW")
             .put(b"site", b"githuzxcvb");
 
-        let ret = db.write(&WriteOptions::default(), batch);
+        let ret = db.write(&WriteOptions::default(), &batch);
         assert!(ret.is_ok());
 
         assert!(db.compact_range(&Default::default(), ..).is_ok());
@@ -454,7 +454,7 @@ mod tests {
             .put(b"k5", b"BY1ghCQ")
             .put(b"k9", b"BY1xcvbCQ");
 
-        let ret = db.write(&WriteOptions::default(), batch);
+        let ret = db.write(&WriteOptions::default(), &batch);
         assert!(ret.is_ok());
 
         let keys: Vec<_> = db

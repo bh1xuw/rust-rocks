@@ -124,7 +124,7 @@ mod tests {
                 .put(b"key4", b"BY1CsafQ")
                 .put(b"name", b"BH1XUwqrW")
                 .put(b"site", b"githuzxcvb");
-            assert!(db.write(&WriteOptions::default(), batch).is_ok());
+            assert!(db.write(&WriteOptions::default(), &batch).is_ok());
         }
 
         let dumps_dir = ::tempdir::TempDir::new_in(".", "dumps").unwrap();

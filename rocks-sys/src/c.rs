@@ -1138,7 +1138,7 @@ extern "C" {
 }
 extern "C" {
     pub fn rocks_db_open_column_families(
-        db_options: *const rocks_options_t,
+        db_options: *const rocks_dboptions_t,
         name: *const ::std::os::raw::c_char,
         num_column_families: ::std::os::raw::c_int,
         column_family_names: *const *const ::std::os::raw::c_char,

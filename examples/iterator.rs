@@ -13,7 +13,7 @@ fn main() {
 
     println!("wb => {:?}", wb);
 
-    let _ = db.write(WriteOptions::default_instance(), wb).unwrap();
+    let _ = db.write(WriteOptions::default_instance(), &wb).unwrap();
 
     println!(
         "db[042-key] => {:?}",
