@@ -9,20 +9,13 @@ on:
 jobs:
   build:
 
-    runs-on: ubuntu-latest
+    runs-on: macos-latest
 
     steps:
     - uses: actions/checkout@v2
       with:
         submodules: true
-    - name: Installing lld
-      shell: bash
-      run: sudo apt-get -y install lld
     - name: Build
       run: cargo build --features static-link --verbose
-      env:
-        RUSTFLAGS: "-C link-arg=-fuse-ld=lld"
     - name: Run tests
       run: cargo test --tests --features static-link --no-fail-fast -- --test-threads 1
-      env:
-        RUSTFLAGS: "-C link-arg=-fuse-ld=lld"
