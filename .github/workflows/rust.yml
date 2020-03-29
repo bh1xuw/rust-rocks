@@ -13,14 +13,11 @@ jobs:
 
     steps:
     - uses: actions/checkout@v2
+      with:
+        submodules: true
     - name: Installing lld
       shell: bash
-      run: sudo apt install lld
-    - name: Checkout submodules
-      shell: bash
-      run: |
-        git submodule sync --recursive
-        git submodule update --init --force --recursive --depth=1
+      run: sudo apt-get -y install lld
     - name: Build
       run: cargo build --features static-link --verbose
       env:
