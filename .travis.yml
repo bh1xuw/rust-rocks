@@ -27,8 +27,8 @@ addons:
       - lld
 
 script:
-  - cargo build --features static-link --verbose
-  - cargo test --tests --features static-link --no-fail-fast -- --test-threads 1
+  - travis_wait cargo build --features static-link --verbose
+  - travis_wait cargo test --tests --features static-link --no-fail-fast -- --test-threads 1
 
 env:
   global:
