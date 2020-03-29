@@ -12,15 +12,17 @@ cache:
 
 os:
   - linux
-  - osx
+#  - osx
 
 before_script:
+  - sudo apt install lld
   - git submodule update --init --recursive
 
 script:
   - cargo build --features static-link --verbose
-  - travis_wait 30 cargo test --tests --features static-link --no-fail-fast -- --test-threads 1
+  - cargo test --tests --features static-link --no-fail-fast -- --test-threads 1
 
 env:
   global:
     - LD_LIBRARY_PATH: "/usr/local/lib"
+    - RUSTFLAGS: "-C link-arg=-fuse-ld=lld"

@@ -9,10 +9,13 @@ on:
 jobs:
   build:
 
-    runs-on: macos-latest  # ubuntu-latest has link error
+    runs-on: ubuntu-latest
 
     steps:
     - uses: actions/checkout@v2
+    - name: Installing lld
+      shell: bash
+      run: sudo apt install lld
     - name: Checkout submodules
       shell: bash
       run: |
@@ -20,5 +23,9 @@ jobs:
         git submodule update --init --force --recursive --depth=1
     - name: Build
       run: cargo build --features static-link --verbose
+      env:
+        RUSTFLAGS: "-C link-arg=-fuse-ld=lld"
     - name: Run tests
       run: cargo test --tests --features static-link --no-fail-fast -- --test-threads 1
+      env:
+        RUSTFLAGS: "-C link-arg=-fuse-ld=lld"
