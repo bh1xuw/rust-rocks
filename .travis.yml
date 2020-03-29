@@ -24,5 +24,5 @@ script:
 
 env:
   global:
-    - LD_LIBRARY_PATH: "/usr/local/lib"
-    - RUSTFLAGS: "-C link-arg=-fuse-ld=lld"
+    - LD_LIBRARY_PATH=/usr/local/lib
+    - RUSTFLAGS="-C link-arg=-fuse-ld=lld"
