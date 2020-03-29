@@ -53,6 +53,7 @@ mod tests {
     use super::super::rocksdb::*;
 
     #[test]
+    #[ignore]
     fn write_buffer_manager_of_2db() {
         let tmp_dir1 = ::tempdir::TempDir::new_in("", "rocks").unwrap();
         let tmp_dir2 = ::tempdir::TempDir::new_in("", "rocks").unwrap();
