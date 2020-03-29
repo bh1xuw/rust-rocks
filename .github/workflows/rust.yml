@@ -9,15 +9,12 @@ on:
 jobs:
   build:
 
-    runs-on: ubuntu-latest
+    runs-on: macos-latest
 
     steps:
     - uses: actions/checkout@v2
-    - name: Checkout submodules
-      shell: bash
-      run: |
-        git submodule sync --recursive
-        git submodule update --init --force --recursive --depth=1
+      with:
+        submodules: true
     - name: Build
       run: cargo build --features static-link --verbose
     - name: Run tests
