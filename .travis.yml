@@ -14,9 +14,17 @@ os:
   - linux
 #  - osx
 
-before_script:
-  - sudo apt install lld
-  - git submodule update --init --recursive
+git:
+  submodules: true
+
+addons:
+  apt:
+    sources:
+      - ubuntu-toolchain-r-test
+      - sourceline: "deb http://apt.llvm.org/bionic/ llvm-toolchain-bionic main"
+        key_url: "https://apt.llvm.org/llvm-snapshot.gpg.key"
+    packages:
+      - lld
 
 script:
   - cargo build --features static-link --verbose
