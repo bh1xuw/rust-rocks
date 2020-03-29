@@ -16,7 +16,7 @@ Dynamic Link Tested: RocksDB 6.5.3 (ArchLinux).
 tests pass under:
 
 - macOS 10.15
-- Linux amd64
+- Linux amd64 (with linking error fix)
 
 For macOS(with RocksDB installed via brew):
 
@@ -25,9 +25,14 @@ For macOS(with RocksDB installed via brew):
 
 For Linux(with RocksDB installed into /usr/local):
 
-    LD_LIBRARY_PATH=/usr/local/lib \
-    LIBRARY_PATH=/usr/local/lib CXXFLAGS=-I/usr/local/include \
-    cargo test -- --nocapture
+```console
+$ sudo apt install lld
+(gcc-ld can't handle circular references while linking.)
+(for more, refer the last section of readme.)
+$ LD_LIBRARY_PATH=/usr/local/lib \
+  LIBRARY_PATH=/usr/local/lib CXXFLAGS=-I/usr/local/include \
+  RUSTFLAGS="-C link-arg=-fuse-ld=lld" cargo test -- --nocapture
+```
 
 For static build:
 
@@ -121,11 +126,20 @@ Bindgen:
 
 ```console
 $ PATH="/usr/local/opt/llvm/bin:$PATH" make
+(this will regenerate the bindgen c.rs)
 ```
 
 ## Known bugs
 
+- Linking error under Linux
+  - rust-rocks exports rust functions to c++, so there are circular references while linking
+  - GCC reuqire that you put the object files and libraries in the order that they depend on each other
+  - Rust will not wrap user crates in `--start-group` and `--end-group`
+  - So circular references will be errors.
+  - Can be fixed by using `lld` as linker, `RUSTFLAGS="-C link-arg=-fuse-ld=lld"`
+  - Can be fixed by manually organising link arguments
+    - librocks, then librocks_sys, *then librocks again*
 - Minor memory leaks
-- Strange test link error under Linux
-  - Link error while `cargo test --workspace`
-  - Link error while `cargo test`
+  - Comparator
+  - CompactionFilter
+  - MergeOperator
