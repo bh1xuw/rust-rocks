@@ -14,7 +14,7 @@ git:
   submodules: true
 
 script:
-  - PATH="${PWD}/scripts:$PATH" travis_wait cargo build --features static-link --verbose
+  - travis_wait cargo build --features static-link --verbose
   - PATH="${PWD}/scripts:$PATH" travis_wait cargo test --tests --features static-link --no-fail-fast -- --test-threads 1
 
 env:
