@@ -6,25 +6,12 @@ rust:
   - nightly
   - stable
 
-cache:
-  directories:
-    - target
-
 os:
   - linux
 #  - osx
 
 git:
   submodules: true
-
-addons:
-  apt:
-    sources:
-      - ubuntu-toolchain-r-test
-      - sourceline: "deb http://apt.llvm.org/bionic/ llvm-toolchain-bionic main"
-        key_url: "https://apt.llvm.org/llvm-snapshot.gpg.key"
-    packages:
-      - lld
 
 script:
   - travis_wait cargo build --features static-link --verbose
@@ -33,4 +20,6 @@ script:
 env:
   global:
     - LD_LIBRARY_PATH=/usr/local/lib
-    - RUSTFLAGS="-C link-arg=-fuse-ld=lld"
+    # use shell wrapper for cc
+    - PATH="${PWD}/scripts:$PATH"
+    # - RUSTFLAGS="-C link-arg=-fuse-ld=lld"

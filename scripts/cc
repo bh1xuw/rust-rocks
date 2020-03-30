@@ -1,0 +1,22 @@
+#!/bin/bash -e
+
+# This script handles circular reference link between librocks and librocks_sys,
+# by modifying the link order:
+# librocks librocks_sys => librocks librocks_sys librocks
+
+SYSTEM_CC="/usr/bin/cc"
+
+ARGS=("$@")
+
+FIXED_ARGS=()
+
+for arg in "${ARGS[@]}"; do
+    FIXED_ARGS+=($arg)
+    if [[ $arg == *librocks-*.rlib ]]; then
+        _librocks=$arg
+    elif [[ $arg == *librocks_sys-*.rlib ]]; then
+        FIXED_ARGS+=($_librocks)
+    fi
+done
+
+exec ${SYSTEM_CC} ${FIXED_ARGS[@]}
