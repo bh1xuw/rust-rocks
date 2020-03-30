@@ -14,12 +14,12 @@ git:
   submodules: true
 
 script:
-  - travis_wait cargo build --features static-link --verbose
-  - travis_wait cargo test --tests --features static-link --no-fail-fast -- --test-threads 1
+  - which cc
+  - travis_wait PATH="${PWD}/scripts:$PATH" cargo build --features static-link --verbose
+  - travis_wait PATH="${PWD}/scripts:$PATH" cargo test --tests --features static-link --no-fail-fast -- --test-threads 1
 
 env:
   global:
     - LD_LIBRARY_PATH=/usr/local/lib
-    # use shell wrapper for cc
-    - PATH="${PWD}/scripts:$PATH"
+    # use shell wrapper for cc to fix link error
     # - RUSTFLAGS="-C link-arg=-fuse-ld=lld"
