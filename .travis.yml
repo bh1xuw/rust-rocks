@@ -15,10 +15,11 @@ git:
 
 script:
   - travis_wait cargo build --features static-link --verbose
-  - PATH="${PWD}/scripts:$PATH" travis_wait cargo test --tests --features static-link --no-fail-fast -- --test-threads 1
+  - travis_wait cargo build --features static-link --verbose
+  - RUSTFLAGS="-C linker=${PWD}/scripts/cc" travis_wait cargo test --tests --features static-link --no-fail-fast
 
 env:
   global:
-    - LD_LIBRARY_PATH=/usr/local/lib
+    - RUST_TEST_THREADS=1
     # use shell wrapper for cc to fix link error
     # - RUSTFLAGS="-C link-arg=-fuse-ld=lld"
