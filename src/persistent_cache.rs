@@ -50,7 +50,7 @@ impl PersistentCache {
         log: Option<&Logger>,
         optimized_for_nvm: bool,
     ) -> Result<PersistentCache> {
-        let path_str = path.as_ref().to_str().expect("valid utf8");
+        let path_str = path.as_ref().to_str().expect("valid path");
         let mut status = ptr::null_mut::<ll::rocks_status_t>();
         unsafe {
             let raw = ll::rocks_new_persistent_cache(

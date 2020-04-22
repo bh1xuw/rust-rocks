@@ -38,12 +38,14 @@ pub fn load_latest_options(path: &str) -> Result<(DBOptions, Vec<ColumnFamilyDes
 
 
 #[cfg(unix)]
+#[inline]
 pub(crate) fn path_to_bytes<P: AsRef<Path>>(path: P) -> Vec<u8> {
     use std::os::unix::ffi::OsStrExt;
     path.as_ref().as_os_str().as_bytes().to_vec()
 }
 
 #[cfg(not(unix))]
+#[inline]
 pub(crate) fn path_to_bytes<P: AsRef<Path>>(path: P) -> Vec<u8> {
     // On Windows, could use std::os::windows::ffi::OsStrExt to encode_wide(),
     // but you end up with a Vec<u16> instead of a Vec<u8>, so that doesn't

@@ -717,7 +717,7 @@ impl DB {
     /// Open the database with the specified `name`.
     pub fn open<T: AsRef<Options>, P: AsRef<Path>>(options: T, name: P) -> Result<DB> {
         let opt = options.as_ref().raw();
-        let dbname = name.as_ref().to_str().and_then(|s| CString::new(s).ok()).unwrap();
+        let dbname = CString::new(path_to_bytes(name)).unwrap();
         let mut status = ptr::null_mut::<ll::rocks_status_t>();
         unsafe {
             let db_ptr = ll::rocks_db_open(opt, dbname.as_ptr(), &mut status);
@@ -747,7 +747,7 @@ impl DB {
         column_families: I,
     ) -> Result<(DB, Vec<ColumnFamily>)> {
         let opt = options.raw();
-        let dbname = name.as_ref().to_str().and_then(|s| CString::new(s).ok()).unwrap();
+        let dbname = CString::new(path_to_bytes(name)).unwrap();
 
         let cfs = column_families
             .into_iter()
@@ -799,7 +799,7 @@ impl DB {
     /// If the db is opened in read only mode, then no compactions
     /// will happen.
     pub fn open_for_readonly<P: AsRef<Path>>(options: &Options, name: P, error_if_log_file_exist: bool) -> Result<DB> {
-        let dbname = name.as_ref().to_str().and_then(|s| CString::new(s).ok()).unwrap();
+        let dbname = CString::new(path_to_bytes(name)).unwrap();
         let mut status = ptr::null_mut::<ll::rocks_status_t>();
         unsafe {
             let db_ptr = ll::rocks_db_open_for_read_only(
@@ -833,7 +833,7 @@ impl DB {
     /// through `column_families` argument. The ordering of
     /// column families in column_families is unspecified.
     pub fn list_column_families<P: AsRef<Path>>(options: &Options, name: P) -> Result<Vec<String>> {
-        let dbname = name.as_ref().to_str().and_then(|s| CString::new(s).ok()).unwrap();
+        let dbname = CString::new(path_to_bytes(name)).unwrap();
         let mut status = ptr::null_mut::<ll::rocks_status_t>();
         let mut lencfs = 0;
         unsafe {
