@@ -1126,6 +1126,9 @@ extern "C" {
     ) -> *mut rocks_db_t;
 }
 extern "C" {
+    pub fn rocks_db_close(db: *mut rocks_db_t);
+}
+extern "C" {
     pub fn rocks_db_open_for_read_only(
         options: *const rocks_options_t,
         name: *const ::std::os::raw::c_char,
@@ -1134,7 +1137,15 @@ extern "C" {
     ) -> *mut rocks_db_t;
 }
 extern "C" {
-    pub fn rocks_db_close(db: *mut rocks_db_t);
+    pub fn rocks_db_open_as_secondary(
+        options: *const rocks_options_t,
+        name: *const ::std::os::raw::c_char,
+        secondary_path: *const ::std::os::raw::c_char,
+        status: *mut *mut rocks_status_t,
+    ) -> *mut rocks_db_t;
+}
+extern "C" {
+    pub fn rocks_db_try_catch_up_with_primary(db: *mut rocks_db_t, status: *mut *mut rocks_status_t);
 }
 extern "C" {
     pub fn rocks_db_open_column_families(

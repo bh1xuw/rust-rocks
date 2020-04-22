@@ -63,8 +63,25 @@ rocks_db_t* rocks_db_open_for_read_only(const rocks_options_t* options, const ch
   }
 }
 
-rocks_db_t* rocks_db_open_column_families(const rocks_dboptions_t* db_options, const char* name, int num_column_families,
-                                          const char* const* column_family_names,
+rocks_db_t* rocks_db_open_as_secondary(const rocks_options_t* options, const char* name, const char* secondary_path,
+                                       rocks_status_t** status) {
+  DB* db = nullptr;
+  auto st = DB::OpenAsSecondary(options->rep, std::string(name), std::string(secondary_path), &db);
+  if (SaveError(status, std::move(st))) {
+    return nullptr;
+  } else {
+    rocks_db_t* result = new rocks_db_t;
+    result->rep = db;
+    return result;
+  }
+}
+
+void rocks_db_try_catch_up_with_primary(rocks_db_t* db, rocks_status_t** status) {
+  SaveError(status, db->rep->TryCatchUpWithPrimary());
+}
+
+rocks_db_t* rocks_db_open_column_families(const rocks_dboptions_t* db_options, const char* name,
+                                          int num_column_families, const char* const* column_family_names,
                                           const rocks_cfoptions_t* const* column_family_options,
                                           rocks_column_family_handle_t** column_family_handles,
                                           rocks_status_t** status) {

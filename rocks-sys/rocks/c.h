@@ -607,13 +607,18 @@ uint32_t rocks_column_family_handle_get_id(const rocks_column_family_handle_t* h
 /* > rocks_db_t */
 rocks_db_t* rocks_db_open(const rocks_options_t* options, const char* name, rocks_status_t** status);
 
+void rocks_db_close(rocks_db_t* db);
+
 rocks_db_t* rocks_db_open_for_read_only(const rocks_options_t* options, const char* name,
                                         unsigned char error_if_log_file_exist, rocks_status_t** status);
 
-void rocks_db_close(rocks_db_t* db);
+rocks_db_t* rocks_db_open_as_secondary(const rocks_options_t* options, const char* name, const char* secondary_path,
+                                       rocks_status_t** status);
 
-rocks_db_t* rocks_db_open_column_families(const rocks_dboptions_t* db_options, const char* name, int num_column_families,
-                                          const char* const* column_family_names,
+void rocks_db_try_catch_up_with_primary(rocks_db_t* db, rocks_status_t** status);
+
+rocks_db_t* rocks_db_open_column_families(const rocks_dboptions_t* db_options, const char* name,
+                                          int num_column_families, const char* const* column_family_names,
                                           const rocks_cfoptions_t* const* column_family_options,
                                           rocks_column_family_handle_t** column_family_handles,
                                           rocks_status_t** status);
@@ -1575,7 +1580,7 @@ int rocks_thread_status_get_state_type(const rocks_thread_status_t* status);
 
 /* options_util */
 rocks_column_family_descriptor_t** rocks_load_latest_options(const char* c_dbpath, rocks_dboptions_t* db_options,
-                                                            size_t* cf_descs_len, rocks_status_t** status);
+                                                             size_t* cf_descs_len, rocks_status_t** status);
 void rocks_load_options_destroy_cf_descs(rocks_column_family_descriptor_t** c_cf_descs, size_t len);
 
 /* aux */
