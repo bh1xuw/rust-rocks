@@ -8,6 +8,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 ### Added
 - New examples
 - Options file handling: `load_latest_options`
+- Secondary instance support
 
 ### Changed
 - Use edition 2018
