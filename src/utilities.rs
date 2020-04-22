@@ -1,5 +1,6 @@
 use std::ffi::{CStr, CString};
 use std::ptr;
+use std::path::Path;
 
 use crate::db::ColumnFamilyDescriptor;
 use crate::options::{ColumnFamilyOptions, DBOptions};
@@ -33,6 +34,21 @@ pub fn load_latest_options(path: &str) -> Result<(DBOptions, Vec<ColumnFamilyDes
     unsafe { ll::rocks_load_options_destroy_cf_descs(c_cf_descs, cf_descs_len) };
 
     Ok((db_opt, cf_descs))
+}
+
+
+#[cfg(unix)]
+pub(crate) fn path_to_bytes<P: AsRef<Path>>(path: P) -> Vec<u8> {
+    use std::os::unix::ffi::OsStrExt;
+    path.as_ref().as_os_str().as_bytes().to_vec()
+}
+
+#[cfg(not(unix))]
+pub(crate) fn path_to_bytes<P: AsRef<Path>>(path: P) -> Vec<u8> {
+    // On Windows, could use std::os::windows::ffi::OsStrExt to encode_wide(),
+    // but you end up with a Vec<u16> instead of a Vec<u8>, so that doesn't
+    // really help.
+    path.as_ref().to_string_lossy().to_string().into_bytes()
 }
 
 #[cfg(test)]

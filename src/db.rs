@@ -28,6 +28,7 @@ use crate::table_properties::TablePropertiesCollection;
 use crate::to_raw::{FromRaw, ToRaw};
 use crate::transaction_log::{LogFile, TransactionLogIterator};
 use crate::types::SequenceNumber;
+use crate::utilities::path_to_bytes;
 use crate::write_batch::WriteBatch;
 use crate::{Error, Result};
 
@@ -807,6 +808,22 @@ impl DB {
                 error_if_log_file_exist as u8,
                 &mut status,
             );
+            Error::from_ll(status).map(|_| DB::from_ll(db_ptr))
+        }
+    }
+
+    pub fn open_as_secondary<P1: AsRef<Path>, P2: AsRef<Path>>(
+        options: &Options,
+        name: P1,
+        secondary_path: P2,
+    ) -> Result<DB> {
+        let dbname = CString::new(path_to_bytes(name)).unwrap();
+        let secondary_path = CString::new(path_to_bytes(secondary_path)).unwrap();
+
+        let mut status = ptr::null_mut::<ll::rocks_status_t>();
+        unsafe {
+            let db_ptr =
+                ll::rocks_db_open_as_secondary(options.raw(), dbname.as_ptr(), secondary_path.as_ptr(), &mut status);
             Error::from_ll(status).map(|_| DB::from_ll(db_ptr))
         }
     }
@@ -2255,6 +2272,14 @@ impl DBRef {
             );
             Error::from_ll(status).map(|()| KeyVersionVec::from_ll(coll_ptr))
         }
+    }
+
+    pub fn try_catch_up_with_primary(&self) -> Result<()> {
+        let mut status = ptr::null_mut();
+        unsafe {
+            ll::rocks_db_try_catch_up_with_primary(self.raw(), &mut status);
+        }
+        Error::from_ll(status)
     }
 
     /*
