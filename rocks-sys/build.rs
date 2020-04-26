@@ -320,7 +320,6 @@ fn main() {
         .file("rocks/filter_policy.cc")
         .file("rocks/iostats_context.cc")
         .file("rocks/iterator.cc")
-        .file("rocks/merge_operator.cc")
         .file("rocks/metadata.cc")
         .file("rocks/options.cc")
         .file("rocks/perf_context.cc")
