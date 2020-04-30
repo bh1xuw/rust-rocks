@@ -23,7 +23,7 @@ use crate::{Error, Result};
 pub const DEFAULT_PAGE_SIZE: usize = 4 * 1024;
 
 lazy_static! {
-    static ref DEFAULT_ENVOPTIONS: EnvOptions = { EnvOptions::default() };
+    static ref DEFAULT_ENVOPTIONS: EnvOptions = EnvOptions::default();
     static ref DEFAULT_ENV: Env = {
         Env {
             raw: unsafe { ll::rocks_create_default_env() },
