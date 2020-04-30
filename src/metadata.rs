@@ -20,7 +20,7 @@ pub struct ColumnFamilyMetaData {
 
 impl fmt::Debug for ColumnFamilyMetaData {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        f.debug_struct("ColumnFamily")
+        f.debug_struct("ColumnFamilyMetaData")
             .field("name", &self.name)
             .field("file_count", &self.file_count)
             .field("size", &self.size)
@@ -46,7 +46,7 @@ pub struct LevelMetaData {
 
 impl fmt::Debug for LevelMetaData {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        f.debug_struct("Level")
+        f.debug_struct("LevelMetaData")
             .field("level", &self.level)
             .field("files", &self.files)
             .finish()
