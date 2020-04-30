@@ -90,7 +90,8 @@ rocks_db_t* rocks_db_open_as_secondary_column_families(const rocks_options_t* op
 
   DB* db = nullptr;
   std::vector<ColumnFamilyHandle*> handles;
-  auto st = DB::OpenAsSecondary(options->rep, std::string(name), std::string(secondary_path), &db, handles);
+  auto st =
+      DB::OpenAsSecondary(options->rep, std::string(name), std::string(secondary_path), column_families, &handles, &db);
   if (SaveError(status, std::move(st))) {
     return nullptr;
   }
