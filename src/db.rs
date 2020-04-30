@@ -726,21 +726,6 @@ impl DB {
     }
 
     /// Open DB with column families.
-    ///
-    /// `db_options` specify database specific options
-    ///
-    /// `column_families` is the vector of all column families in the database,
-    /// containing column family name and options. You need to open ALL column
-    /// families in the database. To get the list of column families, you can use
-    /// ListColumnFamilies(). Also, you can open only a subset of column families
-    /// for read-only access.
-    ///
-    /// The default column family name is `'default'` and it's stored
-    /// in `rocksdb::kDefaultColumnFamilyName`.
-    ///
-    /// If everything is OK, handles will on return be the same size
-    /// as `column_families` --- `handles[i]` will be a handle that you
-    /// will use to operate on column family `column_family[i]`.
     pub fn open_with_column_families<CF: Into<ColumnFamilyDescriptor>, P: AsRef<Path>, I: IntoIterator<Item = CF>>(
         options: &DBOptions,
         name: P,
@@ -812,7 +797,12 @@ impl DB {
         }
     }
 
-    pub fn open_with_column_families_for_readonly<
+    /// Open the database for read only with column families. When opening DB with
+    /// read only, you can specify only a subset of column families in the
+    /// database that should be opened. However, you always need to specify default
+    /// column family. The default column family name is 'default' and it's stored
+    /// in rocksdb::kDefaultColumnFamilyName
+    pub fn open_for_readonly_with_column_families<
         CF: Into<ColumnFamilyDescriptor>,
         P: AsRef<Path>,
         I: IntoIterator<Item = CF>,
@@ -869,6 +859,7 @@ impl DB {
         }
     }
 
+    /// Open DB as secondary instance with only the default column family.
     pub fn open_as_secondary<P1: AsRef<Path>, P2: AsRef<Path>>(
         options: &Options,
         name: P1,
@@ -882,6 +873,67 @@ impl DB {
             let db_ptr =
                 ll::rocks_db_open_as_secondary(options.raw(), dbname.as_ptr(), secondary_path.as_ptr(), &mut status);
             Error::from_ll(status).map(|_| DB::from_ll(db_ptr))
+        }
+    }
+
+    /// Open DB as secondary instance with column families. You can open a subset
+    /// of column families in secondary mode.
+    pub fn open_as_secondary_with_column_families<
+        P1: AsRef<Path>,
+        P2: AsRef<Path>,
+        CF: Into<ColumnFamilyDescriptor>,
+        I: IntoIterator<Item = CF>,
+    >(
+        options: &Options,
+        name: P1,
+        secondary_path: P2,
+        column_families: I,
+    ) -> Result<(DB, Vec<ColumnFamily>)> {
+        let dbname = CString::new(path_to_bytes(name)).unwrap();
+        let secondary_path = CString::new(path_to_bytes(secondary_path)).unwrap();
+        let cf_descs = column_families
+            .into_iter()
+            .map(|desc| desc.into())
+            .collect::<Vec<ColumnFamilyDescriptor>>();
+
+        let num_column_families = cf_descs.len();
+        // for ffi
+        let mut cfnames: Vec<*const c_char> = Vec::with_capacity(num_column_families);
+        let mut cfopts: Vec<*const ll::rocks_cfoptions_t> = Vec::with_capacity(num_column_families);
+        let mut cfhandles = vec![ptr::null_mut(); num_column_families];
+
+        for cf_desc in &cf_descs {
+            cfnames.push(cf_desc.name_as_ptr());
+            cfopts.push(cf_desc.options.raw());
+        }
+
+        let mut status = ptr::null_mut::<ll::rocks_status_t>();
+        unsafe {
+            let db_ptr = ll::rocks_db_open_as_secondary_column_families(
+                options.raw(),
+                dbname.as_ptr(),
+                secondary_path.as_ptr(),
+                num_column_families as c_int,
+                cfnames.as_ptr(),
+                cfopts.as_ptr(),
+                cfhandles.as_mut_ptr(),
+                &mut status,
+            );
+            Error::from_ll(status).map(|_| {
+                let db = DB::from_ll(db_ptr);
+                let db_ref = db.context.clone();
+                (
+                    db,
+                    cfhandles
+                        .into_iter()
+                        .map(|p| ColumnFamily {
+                            handle: ColumnFamilyHandle { raw: p },
+                            db: db_ref.clone(),
+                            owned: true,
+                        })
+                        .collect(),
+                )
+            })
         }
     }
 
@@ -2331,6 +2383,18 @@ impl DBRef {
         }
     }
 
+    /// Make the secondary instance catch up with the primary by tailing and
+    /// replaying the MANIFEST and WAL of the primary.
+    ///
+    /// Column families created by the primary after the secondary instance starts
+    /// will be ignored unless the secondary instance closes and restarts with the
+    /// newly created column families.
+    ///
+    /// Column families that exist before secondary instance starts and dropped by
+    /// the primary afterwards will be marked as dropped. However, as long as the
+    /// secondary instance does not delete the corresponding column family
+    /// handles, the data of the column family is still accessible to the
+    /// secondary.
     pub fn try_catch_up_with_primary(&self) -> Result<()> {
         let mut status = ptr::null_mut();
         unsafe {

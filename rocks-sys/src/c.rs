@@ -1145,6 +1145,18 @@ extern "C" {
     ) -> *mut rocks_db_t;
 }
 extern "C" {
+    pub fn rocks_db_open_as_secondary_column_families(
+        options: *const rocks_options_t,
+        name: *const ::std::os::raw::c_char,
+        secondary_path: *const ::std::os::raw::c_char,
+        num_column_families: ::std::os::raw::c_int,
+        column_family_names: *const *const ::std::os::raw::c_char,
+        column_family_options: *const *const rocks_cfoptions_t,
+        column_family_handles: *mut *mut rocks_column_family_handle_t,
+        status: *mut *mut rocks_status_t,
+    ) -> *mut rocks_db_t;
+}
+extern "C" {
     pub fn rocks_db_try_catch_up_with_primary(db: *mut rocks_db_t, status: *mut *mut rocks_status_t);
 }
 extern "C" {

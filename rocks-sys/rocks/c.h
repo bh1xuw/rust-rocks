@@ -615,6 +615,13 @@ rocks_db_t* rocks_db_open_for_read_only(const rocks_options_t* options, const ch
 rocks_db_t* rocks_db_open_as_secondary(const rocks_options_t* options, const char* name, const char* secondary_path,
                                        rocks_status_t** status);
 
+rocks_db_t* rocks_db_open_as_secondary_column_families(const rocks_options_t* options, const char* name,
+                                                       const char* secondary_path, int num_column_families,
+                                                       const char* const* column_family_names,
+                                                       const rocks_cfoptions_t* const* column_family_options,
+                                                       rocks_column_family_handle_t** column_family_handles,
+                                                       rocks_status_t** status);
+
 void rocks_db_try_catch_up_with_primary(rocks_db_t* db, rocks_status_t** status);
 
 rocks_db_t* rocks_db_open_column_families(const rocks_dboptions_t* db_options, const char* name,
