@@ -152,6 +152,9 @@ pub struct ColumnFamily {
     owned: bool,
 }
 
+unsafe impl Sync for ColumnFamily {}
+unsafe impl Send for ColumnFamily {}
+
 impl Drop for ColumnFamily {
     fn drop(&mut self) {
         if self.owned {
