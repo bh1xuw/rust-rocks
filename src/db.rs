@@ -812,6 +812,63 @@ impl DB {
         }
     }
 
+    pub fn open_with_column_families_for_readonly<
+        CF: Into<ColumnFamilyDescriptor>,
+        P: AsRef<Path>,
+        I: IntoIterator<Item = CF>,
+    >(
+        options: &DBOptions,
+        name: P,
+        column_families: I,
+        error_if_log_file_exist: bool,
+    ) -> Result<(DB, Vec<ColumnFamily>)> {
+        let dbname = CString::new(path_to_bytes(name)).unwrap();
+        let cf_descs = column_families
+            .into_iter()
+            .map(|desc| desc.into())
+            .collect::<Vec<ColumnFamilyDescriptor>>();
+
+        let num_column_families = cf_descs.len();
+        // for ffi
+        let mut cfnames: Vec<*const c_char> = Vec::with_capacity(num_column_families);
+        let mut cfopts: Vec<*const ll::rocks_cfoptions_t> = Vec::with_capacity(num_column_families);
+        let mut cfhandles = vec![ptr::null_mut(); num_column_families];
+
+        for cf_desc in &cf_descs {
+            cfnames.push(cf_desc.name_as_ptr());
+            cfopts.push(cf_desc.options.raw());
+        }
+
+        let mut status = ptr::null_mut::<ll::rocks_status_t>();
+        unsafe {
+            let db_ptr = ll::rocks_db_open_for_read_only_column_families(
+                options.raw(),
+                dbname.as_ptr(),
+                num_column_families as c_int,
+                cfnames.as_ptr(),
+                cfopts.as_ptr(),
+                cfhandles.as_mut_ptr(),
+                error_if_log_file_exist as _,
+                &mut status,
+            );
+            Error::from_ll(status).map(|_| {
+                let db = DB::from_ll(db_ptr);
+                let db_ref = db.context.clone();
+                (
+                    db,
+                    cfhandles
+                        .into_iter()
+                        .map(|p| ColumnFamily {
+                            handle: ColumnFamilyHandle { raw: p },
+                            db: db_ref.clone(),
+                            owned: true,
+                        })
+                        .collect(),
+                )
+            })
+        }
+    }
+
     pub fn open_as_secondary<P1: AsRef<Path>, P2: AsRef<Path>>(
         options: &Options,
         name: P1,

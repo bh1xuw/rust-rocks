@@ -623,9 +623,9 @@ rocks_db_t* rocks_db_open_column_families(const rocks_dboptions_t* db_options, c
                                           rocks_column_family_handle_t** column_family_handles,
                                           rocks_status_t** status);
 
-rocks_db_t* rocks_db_open_for_read_only_column_families(const rocks_options_t* db_options, const char* name,
-                                                        int num_column_families, const char** column_family_names,
-                                                        const rocks_cfoptions_t** column_family_options,
+rocks_db_t* rocks_db_open_for_read_only_column_families(const rocks_dboptions_t* db_options, const char* name,
+                                                        int num_column_families, const char* const* column_family_names,
+                                                        const rocks_cfoptions_t* const* column_family_options,
                                                         rocks_column_family_handle_t** column_family_handles,
                                                         unsigned char error_if_log_file_exist, rocks_status_t** status);
 

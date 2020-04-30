@@ -107,7 +107,7 @@ rocks_db_t* rocks_db_open_column_families(const rocks_dboptions_t* db_options, c
   return result;
 }
 
-rocks_db_t* rocks_db_open_for_read_only_column_families(const rocks_options_t* db_options, const char* name,
+rocks_db_t* rocks_db_open_for_read_only_column_families(const rocks_dboptions_t* db_options, const char* name,
                                                         int num_column_families, const char* const* column_family_names,
                                                         const rocks_cfoptions_t* const* column_family_options,
                                                         rocks_column_family_handle_t** column_family_handles,

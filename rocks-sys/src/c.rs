@@ -1160,11 +1160,11 @@ extern "C" {
 }
 extern "C" {
     pub fn rocks_db_open_for_read_only_column_families(
-        db_options: *const rocks_options_t,
+        db_options: *const rocks_dboptions_t,
         name: *const ::std::os::raw::c_char,
         num_column_families: ::std::os::raw::c_int,
-        column_family_names: *mut *const ::std::os::raw::c_char,
-        column_family_options: *mut *const rocks_cfoptions_t,
+        column_family_names: *const *const ::std::os::raw::c_char,
+        column_family_options: *const *const rocks_cfoptions_t,
         column_family_handles: *mut *mut rocks_column_family_handle_t,
         error_if_log_file_exist: ::std::os::raw::c_uchar,
         status: *mut *mut rocks_status_t,
