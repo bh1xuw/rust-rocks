@@ -641,6 +641,17 @@ void rocks_readoptions_set_snapshot(rocks_readoptions_t* opt, const rocks_snapsh
   opt->rep.snapshot = (snap ? snap->rep : nullptr);
 }
 
+void rocks_readoptions_set_iterate_lower_bound(rocks_readoptions_t* opt, const char* key, size_t keylen) {
+  if (key == nullptr) {
+    opt->lower_bound = Slice();
+    opt->rep.iterate_lower_bound = nullptr;
+
+  } else {
+    opt->lower_bound = Slice(key, keylen);
+    opt->rep.iterate_lower_bound = &opt->lower_bound;
+  }
+}
+
 void rocks_readoptions_set_iterate_upper_bound(rocks_readoptions_t* opt, const char* key, size_t keylen) {
   if (key == nullptr) {
     opt->upper_bound = Slice();

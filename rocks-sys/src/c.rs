@@ -932,6 +932,13 @@ extern "C" {
     pub fn rocks_readoptions_set_snapshot(opt: *mut rocks_readoptions_t, snap: *const rocks_snapshot_t);
 }
 extern "C" {
+    pub fn rocks_readoptions_set_iterate_lower_bound(
+        opt: *mut rocks_readoptions_t,
+        key: *const ::std::os::raw::c_char,
+        keylen: usize,
+    );
+}
+extern "C" {
     pub fn rocks_readoptions_set_iterate_upper_bound(
         opt: *mut rocks_readoptions_t,
         key: *const ::std::os::raw::c_char,
