@@ -44,7 +44,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         println!("{:?}", meta);
         let it = cf.new_iterator(&ReadOptions::default().pin_data(true));
         for (k, val) in it {
-            println!("  {:?} => {:?}", escape(k), escape(val));
+            println!(r#"  "{}" => "{}""#, escape(k), escape(val));
         }
     }
     Ok(())
