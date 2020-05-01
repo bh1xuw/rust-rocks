@@ -505,6 +505,8 @@ void rocks_readoptions_set_fill_cache(rocks_readoptions_t* opt, unsigned char v)
 
 void rocks_readoptions_set_snapshot(rocks_readoptions_t* opt, const rocks_snapshot_t* snap);
 
+void rocks_readoptions_set_iterate_lower_bound(rocks_readoptions_t* opt, const char* key, size_t keylen);
+
 void rocks_readoptions_set_iterate_upper_bound(rocks_readoptions_t* opt, const char* key, size_t keylen);
 
 void rocks_readoptions_set_read_tier(rocks_readoptions_t* opt, int v);

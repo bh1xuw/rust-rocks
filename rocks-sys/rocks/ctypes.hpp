@@ -103,7 +103,8 @@ struct rocks_options_t {
 };
 struct rocks_readoptions_t {
   ReadOptions rep;
-  Slice upper_bound;  // stack variable to set pointer to in ReadOptions
+  Slice lower_bound;
+  Slice upper_bound;  // hold variable to set pointer to in ReadOptions
 };
 struct rocks_writeoptions_t {
   WriteOptions rep;

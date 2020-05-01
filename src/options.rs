@@ -2574,6 +2574,21 @@ impl<'a> ReadOptions<'a> {
         self
     }
 
+    /// `iterate_lower_bound` defines the smallest key at which the backward
+    /// iterator can return an entry. Once the bound is passed, Valid() will be
+    /// false. `iterate_lower_bound` is inclusive ie the bound value is a valid
+    /// entry.
+    ///
+    /// If prefix_extractor is not null, the Seek target and `iterate_lower_bound`
+    /// need to have the same prefix. This is because ordering is not guaranteed
+    /// outside of prefix domain.
+    ///
+    /// Default: nullptr
+    pub fn iterate_lower_bound<'b: 'a>(self, val: &'b [u8]) -> Self {
+        unsafe { ll::rocks_readoptions_set_iterate_lower_bound(self.raw, val.as_ptr() as *const _, val.len()) }
+        self
+    }
+
     /// `iterate_upper_bound` defines the extent upto which the forward iterator
     /// can returns entries. Once the bound is reached, `is_valid()` will be false.
     /// `iterate_upper_bound` is exclusive ie the bound value is
