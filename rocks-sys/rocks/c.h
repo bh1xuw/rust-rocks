@@ -959,6 +959,12 @@ void rocks_writebatch_putv_cf(rocks_writebatch_t* b, rocks_column_family_handle_
                               const char* const* keys_list, const size_t* keys_list_sizes, int num_values,
                               const char* const* values_list, const size_t* values_list_sizes);
 
+void rocks_writebatch_putv_coerce(rocks_writebatch_t* b, const void* key_parts, int num_keys, const void* value_parts,
+                                  int num_values);
+
+void rocks_writebatch_putv_cf_coerce(rocks_writebatch_t* b, rocks_column_family_handle_t* column_family,
+                                     const void* key_parts, int num_keys, const void* value_parts, int num_values);
+
 void rocks_writebatch_merge(rocks_writebatch_t* b, const char* key, size_t klen, const char* val, size_t vlen);
 
 void rocks_writebatch_merge_cf(rocks_writebatch_t* b, rocks_column_family_handle_t* column_family, const char* key,
@@ -972,6 +978,12 @@ void rocks_writebatch_mergev_cf(rocks_writebatch_t* b, rocks_column_family_handl
                                 const char* const* keys_list, const size_t* keys_list_sizes, int num_values,
                                 const char* const* values_list, const size_t* values_list_sizes);
 
+void rocks_writebatch_mergev_coerce(rocks_writebatch_t* b, const void* key_parts, int num_keys, const void* value_parts,
+                                    int num_values);
+
+void rocks_writebatch_mergev_cf_coerce(rocks_writebatch_t* b, rocks_column_family_handle_t* column_family,
+                                       const void* key_parts, int num_keys, const void* value_parts, int num_values);
+
 void rocks_writebatch_delete(rocks_writebatch_t* b, const char* key, size_t klen);
 
 void rocks_writebatch_delete_cf(rocks_writebatch_t* b, rocks_column_family_handle_t* column_family, const char* key,
@@ -982,6 +994,16 @@ void rocks_writebatch_deletev(rocks_writebatch_t* b, int num_keys, const char* c
 
 void rocks_writebatch_deletev_cf(rocks_writebatch_t* b, rocks_column_family_handle_t* column_family, int num_keys,
                                  const char* const* keys_list, const size_t* keys_list_sizes);
+
+void rocks_writebatch_deletev_coerce(rocks_writebatch_t* b, const void* key_parts, int num_keys);
+
+void rocks_writebatch_deletev_cf_coerce(rocks_writebatch_t* b, rocks_column_family_handle_t* column_family,
+                                        const void* key_parts, int num_keys);
+
+void rocks_writebatch_single_deletev_coerce(rocks_writebatch_t* b, const void* key_parts, int num_keys);
+
+void rocks_writebatch_single_deletev_cf_coerce(rocks_writebatch_t* b, rocks_column_family_handle_t* column_family,
+                                               const void* key_parts, int num_keys);
 
 void rocks_writebatch_single_delete(rocks_writebatch_t* b, const char* key, size_t klen);
 
@@ -995,13 +1017,9 @@ void rocks_writebatch_delete_range_cf(rocks_writebatch_t* b, rocks_column_family
                                       const char* start_key, size_t start_key_len, const char* end_key,
                                       size_t end_key_len);
 
-void rocks_writebatch_delete_rangev(rocks_writebatch_t* b, int num_keys, const char* const* start_keys_list,
-                                    const size_t* start_keys_list_sizes, const char* const* end_keys_list,
-                                    const size_t* end_keys_list_sizes);
-
-void rocks_writebatch_delete_rangev_cf(rocks_writebatch_t* b, rocks_column_family_handle_t* column_family, int num_keys,
-                                       const char* const* start_keys_list, const size_t* start_keys_list_sizes,
-                                       const char* const* end_keys_list, const size_t* end_keys_list_sizes);
+void rocks_writebatch_deletev_range_cf_coerce(rocks_writebatch_t* b, rocks_column_family_handle_t* column_family,
+                                              const void* begin_key_parts, int num_begin_keys,
+                                              const void* end_key_parts, int num_end_keys);
 
 void rocks_writebatch_put_log_data(rocks_writebatch_t* b, const char* blob, size_t len);
 
@@ -1012,6 +1030,8 @@ const char* rocks_writebatch_data(rocks_writebatch_t* b, size_t* size);
 void rocks_writebatch_set_save_point(rocks_writebatch_t* b);
 
 void rocks_writebatch_rollback_to_save_point(rocks_writebatch_t* b, rocks_status_t** status);
+
+void rocks_writebatch_pop_save_point(rocks_writebatch_t* b, rocks_status_t** status);
 
 unsigned char rocks_writebatch_has_put(rocks_writebatch_t* b);
 unsigned char rocks_writebatch_has_delete(rocks_writebatch_t* b);

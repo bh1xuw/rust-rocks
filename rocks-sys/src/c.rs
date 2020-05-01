@@ -1953,6 +1953,25 @@ extern "C" {
     );
 }
 extern "C" {
+    pub fn rocks_writebatch_putv_coerce(
+        b: *mut rocks_writebatch_t,
+        key_parts: *const ::std::os::raw::c_void,
+        num_keys: ::std::os::raw::c_int,
+        value_parts: *const ::std::os::raw::c_void,
+        num_values: ::std::os::raw::c_int,
+    );
+}
+extern "C" {
+    pub fn rocks_writebatch_putv_cf_coerce(
+        b: *mut rocks_writebatch_t,
+        column_family: *mut rocks_column_family_handle_t,
+        key_parts: *const ::std::os::raw::c_void,
+        num_keys: ::std::os::raw::c_int,
+        value_parts: *const ::std::os::raw::c_void,
+        num_values: ::std::os::raw::c_int,
+    );
+}
+extern "C" {
     pub fn rocks_writebatch_merge(
         b: *mut rocks_writebatch_t,
         key: *const ::std::os::raw::c_char,
@@ -1995,6 +2014,25 @@ extern "C" {
     );
 }
 extern "C" {
+    pub fn rocks_writebatch_mergev_coerce(
+        b: *mut rocks_writebatch_t,
+        key_parts: *const ::std::os::raw::c_void,
+        num_keys: ::std::os::raw::c_int,
+        value_parts: *const ::std::os::raw::c_void,
+        num_values: ::std::os::raw::c_int,
+    );
+}
+extern "C" {
+    pub fn rocks_writebatch_mergev_cf_coerce(
+        b: *mut rocks_writebatch_t,
+        column_family: *mut rocks_column_family_handle_t,
+        key_parts: *const ::std::os::raw::c_void,
+        num_keys: ::std::os::raw::c_int,
+        value_parts: *const ::std::os::raw::c_void,
+        num_values: ::std::os::raw::c_int,
+    );
+}
+extern "C" {
     pub fn rocks_writebatch_delete(b: *mut rocks_writebatch_t, key: *const ::std::os::raw::c_char, klen: usize);
 }
 extern "C" {
@@ -2020,6 +2058,36 @@ extern "C" {
         num_keys: ::std::os::raw::c_int,
         keys_list: *const *const ::std::os::raw::c_char,
         keys_list_sizes: *const usize,
+    );
+}
+extern "C" {
+    pub fn rocks_writebatch_deletev_coerce(
+        b: *mut rocks_writebatch_t,
+        key_parts: *const ::std::os::raw::c_void,
+        num_keys: ::std::os::raw::c_int,
+    );
+}
+extern "C" {
+    pub fn rocks_writebatch_deletev_cf_coerce(
+        b: *mut rocks_writebatch_t,
+        column_family: *mut rocks_column_family_handle_t,
+        key_parts: *const ::std::os::raw::c_void,
+        num_keys: ::std::os::raw::c_int,
+    );
+}
+extern "C" {
+    pub fn rocks_writebatch_single_deletev_coerce(
+        b: *mut rocks_writebatch_t,
+        key_parts: *const ::std::os::raw::c_void,
+        num_keys: ::std::os::raw::c_int,
+    );
+}
+extern "C" {
+    pub fn rocks_writebatch_single_deletev_cf_coerce(
+        b: *mut rocks_writebatch_t,
+        column_family: *mut rocks_column_family_handle_t,
+        key_parts: *const ::std::os::raw::c_void,
+        num_keys: ::std::os::raw::c_int,
     );
 }
 extern "C" {
@@ -2053,24 +2121,13 @@ extern "C" {
     );
 }
 extern "C" {
-    pub fn rocks_writebatch_delete_rangev(
-        b: *mut rocks_writebatch_t,
-        num_keys: ::std::os::raw::c_int,
-        start_keys_list: *const *const ::std::os::raw::c_char,
-        start_keys_list_sizes: *const usize,
-        end_keys_list: *const *const ::std::os::raw::c_char,
-        end_keys_list_sizes: *const usize,
-    );
-}
-extern "C" {
-    pub fn rocks_writebatch_delete_rangev_cf(
+    pub fn rocks_writebatch_deletev_range_cf_coerce(
         b: *mut rocks_writebatch_t,
         column_family: *mut rocks_column_family_handle_t,
-        num_keys: ::std::os::raw::c_int,
-        start_keys_list: *const *const ::std::os::raw::c_char,
-        start_keys_list_sizes: *const usize,
-        end_keys_list: *const *const ::std::os::raw::c_char,
-        end_keys_list_sizes: *const usize,
+        begin_key_parts: *const ::std::os::raw::c_void,
+        num_begin_keys: ::std::os::raw::c_int,
+        end_key_parts: *const ::std::os::raw::c_void,
+        num_end_keys: ::std::os::raw::c_int,
     );
 }
 extern "C" {
@@ -2091,6 +2148,9 @@ extern "C" {
 }
 extern "C" {
     pub fn rocks_writebatch_rollback_to_save_point(b: *mut rocks_writebatch_t, status: *mut *mut rocks_status_t);
+}
+extern "C" {
+    pub fn rocks_writebatch_pop_save_point(b: *mut rocks_writebatch_t, status: *mut *mut rocks_status_t);
 }
 extern "C" {
     pub fn rocks_writebatch_has_put(b: *mut rocks_writebatch_t) -> ::std::os::raw::c_uchar;

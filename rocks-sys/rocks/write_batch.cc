@@ -60,6 +60,18 @@ void rocks_writebatch_putv_cf(rocks_writebatch_t* b, rocks_column_family_handle_
   b->rep->Put(column_family->rep, SliceParts(key_slices.data(), num_keys), SliceParts(value_slices.data(), num_values));
 }
 
+void rocks_writebatch_putv_coerce(rocks_writebatch_t* b, const void* key_parts, int num_keys, const void* value_parts,
+                                  int num_values) {
+  b->rep->Put(SliceParts(reinterpret_cast<const Slice*>(key_parts), num_keys),
+              SliceParts(reinterpret_cast<const Slice*>(value_parts), num_values));
+}
+
+void rocks_writebatch_putv_cf_coerce(rocks_writebatch_t* b, rocks_column_family_handle_t* column_family,
+                                     const void* key_parts, int num_keys, const void* value_parts, int num_values) {
+  b->rep->Put(column_family->rep, SliceParts(reinterpret_cast<const Slice*>(key_parts), num_keys),
+              SliceParts(reinterpret_cast<const Slice*>(value_parts), num_values));
+}
+
 void rocks_writebatch_merge(rocks_writebatch_t* b, const char* key, size_t klen, const char* val, size_t vlen) {
   b->rep->Merge(Slice(key, klen), Slice(val, vlen));
 }
@@ -98,6 +110,18 @@ void rocks_writebatch_mergev_cf(rocks_writebatch_t* b, rocks_column_family_handl
                 SliceParts(value_slices.data(), num_values));
 }
 
+void rocks_writebatch_mergev_coerce(rocks_writebatch_t* b, const void* key_parts, int num_keys, const void* value_parts,
+                                    int num_values) {
+  b->rep->Merge(SliceParts(reinterpret_cast<const Slice*>(key_parts), num_keys),
+                SliceParts(reinterpret_cast<const Slice*>(value_parts), num_values));
+}
+
+void rocks_writebatch_mergev_cf_coerce(rocks_writebatch_t* b, rocks_column_family_handle_t* column_family,
+                                       const void* key_parts, int num_keys, const void* value_parts, int num_values) {
+  b->rep->Merge(column_family->rep, SliceParts(reinterpret_cast<const Slice*>(key_parts), num_keys),
+                SliceParts(reinterpret_cast<const Slice*>(value_parts), num_values));
+}
+
 void rocks_writebatch_delete(rocks_writebatch_t* b, const char* key, size_t klen) { b->rep->Delete(Slice(key, klen)); }
 
 void rocks_writebatch_delete_cf(rocks_writebatch_t* b, rocks_column_family_handle_t* column_family, const char* key,
@@ -123,6 +147,15 @@ void rocks_writebatch_deletev_cf(rocks_writebatch_t* b, rocks_column_family_hand
   b->rep->Delete(column_family->rep, SliceParts(key_slices.data(), num_keys));
 }
 
+void rocks_writebatch_deletev_coerce(rocks_writebatch_t* b, const void* key_parts, int num_keys) {
+  b->rep->Delete(SliceParts(reinterpret_cast<const Slice*>(key_parts), num_keys));
+}
+
+void rocks_writebatch_deletev_cf_coerce(rocks_writebatch_t* b, rocks_column_family_handle_t* column_family,
+                                        const void* key_parts, int num_keys) {
+  b->rep->Delete(column_family->rep, SliceParts(reinterpret_cast<const Slice*>(key_parts), num_keys));
+}
+
 void rocks_writebatch_single_delete(rocks_writebatch_t* b, const char* key, size_t klen) {
   b->rep->SingleDelete(Slice(key, klen));
 }
@@ -130,6 +163,15 @@ void rocks_writebatch_single_delete(rocks_writebatch_t* b, const char* key, size
 void rocks_writebatch_single_delete_cf(rocks_writebatch_t* b, rocks_column_family_handle_t* column_family,
                                        const char* key, size_t klen) {
   b->rep->SingleDelete(column_family->rep, Slice(key, klen));
+}
+
+void rocks_writebatch_single_deletev_coerce(rocks_writebatch_t* b, const void* key_parts, int num_keys) {
+  b->rep->SingleDelete(SliceParts(reinterpret_cast<const Slice*>(key_parts), num_keys));
+}
+
+void rocks_writebatch_single_deletev_cf_coerce(rocks_writebatch_t* b, rocks_column_family_handle_t* column_family,
+                                               const void* key_parts, int num_keys) {
+  b->rep->SingleDelete(column_family->rep, SliceParts(reinterpret_cast<const Slice*>(key_parts), num_keys));
 }
 
 void rocks_writebatch_delete_range(rocks_writebatch_t* b, const char* start_key, size_t start_key_len,
@@ -143,29 +185,16 @@ void rocks_writebatch_delete_range_cf(rocks_writebatch_t* b, rocks_column_family
   b->rep->DeleteRange(column_family->rep, Slice(start_key, start_key_len), Slice(end_key, end_key_len));
 }
 
-void rocks_writebatch_delete_rangev(rocks_writebatch_t* b, int num_keys, const char* const* start_keys_list,
-                                    const size_t* start_keys_list_sizes, const char* const* end_keys_list,
-                                    const size_t* end_keys_list_sizes) {
-  std::vector<Slice> start_key_slices(num_keys);
-  std::vector<Slice> end_key_slices(num_keys);
-  for (int i = 0; i < num_keys; i++) {
-    start_key_slices[i] = Slice(start_keys_list[i], start_keys_list_sizes[i]);
-    end_key_slices[i] = Slice(end_keys_list[i], end_keys_list_sizes[i]);
+void rocks_writebatch_deletev_range_cf_coerce(rocks_writebatch_t* b, rocks_column_family_handle_t* column_family,
+                                              const void* begin_key_parts, int num_begin_keys,
+                                              const void* end_key_parts, int num_end_keys) {
+  if (column_family == nullptr) {
+    b->rep->DeleteRange(nullptr, SliceParts(reinterpret_cast<const Slice*>(begin_key_parts), num_begin_keys),
+                        SliceParts(reinterpret_cast<const Slice*>(end_key_parts), num_end_keys));
+  } else {
+    b->rep->DeleteRange(column_family->rep, SliceParts(reinterpret_cast<const Slice*>(begin_key_parts), num_begin_keys),
+                        SliceParts(reinterpret_cast<const Slice*>(end_key_parts), num_end_keys));
   }
-  b->rep->DeleteRange(SliceParts(start_key_slices.data(), num_keys), SliceParts(end_key_slices.data(), num_keys));
-}
-
-void rocks_writebatch_delete_rangev_cf(rocks_writebatch_t* b, rocks_column_family_handle_t* column_family, int num_keys,
-                                       const char* const* start_keys_list, const size_t* start_keys_list_sizes,
-                                       const char* const* end_keys_list, const size_t* end_keys_list_sizes) {
-  std::vector<Slice> start_key_slices(num_keys);
-  std::vector<Slice> end_key_slices(num_keys);
-  for (int i = 0; i < num_keys; i++) {
-    start_key_slices[i] = Slice(start_keys_list[i], start_keys_list_sizes[i]);
-    end_key_slices[i] = Slice(end_keys_list[i], end_keys_list_sizes[i]);
-  }
-  b->rep->DeleteRange(column_family->rep, SliceParts(start_key_slices.data(), num_keys),
-                      SliceParts(end_key_slices.data(), num_keys));
 }
 
 void rocks_writebatch_put_log_data(rocks_writebatch_t* b, const char* blob, size_t len) {
@@ -188,6 +217,10 @@ void rocks_writebatch_set_save_point(rocks_writebatch_t* b) { b->rep->SetSavePoi
 
 void rocks_writebatch_rollback_to_save_point(rocks_writebatch_t* b, rocks_status_t** status) {
   SaveError(status, std::move(b->rep->RollbackToSavePoint()));
+}
+
+void rocks_writebatch_pop_save_point(rocks_writebatch_t* b, rocks_status_t** status) {
+  SaveError(status, std::move(b->rep->PopSavePoint()));
 }
 
 rocks_writebatch_t* rocks_writebatch_copy(rocks_writebatch_t* b) {

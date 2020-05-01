@@ -23,12 +23,15 @@ use rocks_sys as ll;
 
 use crate::db::ColumnFamilyHandle;
 use crate::to_raw::{FromRaw, ToRaw};
-use crate::Result;
+use crate::{Error, Result};
 
 /// `WriteBatch` holds a collection of updates to apply atomically to a DB.
 pub struct WriteBatch {
     raw: *mut ll::rocks_writebatch_t,
 }
+
+unsafe impl Sync for WriteBatch {}
+unsafe impl Send for WriteBatch {}
 
 impl Drop for WriteBatch {
     fn drop(&mut self) {
@@ -53,8 +56,7 @@ impl fmt::Debug for WriteBatch {
     }
 }
 
-// FIXME: this is directly converted to raw pointer
-//        not the rocks wrapped
+// FIXME: this is directly converted to raw pointer, not the rocks wrapped
 impl ToRaw<ll::rocks_raw_writebatch_t> for WriteBatch {
     fn raw(&self) -> *mut ll::rocks_raw_writebatch_t {
         unsafe { ll::rocks_writebatch_get_writebatch(self.raw) }
@@ -119,11 +121,30 @@ impl WriteBatch {
     /// that will be written to the database are concatentations of arrays of
     /// slices.
     pub fn putv(&mut self, key: &[&[u8]], value: &[&[u8]]) -> &mut Self {
-        unimplemented!()
+        unsafe {
+            ll::rocks_writebatch_putv_coerce(
+                self.raw,
+                key.as_ptr() as _,
+                key.len() as _,
+                value.as_ptr() as _,
+                value.len() as _,
+            )
+        }
+        self
     }
 
     pub fn putv_cf(&mut self, column_family: &ColumnFamilyHandle, key: &[&[u8]], value: &[&[u8]]) -> &mut Self {
-        unimplemented!()
+        unsafe {
+            ll::rocks_writebatch_putv_cf_coerce(
+                self.raw,
+                column_family.raw(),
+                key.as_ptr() as _,
+                key.len() as _,
+                value.as_ptr() as _,
+                value.len() as _,
+            )
+        }
+        self
     }
 
     /// If the database contains a mapping for "key", erase it.  Else do nothing.
@@ -143,11 +164,15 @@ impl WriteBatch {
 
     /// variant that takes SliceParts
     pub fn deletev(&mut self, key: &[&[u8]]) -> &mut Self {
-        unimplemented!()
+        unsafe { ll::rocks_writebatch_deletev_coerce(self.raw, key.as_ptr() as _, key.len() as _) }
+        self
     }
 
     pub fn deletev_cf(&mut self, column_family: &ColumnFamilyHandle, key: &[&[u8]]) -> &mut Self {
-        unimplemented!()
+        unsafe {
+            ll::rocks_writebatch_deletev_cf_coerce(self.raw, column_family.raw(), key.as_ptr() as _, key.len() as _)
+        }
+        self
     }
 
     /// WriteBatch implementation of DB::SingleDelete().  See db.h.
@@ -167,11 +192,20 @@ impl WriteBatch {
 
     /// variant that takes SliceParts
     pub fn single_deletev(&mut self, key: &[&[u8]]) -> &mut Self {
-        unimplemented!()
+        unsafe { ll::rocks_writebatch_single_deletev_coerce(self.raw, key.as_ptr() as _, key.len() as _) }
+        self
     }
 
     pub fn single_deletev_cf(&mut self, column_family: &ColumnFamilyHandle, key: &[&[u8]]) -> &mut Self {
-        unimplemented!()
+        unsafe {
+            ll::rocks_writebatch_single_deletev_cf_coerce(
+                self.raw,
+                column_family.raw(),
+                key.as_ptr() as _,
+                key.len() as _,
+            )
+        }
+        self
     }
 
     /// WriteBatch implementation of DB::DeleteRange().  See db.h.
@@ -209,7 +243,18 @@ impl WriteBatch {
 
     /// variant that takes SliceParts
     pub fn deletev_range(&mut self, begin_key: &[&[u8]], end_key: &[&[u8]]) -> &mut Self {
-        unimplemented!()
+        unsafe {
+            // NOTE: use nullptr to denote default column family
+            ll::rocks_writebatch_deletev_range_cf_coerce(
+                self.raw,
+                ptr::null_mut(),
+                begin_key.as_ptr() as _,
+                begin_key.len() as _,
+                end_key.as_ptr() as _,
+                end_key.len() as _,
+            );
+        }
+        self
     }
 
     pub fn deletev_range_cf(
@@ -218,7 +263,17 @@ impl WriteBatch {
         begin_key: &[&[u8]],
         end_key: &[&[u8]],
     ) -> &mut Self {
-        unimplemented!()
+        unsafe {
+            ll::rocks_writebatch_deletev_range_cf_coerce(
+                self.raw,
+                column_family.raw(),
+                begin_key.as_ptr() as _,
+                begin_key.len() as _,
+                end_key.as_ptr() as _,
+                end_key.len() as _,
+            );
+        }
+        self
     }
 
     /// Merge "value" with the existing value of "key" in the database.
@@ -246,11 +301,30 @@ impl WriteBatch {
 
     // variant that takes SliceParts
     pub fn mergev(&mut self, key: &[&[u8]], value: &[&[u8]]) -> &mut Self {
-        unimplemented!()
+        unsafe {
+            ll::rocks_writebatch_mergev_coerce(
+                self.raw,
+                key.as_ptr() as _,
+                key.len() as _,
+                value.as_ptr() as _,
+                value.len() as _,
+            )
+        }
+        self
     }
 
     pub fn mergev_cf(&mut self, column_family: &ColumnFamilyHandle, key: &[&[u8]], value: &[&[u8]]) -> &mut Self {
-        unimplemented!()
+        unsafe {
+            ll::rocks_writebatch_mergev_cf_coerce(
+                self.raw,
+                column_family.raw(),
+                key.as_ptr() as _,
+                key.len() as _,
+                value.as_ptr() as _,
+                value.len() as _,
+            )
+        }
+        self
     }
 
     /// Append a blob of arbitrary size to the records in this batch. The blob will
@@ -288,7 +362,19 @@ impl WriteBatch {
         let mut status = ptr::null_mut();
         unsafe {
             ll::rocks_writebatch_rollback_to_save_point(self.raw, &mut status);
-            FromRaw::from_ll(status)
+            Error::from_ll(status)
+        }
+    }
+
+    /// Pop the most recent save point.
+    /// If there is no previous call to SetSavePoint(), Status::NotFound()
+    /// will be returned.
+    /// Otherwise returns Status::OK().
+    pub fn pop_save_point(&mut self) -> Result<()> {
+        let mut status = ptr::null_mut();
+        unsafe {
+            ll::rocks_writebatch_pop_save_point(self.raw, &mut status);
+            Error::from_ll(status)
         }
     }
 
@@ -299,7 +385,7 @@ impl WriteBatch {
             // Box<&mut WriteBatchHandler>
             let raw_ptr = Box::into_raw(Box::new(handler as &mut dyn WriteBatchHandler)) as *mut c_void;
             ll::rocks_writebatch_iterate(self.raw, raw_ptr, &mut status);
-            FromRaw::from_ll(status)
+            Error::from_ll(status)
         }
     }
 
