@@ -22,7 +22,7 @@ use crate::options::{
     ColumnFamilyOptions, CompactRangeOptions, CompactionOptions, DBOptions, FlushOptions, IngestExternalFileOptions,
     Options, ReadOptions, WriteOptions,
 };
-use crate::slice::{CVec, PinnableSlice};
+use crate::slice::PinnableSlice;
 use crate::snapshot::Snapshot;
 use crate::table_properties::TablePropertiesCollection;
 use crate::to_raw::{FromRaw, ToRaw};
@@ -306,43 +306,44 @@ impl ColumnFamily {
         }
     }
 
-    pub fn multi_get(&self, options: &ReadOptions, keys: &[&[u8]]) -> Vec<Result<CVec<u8>>> {
+    pub fn multi_get(&self, options: &ReadOptions, keys: &[&[u8]]) -> Vec<Result<PinnableSlice>> {
         let num_keys = keys.len();
-        let mut c_keys: Vec<*const c_char> = Vec::with_capacity(num_keys);
-        let mut c_keys_lens = Vec::with_capacity(num_keys);
+        let mut statuses: Vec<*mut ll::rocks_status_t> = vec![ptr::null_mut(); num_keys];
+        let mut c_values = Vec::with_capacity(num_keys);
+        let values = (0..num_keys)
+            .map(|_| {
+                let ret = PinnableSlice::new();
+                c_values.push(ret.raw());
+                ret
+            })
+            .collect::<Vec<_>>();
 
-        let c_cfs = vec![self.raw() as *const _; num_keys];
-
-        let mut vals = vec![ptr::null_mut(); num_keys];
-        let mut vals_lens = vec![0_usize; num_keys];
-
-        for key in keys {
-            c_keys.push(key.as_ptr() as *const c_char);
-            c_keys_lens.push(key.len());
-        }
-
-        let mut status: Vec<*mut ll::rocks_status_t> = vec![ptr::null_mut(); num_keys];
-        let mut ret = Vec::with_capacity(num_keys);
         unsafe {
-            ll::rocks_db_multi_get_cf(
+            ll::rocks_db_multi_get_cf_coerce(
                 self.db.raw,
                 options.raw(),
-                c_cfs.as_ptr(),
                 num_keys,
-                c_keys.as_ptr(),
-                c_keys_lens.as_ptr(),
-                vals.as_mut_ptr(),
-                vals_lens.as_mut_ptr(),
-                status.as_mut_ptr(),
+                self.raw(),
+                keys.as_ptr() as _,
+                c_values.as_mut_ptr(),
+                statuses.as_mut_ptr(),
             );
-
-            for i in 0..num_keys {
-                ret.push(Error::from_ll(status[i]).map(|_| CVec::from_raw_parts(vals[i] as *mut u8, vals_lens[i])));
-            }
-            ret
         }
+
+        statuses
+            .into_iter()
+            .zip(values.into_iter())
+            .map(|(st, val)| Error::from_ll(st).map(|_| val))
+            .collect()
     }
 
+    /// If the key definitely does not exist in the database, then this method
+    /// returns false, else true. If the caller wants to obtain value when the key
+    /// is found in memory, a bool for 'value_found' must be passed. 'value_found'
+    /// will be true on return if value has been set properly.
+    ///
+    /// This check is potentially lighter-weight than invoking DB::Get(). One way
+    /// to make this lighter weight is to avoid doing any IOs.
     pub fn key_may_exist(&self, options: &ReadOptions, key: &[u8]) -> bool {
         unsafe {
             ll::rocks_db_key_may_exist_cf(
@@ -1003,6 +1004,11 @@ impl DB {
 }
 
 impl DBRef {
+    /// Returns default column family handle
+    fn raw_default_column_family(&self) -> *mut ll::rocks_column_family_handle_t {
+        unsafe { ll::rocks_db_default_column_family(self.raw()) }
+    }
+
     /// Set the database entry for `"key"` to `"value"`.
     /// If `"key"` already exists, it will be overwritten.
     /// Returns OK on success, and a non-OK status on error.
@@ -1287,39 +1293,35 @@ impl DBRef {
     ///
     /// Note: keys will not be "de-duplicated". Duplicate keys will return
     /// duplicate values in order.
-    pub fn multi_get(&self, options: &ReadOptions, keys: &[&[u8]]) -> Vec<Result<CVec<u8>>> {
+    pub fn multi_get(&self, options: &ReadOptions, keys: &[&[u8]]) -> Vec<Result<PinnableSlice>> {
         let num_keys = keys.len();
-        let mut c_keys: Vec<*const c_char> = Vec::with_capacity(num_keys);
-        let mut c_keys_lens = Vec::with_capacity(num_keys);
-
-        let mut vals = vec![ptr::null_mut(); num_keys];
-        let mut vals_lens = vec![0_usize; num_keys];
-
-        for key in keys {
-            c_keys.push(key.as_ptr() as *const c_char);
-            c_keys_lens.push(key.len());
-        }
-
-        let mut status: Vec<*mut ll::rocks_status_t> = vec![ptr::null_mut(); num_keys];
-        let mut ret = Vec::with_capacity(num_keys);
+        let mut statuses: Vec<*mut ll::rocks_status_t> = vec![ptr::null_mut(); num_keys];
+        let mut c_values = Vec::with_capacity(num_keys);
+        let values = (0..num_keys)
+            .map(|_| {
+                let ret = PinnableSlice::new();
+                c_values.push(ret.raw());
+                ret
+            })
+            .collect::<Vec<_>>();
 
         unsafe {
-            ll::rocks_db_multi_get(
+            ll::rocks_db_multi_get_cf_coerce(
                 self.raw(),
                 options.raw(),
                 num_keys,
-                c_keys.as_ptr(),
-                c_keys_lens.as_ptr(),
-                vals.as_mut_ptr(),
-                vals_lens.as_mut_ptr(),
-                status.as_mut_ptr(),
+                self.raw_default_column_family(),
+                keys.as_ptr() as _,
+                c_values.as_mut_ptr(),
+                statuses.as_mut_ptr(),
             );
-
-            for i in 0..num_keys {
-                ret.push(Error::from_ll(status[i]).map(|_| CVec::from_raw_parts(vals[i] as *mut u8, vals_lens[i])));
-            }
-            ret
         }
+
+        statuses
+            .into_iter()
+            .zip(values.into_iter())
+            .map(|(st, val)| Error::from_ll(st).map(|_| val))
+            .collect()
     }
 
     pub fn multi_get_cf(
@@ -1327,42 +1329,36 @@ impl DBRef {
         options: &ReadOptions,
         column_families: &[&ColumnFamilyHandle],
         keys: &[&[u8]],
-    ) -> Vec<Result<CVec<u8>>> {
+    ) -> Vec<Result<PinnableSlice>> {
         let num_keys = keys.len();
-        let mut c_keys: Vec<*const c_char> = Vec::with_capacity(num_keys);
-        let mut c_keys_lens = Vec::with_capacity(num_keys);
-        let mut c_cfs = Vec::with_capacity(num_keys);
-
-        let mut vals = vec![ptr::null_mut(); num_keys];
-        let mut vals_lens = vec![0_usize; num_keys];
-
-        for i in 0..num_keys {
-            c_keys.push(keys[i].as_ptr() as *const c_char);
-            c_keys_lens.push(keys[i].len());
-            c_cfs.push(column_families[i].raw() as *const _);
-        }
-
-        let mut status: Vec<*mut ll::rocks_status_t> = vec![ptr::null_mut(); num_keys];
-        let mut ret = Vec::with_capacity(num_keys);
+        let c_cfs: Vec<_> = column_families.iter().map(|cf| cf.raw() as *const _).collect();
+        let mut statuses: Vec<*mut ll::rocks_status_t> = vec![ptr::null_mut(); num_keys];
+        let mut c_values = Vec::with_capacity(num_keys);
+        let values = (0..num_keys)
+            .map(|_| {
+                let ret = PinnableSlice::new();
+                c_values.push(ret.raw());
+                ret
+            })
+            .collect::<Vec<_>>();
 
         unsafe {
-            ll::rocks_db_multi_get_cf(
+            ll::rocks_db_multi_get_cfs_coerce(
                 self.raw(),
                 options.raw(),
-                c_cfs.as_ptr(),
                 num_keys,
-                c_keys.as_ptr(),
-                c_keys_lens.as_ptr(),
-                vals.as_mut_ptr(),
-                vals_lens.as_mut_ptr(),
-                status.as_mut_ptr(),
+                c_cfs.as_ptr(),
+                keys.as_ptr() as _,
+                c_values.as_mut_ptr(),
+                statuses.as_mut_ptr(),
             );
-
-            for i in 0..num_keys {
-                ret.push(Error::from_ll(status[i]).map(|_| CVec::from_raw_parts(vals[i] as *mut u8, vals_lens[i])));
-            }
-            ret
         }
+
+        statuses
+            .into_iter()
+            .zip(values.into_iter())
+            .map(|(st, val)| Error::from_ll(st).map(|_| val))
+            .collect()
     }
 
     /// If the key definitely does not exist in the database, then this method

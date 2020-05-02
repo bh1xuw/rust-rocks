@@ -349,6 +349,45 @@ void rocks_db_multi_get_cf(rocks_db_t* db, const rocks_readoptions_t* options,
   }
 }
 
+void rocks_db_multi_get_cf_coerce(rocks_db_t* db, const rocks_readoptions_t* options, const size_t num_keys,
+                                  const rocks_column_family_handle_t* column_family, const void* keys,
+                                  rocks_pinnable_slice_t** values, rocks_status_t** statuses) {
+  std::vector<ColumnFamilyHandle*> cf = std::vector<ColumnFamilyHandle*>(num_keys, column_family->rep);
+  std::vector<Slice> user_keys;
+  std::vector<Status> status;
+  std::vector<std::string> vals;
+
+  for (size_t i = 0; i < num_keys; ++i) {
+    user_keys.emplace_back(reinterpret_cast<const Slice*>(keys)[i]);
+  }
+  status = db->rep->MultiGet(options->rep, cf, user_keys, &vals);
+  for (size_t i = 0; i < num_keys; i++) {
+    if (!SaveError(statuses + i, Status(status[i]))) {
+      values[i]->rep.PinSelf(vals[i]);
+    }
+  }
+}
+
+void rocks_db_multi_get_cfs_coerce(rocks_db_t* db, const rocks_readoptions_t* options, const size_t num_keys,
+                                   const rocks_column_family_handle_t* const* column_families, const void* keys,
+                                   rocks_pinnable_slice_t** values, rocks_status_t** statuses) {
+  std::vector<ColumnFamilyHandle*> cf;
+  std::vector<Slice> user_keys;
+  std::vector<Status> status;
+  std::vector<std::string> vals;
+
+  for (size_t i = 0; i < num_keys; ++i) {
+    cf.emplace_back(column_families[i]->rep);
+    user_keys.emplace_back(reinterpret_cast<const Slice*>(keys)[i]);
+  }
+  status = db->rep->MultiGet(options->rep, cf, user_keys, &vals);
+  for (size_t i = 0; i < num_keys; i++) {
+    if (!SaveError(statuses + i, Status(status[i]))) {
+      values[i]->rep.PinSelf(vals[i]);
+    }
+  }
+}
+
 unsigned char rocks_db_key_may_exist(rocks_db_t* db, const rocks_readoptions_t* options, const char* key,
                                      size_t key_len,
                                      void* value,  // *mut Vec<u8>

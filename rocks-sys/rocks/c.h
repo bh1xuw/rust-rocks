@@ -713,6 +713,14 @@ void rocks_db_multi_get_cf(rocks_db_t* db, const rocks_readoptions_t* options,
                            const char* const* keys_list, const size_t* keys_list_sizes, char** values_list,
                            size_t* values_list_sizes, rocks_status_t** status);
 
+void rocks_db_multi_get_cf_coerce(rocks_db_t* db, const rocks_readoptions_t* options, const size_t num_keys,
+                                  const rocks_column_family_handle_t* column_family, const void* keys,
+                                  rocks_pinnable_slice_t** values, rocks_status_t** statuses);
+
+void rocks_db_multi_get_cfs_coerce(rocks_db_t* db, const rocks_readoptions_t* options, const size_t num_keys,
+                                   const rocks_column_family_handle_t* const* column_families, const void* keys,
+                                   rocks_pinnable_slice_t** values, rocks_status_t** statuses);
+
 unsigned char rocks_db_key_may_exist(rocks_db_t* db, const rocks_readoptions_t* options, const char* key,
                                      size_t key_len, void* value, unsigned char* value_found);
 

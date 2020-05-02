@@ -1379,6 +1379,28 @@ extern "C" {
     );
 }
 extern "C" {
+    pub fn rocks_db_multi_get_cf_coerce(
+        db: *mut rocks_db_t,
+        options: *const rocks_readoptions_t,
+        num_keys: usize,
+        column_family: *const rocks_column_family_handle_t,
+        keys: *const ::std::os::raw::c_void,
+        values: *mut *mut rocks_pinnable_slice_t,
+        statuses: *mut *mut rocks_status_t,
+    );
+}
+extern "C" {
+    pub fn rocks_db_multi_get_cfs_coerce(
+        db: *mut rocks_db_t,
+        options: *const rocks_readoptions_t,
+        num_keys: usize,
+        column_families: *const *const rocks_column_family_handle_t,
+        keys: *const ::std::os::raw::c_void,
+        values: *mut *mut rocks_pinnable_slice_t,
+        statuses: *mut *mut rocks_status_t,
+    );
+}
+extern "C" {
     pub fn rocks_db_key_may_exist(
         db: *mut rocks_db_t,
         options: *const rocks_readoptions_t,

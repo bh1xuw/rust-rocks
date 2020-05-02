@@ -8,6 +8,9 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 ### Added
 - WriteBatch methods that accept SliceParts
 
+### Changed
+- Refactor multi get API using PinnableSlice
+
 ## 0.1.6
 ### Added
 - New examples
