@@ -646,7 +646,7 @@ impl Drop for DBRef {
     #[inline]
     fn drop(&mut self) {
         unsafe {
-            ll::rocks_db_close(self.raw);
+            ll::rocks_db_destroy(self.raw);
         }
     }
 }
@@ -1007,6 +1007,27 @@ impl DBRef {
     /// Returns default column family handle
     fn raw_default_column_family(&self) -> *mut ll::rocks_column_family_handle_t {
         unsafe { ll::rocks_db_default_column_family(self.raw()) }
+    }
+
+    /// Close the DB by releasing resources, closing files etc. This should be
+    /// called before calling the destructor so that the caller can get back a
+    /// status in case there are any errors. This will not fsync the WAL files.
+    /// If syncing is required, the caller must first call SyncWAL(), or Write()
+    /// using an empty write batch with WriteOptions.sync=true.
+    ///
+    /// If the return status is Aborted(), closing fails because there is
+    /// unreleased snapshot in the system. In this case, users can release
+    /// the unreleased snapshots and try again and expect it to succeed. For
+    /// other status, recalling Close() will be no-op.
+    ///
+    /// If the return status is NotSupported(), then the DB implementation does
+    /// cleanup in the destructor
+    ///
+    /// NOTE for Rust: segmentation fault if the db is accessed after close
+    pub unsafe fn close(&self) -> Result<()> {
+        let mut status = ptr::null_mut::<ll::rocks_status_t>();
+        ll::rocks_db_close(self.raw(), &mut status);
+        Error::from_ll(status)
     }
 
     /// Set the database entry for `"key"` to `"value"`.

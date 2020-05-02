@@ -1133,7 +1133,10 @@ extern "C" {
     ) -> *mut rocks_db_t;
 }
 extern "C" {
-    pub fn rocks_db_close(db: *mut rocks_db_t);
+    pub fn rocks_db_close(db: *mut rocks_db_t, status: *mut *mut rocks_status_t);
+}
+extern "C" {
+    pub fn rocks_db_destroy(db: *mut rocks_db_t);
 }
 extern "C" {
     pub fn rocks_db_open_for_read_only(
