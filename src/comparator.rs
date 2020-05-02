@@ -202,7 +202,7 @@ mod tests {
     }
 
     lazy_static! {
-        static ref CMP: MyComparator = { MyComparator };
+        static ref CMP: MyComparator = MyComparator;
     }
 
     #[test]
