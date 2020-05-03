@@ -67,53 +67,6 @@ rocks_db_t* rocks_db_open_for_read_only(const rocks_options_t* options, const ch
   }
 }
 
-rocks_db_t* rocks_db_open_as_secondary(const rocks_options_t* options, const char* name, const char* secondary_path,
-                                       rocks_status_t** status) {
-  DB* db = nullptr;
-  auto st = DB::OpenAsSecondary(options->rep, std::string(name), std::string(secondary_path), &db);
-  if (SaveError(status, std::move(st))) {
-    return nullptr;
-  } else {
-    rocks_db_t* result = new rocks_db_t;
-    result->rep = db;
-    return result;
-  }
-}
-
-rocks_db_t* rocks_db_open_as_secondary_column_families(const rocks_options_t* options, const char* name,
-                                                       const char* secondary_path, int num_column_families,
-                                                       const char* const* column_family_names,
-                                                       const rocks_cfoptions_t* const* column_family_options,
-                                                       rocks_column_family_handle_t** column_family_handles,
-                                                       rocks_status_t** status) {
-  std::vector<ColumnFamilyDescriptor> column_families;
-  for (int i = 0; i < num_column_families; i++) {
-    column_families.push_back(ColumnFamilyDescriptor(std::string(column_family_names[i]),
-                                                     ColumnFamilyOptions(column_family_options[i]->rep)));
-  }
-
-  DB* db = nullptr;
-  std::vector<ColumnFamilyHandle*> handles;
-  auto st =
-      DB::OpenAsSecondary(options->rep, std::string(name), std::string(secondary_path), column_families, &handles, &db);
-  if (SaveError(status, std::move(st))) {
-    return nullptr;
-  }
-
-  for (size_t i = 0; i < handles.size(); i++) {
-    rocks_column_family_handle_t* c_handle = new rocks_column_family_handle_t;
-    c_handle->rep = handles[i];
-    column_family_handles[i] = c_handle;
-  }
-  rocks_db_t* result = new rocks_db_t;
-  result->rep = db;
-  return result;
-}
-
-void rocks_db_try_catch_up_with_primary(rocks_db_t* db, rocks_status_t** status) {
-  SaveError(status, db->rep->TryCatchUpWithPrimary());
-}
-
 rocks_db_t* rocks_db_open_column_families(const rocks_dboptions_t* db_options, const char* name,
                                           int num_column_families, const char* const* column_family_names,
                                           const rocks_cfoptions_t* const* column_family_options,

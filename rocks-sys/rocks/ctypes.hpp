@@ -103,7 +103,6 @@ struct rocks_options_t {
 };
 struct rocks_readoptions_t {
   ReadOptions rep;
-  Slice lower_bound;
   Slice upper_bound;  // hold variable to set pointer to in ReadOptions
 };
 struct rocks_writeoptions_t {
@@ -257,11 +256,6 @@ struct rocks_writebatch_handler_t : public WriteBatch::Handler {
   }
 
   void LogData(const Slice& blob) override { rust_write_batch_handler_log_data(this->obj, &blob); }
-
-  Status MarkBeginPrepare(bool = false) override {
-    rust_write_batch_handler_mark_begin_prepare(this->obj);
-    return Status::OK();
-  }
 
   Status MarkEndPrepare(const Slice& xid) override {
     rust_write_batch_handler_mark_end_prepare(this->obj, &xid);

@@ -863,84 +863,6 @@ impl DB {
         }
     }
 
-    /// Open DB as secondary instance with only the default column family.
-    pub fn open_as_secondary<P1: AsRef<Path>, P2: AsRef<Path>>(
-        options: &Options,
-        name: P1,
-        secondary_path: P2,
-    ) -> Result<DB> {
-        let dbname = CString::new(path_to_bytes(name)).unwrap();
-        let secondary_path = CString::new(path_to_bytes(secondary_path)).unwrap();
-
-        let mut status = ptr::null_mut::<ll::rocks_status_t>();
-        unsafe {
-            let db_ptr =
-                ll::rocks_db_open_as_secondary(options.raw(), dbname.as_ptr(), secondary_path.as_ptr(), &mut status);
-            Error::from_ll(status).map(|_| DB::from_ll(db_ptr))
-        }
-    }
-
-    /// Open DB as secondary instance with column families. You can open a subset
-    /// of column families in secondary mode.
-    pub fn open_as_secondary_with_column_families<
-        P1: AsRef<Path>,
-        P2: AsRef<Path>,
-        CF: Into<ColumnFamilyDescriptor>,
-        I: IntoIterator<Item = CF>,
-    >(
-        options: &Options,
-        name: P1,
-        secondary_path: P2,
-        column_families: I,
-    ) -> Result<(DB, Vec<ColumnFamily>)> {
-        let dbname = CString::new(path_to_bytes(name)).unwrap();
-        let secondary_path = CString::new(path_to_bytes(secondary_path)).unwrap();
-        let cf_descs = column_families
-            .into_iter()
-            .map(|desc| desc.into())
-            .collect::<Vec<ColumnFamilyDescriptor>>();
-
-        let num_column_families = cf_descs.len();
-        // for ffi
-        let mut cfnames: Vec<*const c_char> = Vec::with_capacity(num_column_families);
-        let mut cfopts: Vec<*const ll::rocks_cfoptions_t> = Vec::with_capacity(num_column_families);
-        let mut cfhandles = vec![ptr::null_mut(); num_column_families];
-
-        for cf_desc in &cf_descs {
-            cfnames.push(cf_desc.name_as_ptr());
-            cfopts.push(cf_desc.options.raw());
-        }
-
-        let mut status = ptr::null_mut::<ll::rocks_status_t>();
-        unsafe {
-            let db_ptr = ll::rocks_db_open_as_secondary_column_families(
-                options.raw(),
-                dbname.as_ptr(),
-                secondary_path.as_ptr(),
-                num_column_families as c_int,
-                cfnames.as_ptr(),
-                cfopts.as_ptr(),
-                cfhandles.as_mut_ptr(),
-                &mut status,
-            );
-            Error::from_ll(status).map(|_| {
-                let db = DB::from_ll(db_ptr);
-                let db_ref = db.context.clone();
-                (
-                    db,
-                    cfhandles
-                        .into_iter()
-                        .map(|p| ColumnFamily {
-                            handle: ColumnFamilyHandle { raw: p },
-                            db: db_ref.clone(),
-                            owned: true,
-                        })
-                        .collect(),
-                )
-            })
-        }
-    }
-
     /// `ListColumnFamilies` will open the DB specified by argument name
     /// and return the list of all column nfamilies in that DB
     /// through `column_families` argument. The ordering of
@@ -2401,26 +2323,6 @@ impl DBRef {
             );
             Error::from_ll(status).map(|()| KeyVersionVec::from_ll(coll_ptr))
         }
-    }
-
-    /// Make the secondary instance catch up with the primary by tailing and
-    /// replaying the MANIFEST and WAL of the primary.
-    ///
-    /// Column families created by the primary after the secondary instance starts
-    /// will be ignored unless the secondary instance closes and restarts with the
-    /// newly created column families.
-    ///
-    /// Column families that exist before secondary instance starts and dropped by
-    /// the primary afterwards will be marked as dropped. However, as long as the
-    /// secondary instance does not delete the corresponding column family
-    /// handles, the data of the column family is still accessible to the
-    /// secondary.
-    pub fn try_catch_up_with_primary(&self) -> Result<()> {
-        let mut status = ptr::null_mut();
-        unsafe {
-            ll::rocks_db_try_catch_up_with_primary(self.raw(), &mut status);
-        }
-        Error::from_ll(status)
     }
 
     /*

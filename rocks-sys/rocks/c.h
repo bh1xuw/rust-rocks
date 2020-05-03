@@ -505,8 +505,6 @@ void rocks_readoptions_set_fill_cache(rocks_readoptions_t* opt, unsigned char v)
 
 void rocks_readoptions_set_snapshot(rocks_readoptions_t* opt, const rocks_snapshot_t* snap);
 
-void rocks_readoptions_set_iterate_lower_bound(rocks_readoptions_t* opt, const char* key, size_t keylen);
-
 void rocks_readoptions_set_iterate_upper_bound(rocks_readoptions_t* opt, const char* key, size_t keylen);
 
 void rocks_readoptions_set_read_tier(rocks_readoptions_t* opt, int v);
@@ -615,18 +613,6 @@ void rocks_db_destroy(rocks_db_t* db);
 
 rocks_db_t* rocks_db_open_for_read_only(const rocks_options_t* options, const char* name,
                                         unsigned char error_if_log_file_exist, rocks_status_t** status);
-
-rocks_db_t* rocks_db_open_as_secondary(const rocks_options_t* options, const char* name, const char* secondary_path,
-                                       rocks_status_t** status);
-
-rocks_db_t* rocks_db_open_as_secondary_column_families(const rocks_options_t* options, const char* name,
-                                                       const char* secondary_path, int num_column_families,
-                                                       const char* const* column_family_names,
-                                                       const rocks_cfoptions_t* const* column_family_options,
-                                                       rocks_column_family_handle_t** column_family_handles,
-                                                       rocks_status_t** status);
-
-void rocks_db_try_catch_up_with_primary(rocks_db_t* db, rocks_status_t** status);
 
 rocks_db_t* rocks_db_open_column_families(const rocks_dboptions_t* db_options, const char* name,
                                           int num_column_families, const char* const* column_family_names,

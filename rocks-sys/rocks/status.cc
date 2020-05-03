@@ -13,7 +13,7 @@ int rocks_status_code(rocks_status_t* s) { return s->rep.code(); }
 
 int rocks_status_subcode(rocks_status_t* s) { return s->rep.subcode(); }
 
-int rocks_status_severity(rocks_status_t* s) { return s->rep.severity(); }
+int rocks_status_severity(rocks_status_t* s) { return 0; }
 
 const char* rocks_status_get_state(rocks_status_t* s) { return s->rep.getState(); }
 }
