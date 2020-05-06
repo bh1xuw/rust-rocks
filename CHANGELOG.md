@@ -12,6 +12,9 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 ### Changed
 - Refactor multi get API using PinnableSlice
 
+### Fixed
+- Wrong iterator implementation that might skip keys
+
 ## 0.1.6
 ### Added
 - New examples
