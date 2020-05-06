@@ -20,6 +20,7 @@ use crate::{Error, Result};
 /// external synchronization.
 pub struct Iterator<'a> {
     raw: *mut ll::rocks_iterator_t,
+    initial: bool,
     _marker: PhantomData<&'a ()>,
 }
 
@@ -49,6 +50,7 @@ impl<'a> FromRaw<ll::rocks_iterator_t> for Iterator<'a> {
     unsafe fn from_ll(raw: *mut ll::rocks_iterator_t) -> Self {
         let mut it = Iterator {
             raw: raw,
+            initial: true,
             _marker: PhantomData,
         };
         if !it.is_valid() {
@@ -213,10 +215,14 @@ impl<'a> iter::Iterator for Iterator<'a> {
     type Item = (&'a [u8], &'a [u8]);
 
     fn next(&mut self) -> Option<Self::Item> {
+        if self.initial {
+            self.initial = false;
+        } else {
+            self.next();
+        }
         if self.is_valid() {
             let k = self.key();
             let v = self.value();
-            self.next();
             Some((k, v))
         } else {
             None
@@ -255,10 +261,14 @@ impl<'a> iter::Iterator for IntoRevIter<'a> {
     type Item = (&'a [u8], &'a [u8]);
 
     fn next(&mut self) -> Option<Self::Item> {
+        if self.inner.initial {
+            self.inner.initial = false;
+        } else {
+            self.inner.prev();
+        }
         if self.inner.is_valid() {
             let k = self.inner.key();
             let v = self.inner.value();
-            self.inner.prev();
             Some((k, v))
         } else {
             None
