@@ -55,7 +55,7 @@ RocksDB changes its API often, so `rust-rocks` use different branch to support U
 
 Branches:
 
-- rocksdb5.7 (18.04 LTS)
+- rocksdb5.8 (18.04 LTS)
 - rocksdb5.17 (20.04 LTS)
 
 ## Installation

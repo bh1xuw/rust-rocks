@@ -8,6 +8,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 ### Added
 - WriteBatch methods that accept SliceParts
 - Add unsafe fn DB::close
+- New `rocksdb5.8` and `rocksdb5.17` branch for Ubuntu LTS
 
 ### Changed
 - Refactor multi get API using PinnableSlice
