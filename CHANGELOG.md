@@ -14,6 +14,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ### Fixed
 - Wrong iterator implementation that might skip keys
+- Add no-rtti flag
 
 ## 0.1.6
 ### Added
