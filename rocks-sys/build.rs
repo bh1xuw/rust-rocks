@@ -310,6 +310,7 @@ fn main() {
         .opt_level(2)
         .warnings(false)
         .flag("-std=c++11")
+        .flag("-fno-rtti")
         .include(".")
         .file("rocks/cache.cc")
         .file("rocks/comparator.cc")
