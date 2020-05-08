@@ -9,19 +9,30 @@ Make RocksDB really rocks!
 
 ## How to compile
 
-Static Link against: RocksDB 6.7.3.
+### Static Link
 
-Dynamic Link Tested: RocksDB 6.5.3 (ArchLinux).
+Static link against: RocksDB 6.7.3.
 
-tests pass under:
+```console
+git submodule update --init --recursive
+cargo test --features static-link -- --test-threads 1
 
-- macOS 10.15
-- Linux amd64 (with linking error fix)
+cargo test --features full -- --test-threads 1
+```
+
+### Dynamic Link
+
+Dynamic Link Tested:
+
+- RocksDB 6.7.3 (macOS via Homebrew)
+- RocksDB 6.5.3 (ArchLinux)
 
 For macOS(with RocksDB installed via brew):
 
-    LIBRARY_PATH=/usr/local/lib CXXFLAGS=-I/usr/local/include \
-    cargo test -- --nocapture
+```console
+brew install rocksdb
+cargo test -- --nocapture --test-threads 1
+```
 
 For Linux(with RocksDB installed into /usr/local):
 
@@ -34,28 +45,18 @@ $ LD_LIBRARY_PATH=/usr/local/lib \
   RUSTFLAGS="-C link-arg=-fuse-ld=lld" cargo test -- --nocapture
 ```
 
-For static build:
+### Ubuntu LTS
 
-    git submodule update --init --recursive
-    cargo test --features static-link -- --test-threads 1
-
-    cargo test --features full -- --test-threads 1
-
-List current supported compression types:
+RocksDB changes its API often, so `rust-rocks` use different branch to support Ubuntu LTS.
 
 ```console
-$ cargo run --example it-works
-RocksDB: 6.7.3
-Compression Supported:
-  - NoCompression
-  - SnappyCompression
-  - ZlibCompression
-  - BZip2Compression
-  - LZ4Compression
-  - LZ4HCCompression
-  - ZSTD
-  - ZSTDNotFinalCompression
+> sudo apt install librocksdb-dev libsnappy-dev
 ```
+
+Branches:
+
+- rocksdb5.7 (18.04 LTS)
+- rocksdb5.17 (20.04 LTS)
 
 ## Installation
 
@@ -75,7 +76,7 @@ default-features = false
 features = ["static-link"]
 ```
 
-With all static features:
+With all static features(all compress types):
 
 ```toml
 [dependencies.rocks]
@@ -90,6 +91,22 @@ features = ["full"]
 - [Why another RocksDB binding for Rust?](https://github.com/bh1xuw/rust-rocks/issues/2)
 
 Feel free to Open a [New Issue](https://github.com/bh1xuw/rust-rocks/issues/new).
+
+### List current supported compression types
+
+```console
+$ cargo run --example it-works
+RocksDB: 6.7.3
+Compression Supported:
+  - NoCompression
+  - SnappyCompression
+  - ZlibCompression
+  - BZip2Compression
+  - LZ4Compression
+  - LZ4HCCompression
+  - ZSTD
+  - ZSTDNotFinalCompression
+```
 
 ## TODOs
 
