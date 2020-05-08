@@ -11,7 +11,7 @@ rocks_key_version_collection_t* rocks_db_get_all_key_versions(rocks_db_t* db, co
                                                               size_t end_keylen, rocks_status_t** status) {
   auto coll = new rocks_key_version_collection_t;
   // FIXME: handle max_num_ikeys
-  auto st = GetAllKeyVersions(db->rep, Slice(begin_key, begin_keylen), Slice(end_key, end_keylen), &coll->rep);
+  auto st = GetAllKeyVersions(db->rep, Slice(begin_key, begin_keylen), Slice(end_key, end_keylen), 65535, &coll->rep);
 
   if (!SaveError(status, std::move(st))) {
     return coll;
