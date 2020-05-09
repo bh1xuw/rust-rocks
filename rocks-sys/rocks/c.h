@@ -321,9 +321,6 @@ void rocks_cfoptions_set_hash_skip_list_rep(rocks_cfoptions_t* opt, size_t bucke
 
 void rocks_cfoptions_set_hash_link_list_rep(rocks_cfoptions_t* opt, size_t bucket_count);
 
-void rocks_cfoptions_set_hash_cuckoo_rep(rocks_cfoptions_t* opt, size_t write_buffer_size, size_t average_data_size,
-                                         unsigned int hash_function_count);
-
 void rocks_cfoptions_add_table_properties_collector_factories_by_trait(rocks_cfoptions_t* opt, void* factory_trait_obj);
 
 void rocks_cfoptions_set_max_successive_merges(rocks_cfoptions_t* opt, size_t v);
@@ -470,8 +467,6 @@ void rocks_dboptions_set_avoid_flush_during_shutdown(rocks_dboptions_t* opt, uns
 
 void rocks_dboptions_set_allow_ingest_behind(rocks_dboptions_t* opt, unsigned char v);
 
-void rocks_dboptions_set_concurrent_prepare(rocks_dboptions_t* opt, unsigned char v);
-
 void rocks_dboptions_set_manual_wal_flush(rocks_dboptions_t* opt, unsigned char v);
 
 // opt
@@ -585,8 +580,6 @@ rocks_logger_t* rocks_create_logger_from_options(const char* path, rocks_options
 rocks_fifo_compaction_options_t* rocks_fifo_compaction_options_create();
 
 void rocks_fifo_compaction_options_set_max_table_files_size(rocks_fifo_compaction_options_t* fifo_opts, uint64_t size);
-
-void rocks_fifo_compaction_options_set_ttl(rocks_fifo_compaction_options_t* fifo_opts, uint64_t val);
 
 void rocks_fifo_compaction_options_set_allow_compaction(rocks_fifo_compaction_options_t* fifo_opts, unsigned char val);
 

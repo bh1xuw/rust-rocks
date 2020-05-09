@@ -79,20 +79,6 @@ impl CompactionOptionsFIFO {
         self
     }
 
-    /// Drop files older than TTL. TTL based deletion will take precedence over
-    /// size based deletion if ttl > 0.
-    /// delete if `sst_file_creation_time < (current_time - ttl)`
-    ///
-    /// unit: seconds. Ex: 1 day = 1 * 24 * 60 * 60
-    ///
-    /// Default: 0 (disabled)
-    pub fn ttl(self, val: u64) -> Self {
-        unsafe {
-            ll::rocks_fifo_compaction_options_set_ttl(self.raw, val);
-        }
-        self
-    }
-
     /// If true, try to do compaction to compact smaller files into larger ones.
     /// Minimum files to compact follows options.level0_file_num_compaction_trigger
     /// and compaction won't trigger if average compact bytes per del file is

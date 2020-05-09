@@ -315,13 +315,6 @@ void rocks_cfoptions_set_hash_link_list_rep(rocks_cfoptions_t* opt, size_t bucke
   opt->rep.memtable_factory.reset(rocksdb::NewHashLinkListRepFactory(bucket_count));
 }
 
-/*
-void rocks_cfoptions_set_hash_cuckoo_rep(rocks_cfoptions_t* opt, size_t write_buffer_size, size_t average_data_size,
-                                         unsigned int hash_function_count) {
-  opt->rep.memtable_factory.reset(NewHashCuckooRepFactory(write_buffer_size, average_data_size, hash_function_count));
-}
-*/
-
 // since default is empty vector, add is ok
 void rocks_cfoptions_add_table_properties_collector_factories_by_trait(rocks_cfoptions_t* opt,
                                                                        void* factory_trait_obj) {
@@ -594,13 +587,6 @@ void rocks_dboptions_set_avoid_flush_during_shutdown(rocks_dboptions_t* opt, uns
 void rocks_dboptions_set_allow_ingest_behind(rocks_dboptions_t* opt, unsigned char v) {
   opt->rep.allow_ingest_behind = v;
 }
-
-/*
-// Deprecated by two_write_queues
-void rocks_dboptions_set_concurrent_prepare(rocks_dboptions_t* opt, unsigned char v) {
-  opt->rep.concurrent_prepare = v;
-}
-*/
 
 void rocks_dboptions_set_manual_wal_flush(rocks_dboptions_t* opt, unsigned char v) { opt->rep.manual_wal_flush = v; }
 

@@ -656,14 +656,6 @@ extern "C" {
     pub fn rocks_cfoptions_set_hash_link_list_rep(opt: *mut rocks_cfoptions_t, bucket_count: usize);
 }
 extern "C" {
-    pub fn rocks_cfoptions_set_hash_cuckoo_rep(
-        opt: *mut rocks_cfoptions_t,
-        write_buffer_size: usize,
-        average_data_size: usize,
-        hash_function_count: ::std::os::raw::c_uint,
-    );
-}
-extern "C" {
     pub fn rocks_cfoptions_add_table_properties_collector_factories_by_trait(
         opt: *mut rocks_cfoptions_t,
         factory_trait_obj: *mut ::std::os::raw::c_void,
@@ -899,9 +891,6 @@ extern "C" {
     pub fn rocks_dboptions_set_allow_ingest_behind(opt: *mut rocks_dboptions_t, v: ::std::os::raw::c_uchar);
 }
 extern "C" {
-    pub fn rocks_dboptions_set_concurrent_prepare(opt: *mut rocks_dboptions_t, v: ::std::os::raw::c_uchar);
-}
-extern "C" {
     pub fn rocks_dboptions_set_manual_wal_flush(opt: *mut rocks_dboptions_t, v: ::std::os::raw::c_uchar);
 }
 extern "C" {
@@ -1092,9 +1081,6 @@ extern "C" {
         fifo_opts: *mut rocks_fifo_compaction_options_t,
         size: u64,
     );
-}
-extern "C" {
-    pub fn rocks_fifo_compaction_options_set_ttl(fifo_opts: *mut rocks_fifo_compaction_options_t, val: u64);
 }
 extern "C" {
     pub fn rocks_fifo_compaction_options_set_allow_compaction(
