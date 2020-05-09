@@ -2367,7 +2367,7 @@ impl DBOptions {
 
 /// Options to control the behavior of a database (passed to `DB::Open`)
 ///
-/// ```
+/// ```no_run
 /// use rocks::options::Options;
 ///
 /// let _opt = Options::default()
