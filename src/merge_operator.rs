@@ -35,9 +35,6 @@ use rocks_sys as ll;
 
 use crate::env::Logger;
 
-// really unsafe.
-// &&[u8] is almost the same as &Slice
-
 #[repr(C)]
 pub struct MergeOperationInput<'a> {
     /// The key associated with the merge operation.
