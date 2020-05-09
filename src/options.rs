@@ -210,7 +210,7 @@ impl ColumnFamilyOptions {
         }
     }
 
-    /// Some functions that make it easier to optimize RocksDB
+    // Some functions that make it easier to optimize RocksDB
 
     /// Use this if your DB is very small (like under 1GB) and you don't want to
     /// spend lots of memory for memtables.
@@ -223,8 +223,6 @@ impl ColumnFamilyOptions {
 
     /// Use this if you don't need to keep the data sorted, i.e. you'll never use
     /// an iterator, only Put() and Get() API calls
-    ///
-    /// Not supported in ROCKSDB_LITE
     pub fn optimize_for_point_lookup(self, block_cache_size_mb: u64) -> Self {
         unsafe { ll::rocks_cfoptions_optimize_for_point_lookup(self.raw, block_cache_size_mb) }
         self
@@ -248,17 +246,19 @@ impl ColumnFamilyOptions {
     /// Note: we might use more memory than memtable_memory_budget during high
     /// write rate period
     ///
-    /// OptimizeUniversalStyleCompaction is not supported in ROCKSDB_LITE
+    /// Default: 512 * 1024 * 1024
     pub fn optimize_level_style_compaction(self, memtable_memory_budget: u64) -> Self {
-        // 512 * 1024 * 1024
         unsafe {
             ll::rocks_cfoptions_optimize_level_style_compaction(self.raw, memtable_memory_budget);
         }
         self
     }
 
+    /// Universal style compaction is focused on reducing Write Amplification
+    /// Factor for big data sets, but increases Space Amplification.
+    ///
+    /// Default: 512 * 1024 * 1024
     pub fn optimize_universal_style_compaction(self, memtable_memory_budget: u64) -> Self {
-        // 512 * 1024 * 1024
         unsafe {
             ll::rocks_cfoptions_optimize_universal_style_compaction(self.raw, memtable_memory_budget);
         }
@@ -283,9 +283,7 @@ impl ColumnFamilyOptions {
         self
     }
 
-    /// rust-rocks extension.
-    ///
-    /// use bitwise comparator and set if reversed.
+    /// Use bitwise comparator and set if reversed.
     pub fn bitwise_comparator_reversed(self, val: bool) -> Self {
         unsafe {
             ll::rocks_cfoptions_set_bitwise_comparator(self.raw, val as u8);
@@ -424,7 +422,7 @@ impl ColumnFamilyOptions {
         self
     }
 
-    /// different options for compression algorithms
+    /// Different options for compression algorithms
     pub fn compression_opts(self, val: CompressionOptions) -> Self {
         unsafe {
             // FIXME: name changes from opts to options
@@ -530,7 +528,7 @@ impl ColumnFamilyOptions {
     /// implementation of TableBuilder and TableReader with default
     /// BlockBasedTableOptions.
     ///
-    /// For Rust: use 3 different function
+    /// For Rust: split into 3 different functions
     pub fn table_factory_plain(self, opt: PlainTableOptions) -> Self {
         unsafe {
             ll::rocks_cfoptions_set_plain_table_factory(self.raw, opt.raw());
@@ -2458,9 +2456,7 @@ impl Options {
     }
 
     /// Set appropriate parameters for bulk loading.
-    /// The reason that this is a function that returns "this" instead of a
-    /// constructor is to enable chaining of multiple similar calls in the future.
-
+    ///
     /// All data will be in level 0 without any automatic compaction.
     /// It's recommended to manually call CompactRange(NULL, NULL) before reading
     /// from the database, because otherwise the read can be very slow.
