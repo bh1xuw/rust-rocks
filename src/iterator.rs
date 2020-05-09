@@ -221,9 +221,7 @@ impl<'a> iter::Iterator for Iterator<'a> {
             self.next();
         }
         if self.is_valid() {
-            let k = self.key();
-            let v = self.value();
-            Some((k, v))
+            Some((self.key(), self.value()))
         } else {
             None
         }
@@ -267,9 +265,7 @@ impl<'a> iter::Iterator for IntoRevIter<'a> {
             self.inner.prev();
         }
         if self.inner.is_valid() {
-            let k = self.inner.key();
-            let v = self.inner.value();
-            Some((k, v))
+            Some((self.inner.key(), self.inner.value()))
         } else {
             None
         }
@@ -298,10 +294,14 @@ impl<'a> iter::Iterator for Keys<'a> {
     type Item = &'a [u8];
 
     fn next(&mut self) -> Option<Self::Item> {
-        if self.inner.is_valid() {
-            let k = self.inner.key();
+        if self.inner.initial {
+            self.inner.initial = false;
+        } else {
             self.inner.next();
-            Some(k)
+        }
+        if self.inner.is_valid() {
+            self.inner.next();
+            Some(self.inner.key())
         } else {
             None
         }
@@ -316,10 +316,13 @@ impl<'a> iter::Iterator for RevKeys<'a> {
     type Item = &'a [u8];
 
     fn next(&mut self) -> Option<Self::Item> {
-        if self.inner.is_valid() {
-            let k = self.inner.key();
+        if self.inner.initial {
+            self.inner.initial = false;
+        } else {
             self.inner.prev();
-            Some(k)
+        }
+        if self.inner.is_valid() {
+            Some(self.inner.key())
         } else {
             None
         }
@@ -341,10 +344,13 @@ impl<'a> iter::Iterator for Values<'a> {
     type Item = &'a [u8];
 
     fn next(&mut self) -> Option<Self::Item> {
-        if self.inner.is_valid() {
-            let v = self.inner.value();
+        if self.inner.initial {
+            self.inner.initial = false;
+        } else {
             self.inner.next();
-            Some(v)
+        }
+        if self.inner.is_valid() {
+            Some(self.inner.value())
         } else {
             None
         }
@@ -359,10 +365,13 @@ impl<'a> iter::Iterator for RevValues<'a> {
     type Item = &'a [u8];
 
     fn next(&mut self) -> Option<Self::Item> {
-        if self.inner.is_valid() {
-            let v = self.inner.value();
+        if self.inner.initial {
+            self.inner.initial = false;
+        } else {
             self.inner.prev();
-            Some(v)
+        }
+        if self.inner.is_valid() {
+            Some(self.inner.value())
         } else {
             None
         }
