@@ -65,6 +65,7 @@ pub mod transaction_log;
 pub mod types;
 pub mod universal_compaction;
 pub mod utilities;
+pub mod version;
 pub mod wal_filter;
 pub mod write_batch;
 pub mod write_buffer_manager;
