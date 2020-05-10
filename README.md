@@ -1,7 +1,11 @@
 # RustRocks
 
-[![Build Status](https://travis-ci.org/bh1xuw/rust-rocks.svg?branch=master)](https://travis-ci.org/bh1xuw/rust-rocks)
 [![crates.io badge](https://img.shields.io/crates/v/rocks.svg)](https://crates.io/crates/rocks)
+[![DOCS.RS badge](https://docs.rs/rocks)](https://docs.rs/rocks/badge.svg)
+| Linux
+[![Build Status](https://travis-ci.org/bh1xuw/rust-rocks.svg?branch=master)](https://travis-ci.org/bh1xuw/rust-rocks)
+| macOS
+[![Build Status](https://github.com/bh1xuw/rust-rocks/workflows/rust/badge.svg)](https://github.com/bh1xuw/rust-rocks/actions)
 
 Another RocksDB binding for Rust. [Documentation](https://docs.rs/rocks/)
 
