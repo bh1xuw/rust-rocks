@@ -5,7 +5,7 @@
 | Linux
 [![Build Status](https://travis-ci.org/bh1xuw/rust-rocks.svg?branch=master)](https://travis-ci.org/bh1xuw/rust-rocks)
 | macOS
-[![Build Status](https://github.com/bh1xuw/rust-rocks/workflows/macOS/badge.svg)](https://github.com/bh1xuw/rust-rocks/actions)
+[![Build Status](https://github.com/bh1xuw/rust-rocks/workflows/Rust/badge.svg)](https://github.com/bh1xuw/rust-rocks/actions)
 
 Another RocksDB binding for Rust. [Documentation](https://docs.rs/rocks/)
 
