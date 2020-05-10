@@ -23,6 +23,7 @@ build: false
 # Equivalent to Travis' `script` phase
 test_script:
   - cargo build --verbose
+  - cargo run --example it-works
   - cargo test --no-fail-fast -- --test-threads 1
 
 branches:
