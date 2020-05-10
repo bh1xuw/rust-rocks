@@ -4,6 +4,11 @@ environment:
   global:
     TARGET: x86_64-pc-windows-msvc
     CHANNEL: nightly
+    # required by crate vcpkg
+    VCPKGRS_DYNAMIC: 1
+
+cache:
+  - C:\Tools\vcpkg\installed\ -> appveyor.yml
 
 # Install Rust and Cargo
 # (Based on from https://github.com/rust-lang/libc/blob/master/appveyor.yml)
@@ -13,6 +18,7 @@ install:
   - set PATH=%PATH%;C:\Users\appveyor\.cargo\bin
   - rustc -Vv
   - cargo -V
+  - call "C:\Program Files (x86)\Microsoft Visual Studio\2019\Community\VC\Auxiliary\Build\vcvarsall.bat" x64
   - vcpkg install rocksdb[snappy]:x64-windows
 
 # 'cargo test' takes care of building for us, so disable Appveyor's build stage. This prevents
