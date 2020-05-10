@@ -21,6 +21,11 @@ exclude = [
 
 [dependencies]
 
+[build-dependencies]
+cc = "1.0"
+pkg-config = "0.3"
+cmake = "0.1.42"
+
 [features]
 default = ["snappy"]
 static-link = ["snappy"]
@@ -30,11 +35,6 @@ zlib = []
 bzip2 = []
 lz4 = []
 zstd = []
-
-[build-dependencies]
-cc = "1.0"
-pkg-config = "0.3"
-cmake = "0.1.42"
 
 [package.metadata.docs.rs]
 features = ["static-link"]

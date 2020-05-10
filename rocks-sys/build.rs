@@ -291,6 +291,10 @@ mod imp {
 }
 
 fn main() {
+    if cfg!(not(target_pointer_width = "64")) {
+        panic!("only 64 bit system supported");
+    }
+
     println!("cargo:rerun-if-changed=build.rs");
     println!("cargo:rerun-if-changed=src/c.rs");
     println!("cargo:rerun-if-changed=src/lib.rs");
@@ -300,8 +304,12 @@ fn main() {
     let mut build = ::cc::Build::new();
 
     #[cfg(feature = "static-link")]
+    build.include("rocksdb/include");
+
+    #[cfg(unix)]
     {
-        build.include("rocksdb/include");
+        build.flag("-std=c++11");
+        build.flag("-fno-rtti");
     }
 
     build
@@ -309,8 +317,6 @@ fn main() {
         .pic(true)
         .opt_level(2)
         .warnings(false)
-        .flag("-std=c++11")
-        .flag("-fno-rtti")
         .include(".")
         .file("rocks/cache.cc")
         .file("rocks/comparator.cc")
@@ -343,5 +349,5 @@ fn main() {
         .file("rocks/compaction_job_stats.cc")
         .file("rocks/thread_status.cc")
         .file("rocks/options_util.cc")
-        .compile("librocksdb_wrap.a");
+        .compile("librocksdb_wrap");
 }
