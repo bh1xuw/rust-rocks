@@ -287,7 +287,6 @@ fn main() {
         for inc in lib.include_paths {
             build.include(inc);
         }
-        build.static_crt(true);
     }
 
     build
