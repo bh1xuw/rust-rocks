@@ -1,59 +1,24 @@
 #[cfg(not(feature = "static-link"))]
 mod imp {
     pub fn build() {
-        #[cfg(feature = "snappy")]
-        snappy();
-
-        #[cfg(feature = "zlib")]
-        zlib();
-
-        #[cfg(feature = "bzip2")]
-        bzip2();
-
-        #[cfg(feature = "lz4")]
-        lz4();
-
-        #[cfg(feature = "zstd")]
-        zstd();
-
         rocksdb();
     }
 
-    #[cfg(feature = "snappy")]
-    fn snappy() {
-        let _ = pkg_config::Config::new().probe("snappy").map_err(|_| {
-            println!("cargo:rustc-link-lib=dylib=snappy");
-        });
+    #[cfg(unix)]
+    fn rocksdb() {
+        println!("cargo:rustc-link-lib=dylib=rocksdb");
     }
 
-    #[cfg(feature = "zlib")]
-    fn zlib() {
-        let _ = pkg_config::Config::new().probe("zlib").map_err(|_| {
-            println!("cargo:rustc-link-lib=dylib=z");
-        });
-    }
-
-    #[cfg(feature = "bzip2")]
-    fn bzip2() {
-        println!("cargo:rustc-link-lib=dylib=bz2");
-    }
-
-    #[cfg(feature = "lz4")]
-    fn lz4() {
-        let _ = pkg_config::Config::new().probe("liblz4").map_err(|_| {
-            println!("cargo:rustc-link-lib=dylib=lz4");
-        });
-    }
-
-    #[cfg(feature = "zstd")]
-    fn zstd() {
-        let _ = pkg_config::Config::new().probe("libzstd").map_err(|_| {
-            println!("cargo:rustc-link-lib=dylib=zstd");
-        });
-    }
-
+    #[cfg(windows)]
     fn rocksdb() {
         println!("cargo:rustc-link-lib=rocksdb");
+        for lib in env!("LIB").split(";") {
+            if !lib.is_empty() {
+                println!("cargo:rustc-link-search=native={}", lib);
+            }
+        }
+        println!("cargo:rustc-link-lib=static=shlwapi");
+        println!("cargo:rustc-link-lib=static=rpcrt4");
     }
 }
 
@@ -310,6 +275,19 @@ fn main() {
     {
         build.flag("-std=c++11");
         build.flag("-fno-rtti");
+    }
+
+    #[cfg(windows)]
+    {
+        let lib = vcpkg::Config::new()
+            .emit_includes(true)
+            .find_package("rocksdb")
+            .unwrap();
+
+        for inc in lib.include_paths {
+            build.include(inc);
+        }
+        build.static_crt(true);
     }
 
     build
