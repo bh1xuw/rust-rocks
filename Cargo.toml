@@ -23,9 +23,10 @@ tempdir = "0.3"
 lazy_static = "1"
 
 [features]
-default = ["rocks-sys/default", "rocks-sys/snappy"]
-static-link = ["rocks-sys/static-link", "rocks-sys/snappy"]
+default = ["rocks-sys/default"]
+static-link = ["rocks-sys/static-link"]
 full = ["rocks-sys/static-link-all"]
+windows = ["rocks-sys/zlib"]
 
 [profile.dev]
 opt-level = 1
