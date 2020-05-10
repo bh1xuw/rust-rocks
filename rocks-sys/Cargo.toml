@@ -26,8 +26,11 @@ cc = "1.0"
 pkg-config = "0.3"
 cmake = "0.1.42"
 
+[target.'cfg(windows)'.build-dependencies]
+vcpkg = "0.2"
+
 [features]
-default = ["snappy"]
+default = []
 static-link = ["snappy"]
 static-link-all = ["static-link", "snappy", "zlib", "bzip2", "lz4", "zstd"]
 snappy = []
