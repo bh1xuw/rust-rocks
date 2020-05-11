@@ -1,6 +1,6 @@
 [package]
 name = "rocks"
-version = "0.1.6"
+version = "0.1.7"
 authors = ["BH1XUW <bh1xuw@gmail.com>"]
 description = "RocksDB bindings for Rust."
 repository = "https://github.com/bh1xuw/rust-rocks"
@@ -9,14 +9,14 @@ categories = ["external-ffi-bindings", "database"]
 license = "Apache-2.0"
 readme = "README.md"
 edition = "2018"
-include = ["src/*.rs", "Cargo.toml"]
+include = ["src/*.rs", "Cargo.toml", "LICENSE", "README.md"]
 
 [badges]
 travis-ci = { repository = "bh1xuw/rust-rocks", branch = "master" }
 
 [dependencies]
 lazy_static = "1.4"
-rocks-sys = { path = "rocks-sys", version = "0.1.6", default-features = false }
+rocks-sys = { path = "rocks-sys", version = "0.1.7", default-features = false }
 
 [dev-dependencies]
 tempdir = "0.3"
@@ -26,7 +26,6 @@ lazy_static = "1"
 default = ["rocks-sys/default"]
 static-link = ["rocks-sys/static-link"]
 full = ["rocks-sys/static-link-all"]
-windows = ["rocks-sys/zlib"]
 
 [profile.dev]
 opt-level = 1
