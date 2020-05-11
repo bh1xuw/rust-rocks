@@ -1387,6 +1387,12 @@ impl DBOptions {
         DBOptions { raw: raw }
     }
 
+    pub fn from_options(opt: &Options) -> DBOptions {
+        DBOptions {
+            raw: unsafe { ll::rocks_dboptions_create_from_options(opt.raw()) },
+        }
+    }
+
     /// By default, RocksDB uses only one background thread for flush and
     /// compaction. Calling this function will set it up such that total of
     /// `total_threads` is used. Good value for `total_threads` is the number of
@@ -2364,6 +2370,14 @@ impl Options {
         Options {
             raw: unsafe { ll::rocks_options_create_from_db_cf_options(dbopt.raw(), cfopt.raw()) },
         }
+    }
+
+    pub fn to_cf_options(&self) -> ColumnFamilyOptions {
+        ColumnFamilyOptions::from_options(self)
+    }
+
+    pub fn to_db_options(&self) -> DBOptions {
+        DBOptions::from_options(self)
     }
 
     // Some functions that make it easier to optimize RocksDB
