@@ -9,6 +9,8 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 - WriteBatch methods that accept SliceParts
 - Add unsafe fn DB::close
 - New `rocksdb5.8` and `rocksdb5.17` branch for Ubuntu LTS
+- Add Windows build with `vcpkg`
+- Add AppVeyor CI for Windows build
 
 ### Changed
 - Refactor multi get API using PinnableSlice
@@ -16,6 +18,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 ### Fixed
 - Wrong iterator implementation that might skip keys
 - Add no-rtti flag
+- Wrong dynamic link feature gate usage
 
 ## 0.1.6
 ### Added
