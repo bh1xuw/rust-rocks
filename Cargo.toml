@@ -3,15 +3,19 @@ name = "rocks"
 version = "0.1.7"
 authors = ["BH1XUW <bh1xuw@gmail.com>"]
 description = "RocksDB bindings for Rust."
-repository = "https://github.com/bh1xuw/rust-rocks"
 keywords = ["ffi", "RocksDB", "facebook", "database"]
 categories = ["external-ffi-bindings", "database"]
 license = "Apache-2.0"
 readme = "README.md"
 edition = "2018"
-include = ["src/*.rs", "Cargo.toml", "LICENSE", "README.md"]
+homepage = "https://github.com/bh1xuw/rust-rocks"
+repository = "https://github.com/bh1xuw/rust-rocks"
+documentation = "https://docs.rs/rocks"
+include = ["src/**/*", "Cargo.toml", "LICENSE", "README.md"]
 
 [badges]
+maintenance = { status = "actively-developed" }
+appveyor = { repository = "bh1xuw/rust-rocks", branch = "master" }
 travis-ci = { repository = "bh1xuw/rust-rocks", branch = "master" }
 
 [dependencies]
@@ -20,12 +24,16 @@ rocks-sys = { path = "rocks-sys", version = "0.1.7", default-features = false }
 
 [dev-dependencies]
 tempdir = "0.3"
-lazy_static = "1"
 
 [features]
 default = ["rocks-sys/default"]
 static-link = ["rocks-sys/static-link"]
 full = ["rocks-sys/static-link-all"]
+snappy = ["rocks-sys/snappy"]
+zlib = ["rocks-sys/zlib"]
+bzip2 = ["rocks-sys/bzip2"]
+lz4 = ["rocks-sys/lz4"]
+zstd = ["rocks-sys/zstd"]
 
 [profile.dev]
 opt-level = 1
