@@ -968,6 +968,9 @@ extern "C" {
     );
 }
 extern "C" {
+    pub fn rocks_readoptions_set_iter_start_seqnum(opt: *mut rocks_readoptions_t, v: u64);
+}
+extern "C" {
     pub fn rocks_writeoptions_create() -> *mut rocks_writeoptions_t;
 }
 extern "C" {
@@ -990,6 +993,12 @@ extern "C" {
 }
 extern "C" {
     pub fn rocks_writeoptions_set_low_pri(opt: *mut rocks_writeoptions_t, v: ::std::os::raw::c_uchar);
+}
+extern "C" {
+    pub fn rocks_writeoptions_set_memtable_insert_hint_per_batch(
+        opt: *mut rocks_writeoptions_t,
+        v: ::std::os::raw::c_uchar,
+    );
 }
 extern "C" {
     pub fn rocks_compactrange_options_create() -> *mut rocks_compactrange_options_t;

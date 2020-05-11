@@ -524,6 +524,8 @@ void rocks_readoptions_set_ignore_range_deletions(rocks_readoptions_t* opt, unsi
 
 void rocks_readoptions_set_background_purge_on_iterator_cleanup(rocks_readoptions_t* opt, unsigned char v);
 
+void rocks_readoptions_set_iter_start_seqnum(rocks_readoptions_t* opt, uint64_t v);
+
 /* > writeoptions */
 rocks_writeoptions_t* rocks_writeoptions_create();
 
@@ -538,6 +540,8 @@ void rocks_writeoptions_set_ignore_missing_column_families(rocks_writeoptions_t*
 void rocks_writeoptions_set_no_slowdown(rocks_writeoptions_t* opt, unsigned char v);
 
 void rocks_writeoptions_set_low_pri(rocks_writeoptions_t* opt, unsigned char v);
+
+void rocks_writeoptions_set_memtable_insert_hint_per_batch(rocks_writeoptions_t* opt, unsigned char v);
 
 /* > compactrange_options */
 rocks_compactrange_options_t* rocks_compactrange_options_create();

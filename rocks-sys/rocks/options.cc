@@ -680,6 +680,10 @@ void rocks_readoptions_set_ignore_range_deletions(rocks_readoptions_t* opt, unsi
 void rocks_readoptions_set_background_purge_on_iterator_cleanup(rocks_readoptions_t* opt, unsigned char v) {
   opt->rep.background_purge_on_iterator_cleanup = v;
 }
+
+void rocks_readoptions_set_iter_start_seqnum(rocks_readoptions_t* opt, uint64_t v) {
+  opt->rep.iter_start_seqnum = v;
+}
 }
 
 extern "C" {
@@ -698,6 +702,10 @@ void rocks_writeoptions_set_ignore_missing_column_families(rocks_writeoptions_t*
 void rocks_writeoptions_set_no_slowdown(rocks_writeoptions_t* opt, unsigned char v) { opt->rep.no_slowdown = v; }
 
 void rocks_writeoptions_set_low_pri(rocks_writeoptions_t* opt, unsigned char v) { opt->rep.low_pri = v; }
+
+void rocks_writeoptions_set_memtable_insert_hint_per_batch(rocks_writeoptions_t* opt, unsigned char v) {
+  opt->rep.memtable_insert_hint_per_batch = v;
+}
 }
 
 extern "C" {

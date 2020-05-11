@@ -27,6 +27,7 @@ use crate::sst_file_manager::SstFileManager;
 use crate::statistics::Statistics;
 use crate::table::{BlockBasedTableOptions, CuckooTableOptions, PlainTableOptions};
 use crate::table_properties::TablePropertiesCollectorFactory;
+use crate::types::SequenceNumber;
 use crate::universal_compaction::CompactionOptionsUniversal;
 use crate::write_buffer_manager::WriteBufferManager;
 
@@ -2688,6 +2689,20 @@ impl<'a> ReadOptions<'a> {
         }
         self
     }
+
+    /// Needed to support differential snapshots. Has 2 effects:
+    ///
+    /// 1) Iterator will skip all internal keys with seqnum < iter_start_seqnum
+    /// 2) if this param > 0 iterator will return INTERNAL keys instead of
+    ///    user keys; e.g. return tombstones as well.
+    ///
+    /// Default: 0 (don't filter by seqnum, return user keys)
+    pub fn iter_start_seqnum(self, val: SequenceNumber) -> Self {
+        unsafe {
+            ll::rocks_readoptions_set_iter_start_seqnum(self.raw, val.0);
+        }
+        self
+    }
 }
 
 /// Options that control write operations
@@ -2795,6 +2810,20 @@ impl WriteOptions {
     pub fn low_pri(self, val: bool) -> Self {
         unsafe {
             ll::rocks_writeoptions_set_low_pri(self.raw, val as u8);
+        }
+        self
+    }
+
+    /// If true, this writebatch will maintain the last insert positions of each
+    /// memtable as hints in concurrent write. It can improve write performance
+    /// in concurrent writes if keys in one writebatch are sequential. In
+    /// non-concurrent writes (when concurrent_memtable_writes is false) this
+    /// option will be ignored.
+    ///
+    /// Default: false
+    pub fn memtable_insert_hint_per_batch(self, val: bool) -> Self {
+        unsafe {
+            ll::rocks_writeoptions_set_memtable_insert_hint_per_batch(self.raw, val as u8);
         }
         self
     }
