@@ -2,63 +2,21 @@
 
 [![crates.io badge](https://img.shields.io/crates/v/rocks.svg)](https://crates.io/crates/rocks)
 [![DOCS.RS badge](https://docs.rs/rocks/badge.svg)](https://docs.rs/rocks)
-[![Build Status](https://travis-ci.org/bh1xuw/rust-rocks.svg?branch=master)](https://travis-ci.org/bh1xuw/rust-rocks)
-[![Build Status](https://github.com/bh1xuw/rust-rocks/workflows/Rust/badge.svg)](https://github.com/bh1xuw/rust-rocks/actions)
+[![Linux Build Status](https://travis-ci.org/bh1xuw/rust-rocks.svg?branch=master)](https://travis-ci.org/bh1xuw/rust-rocks)
+[![macOS Build Status](https://github.com/bh1xuw/rust-rocks/workflows/Rust/badge.svg)](https://github.com/bh1xuw/rust-rocks/actions)
+[![Windows Build Status](https://ci.appveyor.com/api/projects/status/atawb7u8ekseodhm/branch/master?svg=true)](https://ci.appveyor.com/project/bh1xuw/rust-rocks)
 
 Another RocksDB binding for Rust. [Documentation](https://docs.rs/rocks/)
 
 Make RocksDB really rocks!
 
-## How to compile
-
-### Static Link
-
-Static link against: RocksDB 6.7.3.
-
-```console
-git submodule update --init --recursive
-cargo test --features static-link -- --test-threads 1
-
-cargo test --features full -- --test-threads 1
-```
-
-### Dynamic Link
-
-Dynamic Link Tested:
-
-- RocksDB 6.7.3 (macOS via Homebrew)
-- RocksDB 6.5.3 (ArchLinux)
-
-For macOS(with RocksDB installed via brew):
-
-```console
-brew install rocksdb
-cargo test -- --nocapture --test-threads 1
-```
-
-For Linux(with RocksDB installed into /usr/local):
-
-```console
-$ sudo apt install lld
-(gcc-ld can't handle circular references while linking.)
-(for more, refer the last section of readme.)
-$ LD_LIBRARY_PATH=/usr/local/lib \
-  LIBRARY_PATH=/usr/local/lib CXXFLAGS=-I/usr/local/include \
-  RUSTFLAGS="-C link-arg=-fuse-ld=lld" cargo test -- --nocapture
-```
-
-### Ubuntu LTS
-
-RocksDB changes its API often, so `rust-rocks` use different branch to support Ubuntu LTS.
-
-```console
-> sudo apt install librocksdb-dev libsnappy-dev
-```
-
-Branches:
-
-- rocksdb5.8 (18.04 LTS)
-- rocksdb5.17 (20.04 LTS)
+- Static link against RocksDB 6.7.3 (git submodules)
+- Dynamic link tested:
+  - macOS homebrew
+  - Windows 10, VS 2019 with `vcpkg`
+  - ArchLinux pacman, both x86_64 and aarch64(ODroid-C2)
+  - Ubuntu 18.04 (`rocksdb5.8` branch), both x86_64 and aarch64(RPi 3)
+  - Ubuntu 20.04 (`rocksdb5.17` branch)
 
 ## Installation
 
@@ -78,7 +36,7 @@ default-features = false
 features = ["static-link"]
 ```
 
-With all static features(all compress types):
+With all static features(all compression types):
 
 ```toml
 [dependencies.rocks]
@@ -86,6 +44,64 @@ version = "0.1"
 default-features = false
 features = ["full"]
 ```
+
+## How to compile
+
+Feel free to refer Travic-CI, AppVeyor and Github Actions configuration files.
+
+### Static Link
+
+```console
+$ git submodule update --init --recursive
+$ cargo test --features static-link -- --test-threads 1
+(This will build with snappy as the only compression supported)
+
+$ cargo test --features full -- --test-threads 1
+(This will build with all compression supported)
+```
+
+### Dynamic Link
+
+For macOS(with RocksDB installed via brew):
+
+```console
+$ brew install rocksdb
+$ cargo test -- --nocapture --test-threads 1
+```
+
+For Linux:
+
+```console
+(install rocksdb via package manager or make & install)
+$ sudo apt install lld
+(NOTE: gcc-ld can't handle circular references while linking.)
+(for more, refer the last section of README)
+$ RUSTFLAGS="-C link-arg=-fuse-ld=lld" cargo test -- --test-threads 1
+```
+
+Use environment variables if rocksdb is installed to non-default directory:
+
+`LD_LIBRARY_PATH=/usr/local/lib LIBRARY_PATH=/usr/local/lib CXXFLAGS=-I/usr/local/include`
+
+### Ubuntu LTS
+
+RocksDB changes its API often, so `rust-rocks` use different branch to support Ubuntu LTS.
+
+```console
+> sudo apt install librocksdb-dev libsnappy-dev
+```
+
+You also need `lld` form official source or `http://apt.llvm.org/`.
+
+Branches:
+
+- rocksdb5.8 (18.04 LTS)
+- rocksdb5.17 (20.04 LTS)
+
+### Windows
+
+You need VS 2017 or VS 2019, and [install RocksDB](https://github.com/facebook/rocksdb/wiki/Building-on-Windows)
+via [vcpkg](https://github.com/Microsoft/vcpkg).
 
 ## FAQ
 
@@ -144,6 +160,7 @@ Big picture:
 Bindgen:
 
 ```console
+$ cd rocks-sys
 $ PATH="/usr/local/opt/llvm/bin:$PATH" make
 (this will regenerate the bindgen c.rs)
 ```
