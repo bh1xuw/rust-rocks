@@ -759,6 +759,10 @@ rocks_flushoptions_t* rocks_flushoptions_create() { return new rocks_flushoption
 void rocks_flushoptions_destroy(rocks_flushoptions_t* opt) { delete opt; }
 
 void rocks_flushoptions_set_wait(rocks_flushoptions_t* opt, unsigned char v) { opt->rep.wait = v; }
+
+void rocks_flushoptions_set_allow_write_stall(rocks_flushoptions_t* opt, unsigned char v) {
+  opt->rep.allow_write_stall = v;
+}
 }
 
 extern "C" {

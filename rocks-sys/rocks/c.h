@@ -573,6 +573,8 @@ void rocks_flushoptions_destroy(rocks_flushoptions_t* options);
 
 void rocks_flushoptions_set_wait(rocks_flushoptions_t* options, unsigned char v);
 
+void rocks_flushoptions_set_allow_write_stall(rocks_flushoptions_t* opt, unsigned char v);
+
 /* > misc */
 rocks_logger_t* rocks_create_logger_from_options(const char* path, rocks_options_t* opts, rocks_status_t** status);
 
@@ -602,7 +604,7 @@ uint32_t rocks_column_family_handle_get_id(const rocks_column_family_handle_t* h
 /* > rocks_db_t */
 rocks_db_t* rocks_db_open(const rocks_options_t* options, const char* name, rocks_status_t** status);
 
-void rocks_db_close(rocks_db_t* db, rocks_status_t **status);
+void rocks_db_close(rocks_db_t* db, rocks_status_t** status);
 
 void rocks_db_destroy(rocks_db_t* db);
 

@@ -43,6 +43,9 @@ lazy_static! {
     static ref DEFAULT_WRITE_OPTIONS: WriteOptions = {
         WriteOptions::default()
     };
+    static ref DEFAULT_FLUSH_OPTIONS: FlushOptions = {
+        FlushOptions::default()
+    };
 }
 
 /// DB contents are stored in a set of blocks, each of which holds a
@@ -2826,11 +2829,30 @@ impl ToRaw<ll::rocks_flushoptions_t> for FlushOptions {
 }
 
 impl FlushOptions {
+    #[inline]
+    pub fn default_instance() -> &'static FlushOptions {
+        &*DEFAULT_FLUSH_OPTIONS
+    }
+
     /// If true, the flush will wait until the flush is done.
+    ///
     /// Default: true
     pub fn wait(self, val: bool) -> Self {
         unsafe {
             ll::rocks_flushoptions_set_wait(self.raw, val as u8);
+        }
+        self
+    }
+
+    /// If true, the flush would proceed immediately even it means writes will
+    /// stall for the duration of the flush; if false the operation will wait
+    /// until it's possible to do flush w/o causing stall or until required flush
+    /// is performed by someone else (foreground call or background thread).
+    ///
+    /// Default: false
+    pub fn allow_write_stall(self, val: bool) -> Self {
+        unsafe {
+            ll::rocks_flushoptions_set_allow_write_stall(self.raw, val as u8);
         }
         self
     }

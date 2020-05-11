@@ -695,7 +695,7 @@ impl ops::Deref for DB {
 
 impl fmt::Debug for DB {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        write!(f, "DB({:?})", self.name())
+        f.debug_struct("DB").field("name", &self.name()).finish()
     }
 }
 
@@ -1863,7 +1863,7 @@ impl DBRef {
 
     /// This function will wait until all currently running background processes
     /// finish. After it returns, no background process will be run until
-    /// UnblockBackgroundWork is called
+    /// ContinueBackgroundWork is called
     pub fn pause_background_work(&self) -> Result<()> {
         let mut status = ptr::null_mut::<ll::rocks_status_t>();
         unsafe {
@@ -1881,8 +1881,6 @@ impl DBRef {
     }
 
     /// Request stopping background work, if wait is true wait until it's done
-    ///
-    /// Original in rocksdb/utilities/convenience.h
     pub fn cancel_background_work(&self, wait: bool) {
         unsafe {
             ll::rocks_cancel_all_background_work(self.raw(), wait as u8);

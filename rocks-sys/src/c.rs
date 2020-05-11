@@ -1067,6 +1067,9 @@ extern "C" {
     pub fn rocks_flushoptions_set_wait(options: *mut rocks_flushoptions_t, v: ::std::os::raw::c_uchar);
 }
 extern "C" {
+    pub fn rocks_flushoptions_set_allow_write_stall(opt: *mut rocks_flushoptions_t, v: ::std::os::raw::c_uchar);
+}
+extern "C" {
     pub fn rocks_create_logger_from_options(
         path: *const ::std::os::raw::c_char,
         opts: *mut rocks_options_t,
