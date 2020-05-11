@@ -105,7 +105,6 @@ impl FullKey<'_> {
         let mut raw_num = [0u8; 8];
         raw_num.copy_from_slice(&internal_key[n - 8..]);
         let num: u64 = unsafe { mem::transmute(raw_num) };
-        println!("num ={}", num);
         let c = (num & 0xff) as u8;
         let seq = num >> 8;
         let typ = EntryType::from_u8(c);
