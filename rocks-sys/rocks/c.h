@@ -610,6 +610,8 @@ rocks_db_t* rocks_db_open(const rocks_options_t* options, const char* name, rock
 
 void rocks_db_close(rocks_db_t* db, rocks_status_t** status);
 
+void rocks_db_resume(rocks_db_t* db, rocks_status_t** status);
+
 void rocks_db_destroy(rocks_db_t* db);
 
 rocks_db_t* rocks_db_open_for_read_only(const rocks_options_t* options, const char* name,

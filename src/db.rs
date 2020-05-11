@@ -1030,6 +1030,18 @@ impl DBRef {
         Error::from_ll(status)
     }
 
+    /// Manually resume the DB and put it in read-write mode.
+    /// This function will flush memtables for all the column families,
+    /// clear the error, purge any obsolete files, and restart
+    /// background flush and compaction operations.
+    pub fn resume(&self) -> Result<()> {
+        let mut status = ptr::null_mut::<ll::rocks_status_t>();
+        unsafe {
+            ll::rocks_db_resume(self.raw(), &mut status);
+        }
+        Error::from_ll(status)
+    }
+
     /// Set the database entry for `"key"` to `"value"`.
     /// If `"key"` already exists, it will be overwritten.
     /// Returns OK on success, and a non-OK status on error.

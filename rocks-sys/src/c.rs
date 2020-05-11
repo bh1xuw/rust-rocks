@@ -1134,6 +1134,9 @@ extern "C" {
     pub fn rocks_db_close(db: *mut rocks_db_t, status: *mut *mut rocks_status_t);
 }
 extern "C" {
+    pub fn rocks_db_resume(db: *mut rocks_db_t, status: *mut *mut rocks_status_t);
+}
+extern "C" {
     pub fn rocks_db_destroy(db: *mut rocks_db_t);
 }
 extern "C" {
