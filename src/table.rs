@@ -15,15 +15,15 @@
 //! > https://github.com/facebook/rocksdb/wiki/A-Tutorial-of-RocksDB-SST-formats#wiki-examples
 
 use std::mem;
-use std::ptr;
 use std::os::raw::c_int;
+use std::ptr;
 
 use rocks_sys as ll;
 
 use crate::cache::Cache;
-use crate::to_raw::ToRaw;
 use crate::filter_policy::FilterPolicy;
 use crate::persistent_cache::PersistentCache;
+use crate::to_raw::ToRaw;
 
 #[derive(Debug, Copy, Clone, PartialEq, Eq, Hash)]
 #[repr(C)]
@@ -59,7 +59,9 @@ pub struct BlockBasedTableOptions {
 
 impl Default for BlockBasedTableOptions {
     fn default() -> Self {
-        BlockBasedTableOptions { raw: unsafe { ll::rocks_block_based_table_options_create() } }
+        BlockBasedTableOptions {
+            raw: unsafe { ll::rocks_block_based_table_options_create() },
+        }
     }
 }
 
@@ -111,8 +113,7 @@ impl BlockBasedTableOptions {
     pub fn cache_index_and_filter_blocks_with_high_priority(self, val: bool) -> Self {
         unsafe {
             ll::rocks_block_based_table_options_set_cache_index_and_filter_blocks_with_high_priority(
-                self.raw,
-                val as u8,
+                self.raw, val as u8,
             );
         }
         self
@@ -175,15 +176,12 @@ impl BlockBasedTableOptions {
 
     /// If non-NULL use the specified cache for pages read from device
     /// IF NULL, no page cache is used
-    ///
     pub fn persistent_cache(self, val: Option<PersistentCache>) -> Self {
-        match val {
-            None => unsafe {
-                ll::rocks_block_based_table_options_set_persistent_cache(self.raw, ptr::null_mut());
-            },
-            Some(cache) => unsafe {
-                ll::rocks_block_based_table_options_set_persistent_cache(self.raw, cache.raw());
-            },
+        unsafe {
+            ll::rocks_block_based_table_options_set_persistent_cache(
+                self.raw,
+                val.map(|cache| cache.raw()).unwrap_or(ptr::null_mut()),
+            )
         }
         self
     }
@@ -402,7 +400,9 @@ pub struct PlainTableOptions {
 
 impl Default for PlainTableOptions {
     fn default() -> Self {
-        PlainTableOptions { raw: unsafe { ll::rocks_plain_table_options_create() } }
+        PlainTableOptions {
+            raw: unsafe { ll::rocks_plain_table_options_create() },
+        }
     }
 }
 
@@ -504,14 +504,15 @@ impl PlainTableOptions {
     }
 }
 
-
 pub struct CuckooTableOptions {
     raw: *mut ll::rocks_cuckoo_table_options_t,
 }
 
 impl Default for CuckooTableOptions {
     fn default() -> Self {
-        CuckooTableOptions { raw: unsafe { ll::rocks_cuckoo_table_options_create() } }
+        CuckooTableOptions {
+            raw: unsafe { ll::rocks_cuckoo_table_options_create() },
+        }
     }
 }
 

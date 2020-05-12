@@ -24,6 +24,12 @@ impl ToRaw<ll::rocks_persistent_cache_t> for PersistentCache {
     }
 }
 
+impl Drop for PersistentCache {
+    fn drop(&mut self) {
+        unsafe { ll::rocks_persistent_cache_destroy(self.raw) }
+    }
+}
+
 impl Clone for PersistentCache {
     /// Duplicated PersistentCache inner shared_ptr
     fn clone(&self) -> Self {
