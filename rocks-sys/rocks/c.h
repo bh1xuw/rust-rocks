@@ -1295,24 +1295,26 @@ rocks_statistics_t* rocks_statistics_copy(rocks_statistics_t* stat);
 
 void rocks_statistics_destroy(rocks_statistics_t* stat);
 
-uint64_t rocks_statistics_get_ticker_count(rocks_statistics_t* stat, uint32_t tickerType);
+uint64_t rocks_statistics_get_ticker_count(rocks_statistics_t* stat, const char* key, size_t key_len);
 
-void rocks_statistics_histogram_data(rocks_statistics_t* stat, uint32_t type, rocks_histogram_data_t* const data);
+void rocks_statistics_histogram_data(rocks_statistics_t* stat, const char* key, size_t key_len,
+                                     rocks_histogram_data_t* const data);
 
-void rocks_statistics_get_histogram_string(rocks_statistics_t* stat, uint32_t type,
-                                           void* str);  // *mut String
+void rocks_statistics_get_histogram_string(rocks_statistics_t* stat, const char* key, size_t key_len, void* str);
 
 void rocks_statistics_record_tick(rocks_statistics_t* stat, uint32_t tickerType, uint64_t count);
 
 void rocks_statistics_set_ticker_count(rocks_statistics_t* stat, uint32_t tickerType, uint64_t count);
 
-uint64_t rocks_statistics_get_and_reset_ticker_count(rocks_statistics_t* stat, uint32_t tickerType);
+uint64_t rocks_statistics_get_and_reset_ticker_count(rocks_statistics_t* stat, const char* key, size_t key_len);
 
 void rocks_statistics_measure_time(rocks_statistics_t* stat, uint32_t histogramType, uint64_t time);
 
 void rocks_statistics_to_string(rocks_statistics_t* stat, void* str); /* *mut String */
 
 unsigned char rocks_statistics_hist_enabled_for_type(rocks_statistics_t* stat, uint32_t type);
+
+void rocks_statistics_reset(rocks_statistics_t* stat, rocks_status_t** status);
 
 /* metadata */
 int rocks_livefiles_count(const rocks_livefiles_t* lf);
