@@ -8,9 +8,15 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 ### Added
 - `ReadOptions::iter_start_seqnum` and example code
 - `types::FullKey` for iter over internal keys
+- `DB::resume()`
 
 ### Changed
 - Compression type features are now at `rocks` level
+- Refactor `Statistics`, use str keys, slower but compatible with older versions
+
+### Fixed
+- Wrong implementation of iterator `Keys::next()`
+- Memory leak in `PersistentCache`
 
 ## 0.1.7
 ### Added
