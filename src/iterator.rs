@@ -300,7 +300,6 @@ impl<'a> iter::Iterator for Keys<'a> {
             self.inner.next();
         }
         if self.inner.is_valid() {
-            self.inner.next();
             Some(self.inner.key())
         } else {
             None
