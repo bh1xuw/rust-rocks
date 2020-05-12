@@ -2710,19 +2710,25 @@ extern "C" {
     pub fn rocks_statistics_destroy(stat: *mut rocks_statistics_t);
 }
 extern "C" {
-    pub fn rocks_statistics_get_ticker_count(stat: *mut rocks_statistics_t, tickerType: u32) -> u64;
+    pub fn rocks_statistics_get_ticker_count(
+        stat: *mut rocks_statistics_t,
+        key: *const ::std::os::raw::c_char,
+        key_len: usize,
+    ) -> u64;
 }
 extern "C" {
     pub fn rocks_statistics_histogram_data(
         stat: *mut rocks_statistics_t,
-        type_: u32,
+        key: *const ::std::os::raw::c_char,
+        key_len: usize,
         data: *mut rocks_histogram_data_t,
     );
 }
 extern "C" {
     pub fn rocks_statistics_get_histogram_string(
         stat: *mut rocks_statistics_t,
-        type_: u32,
+        key: *const ::std::os::raw::c_char,
+        key_len: usize,
         str: *mut ::std::os::raw::c_void,
     );
 }
@@ -2733,7 +2739,11 @@ extern "C" {
     pub fn rocks_statistics_set_ticker_count(stat: *mut rocks_statistics_t, tickerType: u32, count: u64);
 }
 extern "C" {
-    pub fn rocks_statistics_get_and_reset_ticker_count(stat: *mut rocks_statistics_t, tickerType: u32) -> u64;
+    pub fn rocks_statistics_get_and_reset_ticker_count(
+        stat: *mut rocks_statistics_t,
+        key: *const ::std::os::raw::c_char,
+        key_len: usize,
+    ) -> u64;
 }
 extern "C" {
     pub fn rocks_statistics_measure_time(stat: *mut rocks_statistics_t, histogramType: u32, time: u64);
@@ -2744,6 +2754,9 @@ extern "C" {
 extern "C" {
     pub fn rocks_statistics_hist_enabled_for_type(stat: *mut rocks_statistics_t, type_: u32)
         -> ::std::os::raw::c_uchar;
+}
+extern "C" {
+    pub fn rocks_statistics_reset(stat: *mut rocks_statistics_t, status: *mut *mut rocks_status_t);
 }
 extern "C" {
     pub fn rocks_livefiles_count(lf: *const rocks_livefiles_t) -> ::std::os::raw::c_int;
