@@ -126,35 +126,6 @@ Compression Supported:
   - ZSTDNotFinalCompression
 ```
 
-## TODOs
-
-Big picture:
-
-- [x] git submodule, static-link, compression as feature gate
-- [x] information hiding (DO NOT EXPORT raw pointers)
-- [x] Rust style
-  - [x] wraps Status into a Rust style ``Result<T>``
-  - [x] ``*Options`` via builder pattern
-  - [x] handle CFHandle lifetime, Ref safety
-- [ ] Lifetime safely guarantee
-  - [x] `ReadOptions` + `snapshot`
-  - [x] `ReadOptions` + `iterate_upper_bound`
-  - [x] `DB` + `ColumnFamilyHandle`
-  - [ ] `ColumnFamilyOptions` + `compaction_filter`
-  - [ ] `ColumnFamilyOptions` + customized `comparator`
-- [ ] Proof of usablility
-- [ ] bench across C++/Java/other-rust binding
-- [x] CI
-  - [x] travis-ci integration
-  - [ ] appveyor integration for windows
-- [x] Zero-Copy between C++ part
-  - [x] pinnable slice support
-  - [x] exports `String/Vec<u8>` to C++ via `assign`-style API
-- [ ] Full documentation with code examples
-  - [x] good enough by copying C++ comments
-  - [ ] rename C++ function names to rust name in doc comments
-  - [ ] more examples in doc comment
-
 ## Development
 
 Bindgen:
@@ -167,15 +138,18 @@ $ PATH="/usr/local/opt/llvm/bin:$PATH" make
 
 ## Known bugs
 
-- Linking error under Linux
-  - rust-rocks exports rust functions to c++, so there are circular references while linking
-  - GCC reuqire that you put the object files and libraries in the order that they depend on each other
-  - Rust will not wrap user crates in `--start-group` and `--end-group`
-  - So circular references will be errors.
-  - Can be fixed by using `lld` as linker, `RUSTFLAGS="-C link-arg=-fuse-ld=lld"`
-  - Can be fixed by manually organising link arguments
-    - librocks, then librocks_sys, *then librocks again*
-- Minor memory leaks
-  - Comparator
-  - CompactionFilter
-  - MergeOperator
+### Linking error under Linux
+
+- rust-rocks exports rust functions to c++, so there are circular references while linking
+- GCC reuqire that you put the object files and libraries in the order that they depend on each other
+- Rust will not wrap user crates in `--start-group` and `--end-group`
+- So circular references will be errors.
+- Can be fixed by using `lld` as linker, `RUSTFLAGS="-C link-arg=-fuse-ld=lld"`
+- Can be fixed by manually organising link arguments
+  - librocks, then librocks_sys, *then librocks again*
+
+### Minor memory leaks
+
+- The raw pointers are created on the fly, should be impled via `lazy_static` and wrapped in trait objects
+  - `ColumnFamilyOptions::comparator`: `const Comparator*`
+  - `ColumnFamilyOptions::compaction_filter`: `const CompactionFilter*`
