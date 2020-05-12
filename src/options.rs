@@ -214,7 +214,7 @@ impl ColumnFamilyOptions {
         }
     }
 
-    // Some functions that make it easier to optimize RocksDB
+    // ! Some functions that make it easier to optimize RocksDB
 
     /// Use this if your DB is very small (like under 1GB) and you don't want to
     /// spend lots of memory for memtables.
@@ -269,7 +269,7 @@ impl ColumnFamilyOptions {
         self
     }
 
-    // Parameters that affect behavior
+    // ! Parameters that affect behavior
 
     /// Comparator used to define the order of keys in the table.
     /// Default: a comparator that uses lexicographic byte-wise ordering
@@ -279,8 +279,7 @@ impl ColumnFamilyOptions {
     /// comparator provided to previous open calls on the same DB.
     pub fn comparator<T: Comparator>(self, val: &'static T) -> Self {
         unsafe {
-            // FIXME: mem leaks, CFOptions.comparator is a raw pointer,
-            // not a shared_ptr
+            // Box<&dyn Comparator>
             let raw_ptr = Box::into_raw(Box::new(val as &dyn Comparator));
             ll::rocks_cfoptions_set_comparator_by_trait(self.raw, raw_ptr as *mut _);
         }

@@ -221,11 +221,10 @@ mod tests {
 
         let ks = db
             .new_iterator(&ReadOptions::default().pin_data(true))
-            .into_iter()
-            .map(|kv| String::from_utf8_lossy(kv.0))
+            .keys()
+            .map(|key| String::from_utf8_lossy(key))
             .collect::<Vec<_>>();
 
-        // println!("keys => {:?}", ks);
         assert_eq!(ks, vec!["Key1", "kEy2", "kEY3", "key4"]);
     }
 }
