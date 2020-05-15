@@ -153,3 +153,10 @@ $ PATH="/usr/local/opt/llvm/bin:$PATH" make
 - The raw pointers are created on the fly, should be impled via `lazy_static` and wrapped in trait objects
   - `ColumnFamilyOptions::comparator`: `const Comparator*`
   - `ColumnFamilyOptions::compaction_filter`: `const CompactionFilter*`
+
+### Iterator leaks lifetime
+
+Ref: <https://github.com/bh1xuw/rust-rocks/issues/15>
+
+- While doing a `for`-traverse: That's OK
+- While collecting for later use: Clone the keys and values
