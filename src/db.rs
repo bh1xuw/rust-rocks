@@ -1748,8 +1748,7 @@ impl DBRef {
     /// move the files back to the minimum level capable of holding the data set
     /// or a given level (specified by non-negative options.target_level).
     ///
-    /// For Rust: use range expr, and since `compact_range()` use superset of range,
-    /// we ignore inclusive relation.
+    /// For Rust: use range expr, and since `compact_range()` use superset of range.
     pub fn compact_range<R: AsCompactRange>(&self, options: &CompactRangeOptions, range: R) -> Result<()> {
         let mut status = ptr::null_mut::<ll::rocks_status_t>();
         unsafe {
@@ -2513,7 +2512,6 @@ pub fn repair_db<P: AsRef<Path>>(options: &Options, name: P) -> Result<()> {
     }
 }
 
-// TODO: reimpl with std::collections::range::RangeArgument
 pub trait AsCompactRange {
     fn start_key(&self) -> *const u8 {
         ptr::null()
@@ -2532,7 +2530,8 @@ pub trait AsCompactRange {
     }
 }
 
-impl<'a> AsCompactRange for ops::Range<&'a [u8]> {
+#[deprecated(since = "0.1.7", note = "Please use RangeInclusive instead: `start..=end`")]
+impl AsCompactRange for ops::Range<&'_ [u8]> {
     fn start_key(&self) -> *const u8 {
         self.start.as_ptr()
     }
@@ -2550,7 +2549,36 @@ impl<'a> AsCompactRange for ops::Range<&'a [u8]> {
     }
 }
 
+impl<'a> AsCompactRange for ops::RangeInclusive<&'a [u8]> {
+    fn start_key(&self) -> *const u8 {
+        self.start().as_ptr()
+    }
+
+    fn start_key_len(&self) -> usize {
+        self.start().len()
+    }
+
+    fn end_key(&self) -> *const u8 {
+        self.end().as_ptr()
+    }
+
+    fn end_key_len(&self) -> usize {
+        self.end().len()
+    }
+}
+
+#[deprecated(since = "0.1.7", note = "Please use RangeToInclusive instead: `..=end`")]
 impl<'a> AsCompactRange for ops::RangeTo<&'a [u8]> {
+    fn end_key(&self) -> *const u8 {
+        self.end.as_ptr()
+    }
+
+    fn end_key_len(&self) -> usize {
+        self.end.len()
+    }
+}
+
+impl<'a> AsCompactRange for ops::RangeToInclusive<&'a [u8]> {
     fn end_key(&self) -> *const u8 {
         self.end.as_ptr()
     }
