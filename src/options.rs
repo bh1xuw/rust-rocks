@@ -546,6 +546,7 @@ impl ColumnFamilyOptions {
         self
     }
 
+    /// Requires DBOptions.allow_mmap_reads = true
     pub fn table_factory_cuckoo(self, opt: CuckooTableOptions) -> Self {
         unsafe {
             ll::rocks_cfoptions_set_cuckoo_table_factory(self.raw, opt.raw());
