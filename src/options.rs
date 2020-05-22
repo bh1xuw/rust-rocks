@@ -55,7 +55,7 @@ lazy_static! {
 /// compression method (if any) is used to compress a block.
 #[repr(C)]
 // FIXME: u8 in rocksdb
-#[derive(Debug, Copy, Clone, PartialEq, Eq, Hash)]
+#[derive(Debug, Copy, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub enum CompressionType {
     /// NOTE: do not change the values of existing entries, as these are
     /// part of the persistent format on disk.
