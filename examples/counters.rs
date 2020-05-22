@@ -2,6 +2,8 @@ extern crate rocks;
 
 use rocks::prelude::*;
 
+const DB_PATH: &str = "./data.merge_op";
+
 pub struct UInt64AddOperator;
 
 fn deserialize(value: &[u8]) -> u64 {
@@ -74,7 +76,7 @@ fn main() {
         Options::default()
             .map_db_options(|db| db.create_if_missing(true))
             .map_cf_options(|cf| cf.associative_merge_operator(Box::new(UInt64AddOperator))),
-        "./data",
+        DB_PATH,
     )
     .unwrap();
 
