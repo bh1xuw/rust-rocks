@@ -476,18 +476,23 @@ impl ColumnFamilyOptions {
         self
     }
 
+    /// rocksdb.FixedPrefix.N
     pub fn prefix_extractor_fixed(self, len: usize) -> Self {
         unsafe {
             ll::rocks_cfoptions_set_prefix_extractor_fixed_prefix(self.raw, len);
         }
         self
     }
+
+    /// rocksdb.CappedPrefix.N
     pub fn prefix_extractor_capped(self, len: usize) -> Self {
         unsafe {
             ll::rocks_cfoptions_set_prefix_extractor_capped_prefix(self.raw, len);
         }
         self
     }
+
+    /// rocksdb.Noop
     pub fn prefix_extractor_noop(self) -> Self {
         unsafe {
             ll::rocks_cfoptions_set_prefix_extractor_noop(self.raw);
@@ -532,6 +537,16 @@ impl ColumnFamilyOptions {
     /// BlockBasedTableOptions.
     ///
     /// For Rust: split into 3 different functions
+    pub fn table_factory(self, val: ()) -> Self {
+        panic!("use any of plain_table_factory, block_based_table_factory and cuckoo_table_factory")
+    }
+
+    /// Plain Table with prefix-only seek
+    ///
+    /// For this factory, you need to set Options.prefix_extractor properly to make
+    /// it work. Look-up will starts with prefix hash lookup for key prefix. Inside
+    /// the hash bucket found, a binary search is executed for hash conflicts.
+    /// Finally, a linear search is used.
     pub fn table_factory_plain(self, opt: PlainTableOptions) -> Self {
         unsafe {
             ll::rocks_cfoptions_set_plain_table_factory(self.raw, opt.raw());
@@ -539,6 +554,7 @@ impl ColumnFamilyOptions {
         self
     }
 
+    /// Default block based table factory.
     pub fn table_factory_block_based(self, opt: BlockBasedTableOptions) -> Self {
         unsafe {
             ll::rocks_cfoptions_set_block_based_table_factory(self.raw, opt.raw());
@@ -546,6 +562,8 @@ impl ColumnFamilyOptions {
         self
     }
 
+    /// Cuckoo Table Factory for SST table format using Cache Friendly Cuckoo Hashing
+    ///
     /// Requires DBOptions.allow_mmap_reads = true
     pub fn table_factory_cuckoo(self, opt: CuckooTableOptions) -> Self {
         unsafe {
@@ -553,11 +571,6 @@ impl ColumnFamilyOptions {
         }
         self
     }
-
-    // pub fn table_factory(self, val: ()) -> Self {
-    // panic!("use any of plain_table_factory, block_based_table_factory and cuckoo_table_factory")
-    // }
-    //
 
     // Following: AdvancedColumnFamilyOptions
 
