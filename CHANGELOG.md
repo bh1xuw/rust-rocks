@@ -5,6 +5,8 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/en/1.0.0/)
 and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.html).
 
 ## Unreleased
+
+## 0.1.8
 ### Added
 - `ReadOptions::iter_start_seqnum` and example code
 - `types::FullKey` for iter over internal keys
@@ -13,6 +15,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 ### Changed
 - Compression type features are now at `rocks` level
 - Refactor `Statistics`, use str keys, slower but compatible with older versions
+- Use `RangeInclusive` for `ToCompactRange`
 
 ### Fixed
 - Wrong implementation of iterator `Keys::next()`

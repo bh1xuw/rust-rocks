@@ -1,6 +1,6 @@
 [package]
 name = "rocks-sys"
-version = "0.1.7"
+version = "0.1.8"
 authors = ["BH1XUW <bh1xuw@gmail.com>"]
 description = "Raw RocksDB bindings for Rust, used internally in rust-rocks"
 repository = "https://github.com/bh1xuw/rust-rocks"
@@ -24,7 +24,7 @@ exclude = [
 [build-dependencies]
 cc = "1.0"
 pkg-config = "0.3"
-cmake = "0.1.42"
+cmake = "0.1.44"
 
 [target.'cfg(windows)'.build-dependencies]
 vcpkg = "0.2"
