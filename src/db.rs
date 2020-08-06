@@ -888,7 +888,7 @@ impl DB {
         CF: Into<ColumnFamilyDescriptor>,
         I: IntoIterator<Item = CF>,
     >(
-        options: &Options,
+        dboptions: &DBOptions,
         name: P1,
         secondary_path: P2,
         column_families: I,
@@ -914,7 +914,7 @@ impl DB {
         let mut status = ptr::null_mut::<ll::rocks_status_t>();
         unsafe {
             let db_ptr = ll::rocks_db_open_as_secondary_column_families(
-                options.raw(),
+                dboptions.raw(),
                 dbname.as_ptr(),
                 secondary_path.as_ptr(),
                 num_column_families as c_int,

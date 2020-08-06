@@ -141,7 +141,7 @@ $ PATH="/usr/local/opt/llvm/bin:$PATH" make
 ### Linking error under Linux
 
 - rust-rocks exports rust functions to c++, so there are circular references while linking
-- GCC reuqire that you put the object files and libraries in the order that they depend on each other
+- GCC requires that you put the object files and libraries in the order that they depend on each other
 - Rust will not wrap user crates in `--start-group` and `--end-group`
 - So circular references will be errors.
 - Can be fixed by using `lld` as linker, `RUSTFLAGS="-C link-arg=-fuse-ld=lld"`
