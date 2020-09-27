@@ -2,7 +2,7 @@
 
 #include "rocks/ctypes.hpp"
 
-using namespace rocksdb;
+using namespace ROCKSDB_NAMESPACE;
 
 extern "C" {
 int rocks_livefiles_count(const rocks_livefiles_t* lf) { return static_cast<int>(lf->rep.size()); }

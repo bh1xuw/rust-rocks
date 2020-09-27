@@ -2,7 +2,7 @@
 
 #include "rocks/ctypes.hpp"
 
-using namespace rocksdb;
+using namespace ROCKSDB_NAMESPACE;
 
 // TablePropertiesCollection, used in db.h
 // since this is a readonly structure

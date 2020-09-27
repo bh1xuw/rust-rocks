@@ -5,7 +5,7 @@
 #include "rocks/ctypes.hpp"
 #include "rust_export.h"
 
-using namespace rocksdb;
+using namespace ROCKSDB_NAMESPACE;
 
 extern "C" {
 rocks_statistics_t* rocks_statistics_create() { return new rocks_statistics_t{CreateDBStatistics()}; }

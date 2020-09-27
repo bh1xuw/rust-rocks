@@ -3,7 +3,7 @@
 #include "rocks/ctypes.hpp"
 #include "rocks/rust_export.h"
 
-using namespace rocksdb;
+using namespace ROCKSDB_NAMESPACE;
 
 using std::shared_ptr;
 

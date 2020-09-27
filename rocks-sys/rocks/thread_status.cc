@@ -1,8 +1,8 @@
+#include "rocks/ctypes.hpp"
+// FIXME: This must come after above.
 #include "rocksdb/thread_status.h"
 
-#include "rocks/ctypes.hpp"
-
-using namespace rocksdb;
+using namespace ROCKSDB_NAMESPACE;
 
 extern "C" {
 void rocks_thread_status_destroy(rocks_thread_status_t* status) { delete status; }

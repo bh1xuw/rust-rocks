@@ -1,6 +1,6 @@
 #include "rocks/ctypes.hpp"
 
-using namespace rocksdb;
+using namespace ROCKSDB_NAMESPACE;
 
 typedef CompactionJobStats rocks_compaction_job_stats_t;
 

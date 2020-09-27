@@ -9,7 +9,7 @@
 #include <cstdint>
 #include <string>
 
-using namespace rocksdb;
+using namespace ROCKSDB_NAMESPACE;
 
 #ifdef __cplusplus
 extern "C" {

@@ -4,7 +4,7 @@
 
 #include "rust_export.h"
 
-using namespace rocksdb;
+using namespace ROCKSDB_NAMESPACE;
 
 extern "C" {
 rocks_perf_context_t* rocks_get_perf_context() { return reinterpret_cast<rocks_perf_context_t*>(get_perf_context()); }

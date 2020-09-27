@@ -7,7 +7,7 @@
 #include "rocks/rust_export.h"
 #include "rocksdb/utilities/info_log_finder.h"
 
-using namespace rocksdb;
+using namespace ROCKSDB_NAMESPACE;
 
 using std::shared_ptr;
 

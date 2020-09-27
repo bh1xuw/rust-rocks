@@ -2,7 +2,7 @@
 
 #include "rocks/ctypes.hpp"
 
-using namespace rocksdb;
+using namespace ROCKSDB_NAMESPACE;
 
 extern "C" {
 int* rocks_get_supported_compressions(size_t* len) {

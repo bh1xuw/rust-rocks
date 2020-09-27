@@ -1,8 +1,9 @@
-#include "rocksdb/universal_compaction.h"
-
 #include "rocks/ctypes.hpp"
 
-using namespace rocksdb;
+#include "rocksdb/universal_compaction.h"
+
+
+using namespace ROCKSDB_NAMESPACE;
 
 extern "C" {
 rocks_universal_compaction_options_t* rocks_universal_compaction_options_create() {
@@ -33,7 +34,7 @@ void rocks_universal_compaction_options_set_compression_size_percent(rocks_unive
 }
 
 void rocks_universal_compaction_options_set_stop_style(rocks_universal_compaction_options_t* uco, int style) {
-  uco->rep.stop_style = static_cast<rocksdb::CompactionStopStyle>(style);
+  uco->rep.stop_style = static_cast<CompactionStopStyle>(style);
 }
 
 void rocks_universal_compaction_options_set_allow_trivial_move(rocks_universal_compaction_options_t* uco,

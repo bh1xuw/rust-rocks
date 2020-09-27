@@ -1,6 +1,6 @@
 #include "rocks/ctypes.hpp"
 
-using namespace rocksdb;
+using namespace ROCKSDB_NAMESPACE;
 
 extern "C" {
 void rocks_logfiles_destroy(rocks_logfiles_t* files) { delete files; }

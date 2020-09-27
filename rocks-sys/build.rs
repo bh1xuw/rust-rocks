@@ -273,7 +273,7 @@ fn main() {
 
     #[cfg(unix)]
     {
-        build.flag("-std=c++11");
+        build.flag("-std=c++14");
         build.flag("-fno-rtti");
     }
 

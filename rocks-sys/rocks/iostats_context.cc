@@ -4,7 +4,7 @@
 
 #include "rust_export.h"
 
-using namespace rocksdb;
+using namespace ROCKSDB_NAMESPACE;
 
 extern "C" {
 rocks_iostats_context_t* rocks_get_iostats_context() {

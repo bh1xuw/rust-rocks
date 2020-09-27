@@ -30,7 +30,7 @@
 
 using std::shared_ptr;
 
-using namespace rocksdb;
+using namespace ROCKSDB_NAMESPACE;
 
 #ifdef __cplusplus
 extern "C" {
@@ -382,7 +382,7 @@ struct rocks_column_family_metadata_t {
 
 /* universal_compaction */
 struct rocks_universal_compaction_options_t {
-  rocksdb::CompactionOptionsUniversal rep;
+  CompactionOptionsUniversal rep;
 };
 
 /* transaction_log */

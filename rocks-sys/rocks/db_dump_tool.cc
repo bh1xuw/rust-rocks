@@ -2,7 +2,7 @@
 
 #include "rocks/ctypes.hpp"
 
-using namespace rocksdb;
+using namespace ROCKSDB_NAMESPACE;
 
 extern "C" {
 rocks_dump_options_t* rocks_dump_options_create() { return new rocks_dump_options_t; }
