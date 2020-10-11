@@ -12,6 +12,7 @@ use std::ptr;
 use std::slice;
 use std::str;
 use std::sync::Arc;
+use std::time::Duration;
 
 use rocks_sys as ll;
 
@@ -729,6 +730,18 @@ impl DB {
         }
     }
 
+    /// Open the database with the specified `name` and ttl.
+    pub fn open_with_ttl<T: AsRef<Options>, P: AsRef<Path>>(options: T, name: P, ttl: Option<Duration>) -> Result<DB> {
+        let opt = options.as_ref().raw();
+        let dbname = CString::new(path_to_bytes(name)).unwrap();
+        let ttl = ttl.map(|ttl| ttl.as_secs() as i32).unwrap_or(0);
+        let mut status = ptr::null_mut::<ll::rocks_status_t>();
+        unsafe {
+            let db_ptr = ll::rocks_db_open_with_ttl(opt, dbname.as_ptr(), ttl, &mut status);
+            Error::from_ll(status).map(|_| DB::from_ll(db_ptr))
+        }
+    }
+
     /// Open DB with column families.
     pub fn open_with_column_families<CF: Into<ColumnFamilyDescriptor>, P: AsRef<Path>, I: IntoIterator<Item = CF>>(
         options: &DBOptions,
@@ -763,6 +776,71 @@ impl DB {
                 cfnames.as_ptr(),
                 cfopts.as_ptr(),
                 cfhandles.as_mut_ptr(),
+                &mut status,
+            );
+            Error::from_ll(status).map(|_| {
+                let db = DB::from_ll(db_ptr);
+                let db_ref = db.context.clone();
+                (
+                    db,
+                    cfhandles
+                        .into_iter()
+                        .map(|p| ColumnFamily {
+                            handle: ColumnFamilyHandle { raw: p },
+                            db: db_ref.clone(),
+                            owned: true,
+                        })
+                        .collect(),
+                )
+            })
+        }
+    }
+
+    /// Open DB with column families and ttls.
+    pub fn open_with_column_families_and_ttls<
+        CF: Into<ColumnFamilyDescriptor>,
+        P: AsRef<Path>,
+        I: IntoIterator<Item = CF>,
+    >(
+        options: &DBOptions,
+        name: P,
+        column_families: I,
+        ttls: Vec<Option<Duration>>,
+    ) -> Result<(DB, Vec<ColumnFamily>)> {
+        let opt = options.raw();
+        let dbname = CString::new(path_to_bytes(name)).unwrap();
+
+        let cfs = column_families
+            .into_iter()
+            .map(|desc| desc.into())
+            .collect::<Vec<ColumnFamilyDescriptor>>();
+
+        let num_column_families = cfs.len();
+        // for ffi
+        let mut cfnames: Vec<*const c_char> = Vec::with_capacity(num_column_families);
+        let mut cfopts: Vec<*const ll::rocks_cfoptions_t> = Vec::with_capacity(num_column_families);
+        let mut cfhandles = vec![ptr::null_mut(); num_column_families];
+
+        for cf in &cfs {
+            cfnames.push(cf.name_as_ptr());
+            cfopts.push(cf.options.raw());
+        }
+
+        let ttls: Vec<i32> = ttls
+            .into_iter()
+            .map(|opt| opt.map(|ttl| ttl.as_secs() as i32).unwrap_or(0))
+            .collect();
+
+        let mut status = ptr::null_mut::<ll::rocks_status_t>();
+        unsafe {
+            let db_ptr = ll::rocks_db_open_column_families_with_ttl(
+                options.raw(),
+                dbname.as_ptr(),
+                num_column_families as c_int,
+                cfnames.as_ptr(),
+                cfopts.as_ptr(),
+                cfhandles.as_mut_ptr(),
+                ttls.as_ptr(),
                 &mut status,
             );
             Error::from_ll(status).map(|_| {
@@ -980,6 +1058,29 @@ impl DB {
             })
         }
     }
+
+    /// Create a column_family with ttl and return the handle of column family
+    /// through the argument handle.
+    pub fn create_column_family_with_ttl(
+        &self,
+        cfopts: &ColumnFamilyOptions,
+        column_family_name: &str,
+        ttl: Option<Duration>,
+    ) -> Result<ColumnFamily> {
+        let dbname = CString::new(column_family_name).unwrap();
+        let ttl = ttl.map(|ttl| ttl.as_secs() as i32).unwrap_or(0);
+        let mut status = ptr::null_mut::<ll::rocks_status_t>();
+        unsafe {
+            let handle =
+                ll::rocks_db_create_column_family_with_ttl(self.raw(), cfopts.raw(), dbname.as_ptr(), ttl, &mut status);
+            Error::from_ll(status).map(|_| ColumnFamily {
+                handle: ColumnFamilyHandle { raw: handle },
+                db: self.context.clone(),
+                owned: true,
+            })
+        }
+    }
+
     /// Drop a column family specified by column_family handle. This call
     /// only records a drop record in the manifest and prevents the column
     /// family from flushing and compacting.
