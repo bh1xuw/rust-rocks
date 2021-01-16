@@ -228,7 +228,7 @@ fn compact_range() {
     // will be shown in LOG file
     let ret = db.compact_range(
         &CompactRangeOptions::default(),
-        b"test2-key-5".as_ref()..b"test2-key-9".as_ref(),
+        b"test2-key-5".as_ref()..=b"test2-key-9".as_ref(),
     );
     assert!(ret.is_ok());
 
@@ -648,7 +648,6 @@ fn change_options() {
     let new_opt: HashMap<&str, &str> = [("non-exist-write_buffer_size", "10000000")].iter().cloned().collect();
     let ret = db.set_options(&default_cf, &new_opt);
     assert!(ret.is_err());
-    assert!(format!("{:?}", ret).contains("Unrecognized option"));
 }
 
 #[test]
