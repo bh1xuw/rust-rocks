@@ -1,4 +1,5 @@
 #include "rocksdb/db.h"
+#include "rocksdb/utilities/db_ttl.h"
 
 #include <iostream>
 #include <unordered_map>
@@ -36,6 +37,18 @@ extern "C" {
 rocks_db_t* rocks_db_open(const rocks_options_t* options, const char* name, rocks_status_t** status) {
   DB* db = nullptr;
   Status st = DB::Open(options->rep, std::string(name), &db);
+  if (SaveError(status, std::move(st))) {
+    return nullptr;
+  } else {
+    rocks_db_t* result = new rocks_db_t;
+    result->rep = db;
+    return result;
+  }
+}
+
+rocks_db_t* rocks_db_open_with_ttl(const rocks_options_t* options, const char* name, int ttl, rocks_status_t** status) {
+  DBWithTTL* db = nullptr;
+  Status st = DBWithTTL::Open(options->rep, std::string(name), &db, ttl);
   if (SaveError(status, std::move(st))) {
     return nullptr;
   } else {
@@ -141,6 +154,36 @@ rocks_db_t* rocks_db_open_column_families(const rocks_dboptions_t* db_options, c
   return result;
 }
 
+rocks_db_t* rocks_db_open_column_families_with_ttl(const rocks_dboptions_t* db_options, const char* name,
+                                                   int num_column_families, const char* const* column_family_names,
+                                                   const rocks_cfoptions_t* const* column_family_options,
+                                                   rocks_column_family_handle_t** column_family_handles, const int* ttls,
+                                                   rocks_status_t** status) {
+  std::vector<int32_t> ttls_vec;
+  std::vector<ColumnFamilyDescriptor> column_families;
+  for (int i = 0; i < num_column_families; i++) {
+    ttls_vec.push_back(ttls[i]);
+
+    column_families.push_back(ColumnFamilyDescriptor(std::string(column_family_names[i]),
+                                                     ColumnFamilyOptions(column_family_options[i]->rep)));
+  }
+
+  DBWithTTL* db = nullptr;
+  std::vector<ColumnFamilyHandle*> handles;
+  if (SaveError(status, DBWithTTL::Open(db_options->rep, std::string(name), column_families, &handles, &db, ttls_vec))) {
+    return nullptr;
+  }
+
+  for (size_t i = 0; i < handles.size(); i++) {
+    rocks_column_family_handle_t* c_handle = new rocks_column_family_handle_t;
+    c_handle->rep = handles[i];
+    column_family_handles[i] = c_handle;
+  }
+  rocks_db_t* result = new rocks_db_t;
+  result->rep = db;
+  return result;
+}
+
 rocks_db_t* rocks_db_open_for_read_only_column_families(const rocks_dboptions_t* db_options, const char* name,
                                                         int num_column_families, const char* const* column_family_names,
                                                         const rocks_cfoptions_t* const* column_family_options,
@@ -201,6 +244,22 @@ rocks_column_family_handle_t* rocks_db_create_column_family(rocks_db_t* db,
   rocks_column_family_handle_t* handle = new rocks_column_family_handle_t;
   auto st = db->rep->CreateColumnFamily(ColumnFamilyOptions(column_family_options->rep),
                                         std::string(column_family_name), &(handle->rep));
+  if (SaveError(status, std::move(st))) {
+    delete handle;
+    handle = nullptr;
+  }
+  return handle;
+}
+
+rocks_column_family_handle_t* rocks_db_create_column_family_with_ttl(rocks_db_t* db,
+                                                                     const rocks_cfoptions_t* column_family_options,
+                                                                     const char* column_family_name, int ttl,
+                                                                     rocks_status_t** status) {
+  DBWithTTL* db_with_ttl = static_cast<DBWithTTL*>(db->rep);
+
+  rocks_column_family_handle_t* handle = new rocks_column_family_handle_t;
+  auto st = db_with_ttl->CreateColumnFamilyWithTtl(ColumnFamilyOptions(column_family_options->rep),
+                                                   std::string(column_family_name), &(handle->rep), ttl);
   if (SaveError(status, std::move(st))) {
     delete handle;
     handle = nullptr;
