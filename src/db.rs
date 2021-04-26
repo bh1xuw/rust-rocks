@@ -2631,25 +2631,6 @@ pub trait AsCompactRange {
     }
 }
 
-#[deprecated(since = "0.1.7", note = "Please use RangeInclusive instead: `start..=end`")]
-impl AsCompactRange for ops::Range<&'_ [u8]> {
-    fn start_key(&self) -> *const u8 {
-        self.start.as_ptr()
-    }
-
-    fn start_key_len(&self) -> usize {
-        self.start.len()
-    }
-
-    fn end_key(&self) -> *const u8 {
-        self.end.as_ptr()
-    }
-
-    fn end_key_len(&self) -> usize {
-        self.end.len()
-    }
-}
-
 impl<'a> AsCompactRange for ops::RangeInclusive<&'a [u8]> {
     fn start_key(&self) -> *const u8 {
         self.start().as_ptr()
@@ -2665,17 +2646,6 @@ impl<'a> AsCompactRange for ops::RangeInclusive<&'a [u8]> {
 
     fn end_key_len(&self) -> usize {
         self.end().len()
-    }
-}
-
-#[deprecated(since = "0.1.7", note = "Please use RangeToInclusive instead: `..=end`")]
-impl<'a> AsCompactRange for ops::RangeTo<&'a [u8]> {
-    fn end_key(&self) -> *const u8 {
-        self.end.as_ptr()
-    }
-
-    fn end_key_len(&self) -> usize {
-        self.end.len()
     }
 }
 
